@@ -393,26 +393,7 @@
                 button.textContent = '🔍 Scan Breaches';
             }
         }
-async function deleteProfile(profileId, profileName) {
-    if (!confirm(`Are you sure you want to delete ${profileName}?\n\nThis will remove all associated data (breaches, social media, etc.)`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/api/profile/${profileId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            alert(`Profile "${profileName}" deleted successfully`);
-            loadProfiles();
-        } else {
-            alert('Failed to delete profile');
-        }
-    } catch (error) {
-        alert('Error deleting profile');
-    }
-}
+
         function showMessage(message, type) {
             const statusDiv = document.getElementById('statusMessage');
             statusDiv.textContent = message;

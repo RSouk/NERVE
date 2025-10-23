@@ -171,6 +171,7 @@ def scan_breaches(target_id):
     result = scan_profile_breaches(target_id)
     return jsonify(result)
 
+
 if __name__ == '__main__':
     print("Ghost backend starting...")
     print("API running at http://localhost:5000")

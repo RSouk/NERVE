@@ -33,7 +33,7 @@ GHOST is a credential and breach intelligence module that aggregates data from b
 
 **Core Purpose:** Answer the question "Has this person/organization been compromised in a data breach?"
 
-**Think:** Hudson Rock Cavalier + Medusa Labs breach intelligence
+**Think:** Hudson Rock Cavalier + Resecurity breach intelligence
 
 ### GHOST Capabilities
 

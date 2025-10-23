@@ -18,12 +18,17 @@ Ghost is a person intelligence and attack surface analysis platform designed for
 - **Database** - SQLite with persistent storage for profiles, breaches, social media, devices
 - **Frontend UI** - Clean web interface for creating and managing target profiles
 - **Profile Management** - Create, search, view, and delete profiles
-- **Breach Scanning Infrastructure** - Ready to integrate breach data sources
+- **Breach Scanning** - Multi-source breach checking with real data:
+  - LeakCheck.io (free, no auth)
+  - BreachDirectory via RapidAPI (500/month free)
+  - Local breach file support
+  - HIBP fallback (with API key)
+- **Risk Scoring** - Automated risk calculation based on breach findings
 
 ### 🚧 In Progress
-- **HIBP Integration** - Infrastructure built, needs API key ($3.50/month) or free alternative
-- **Risk Scoring** - Basic algorithm in place, needs refinement
-- **Data Collection** - Need to add free OSINT sources
+- Social media discovery (Sherlock integration)
+- Detailed profile view pages
+- Google dorking for exposed information
 
 ### 📋 Planned Features
 - **Watchtower Module** - IoT/camera/device exposure tracking (Shodan/Censys integration)

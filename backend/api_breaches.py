@@ -113,60 +113,67 @@ def check_leakcheck_api(email):
 
 def check_breachdirectory_api(email):
     """
-    Check BreachDirectory API (free, no auth required)
-    Public service for breach checking
-    Note: Rate limited but no API key needed
+    Check BreachDirectory API via RapidAPI
+    Uses the exact format from RapidAPI documentation
     """
-    url = "https://breachdirectory.p.rapidapi.com/"
-    
-    # This requires RapidAPI key (free tier available)
     api_key = os.getenv('RAPIDAPI_KEY')
     
     if not api_key or api_key == '':
         print("BreachDirectory: No RapidAPI key found")
         return None, -4
     
-    if not api_key:
-        return None, -4
+    # Exact URL format from RapidAPI docs
+    url = f"https://breachdirectory.p.rapidapi.com/?func=auto&term={email}"
+    
+    headers = {
+        'x-rapidapi-host': 'breachdirectory.p.rapidapi.com',
+        'x-rapidapi-key': api_key
+    }
     
     try:
-        response = requests.get(
-            url,
-            params={'func': 'auto', 'term': email},
-            headers={
-                'X-RapidAPI-Key': api_key,
-                'X-RapidAPI-Host': 'breachdirectory.p.rapidapi.com'
-            },
-            timeout=10
-        )
+        print(f"BreachDirectory: Checking {email}...")
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        print(f"BreachDirectory: Status {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
             
+            # Check if email was found
             if not data.get('found'):
+                print("BreachDirectory: No breaches found")
                 return [], 0
             
+            # Extract breach sources
             sources = data.get('sources', [])
             breach_list = []
             
+            # BreachDirectory returns sources as list of breach names
             for source in sources:
                 breach_list.append({
                     'name': source,
-                    'date': 'Unknown',
-                    'data_types': ['Email']
+                    'date': 'Unknown',  # BreachDirectory doesn't provide dates
+                    'data_types': ['Email', 'Password (likely)']
                 })
             
+            print(f"BreachDirectory: Found {len(breach_list)} breaches")
             return breach_list, len(breach_list)
         
         elif response.status_code == 429:
+            print("BreachDirectory: Rate limited")
             return None, -1
+        elif response.status_code == 401:
+            print("BreachDirectory: Invalid API key")
+            return None, -4
         else:
+            print(f"BreachDirectory: Error - status {response.status_code}")
+            print(f"Response: {response.text[:200]}")
             return None, -2
             
     except Exception as e:
         print(f"BreachDirectory API error: {e}")
         return None, -3
-
+    
 def check_snusbase_api(email):
     """
     Check Snusbase API

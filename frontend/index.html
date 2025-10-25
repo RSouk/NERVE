@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOST - Unified Intelligence Search</title>
+    <title>GHOST - Credential Intelligence</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -127,6 +127,26 @@
             color: #667eea;
         }
 
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #667eea;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .results-container {
             display: none;
             margin-top: 40px;
@@ -181,120 +201,153 @@
             margin-top: 5px;
         }
 
-        .sources-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
-        }
-
-        .source-card {
+        /* NEW DATA-FIRST LAYOUT */
+        .data-section {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 25px;
-            transition: all 0.3s;
-            max-height: 600px;
-            overflow-y: auto;
+            margin-bottom: 20px;
         }
 
-        .source-card.has-results {
-            border-color: #10b981;
-        }
-
-        .source-card.has-error {
-            border-color: #ef4444;
-        }
-
-        .source-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .source-header {
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .source-name {
-            font-size: 1.3em;
+        .section-title {
+            font-size: 1.4em;
             font-weight: 600;
             color: #fff;
         }
 
-        .result-count {
+        .section-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .section-count {
             padding: 5px 15px;
+            background: #667eea;
             border-radius: 20px;
             font-size: 0.9em;
             font-weight: 600;
-        }
-
-        .count-success {
-            background: #10b981;
             color: white;
         }
 
-        .count-empty {
-            background: rgba(255, 255, 255, 0.1);
-            color: #666;
-        }
-
-        .count-error {
-            background: #ef4444;
-            color: white;
-        }
-
-        .source-results {
-            margin-top: 15px;
-        }
-
-        .result-item {
-            padding: 12px;
+        .data-item {
+            padding: 15px;
             background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid #667eea;
             border-radius: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .data-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .item-primary {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .item-details {
             font-size: 0.95em;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            color: #aaa;
+            line-height: 1.6;
         }
 
-        .result-item strong {
-            color: #667eea;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-        }
-
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            border-top: 4px solid #667eea;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 60px;
+        .item-meta {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85em;
             color: #666;
         }
 
-        .error-message {
-            padding: 20px;
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid #ef4444;
-            border-radius: 10px;
+        .source-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+
+        .severity-critical {
             color: #ef4444;
-            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .severity-high {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .severity-medium {
+            color: #10b981;
+        }
+
+        .attack-path-section {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .attack-phase {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .phase-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background: #667eea;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 25px;
+            margin-right: 10px;
+            font-weight: 600;
+        }
+
+        .probability {
+            float: right;
+            padding: 2px 10px;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+
+        .empty-section {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .expand-button {
+            text-align: center;
+            padding: 12px;
+            margin-top: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .expand-button:hover {
+            background: rgba(102, 126, 234, 0.2);
         }
     </style>
 </head>
@@ -302,8 +355,8 @@
     <div class="container">
         <header>
             <h1>GHOST</h1>
-            <p class="subtitle">Unified Intelligence Search Platform</p>
-            <span class="module-badge">Module 1: Credential Intelligence</span>
+            <p class="subtitle">Credential Intelligence Platform</p>
+            <span class="module-badge">Module 1: Breach & Stealer Intelligence</span>
         </header>
 
         <div class="search-container">
@@ -312,7 +365,7 @@
                     type="text" 
                     id="searchInput" 
                     class="search-input" 
-                    placeholder="Search email, domain, password, username, IP, or keyword..."
+                    placeholder="Search email, domain, password, username, IP..."
                     autofocus
                 >
                 <button id="searchButton" class="search-button">Search</button>
@@ -322,18 +375,15 @@
                 <span onclick="exampleSearch('test@example.com')">Email</span>
                 <span onclick="exampleSearch('example.com')">Domain</span>
                 <span onclick="exampleSearch('192.168.1.1')">IP Address</span>
-                <span onclick="exampleSearch('john_doe')">Username</span>
             </div>
         </div>
 
         <div id="loadingIndicator" class="loading" style="display: none;">
             <div class="spinner"></div>
-            <p>Searching across multiple intelligence sources...</p>
+            <p>Querying intelligence sources...</p>
         </div>
 
         <div id="resultsContainer" class="results-container">
-            <div id="errorMessage" class="error-message" style="display: none;"></div>
-            
             <div class="results-header">
                 <div class="results-summary">
                     <div class="stat">
@@ -341,12 +391,12 @@
                         <div class="stat-label">Total Findings</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value" id="sourcesQueried">0</div>
-                        <div class="stat-label">Sources Queried</div>
+                        <div class="stat-value" id="credentialsCount">0</div>
+                        <div class="stat-label">Credentials</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value" id="searchTime">0s</div>
-                        <div class="stat-label">Search Time</div>
+                        <div class="stat-value" id="machinesCount">0</div>
+                        <div class="stat-label">Machines</div>
                     </div>
                 </div>
                 <div class="query-info">
@@ -355,7 +405,7 @@
                 </div>
             </div>
 
-            <div id="sourcesGrid" class="sources-grid">
+            <div id="resultsContent">
                 <!-- Results will be populated here -->
             </div>
         </div>
@@ -365,7 +415,6 @@
         const API_URL = 'http://localhost:5000';
         let currentResults = null;
 
-        // Event listeners
         document.getElementById('searchButton').addEventListener('click', performSearch);
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') performSearch();
@@ -384,7 +433,6 @@
                 return;
             }
 
-            // Show loading
             document.getElementById('loadingIndicator').style.display = 'block';
             document.getElementById('resultsContainer').style.display = 'none';
             document.getElementById('searchButton').disabled = true;
@@ -401,10 +449,10 @@
                 if (result.success) {
                     displayResults(result);
                 } else {
-                    showError(result.error || 'Search failed');
+                    alert('Search failed: ' + (result.error || 'Unknown error'));
                 }
             } catch (error) {
-                showError('Failed to connect to search engine. Make sure the backend is running.');
+                alert('Failed to connect to search engine');
             } finally {
                 document.getElementById('loadingIndicator').style.display = 'none';
                 document.getElementById('searchButton').disabled = false;
@@ -414,174 +462,343 @@
         function displayResults(result) {
             currentResults = result;
 
-            // Update summary stats
-            document.getElementById('totalFindings').textContent = result.total_findings;
-            document.getElementById('sourcesQueried').textContent = result.sources_queried.length;
-            document.getElementById('searchTime').textContent = result.elapsed_seconds + 's';
+            // Update header stats
             document.getElementById('queryType').textContent = result.query_type.toUpperCase();
             document.getElementById('queryText').textContent = result.query;
+            document.getElementById('totalFindings').textContent = result.total_findings;
 
-            // Clear previous results
-            const sourcesGrid = document.getElementById('sourcesGrid');
-            sourcesGrid.innerHTML = '';
+            // Process and categorize all data
+            const categorized = categorizeData(result.results);
 
-            // Display each source's results
-            for (const [sourceName, sourceData] of Object.entries(result.results)) {
-                const sourceCard = createSourceCard(sourceName, sourceData);
-                sourcesGrid.appendChild(sourceCard);
+            // Update credential and machine counts
+            document.getElementById('credentialsCount').textContent = categorized.credentials.length;
+            document.getElementById('machinesCount').textContent = categorized.machines.length;
+
+            // Build results display
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContent.innerHTML = '';
+
+            if (result.total_findings > 0) {
+                resultsContent.appendChild(buildAttackPathSection(categorized));
             }
 
-            // Show results container
+            // Compromised Credentials Section
+            if (categorized.credentials.length > 0) {
+                resultsContent.appendChild(buildCredentialsSection(categorized.credentials));
+            }
+
+            // Infected Machines Section
+            if (categorized.machines.length > 0) {
+                resultsContent.appendChild(buildMachinesSection(categorized.machines));
+            }
+
+            // Breach History Section
+            if (categorized.breaches.length > 0) {
+                resultsContent.appendChild(buildBreachesSection(categorized.breaches));
+            }
+
+            // Show no results if nothing found
+            if (result.total_findings === 0) {
+                resultsContent.innerHTML = '<div class="empty-section">No intelligence found for this query</div>';
+            }
+
             document.getElementById('resultsContainer').style.display = 'block';
-            document.getElementById('errorMessage').style.display = 'none';
         }
 
-        function createSourceCard(sourceName, sourceData) {
-            const card = document.createElement('div');
-            card.className = 'source-card';
-            
-            if (sourceData.error) {
-                card.classList.add('has-error');
-            } else if (sourceData.found) {
-                card.classList.add('has-results');
-            }
-
-            const header = document.createElement('div');
-            header.className = 'source-header';
-            
-            const name = document.createElement('div');
-            name.className = 'source-name';
-            name.textContent = formatSourceName(sourceName);
-            
-            const count = document.createElement('div');
-            count.className = 'result-count';
-            
-            if (sourceData.error) {
-                count.className += ' count-error';
-                count.textContent = 'Error';
-            } else if (sourceData.found) {
-                count.className += ' count-success';
-                count.textContent = `${sourceData.count} found`;
-            } else {
-                count.className += ' count-empty';
-                count.textContent = 'No results';
-            }
-            
-            header.appendChild(name);
-            header.appendChild(count);
-            card.appendChild(header);
-
-            // Add results if found
-            if (sourceData.found && sourceData.data) {
-                const resultsDiv = document.createElement('div');
-                resultsDiv.className = 'source-results';
-                resultsDiv.innerHTML = formatSourceData(sourceData);
-                card.appendChild(resultsDiv);
-            }
-
-            // Add error message if error
-            if (sourceData.error) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'result-item';
-                errorDiv.innerHTML = `<strong>Error:</strong> ${sourceData.error}`;
-                card.appendChild(errorDiv);
-            }
-
-            return card;
-        }
-
-        function formatSourceName(name) {
-            const names = {
-                'hudson_rock': 'Hudson Rock (Infostealer)',
-                'leakcheck': 'LeakCheck',
-                'breachdirectory': 'BreachDirectory',
-                'local_files': 'Local Database',
-                'intelligence_x': 'Intelligence X'
+        function categorizeData(results) {
+            const categorized = {
+                credentials: [],
+                machines: [],
+                breaches: [],
+                companies: []
             };
-            return names[name] || name;
-        }
 
-        function formatSourceData(sourceData) {
-    if (!sourceData.data || sourceData.data.length === 0) {
-        return '<div class="result-item">No detailed data available</div>';
-    }
+            for (const [source, data] of Object.entries(results)) {
+                if (!data.found || !data.data) continue;
 
-    let html = '';
-    const items = Array.isArray(sourceData.data) ? sourceData.data : [sourceData.data];
-    
-    // Hudson Rock stealer format
-    if (sourceData.type === 'infostealer_logs') {
-        items.slice(0, 5).forEach(item => {
-            html += '<div class="result-item">';
-            html += '<strong>Stealer: ' + (item.stealer_family || 'Unknown') + '</strong><br>';
-            html += 'Compromised: ' + (item.date_compromised ? new Date(item.date_compromised).toLocaleDateString() : 'Unknown') + '<br>';
-            
-            if (item.computer_name) {
-                html += 'Computer: ' + item.computer_name + '<br>';
-            }
-            if (item.operating_system) {
-                html += 'OS: ' + item.operating_system + '<br>';
-            }
-            if (item.ip) {
-                html += 'IP: ' + item.ip + '<br>';
-            }
-            
-            // Show credential count
-            if (item.credentials && item.credentials.length > 0) {
-                html += '<strong style="color: #ef4444;">' + item.credentials.length + ' credentials exposed</strong><br>';
-                
-                // Show first few credentials
-                const creds = item.credentials.slice(0, 3);
-                creds.forEach(cred => {
-                    html += '&nbsp;&nbsp;• ' + (cred.url || cred.domain || 'Unknown site') + '<br>';
-                });
-                
-                if (item.credentials.length > 3) {
-                    html += '&nbsp;&nbsp;+ ' + (item.credentials.length - 3) + ' more...<br>';
+                const items = Array.isArray(data.data) ? data.data : [data.data];
+
+                // Hudson Rock stealer data
+                if (data.type === 'infostealer_logs') {
+                    items.forEach(item => {
+                        // Add machine info
+                        categorized.machines.push({
+                            source: 'Hudson Rock',
+                            stealer: item.stealer_family,
+                            computer: item.computer_name,
+                            os: item.operating_system,
+                            ip: item.ip,
+                            date: item.date_compromised,
+                            cred_count: item.credentials ? item.credentials.length : 0,
+                            credentials: item.credentials || []
+                        });
+
+                        // Extract credentials
+                        if (item.credentials) {
+                            item.credentials.forEach(cred => {
+                                categorized.credentials.push({
+                                    source: 'Hudson Rock',
+                                    url: cred.url,
+                                    domain: cred.domain,
+                                    username: cred.username,
+                                    password: cred.password,
+                                    date: item.date_compromised
+                                });
+                            });
+                        }
+
+                        // Extract companies
+                        if (item.employeeAt) {
+                            item.employeeAt.forEach(company => {
+                                if (!categorized.companies.includes(company)) {
+                                    categorized.companies.push(company);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Breach data
+                if (data.type === 'breach_data') {
+                    items.forEach(item => {
+                        categorized.breaches.push({
+                            source: source,
+                            name: item.name,
+                            date: item.date,
+                            data_types: item.data_types
+                        });
+                    });
                 }
             }
+
+            return categorized;
+        }
+
+        function buildCredentialsSection(credentials) {
+    const section = document.createElement('div');
+    section.className = 'data-section';
+    
+    const showCount = 5;
+    const hasMore = credentials.length > showCount;
+    
+    section.innerHTML = `
+        <div class="section-header">
+            <div>
+                <span class="section-icon">🔑</span>
+                <span class="section-title">Compromised Credentials</span>
+            </div>
+            <span class="section-count">${credentials.length} found</span>
+        </div>
+    `;
+
+    const itemsContainer = document.createElement('div');
+    
+    credentials.slice(0, showCount).forEach(cred => {
+        const item = document.createElement('div');
+        item.className = 'data-item';
+        
+        const domain = cred.domain || cred.url || 'Unknown';
+        const date = cred.date ? new Date(cred.date).toLocaleDateString() : 'Unknown';
+        
+        item.innerHTML = `
+            <div class="item-primary">${domain}</div>
+            <div class="item-details">
+                Username: <strong>${cred.username || 'N/A'}</strong><br>
+                Password: <strong class="severity-critical">${cred.password || '[Hidden]'}</strong>
+            </div>
+            <div class="item-meta">
+                <span class="source-tag">${cred.source}</span>
+                <span>Compromised: ${date}</span>
+            </div>
+        `;
+        itemsContainer.appendChild(item);
+    });
+
+    section.appendChild(itemsContainer);
+
+    if (hasMore) {
+        const hiddenContainer = document.createElement('div');
+        hiddenContainer.style.display = 'none';
+        hiddenContainer.id = 'hidden-creds';
+        
+        credentials.slice(showCount).forEach(cred => {
+            const item = document.createElement('div');
+            item.className = 'data-item';
             
-            // Show companies if available
-            if (item.employeeAt && item.employeeAt.length > 0) {
-                html += 'Employee at: ' + item.employeeAt.slice(0, 3).join(', ') + '<br>';
+            const domain = cred.domain || cred.url || 'Unknown';
+            const date = cred.date ? new Date(cred.date).toLocaleDateString() : 'Unknown';
+            
+            item.innerHTML = `
+                <div class="item-primary">${domain}</div>
+                <div class="item-details">
+                    Username: <strong>${cred.username || 'N/A'}</strong><br>
+                    Password: <strong class="severity-critical">${cred.password || '[Hidden]'}</strong>
+                </div>
+                <div class="item-meta">
+                    <span class="source-tag">${cred.source}</span>
+                    <span>Compromised: ${date}</span>
+                </div>
+            `;
+            hiddenContainer.appendChild(item);
+        });
+        
+        section.appendChild(hiddenContainer);
+        
+        const expandBtn = document.createElement('div');
+        expandBtn.className = 'expand-button';
+        expandBtn.innerHTML = `+ Show ${credentials.length - showCount} more credentials`;
+        expandBtn.onclick = () => {
+            const hidden = document.getElementById('hidden-creds');
+            if (hidden.style.display === 'none') {
+                hidden.style.display = 'block';
+                expandBtn.innerHTML = '- Show less';
+            } else {
+                hidden.style.display = 'none';
+                expandBtn.innerHTML = `+ Show ${credentials.length - showCount} more credentials`;
             }
-            
-            html += '</div>';
-        });
-    }
-    // Breach format (LeakCheck, BreachDirectory)
-    else if (sourceData.type === 'breach_data') {
-        items.slice(0, 5).forEach(item => {
-            html += '<div class="result-item">';
-            if (item.name) html += '<strong>' + item.name + '</strong><br>';
-            if (item.date) html += 'Date: ' + item.date + '<br>';
-            if (item.data_types) html += 'Data: ' + (Array.isArray(item.data_types) ? item.data_types.join(', ') : item.data_types);
-            html += '</div>';
-        });
-    }
-    // Generic format
-    else {
-        items.slice(0, 5).forEach(item => {
-            html += '<div class="result-item">';
-            if (item.name) html += '<strong>' + item.name + '</strong><br>';
-            if (item.date) html += 'Date: ' + item.date + '<br>';
-            if (item.data_types) html += 'Data: ' + (Array.isArray(item.data_types) ? item.data_types.join(', ') : item.data_types);
-            html += '</div>';
-        });
+        };
+        section.appendChild(expandBtn);
     }
 
-    if (items.length > 5) {
-        html += '<div class="result-item" style="text-align: center; color: #667eea;">+ ' + (items.length - 5) + ' more results</div>';
-    }
-
-    return html;
+    return section;
 }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            document.getElementById('resultsContainer').style.display = 'block';
+function buildMachinesSection(machines) {
+    const section = document.createElement('div');
+    section.className = 'data-section';
+    
+    const showCount = 3;
+    const hasMore = machines.length > showCount;
+    
+    section.innerHTML = `
+        <div class="section-header">
+            <div>
+                <span class="section-icon">💻</span>
+                <span class="section-title">Infected Machines</span>
+            </div>
+            <span class="section-count">${machines.length} found</span>
+        </div>
+    `;
+
+    machines.slice(0, showCount).forEach(machine => {
+        const item = document.createElement('div');
+        item.className = 'data-item';
+        
+        const date = machine.date ? new Date(machine.date).toLocaleDateString() : 'Unknown';
+        
+        item.innerHTML = `
+            <div class="item-primary">${machine.computer || 'Unknown Computer'}</div>
+            <div class="item-details">
+                Stealer: <strong>${machine.stealer || 'Unknown'}</strong><br>
+                OS: ${machine.os || 'Unknown'}<br>
+                IP: ${machine.ip || 'Unknown'}<br>
+                <span class="severity-critical">${machine.cred_count} credentials exposed</span>
+            </div>
+            <div class="item-meta">
+                <span class="source-tag">${machine.source}</span>
+                <span>Compromised: ${date}</span>
+            </div>
+        `;
+        section.appendChild(item);
+    });
+
+    if (hasMore) {
+        const expandBtn = document.createElement('div');
+        expandBtn.className = 'expand-button';
+        expandBtn.innerHTML = `+ Show ${machines.length - showCount} more machines`;
+        expandBtn.onclick = () => alert(`Full machine list coming soon! Total: ${machines.length}`);
+        section.appendChild(expandBtn);
+    }
+
+    return section;
+}
+
+function buildBreachesSection(breaches) {
+    const section = document.createElement('div');
+    section.className = 'data-section';
+    
+    section.innerHTML = `
+        <div class="section-header">
+            <div>
+                <span class="section-icon">📊</span>
+                <span class="section-title">Breach History</span>
+            </div>
+            <span class="section-count">${breaches.length} breaches</span>
+        </div>
+    `;
+
+    breaches.forEach(breach => {
+        const item = document.createElement('div');
+        item.className = 'data-item';
+        
+        const dataTypes = Array.isArray(breach.data_types) ? breach.data_types.join(', ') : breach.data_types;
+        
+        item.innerHTML = `
+            <div class="item-primary">${breach.name}</div>
+            <div class="item-details">
+                Date: ${breach.date || 'Unknown'}<br>
+                Exposed: ${dataTypes || 'Unknown'}
+            </div>
+            <div class="item-meta">
+                <span class="source-tag">${breach.source}</span>
+            </div>
+        `;
+        section.appendChild(item);
+    });
+
+    return section;
+}
+        function buildAttackPathSection(data) {
+            const section = document.createElement('div');
+            section.className = 'data-section attack-path-section';
+            
+            const credCount = data.credentials.length;
+            const machineCount = data.machines.length;
+            const hasPasswords = data.credentials.some(c => c.password);
+            
+            // Calculate attack probability
+            let probability = 60;
+            if (credCount > 10) probability += 15;
+            if (hasPasswords) probability += 20;
+            if (machineCount > 1) probability += 10;
+            probability = Math.min(probability, 95);
+            
+            section.innerHTML = `
+                <div class="section-header">
+                    <div>
+                        <span class="section-icon">⚠️</span>
+                        <span class="section-title">Attack Path Analysis</span>
+                    </div>
+                    <span class="section-count severity-critical">${probability}% Risk</span>
+                </div>
+                <div class="attack-phase">
+                    <span class="phase-number">1</span>
+                    <strong>Initial Access</strong>
+                    <span class="probability">${probability}%</span><br>
+                    <div style="margin-left: 35px; margin-top: 8px; color: #aaa;">
+                        ${credCount} credentials available for account takeover<br>
+                        ${hasPasswords ? '✓ Plaintext passwords exposed' : '⚠ Hashed passwords only'}<br>
+                        → Likely works on: Email, Social Media, Corporate Accounts
+                    </div>
+                </div>
+                <div class="attack-phase">
+                    <span class="phase-number">2</span>
+                    <strong>Lateral Movement</strong>
+                    <span class="probability">${Math.max(probability - 20, 40)}%</span><br>
+                    <div style="margin-left: 35px; margin-top: 8px; color: #aaa;">
+                        Password reuse across ${Math.min(credCount, 10)} services detected<br>
+                        ${machineCount} infected machines provide additional entry points<br>
+                        → High probability of corporate account access
+                    </div>
+                </div>
+                <div class="item-meta" style="margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                    <strong>Estimated Time to Compromise:</strong> 2-4 hours<br>
+                    <strong>Black Market Value:</strong> $${Math.min(credCount * 15, 2000)}-$${Math.min(credCount * 25, 3500)}<br>
+                    <strong>Recommended Action:</strong> Immediate password reset on all accounts
+                </div>
+            `;
+
+            return section;
         }
     </script>
 </body>

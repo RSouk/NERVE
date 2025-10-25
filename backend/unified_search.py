@@ -162,7 +162,13 @@ class UnifiedSearch:
         """Query Hudson Rock for email"""
         data, count = search_by_email(email)
         
-        if count > 0:
+        # Debug: Print what we got back
+        print(f"DEBUG: Hudson Rock returned count={count}")
+        if data:
+            print(f"DEBUG: Data type: {type(data)}")
+            print(f"DEBUG: First 500 chars: {str(data)[:500]}")
+        
+        if count and count > 0:
             return {
                 'found': True,
                 'count': count,
@@ -173,12 +179,12 @@ class UnifiedSearch:
     
     def _hudson_rock_domain(self, domain: str):
         """Query Hudson Rock for domain"""
-        data = search_by_domain(domain)
+        data, count = search_by_domain(domain)
         
-        if data:
+        if count and count > 0:
             return {
                 'found': True,
-                'count': len(data) if isinstance(data, list) else 1,
+                'count': count,
                 'data': data,
                 'type': 'domain_exposure'
             }
@@ -186,12 +192,12 @@ class UnifiedSearch:
     
     def _hudson_rock_password(self, password: str):
         """Query Hudson Rock for password"""
-        data = search_by_password(password)
+        data, count = search_by_password(password)
         
-        if data:
+        if count and count > 0:
             return {
                 'found': True,
-                'count': len(data) if isinstance(data, list) else 1,
+                'count': count,
                 'data': data,
                 'type': 'password_reuse'
             }

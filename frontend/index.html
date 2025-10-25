@@ -193,6 +193,8 @@
             border-radius: 15px;
             padding: 25px;
             transition: all 0.3s;
+            max-height: 600px;
+            overflow-y: auto;
         }
 
         .source-card.has-results {
@@ -252,6 +254,8 @@
             border-radius: 8px;
             margin-bottom: 10px;
             font-size: 0.95em;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .result-item strong {
@@ -498,27 +502,80 @@
         }
 
         function formatSourceData(sourceData) {
-            if (!sourceData.data || sourceData.data.length === 0) {
-                return '<div class="result-item">No detailed data available</div>';
-            }
+    if (!sourceData.data || sourceData.data.length === 0) {
+        return '<div class="result-item">No detailed data available</div>';
+    }
 
-            let html = '';
-            const items = Array.isArray(sourceData.data) ? sourceData.data : [sourceData.data];
+    let html = '';
+    const items = Array.isArray(sourceData.data) ? sourceData.data : [sourceData.data];
+    
+    // Hudson Rock stealer format
+    if (sourceData.type === 'infostealer_logs') {
+        items.slice(0, 5).forEach(item => {
+            html += '<div class="result-item">';
+            html += '<strong>Stealer: ' + (item.stealer_family || 'Unknown') + '</strong><br>';
+            html += 'Compromised: ' + (item.date_compromised ? new Date(item.date_compromised).toLocaleDateString() : 'Unknown') + '<br>';
             
-            items.slice(0, 5).forEach(item => {
-                html += '<div class="result-item">';
-                if (item.name) html += `<strong>${item.name}</strong><br>`;
-                if (item.date) html += `Date: ${item.date}<br>`;
-                if (item.data_types) html += `Data: ${Array.isArray(item.data_types) ? item.data_types.join(', ') : item.data_types}`;
-                html += '</div>';
-            });
-
-            if (items.length > 5) {
-                html += `<div class="result-item" style="text-align: center; color: #667eea;">+ ${items.length - 5} more results</div>`;
+            if (item.computer_name) {
+                html += 'Computer: ' + item.computer_name + '<br>';
             }
+            if (item.operating_system) {
+                html += 'OS: ' + item.operating_system + '<br>';
+            }
+            if (item.ip) {
+                html += 'IP: ' + item.ip + '<br>';
+            }
+            
+            // Show credential count
+            if (item.credentials && item.credentials.length > 0) {
+                html += '<strong style="color: #ef4444;">' + item.credentials.length + ' credentials exposed</strong><br>';
+                
+                // Show first few credentials
+                const creds = item.credentials.slice(0, 3);
+                creds.forEach(cred => {
+                    html += '&nbsp;&nbsp;• ' + (cred.url || cred.domain || 'Unknown site') + '<br>';
+                });
+                
+                if (item.credentials.length > 3) {
+                    html += '&nbsp;&nbsp;+ ' + (item.credentials.length - 3) + ' more...<br>';
+                }
+            }
+            
+            // Show companies if available
+            if (item.employeeAt && item.employeeAt.length > 0) {
+                html += 'Employee at: ' + item.employeeAt.slice(0, 3).join(', ') + '<br>';
+            }
+            
+            html += '</div>';
+        });
+    }
+    // Breach format (LeakCheck, BreachDirectory)
+    else if (sourceData.type === 'breach_data') {
+        items.slice(0, 5).forEach(item => {
+            html += '<div class="result-item">';
+            if (item.name) html += '<strong>' + item.name + '</strong><br>';
+            if (item.date) html += 'Date: ' + item.date + '<br>';
+            if (item.data_types) html += 'Data: ' + (Array.isArray(item.data_types) ? item.data_types.join(', ') : item.data_types);
+            html += '</div>';
+        });
+    }
+    // Generic format
+    else {
+        items.slice(0, 5).forEach(item => {
+            html += '<div class="result-item">';
+            if (item.name) html += '<strong>' + item.name + '</strong><br>';
+            if (item.date) html += 'Date: ' + item.date + '<br>';
+            if (item.data_types) html += 'Data: ' + (Array.isArray(item.data_types) ? item.data_types.join(', ') : item.data_types);
+            html += '</div>';
+        });
+    }
 
-            return html;
-        }
+    if (items.length > 5) {
+        html += '<div class="result-item" style="text-align: center; color: #667eea;">+ ' + (items.length - 5) + ' more results</div>';
+    }
+
+    return html;
+}
 
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');

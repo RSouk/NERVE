@@ -5,6 +5,7 @@ from osint import scan_profile_breaches
 import os
 import json
 from datetime import datetime
+from unified_search import UnifiedSearch
 
 app = Flask(__name__)
 CORS(app)
@@ -169,6 +170,20 @@ def delete_profile(target_id):
 def scan_breaches(target_id):
     """Scan a profile for data breaches"""
     result = scan_profile_breaches(target_id)
+    return jsonify(result)
+
+@app.route('/api/search/unified', methods=['POST'])
+def unified_search_endpoint():
+    """Unified search across all data sources"""
+    data = request.json
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'error': 'Query cannot be empty'}), 400
+    
+    searcher = UnifiedSearch()
+    result = searcher.search(query)
+    
     return jsonify(result)
 
 

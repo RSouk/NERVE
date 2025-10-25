@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghost - Person Intelligence Platform</title>
+    <title>GHOST - Unified Intelligence Search</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -31,7 +31,7 @@
         }
 
         h1 {
-            font-size: 3em;
+            font-size: 3.5em;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -40,193 +40,257 @@
 
         .subtitle {
             color: #888;
-            font-size: 1.1em;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .panel {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .panel h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #aaa;
-            font-size: 0.9em;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: #e0e0e0;
-            font-size: 1em;
-        }
-
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 1em;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .profiles-list {
-            display: grid;
-            gap: 15px;
-        }
-
-        .profile-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 20px;
-            transition: all 0.3s;
-        }
-
-        .profile-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: #667eea;
-        }
-
-        .profile-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-size: 1.2em;
             margin-bottom: 10px;
         }
 
-        .profile-name {
-            font-size: 1.2em;
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .risk-badge {
+        .module-badge {
+            display: inline-block;
             padding: 5px 15px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid #667eea;
             border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .risk-low { background: #10b981; color: white; }
-        .risk-medium { background: #f59e0b; color: white; }
-        .risk-high { background: #ef4444; color: white; }
-
-        .profile-info {
-            color: #888;
             font-size: 0.9em;
+            color: #667eea;
         }
 
-        .profile-actions {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
+        .search-container {
+            max-width: 900px;
+            margin: 50px auto;
         }
 
-        .btn-scan {
-            padding: 8px 15px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 20px 60px 20px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #e0e0e0;
+            font-size: 1.2em;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .search-button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 6px;
+            border-radius: 10px;
             color: white;
-            font-size: 0.85em;
+            font-size: 1em;
             cursor: pointer;
             transition: transform 0.2s;
-            width: auto;
         }
 
-        .btn-scan:hover {
-            transform: translateY(-1px);
+        .search-button:hover {
+            transform: translateY(-50%) scale(1.05);
         }
 
-        .btn-scan:disabled {
+        .search-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .breach-count {
-            color: #ef4444;
-            font-weight: 600;
+        .search-examples {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+
+        .search-examples span {
+            display: inline-block;
+            margin: 5px 10px;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-examples span:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #667eea;
+        }
+
+        .results-container {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .results-summary {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .query-info {
+            padding: 15px 25px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+        }
+
+        .query-type {
+            font-size: 0.85em;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .query-text {
+            font-size: 1.2em;
             margin-top: 5px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
+        .sources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .source-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+
+        .source-card.has-results {
+            border-color: #10b981;
+        }
+
+        .source-card.has-error {
+            border-color: #ef4444;
+        }
+
+        .source-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .source-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .source-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .result-count {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .count-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .count-empty {
+            background: rgba(255, 255, 255, 0.1);
             color: #666;
         }
 
-        .empty-state-icon {
-            font-size: 4em;
-            margin-bottom: 20px;
+        .count-error {
+            background: #ef4444;
+            color: white;
         }
 
-        .search-box {
-            margin-bottom: 20px;
+        .source-results {
+            margin-top: 15px;
         }
 
-        .status-message {
-            padding: 15px;
+        .result-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
+            margin-bottom: 10px;
+            font-size: 0.95em;
         }
 
-        .status-success {
-            background: rgba(16, 185, 129, 0.2);
-            border: 1px solid #10b981;
-            color: #10b981;
+        .result-item strong {
+            color: #667eea;
         }
 
-        .status-error {
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #667eea;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .error-message {
+            padding: 20px;
             background: rgba(239, 68, 68, 0.2);
             border: 1px solid #ef4444;
+            border-radius: 10px;
             color: #ef4444;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -234,218 +298,234 @@
     <div class="container">
         <header>
             <h1>GHOST</h1>
-            <p class="subtitle">Person Intelligence & Attack Surface Platform</p>
+            <p class="subtitle">Unified Intelligence Search Platform</p>
+            <span class="module-badge">Module 1: Credential Intelligence</span>
         </header>
 
-        <div class="main-content">
-            <div class="panel">
-                <h2>Create New Profile</h2>
-                <div id="statusMessage" class="status-message"></div>
-                <form id="createForm">
-                    <div class="form-group">
-                        <label>Name</label>
-                        <input type="text" id="name" required>
+        <div class="search-container">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search email, domain, password, username, IP, or keyword..."
+                    autofocus
+                >
+                <button id="searchButton" class="search-button">Search</button>
+            </div>
+            <div class="search-examples">
+                <strong>Examples:</strong>
+                <span onclick="exampleSearch('test@example.com')">Email</span>
+                <span onclick="exampleSearch('example.com')">Domain</span>
+                <span onclick="exampleSearch('192.168.1.1')">IP Address</span>
+                <span onclick="exampleSearch('john_doe')">Username</span>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Searching across multiple intelligence sources...</p>
+        </div>
+
+        <div id="resultsContainer" class="results-container">
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            
+            <div class="results-header">
+                <div class="results-summary">
+                    <div class="stat">
+                        <div class="stat-value" id="totalFindings">0</div>
+                        <div class="stat-label">Total Findings</div>
                     </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="email" required>
+                    <div class="stat">
+                        <div class="stat-value" id="sourcesQueried">0</div>
+                        <div class="stat-label">Sources Queried</div>
                     </div>
-                    <div class="form-group">
-                        <label>Username (optional)</label>
-                        <input type="text" id="username">
+                    <div class="stat">
+                        <div class="stat-value" id="searchTime">0s</div>
+                        <div class="stat-label">Search Time</div>
                     </div>
-                    <div class="form-group">
-                        <label>Phone (optional)</label>
-                        <input type="tel" id="phone">
-                    </div>
-                    <div class="form-group">
-                        <label>Notes</label>
-                        <textarea id="notes" placeholder="Add any additional context..."></textarea>
-                    </div>
-                    <button type="submit">Create Profile</button>
-                </form>
+                </div>
+                <div class="query-info">
+                    <div class="query-type" id="queryType">EMAIL</div>
+                    <div class="query-text" id="queryText">test@example.com</div>
+                </div>
             </div>
 
-            <div class="panel">
-                <h2>Profiles</h2>
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search profiles...">
-                </div>
-                <div id="profilesList" class="profiles-list">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">👤</div>
-                        <p>No profiles yet. Create your first target profile to get started.</p>
-                    </div>
-                </div>
+            <div id="sourcesGrid" class="sources-grid">
+                <!-- Results will be populated here -->
             </div>
         </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:5000';
+        let currentResults = null;
 
-        loadProfiles();
-
-        document.getElementById('createForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                username: document.getElementById('username').value,
-                phone: document.getElementById('phone').value,
-                notes: document.getElementById('notes').value
-            };
-
-            try {
-                const response = await fetch(`${API_URL}/api/create`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-
-                if (response.ok) {
-                    showMessage('Profile created successfully!', 'success');
-                    document.getElementById('createForm').reset();
-                    loadProfiles();
-                } else {
-                    showMessage('Failed to create profile', 'error');
-                }
-            } catch (error) {
-                showMessage('Error connecting to server', 'error');
-            }
+        // Event listeners
+        document.getElementById('searchButton').addEventListener('click', performSearch);
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
         });
 
-        async function loadProfiles() {
-            try {
-                const response = await fetch(`${API_URL}/api/profiles`);
-                const data = await response.json();
-                
-                const profilesList = document.getElementById('profilesList');
-                
-                if (data.profiles.length === 0) {
-                    profilesList.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">👤</div>
-                            <p>No profiles yet. Create your first target profile to get started.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                profilesList.innerHTML = data.profiles.map(profile => {
-                    const riskClass = profile.risk_score > 70 ? 'risk-high' : 
-                                     profile.risk_score > 40 ? 'risk-medium' : 'risk-low';
-                    
-                    return `
-                        <div class="profile-card">
-                            <div class="profile-header">
-                                <div class="profile-name">${profile.name}</div>
-                                <div class="risk-badge ${riskClass}">Risk: ${profile.risk_score}</div>
-                            </div>
-                            <div class="profile-info">
-                                ${profile.email}<br>
-                                ${profile.username ? 'Username: ' + profile.username : ''}
-                                ${profile.breach_count > 0 ? `<div class="breach-count">⚠️ Found in ${profile.breach_count} breaches</div>` : ''}
-                            </div>
-                            <div class="profile-actions">
-                                <button class="btn-scan" onclick="scanBreaches('${profile.id}')">🔍 Scan Breaches</button>
-                                <button class="btn-scan" onclick="viewProfile('${profile.id}')">View Details</button>
-                                <button class="btn-scan" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);" onclick="deleteProfile('${profile.id}', '${profile.name}')">🗑️ Delete</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } catch (error) {
-                console.error('Error loading profiles:', error);
-            }
+        function exampleSearch(query) {
+            document.getElementById('searchInput').value = query;
+            performSearch();
         }
 
-        function viewProfile(profileId) {
-            alert(`Profile details view coming soon!\nProfile ID: ${profileId}`);
-        }
-
-        async function scanBreaches(profileId) {
-            const button = event.target;
-            button.disabled = true;
-            button.textContent = '⏳ Scanning...';
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
             
-            try {
-                const response = await fetch(`${API_URL}/api/scan/breaches/${profileId}`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert(`Error: ${data.error}`);
-                } else {
-                    const message = data.breaches_found > 0 
-                        ? `Found ${data.breaches_found} breaches!\nRisk Score: ${data.risk_score}\n\nBreaches:\n${data.breaches.map(b => `- ${b.name} (${b.date})`).join('\n')}`
-                        : 'No breaches found! This email is clean.';
-                    alert(message);
-                    loadProfiles();
-                }
-            } catch (error) {
-                alert('Error scanning for breaches');
-            } finally {
-                button.disabled = false;
-                button.textContent = '🔍 Scan Breaches';
-            }
-        }
-
-        function showMessage(message, type) {
-            const statusDiv = document.getElementById('statusMessage');
-            statusDiv.textContent = message;
-            statusDiv.className = `status-message status-${type}`;
-            statusDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 3000);
-        }
-
-        document.getElementById('searchInput').addEventListener('input', async (e) => {
-            const query = e.target.value;
-            
-            if (query.length < 2) {
-                loadProfiles();
+            if (!query) {
+                alert('Please enter a search query');
                 return;
             }
 
-            try {
-                const response = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-                
-                const profilesList = document.getElementById('profilesList');
-                
-                if (data.results.length === 0) {
-                    profilesList.innerHTML = '<div class="empty-state"><p>No profiles found</p></div>';
-                    return;
-                }
+            // Show loading
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('searchButton').disabled = true;
 
-                profilesList.innerHTML = data.results.map(profile => {
-                    const riskClass = profile.risk_score > 70 ? 'risk-high' : 
-                                     profile.risk_score > 40 ? 'risk-medium' : 'risk-low';
-                    
-                    return `
-                        <div class="profile-card">
-                            <div class="profile-header">
-                                <div class="profile-name">${profile.name}</div>
-                                <div class="risk-badge ${riskClass}">Risk: ${profile.risk_score}</div>
-                            </div>
-                            <div class="profile-info">${profile.email}</div>
-                            <div class="profile-actions">
-                                <button class="btn-scan" onclick="scanBreaches('${profile.id}')">🔍 Scan Breaches</button>
-                                <button class="btn-scan" onclick="viewProfile('${profile.id}')">View Details</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+            try {
+                const response = await fetch(`${API_URL}/api/search/unified`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    showError(result.error || 'Search failed');
+                }
             } catch (error) {
-                console.error('Search error:', error);
+                showError('Failed to connect to search engine. Make sure the backend is running.');
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('searchButton').disabled = false;
             }
-        });
+        }
+
+        function displayResults(result) {
+            currentResults = result;
+
+            // Update summary stats
+            document.getElementById('totalFindings').textContent = result.total_findings;
+            document.getElementById('sourcesQueried').textContent = result.sources_queried.length;
+            document.getElementById('searchTime').textContent = result.elapsed_seconds + 's';
+            document.getElementById('queryType').textContent = result.query_type.toUpperCase();
+            document.getElementById('queryText').textContent = result.query;
+
+            // Clear previous results
+            const sourcesGrid = document.getElementById('sourcesGrid');
+            sourcesGrid.innerHTML = '';
+
+            // Display each source's results
+            for (const [sourceName, sourceData] of Object.entries(result.results)) {
+                const sourceCard = createSourceCard(sourceName, sourceData);
+                sourcesGrid.appendChild(sourceCard);
+            }
+
+            // Show results container
+            document.getElementById('resultsContainer').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function createSourceCard(sourceName, sourceData) {
+            const card = document.createElement('div');
+            card.className = 'source-card';
+            
+            if (sourceData.error) {
+                card.classList.add('has-error');
+            } else if (sourceData.found) {
+                card.classList.add('has-results');
+            }
+
+            const header = document.createElement('div');
+            header.className = 'source-header';
+            
+            const name = document.createElement('div');
+            name.className = 'source-name';
+            name.textContent = formatSourceName(sourceName);
+            
+            const count = document.createElement('div');
+            count.className = 'result-count';
+            
+            if (sourceData.error) {
+                count.className += ' count-error';
+                count.textContent = 'Error';
+            } else if (sourceData.found) {
+                count.className += ' count-success';
+                count.textContent = `${sourceData.count} found`;
+            } else {
+                count.className += ' count-empty';
+                count.textContent = 'No results';
+            }
+            
+            header.appendChild(name);
+            header.appendChild(count);
+            card.appendChild(header);
+
+            // Add results if found
+            if (sourceData.found && sourceData.data) {
+                const resultsDiv = document.createElement('div');
+                resultsDiv.className = 'source-results';
+                resultsDiv.innerHTML = formatSourceData(sourceData);
+                card.appendChild(resultsDiv);
+            }
+
+            // Add error message if error
+            if (sourceData.error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'result-item';
+                errorDiv.innerHTML = `<strong>Error:</strong> ${sourceData.error}`;
+                card.appendChild(errorDiv);
+            }
+
+            return card;
+        }
+
+        function formatSourceName(name) {
+            const names = {
+                'hudson_rock': 'Hudson Rock (Infostealer)',
+                'leakcheck': 'LeakCheck',
+                'breachdirectory': 'BreachDirectory',
+                'local_files': 'Local Database',
+                'intelligence_x': 'Intelligence X'
+            };
+            return names[name] || name;
+        }
+
+        function formatSourceData(sourceData) {
+            if (!sourceData.data || sourceData.data.length === 0) {
+                return '<div class="result-item">No detailed data available</div>';
+            }
+
+            let html = '';
+            const items = Array.isArray(sourceData.data) ? sourceData.data : [sourceData.data];
+            
+            items.slice(0, 5).forEach(item => {
+                html += '<div class="result-item">';
+                if (item.name) html += `<strong>${item.name}</strong><br>`;
+                if (item.date) html += `Date: ${item.date}<br>`;
+                if (item.data_types) html += `Data: ${Array.isArray(item.data_types) ? item.data_types.join(', ') : item.data_types}`;
+                html += '</div>';
+            });
+
+            if (items.length > 5) {
+                html += `<div class="result-item" style="text-align: center; color: #667eea;">+ ${items.length - 5} more results</div>`;
+            }
+
+            return html;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'block';
+        }
     </script>
 </body>
 </html>

@@ -366,5 +366,85 @@ Will incorporate Opsych concepts in Phase 2:
 **Next milestone:** Free data sources + functional breach scanning
 **Blocker:** Need alternatives to paid HIBP API
 
+---## October 23, 2025 - Evening: Architecture Pivot
+
+### Major Decision: Search-First Architecture
+
+**Changed from:**
+- Profile-based system (create profile → scan → view)
+
+**Changed to:**
+- Search-first system (search anything → auto-detect → query all sources → results)
+
+**Reason:** Industry standard for CTI platforms (Hudson Rock, Intelligence X model)
+
+### New Files Created
+
+**backend/search_engine.py** - Query type detection
+- Auto-detects: email, domain, IP, CIDR, username, password, keyword
+- Returns applicable data sources for each type
+- Validates queries before searching
+
+**backend/unified_search.py** - Search orchestrator
+- Routes searches to all applicable sources
+- Aggregates results from multiple APIs
+- Error handling per source
+- Returns unified results
+
+**backend/hudson_rock.py** - Hudson Rock API integration
+- Email search
+- Domain search
+- Password search
+- Free infostealer API access
+
+### Architecture Changes
+
+**Search Type Support:**
+- Email → Hudson Rock, LeakCheck, BreachDirectory, Local files
+- Domain → Hudson Rock, Intelligence X, URLScan
+- Password → Hudson Rock, Local files
+- Username → Hudson Rock, Local files
+- IP/CIDR → Hudson Rock, Feodo Tracker, Criminal IP
+- Keyword → Hudson Rock, Intelligence X, Pastebin
+
+**Unified Search Flow:**
+1. User enters any query
+2. System auto-detects type
+3. Queries all applicable sources in parallel
+4. Aggregates results
+5. Returns unified response
+
+### API Keys Added
+
+- Hudson Rock: MdBmjE4lF1_2YHD3PZL2W0XXhn.VtNTYQfJ3wClmCxx9cChelzXBJaP1JkfxmRQA
+- Intelligence X: 463eb54d-bf1f-4346-b085-409e98e77212
+
+### Testing Results
+
+**Email Search (test@adobe.com):**
+- LeakCheck: 4 breaches found
+- Hudson Rock: 0 results (not in stealer logs)
+- BreachDirectory: 0 results
+- Time: 7.24s
+
+**Domain Search (example.com):**
+- Hudson Rock: 0 results
+- Time: 0.6s
+
+### Next Steps (Sprint 1 Continued)
+
+1. ✅ Unified search architecture - DONE
+2. 🔄 Add Intelligence X integration
+3. ⬜ Build search results API endpoint
+4. ⬜ Rebuild frontend for search-first UI
+5. ⬜ Add investigation save/history
+6. ⬜ Add Telegram monitoring
+7. ⬜ Add botnet data sources
+
 ---
-*Last updated: October 22, 2025 11:52 PM*
+
+**Status:** Sprint 1 - 40% complete (architecture foundation done)
+**Next Session:** Build search API endpoint, start on new UI
+
+---
+*Last updated: October 25, 2025 11:52 PM*

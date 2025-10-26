@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 def detect_search_type(query: str) -> str:
     """
     Detect what type of search query this is
-    Returns: 'email', 'domain', 'ip', 'username', 'password', 'keyword'
+    Returns: 'email', 'domain', 'ip', 'cidr', 'username', 'password', 'keyword'
     """
     query = query.strip()
     
@@ -66,6 +66,7 @@ def get_applicable_sources(search_type: str) -> List[str]:
         ],
         'domain': [
             'hudson_rock',
+            'breachdirectory',
             'intelligence_x',
             'urlscan',
             'certificate_transparency'
@@ -83,7 +84,8 @@ def get_applicable_sources(search_type: str) -> List[str]:
         'username': [
             'hudson_rock',
             'intelligence_x',
-            'local_files'
+            'local_files',
+            'sherlock'
         ],
         'password': [
             'hudson_rock',

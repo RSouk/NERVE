@@ -29,7 +29,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 0;
+            padding: 20px 30px;
             border-bottom: 1px solid rgba(212, 175, 55, 0.3);
             margin-bottom: 30px;
         }
@@ -213,6 +213,62 @@
             margin-top: 3px;
         }
 
+        /* FILTER SECTION - NEW */
+        .filter-container {
+            background: #000000;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .filter-label {
+            color: #D4AF37;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .filter-select {
+            padding: 8px 15px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-select:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+
+        .filter-clear {
+            padding: 8px 20px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            color: #ef4444;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+
+        .filter-clear:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+
         /* Data Sections */
         .data-section {
             background: #000000;
@@ -220,6 +276,10 @@
             border-radius: 8px;
             padding: 25px;
             margin-bottom: 20px;
+        }
+
+        .data-section.filtered-out {
+            display: none;
         }
 
         .section-header {
@@ -367,14 +427,15 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-left">
-                <h1>GHOST</h1>
-                <p>Credential Intelligence Module</p>
+    <div class="header">
+        <div class="header-left">
+            <div style="display: inline-block; vertical-align: middle;">
+                <img src="assets/ghost-logo.png" alt="GHOST" style="height: 60px; margin-right: 15px; vertical-align: middle;">
+                <p style="margin: 0;">Credential Intelligence</p>
             </div>
-            <a href="index.html" class="back-button">← Back to Dashboard</a>
         </div>
+        <a href="index.html" class="back-button">← Back to Dashboard</a>
+    </div>
 
         <div class="search-container">
             <div class="search-box">
@@ -389,9 +450,12 @@
             </div>
             <div class="search-examples">
                 <strong>Examples:</strong>
-                <span onclick="exampleSearch('test@example.com')">Email</span>
-                <span onclick="exampleSearch('example.com')">Domain</span>
-                <span onclick="exampleSearch('192.168.1.1')">IP</span>
+                    <span onclick="exampleSearch('test@example.com')">Email</span>
+                    <span onclick="exampleSearch('example.com')">Domain</span>
+                    <span onclick="exampleSearch('john_doe')">Username</span>
+                    <span onclick="exampleSearch('192.168.1.1')">IP Address</span>
+                    <span onclick="exampleSearch('Password123!')">Password</span>
+                    <span onclick="exampleSearch('banking')">Keyword</span>
             </div>
         </div>
 
@@ -422,6 +486,25 @@
                 </div>
             </div>
 
+            <!-- NEW FILTER SECTION -->
+            <div class="filter-container">
+                <div class="filter-label">Filter by:</div>
+                <select id="filterType" class="filter-select">
+                    <option value="all">All Results</option>
+                    <option value="credentials">Credentials Only</option>
+                    <option value="machines">Infected Machines Only</option>
+                    <option value="breaches">Breach History Only</option>
+                    <option value="attack">Attack Path Only</option>
+                </select>
+                <select id="filterSource" class="filter-select">
+                    <option value="all">All Sources</option>
+                    <option value="Hudson Rock">Hudson Rock</option>
+                    <option value="leakcheck">LeakCheck</option>
+                    <option value="breachdirectory">BreachDirectory</option>
+                </select>
+                <button id="clearFilters" class="filter-clear">Clear Filters</button>
+            </div>
+
             <div id="resultsContent">
                 <!-- Results populated by JavaScript -->
             </div>
@@ -444,6 +527,11 @@
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') performSearch();
         });
+
+        // FILTER EVENT LISTENERS - NEW
+        document.getElementById('filterType').addEventListener('change', applyFilters);
+        document.getElementById('filterSource').addEventListener('change', applyFilters);
+        document.getElementById('clearFilters').addEventListener('click', clearFilters);
 
         function exampleSearch(query) {
             document.getElementById('searchInput').value = query;
@@ -501,20 +589,30 @@
 
             // Attack Path First
             if (result.total_findings > 0) {
-                resultsContent.appendChild(buildAttackPathSection(categorized));
+                const attackSection = buildAttackPathSection(categorized);
+                attackSection.setAttribute('data-section-type', 'attack');
+                resultsContent.appendChild(attackSection);
             }
 
             // Then Data Sections
             if (categorized.credentials.length > 0) {
-                resultsContent.appendChild(buildCredentialsSection(categorized.credentials));
+                const credSection = buildCredentialsSection(categorized.credentials);
+                credSection.setAttribute('data-section-type', 'credentials');
+                resultsContent.appendChild(credSection);
             }
 
+            console.log('Categorized machines:', categorized.machines);
+
             if (categorized.machines.length > 0) {
-                resultsContent.appendChild(buildMachinesSection(categorized.machines));
+                const machineSection = buildMachinesSection(categorized.machines);
+                machineSection.setAttribute('data-section-type', 'machines');
+                resultsContent.appendChild(machineSection);
             }
 
             if (categorized.breaches.length > 0) {
-                resultsContent.appendChild(buildBreachesSection(categorized.breaches));
+                const breachSection = buildBreachesSection(categorized.breaches);
+                breachSection.setAttribute('data-section-type', 'breaches');
+                resultsContent.appendChild(breachSection);
             }
 
             if (result.total_findings === 0) {
@@ -524,7 +622,53 @@
             document.getElementById('resultsContainer').style.display = 'block';
         }
 
+        // NEW FILTER FUNCTIONS
+        function applyFilters() {
+            const typeFilter = document.getElementById('filterType').value;
+            const sourceFilter = document.getElementById('filterSource').value;
+            
+            const sections = document.querySelectorAll('.data-section');
+            
+            sections.forEach(section => {
+                let showSection = true;
+                
+                // Type filter
+                const sectionType = section.getAttribute('data-section-type');
+                if (typeFilter !== 'all' && sectionType !== typeFilter) {
+                    showSection = false;
+                }
+                
+                // Source filter
+                if (sourceFilter !== 'all') {
+                    const sourceTags = section.querySelectorAll('.source-tag');
+                    let hasMatchingSource = false;
+                    sourceTags.forEach(tag => {
+                        if (tag.textContent.toLowerCase().includes(sourceFilter.toLowerCase())) {
+                            hasMatchingSource = true;
+                        }
+                    });
+                    if (!hasMatchingSource && sectionType !== 'attack') {
+                        showSection = false;
+                    }
+                }
+                
+                // Apply filter
+                if (showSection) {
+                    section.classList.remove('filtered-out');
+                } else {
+                    section.classList.add('filtered-out');
+                }
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('filterType').value = 'all';
+            document.getElementById('filterSource').value = 'all';
+            applyFilters();
+        }
+
         function categorizeData(results) {
+            console.log('Results received:', results);
             const categorized = {
                 credentials: [],
                 machines: [],
@@ -533,12 +677,17 @@
             };
 
             for (const [source, data] of Object.entries(results)) {
+                console.log('Processing source:', source, 'Data:', data);
+
                 if (!data.found || !data.data) continue;
 
                 const items = Array.isArray(data.data) ? data.data : [data.data];
+                console.log('Items to process:', items);
 
                 if (data.type === 'infostealer_logs') {
+                    console.log('Processing infostealer logs');
                     items.forEach(item => {
+                        console.log('Processing item:', item);
                         categorized.machines.push({
                             source: 'Hudson Rock',
                             stealer: item.stealer_family,

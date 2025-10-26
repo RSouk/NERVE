@@ -1,9 +1,17 @@
 import time
 from typing import Dict, List
 from search_engine import analyze_query
-from hudson_rock import search_by_email, search_by_domain, search_by_password
+from hudson_rock import (
+    search_by_email, 
+    search_by_domain, 
+    search_by_password,
+    search_by_username,
+    search_by_ip,
+    search_by_keyword
+)
 from api_breaches import check_leakcheck_api, check_breachdirectory_api
 from breach_checker import check_local_breaches
+from intelligence_x import search_email_intelx, search_domain_intelx, search_keyword_intelx
 from datetime import datetime
 
 class UnifiedSearch:
@@ -60,7 +68,7 @@ class UnifiedSearch:
             self._search_password(query)
         elif self.query_type == 'username':
             self._search_username(query)
-        elif self.query_type == 'ip':
+        elif self.query_type == 'ip' or self.query_type == 'cidr':
             self._search_ip(query)
         elif self.query_type == 'keyword':
             self._search_keyword(query)
@@ -85,21 +93,12 @@ class UnifiedSearch:
     def _search_email(self, email: str):
         """Search all email-capable sources"""
         print("🔍 Searching email across sources...\n")
-        
-        # Hudson Rock
+        # Query ALL sources
         self._query_source('hudson_rock', lambda: self._hudson_rock_email(email))
-        
-        # LeakCheck
         self._query_source('leakcheck', lambda: self._leakcheck_search(email))
-        
-        # BreachDirectory
         self._query_source('breachdirectory', lambda: self._breachdirectory_search(email))
-        
-        # Local files
+        self._query_source('intelligence_x', lambda: self._intelx_email_search(email))
         self._query_source('local_files', lambda: self._local_search(email))
-        
-        # TODO: Intelligence X
-        # self._query_source('intelligence_x', lambda: self._intelx_search(email))
     
     def _search_domain(self, domain: str):
         """Search all domain-capable sources"""
@@ -108,7 +107,8 @@ class UnifiedSearch:
         # Hudson Rock domain search
         self._query_source('hudson_rock', lambda: self._hudson_rock_domain(domain))
         
-        # TODO: Intelligence X, URLScan, etc.
+        # BreachDirectory can also search domains
+        self._query_source('breachdirectory', lambda: self._breachdirectory_search(domain))
     
     def _search_password(self, password: str):
         """Search password across sources"""
@@ -117,38 +117,32 @@ class UnifiedSearch:
         # Hudson Rock password search
         self._query_source('hudson_rock', lambda: self._hudson_rock_password(password))
         
-        # Local files
-        # TODO: Implement password search in local files
+        # Local files (if implemented)
+        # self._query_source('local_files', lambda: self._local_password_search(password))
     
     def _search_username(self, username: str):
         """Search username across sources"""
         print("🔍 Searching username across sources...\n")
         
-        # Hudson Rock
-        # TODO: Hudson Rock username search
+        # Hudson Rock username search
+        self._query_source('hudson_rock', lambda: self._hudson_rock_username(username))
         
         # Local files
-        # TODO: Username search in local files
+        # self._query_source('local_files', lambda: self._local_username_search(username))
     
     def _search_ip(self, ip: str):
         """Search IP address across sources"""
         print("🔍 Searching IP across sources...\n")
         
-        # Hudson Rock
-        # TODO: Hudson Rock IP search
-        
-        # Feodo Tracker
-        # TODO: Botnet C2 check
+        # Hudson Rock IP search
+        self._query_source('hudson_rock', lambda: self._hudson_rock_ip(ip))
     
     def _search_keyword(self, keyword: str):
         """Search keyword across sources"""
         print("🔍 Searching keyword across sources...\n")
         
-        # Hudson Rock
-        # TODO: Hudson Rock keyword search
-        
-        # Intelligence X
-        # TODO: Intelligence X search
+        # Hudson Rock keyword search
+        self._query_source('hudson_rock', lambda: self._hudson_rock_keyword(keyword))
     
     def _search_generic(self, query: str):
         """Generic search when type is unclear"""
@@ -159,20 +153,17 @@ class UnifiedSearch:
     # Source-specific query methods
     
     def _hudson_rock_email(self, email: str):
-        """Query Hudson Rock for email"""
+        """Query Hudson Rock for email - WITH PROPER PASSWORD EXTRACTION"""
         data, count = search_by_email(email)
         
-        # Debug: Print what we got back
-        print(f"DEBUG: Hudson Rock returned count={count}")
-        if data:
-            print(f"DEBUG: Data type: {type(data)}")
-            print(f"DEBUG: First 500 chars: {str(data)[:500]}")
-        
         if count and count > 0:
+            # Extract and structure the credentials properly
+            structured_data = self._structure_hudson_rock_data(data)
+            
             return {
                 'found': True,
                 'count': count,
-                'data': data,
+                'data': structured_data,
                 'type': 'infostealer_logs'
             }
         return {'found': False, 'count': 0}
@@ -180,13 +171,14 @@ class UnifiedSearch:
     def _hudson_rock_domain(self, domain: str):
         """Query Hudson Rock for domain"""
         data, count = search_by_domain(domain)
-        
+    
         if count and count > 0:
+            structured_data = self._structure_hudson_rock_data(data)
             return {
                 'found': True,
                 'count': count,
-                'data': data,
-                'type': 'domain_exposure'
+                'data': structured_data,
+                'type': 'infostealer_logs'  # Changed from 'domain_exposure'
             }
         return {'found': False, 'count': 0}
     
@@ -195,13 +187,106 @@ class UnifiedSearch:
         data, count = search_by_password(password)
         
         if count and count > 0:
+            structured_data = self._structure_hudson_rock_data(data)
             return {
                 'found': True,
                 'count': count,
-                'data': data,
+                'data': structured_data,
                 'type': 'password_reuse'
             }
         return {'found': False, 'count': 0}
+    
+    def _hudson_rock_username(self, username: str):
+        """Query Hudson Rock for username"""
+        data, count = search_by_username(username)
+        
+        if count and count > 0:
+            structured_data = self._structure_hudson_rock_data(data)
+            return {
+                'found': True,
+                'count': count,
+                'data': structured_data,
+                'type': 'username_exposure'
+            }
+        return {'found': False, 'count': 0}
+    
+    def _hudson_rock_ip(self, ip: str):
+        """Query Hudson Rock for IP"""
+        data, count = search_by_ip(ip)
+    
+        if count and count > 0:
+            structured_data = self._structure_hudson_rock_data(data)
+            print(f"DEBUG: Structured IP data: {structured_data}")
+            return {
+                'found': True,
+                'count': count,
+                'data': structured_data,
+                'type': 'infostealer_logs'  # Changed from 'ip_exposure'
+            }
+        return {'found': False, 'count': 0}
+    
+    def _hudson_rock_keyword(self, keyword: str):
+        """Query Hudson Rock for keyword"""
+        data, count = search_by_keyword(keyword)
+        
+        if count and count > 0:
+            structured_data = self._structure_hudson_rock_data(data)
+            return {
+                'found': True,
+                'count': count,
+                'data': structured_data,
+                'type': 'keyword_match'
+            }
+        return {'found': False, 'count': 0}
+    
+    def _structure_hudson_rock_data(self, raw_data):
+        """
+        Properly structure Hudson Rock data to extract passwords
+        Hudson Rock returns: {"data": [...], "nextCursor": "..."}
+        Each item has: credentials array with url, domain, username, password
+        """
+        if not raw_data:
+            return []
+        
+        # Handle both list and dict responses
+        if isinstance(raw_data, dict):
+            items = raw_data.get('data', [])
+        elif isinstance(raw_data, list):
+            items = raw_data
+        else:
+            return []
+        
+        structured = []
+        
+        for item in items:
+            # Extract credentials properly
+            credentials = []
+            raw_creds = item.get('credentials', [])
+            
+            for cred in raw_creds:
+                credentials.append({
+                    'url': cred.get('url', ''),
+                    'domain': cred.get('domain', ''),
+                    'username': cred.get('username', ''),
+                    'password': cred.get('password', '[Encrypted]'),  # This is the actual password
+                    'type': cred.get('type', 'login')
+                })
+            
+            structured.append({
+                'stealer_family': item.get('malware_path', 'Unknown Stealer'),
+                'computer_name': item.get('computer_name', 'Unknown'),
+                'operating_system': item.get('operating_system', 'Unknown'),
+                'ip': item.get('ip', 'Unknown'),
+                'date_compromised': item.get('date_compromised', 'Unknown'),
+                'credentials': credentials,  # Now properly structured with passwords
+                'antiviruses': item.get('antiviruses', []),
+                'top_logins': item.get('top_logins', []),
+                'top_sites': item.get('top_sites', []),
+                'employee_of': item.get('employee_of', []),
+                'client_of': item.get('client_of', [])
+            })
+        
+        return structured
     
     def _leakcheck_search(self, email: str):
         """Query LeakCheck"""
@@ -216,9 +301,9 @@ class UnifiedSearch:
             }
         return {'found': False, 'count': 0}
     
-    def _breachdirectory_search(self, email: str):
-        """Query BreachDirectory"""
-        breaches, count = check_breachdirectory_api(email)
+    def _breachdirectory_search(self, query: str):
+        """Query BreachDirectory - works for email and domain"""
+        breaches, count = check_breachdirectory_api(query)
         
         if count > 0:
             return {
@@ -239,6 +324,45 @@ class UnifiedSearch:
                 'count': len(breaches),
                 'data': breaches,
                 'type': 'local_breach_data'
+            }
+        return {'found': False, 'count': 0}
+    
+    def _intelx_email_search(self, email: str):
+        """Query Intelligence X for email"""
+        results, count = search_email_intelx(email)
+        
+        if count and count > 0:
+            return {
+                'found': True,
+                'count': count,
+                'data': results,
+                'type': 'intelx_records'
+            }
+        return {'found': False, 'count': 0}
+    
+    def _intelx_domain_search(self, domain: str):
+        """Query Intelligence X for domain"""
+        results, count = search_domain_intelx(domain)
+        
+        if count and count > 0:
+            return {
+                'found': True,
+                'count': count,
+                'data': results,
+                'type': 'intelx_records'
+            }
+        return {'found': False, 'count': 0}
+    
+    def _intelx_keyword_search(self, keyword: str):
+        """Query Intelligence X for keyword"""
+        results, count = search_keyword_intelx(keyword)
+        
+        if count and count > 0:
+            return {
+                'found': True,
+                'count': count,
+                'data': results,
+                'type': 'intelx_records'
             }
         return {'found': False, 'count': 0}
     
@@ -273,9 +397,10 @@ if __name__ == "__main__":
     searcher = UnifiedSearch()
     
     test_queries = [
-        "test@adobe.com",
-        "example.com",
-        # "Password123!",  # Uncomment if you want to test password search
+        "test@adobe.com",  # Email
+        "example.com",     # Domain
+        "john_doe123",     # Username
+        "192.168.1.1",     # IP
     ]
     
     for query in test_queries:

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST - Adversary Intelligence</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-left img {
+            height: 60px;
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #D4AF37;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .back-button:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+        }
+
+        /* Form Section */
+        .form-container {
+            background: #000000;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .form-container h2 {
+            font-size: 1.8em;
+            color: #D4AF37;
+            margin-bottom: 10px;
+        }
+
+        .form-container p {
+            color: #888;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: #D4AF37;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 12px 15px;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .form-group select option {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .analyze-button {
+            width: 100%;
+            padding: 16px;
+            background: #D4AF37;
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .analyze-button:hover {
+            background: #C4A037;
+            transform: translateY(-2px);
+        }
+
+        .analyze-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid rgba(212, 175, 55, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #D4AF37;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Results Container */
+        .results-container {
+            display: none;
+        }
+
+        .threat-card {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .threat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .threat-name {
+            font-size: 1.5em;
+            color: #D4AF37;
+            font-weight: 600;
+        }
+
+        .threat-match {
+            padding: 8px 16px;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 4px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #ef4444;
+        }
+
+        .threat-match.critical {
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            border: 2px solid #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        .threat-match.high {
+            background: rgba(251, 146, 60, 0.2);
+            color: #fb923c;
+        }
+
+        .threat-match.medium {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .threat-icon {
+            font-size: 1.3em;
+            margin-right: 8px;
+        }
+
+        .threat-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .info-label {
+            font-size: 0.8em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1em;
+            color: #e0e0e0;
+        }
+
+        .threat-description {
+            font-size: 0.95em;
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .ttps-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .ttps-title {
+            font-size: 1.1em;
+            color: #D4AF37;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .ttp-item {
+            padding: 10px;
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 3px solid #D4AF37;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <img src="assets/ghost-logo.png" alt="GHOST">
+                <div>
+                    <h1 style="font-size: 2em; color: #D4AF37; margin: 0;">Adversary Intelligence</h1>
+                    <p style="color: #888; margin: 0;">Personalized Threat Actor Profiling</p>
+                </div>
+            </div>
+            <a href="ghost.html" class="back-button">← Back to GHOST Dashboard</a>
+        </div>
+
+        <!-- Input Form -->
+        <div class="form-container">
+            <h2>Organization Threat Profile</h2>
+            <p>Provide detailed information about your organization to receive personalized threat intelligence. We'll analyze your attack surface and match your profile against 50+ known APT groups and threat actors.</p>
+            
+            <div class="form-grid">
+                <!-- Row 1: Basic Info -->
+                <div class="form-group">
+                    <label for="industry">Industry Sector *</label>
+                    <select id="industry">
+                        <option value="">Select Industry...</option>
+                        <option value="financial">Financial Services & Banking</option>
+                        <option value="healthcare">Healthcare & Pharmaceuticals</option>
+                        <option value="technology">Technology & Software</option>
+                        <option value="energy">Energy & Utilities</option>
+                        <option value="government">Government & Defense</option>
+                        <option value="retail">Retail & E-commerce</option>
+                        <option value="manufacturing">Manufacturing</option>
+                        <option value="telecommunications">Telecommunications</option>
+                        <option value="education">Education</option>
+                        <option value="media">Media & Entertainment</option>
+                        <option value="critical-infrastructure">Critical Infrastructure</option>
+                        <option value="transportation">Transportation & Logistics</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Primary Location *</label>
+                    <select id="location">
+                        <option value="">Select Region...</option>
+                        <option value="north-america">North America</option>
+                        <option value="europe">Europe</option>
+                        <option value="asia-pacific">Asia Pacific</option>
+                        <option value="middle-east">Middle East</option>
+                        <option value="latin-america">Latin America</option>
+                        <option value="africa">Africa</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="company-size">Company Size *</label>
+                    <select id="company-size">
+                        <option value="">Select Size...</option>
+                        <option value="small">Small (1-50 employees)</option>
+                        <option value="medium">Medium (51-500 employees)</option>
+                        <option value="large">Large (501-5000 employees)</option>
+                        <option value="enterprise">Enterprise (5000+ employees)</option>
+                    </select>
+                </div>
+
+                <!-- Row 2: Technical Infrastructure -->
+                <div class="form-group">
+                    <label for="tech-stack">Primary Tech Stack *</label>
+                    <select id="tech-stack">
+                        <option value="">Select Technology...</option>
+                        <option value="windows">Windows Infrastructure</option>
+                        <option value="linux">Linux/Unix Infrastructure</option>
+                        <option value="cloud-aws">Cloud (AWS)</option>
+                        <option value="cloud-azure">Cloud (Azure)</option>
+                        <option value="cloud-gcp">Cloud (Google Cloud)</option>
+                        <option value="hybrid">Hybrid Environment</option>
+                        <option value="on-premise">Fully On-Premise</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cloud-usage">Cloud Adoption *</label>
+                    <select id="cloud-usage">
+                        <option value="">Select Cloud Usage...</option>
+                        <option value="none">No Cloud (100% On-Premise)</option>
+                        <option value="minimal">Minimal (< 25% Cloud)</option>
+                        <option value="partial">Partial (25-50% Cloud)</option>
+                        <option value="mostly">Mostly Cloud (50-75%)</option>
+                        <option value="full">Full Cloud (> 75%)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="remote-work">Remote Workforce *</label>
+                    <select id="remote-work">
+                        <option value="">Select Remote Work Model...</option>
+                        <option value="none">No Remote Work</option>
+                        <option value="some">Some Remote (< 25%)</option>
+                        <option value="hybrid">Hybrid (25-75%)</option>
+                        <option value="mostly">Mostly Remote (> 75%)</option>
+                        <option value="full">Fully Remote (100%)</option>
+                    </select>
+                </div>
+
+                <!-- Row 3: Security & Assets -->
+                <div class="form-group">
+                    <label for="security-maturity">Security Maturity *</label>
+                    <select id="security-maturity">
+                        <option value="">Select Security Level...</option>
+                        <option value="basic">Basic (Antivirus, Firewall)</option>
+                        <option value="developing">Developing (EDR, Basic SOC)</option>
+                        <option value="mature">Mature (SIEM, Threat Intel)</option>
+                        <option value="advanced">Advanced (Deception, Hunting)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="internet-facing">Internet-Facing Systems *</label>
+                    <select id="internet-facing">
+                        <option value="">Select Exposed Systems...</option>
+                        <option value="minimal">Minimal (Website only)</option>
+                        <option value="standard">Standard (Web + Email)</option>
+                        <option value="moderate">Moderate (+ VPN, RDP)</option>
+                        <option value="extensive">Extensive (+ APIs, Services)</option>
+                        <option value="high">High (Multiple public apps)</option>
+                    </select>
+                </div>
+
+                    <div class="form-group">
+                        <label>Critical Assets *</label>
+                        <div style="background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; padding: 12px; max-height: 180px; overflow-y: auto;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
+                                <input type="checkbox" name="critical-assets" value="customer-data" style="margin-right: 8px;">
+                                Customer Data (PII)
+                            </label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
+                                <input type="checkbox" name="critical-assets" value="financial" style="margin-right: 8px;">
+                                Financial Systems
+                            </label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
+                                <input type="checkbox" name="critical-assets" value="ip" style="margin-right: 8px;">
+                                Intellectual Property
+                            </label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
+                                <input type="checkbox" name="critical-assets" value="infrastructure" style="margin-right: 8px;">
+                                Critical Infrastructure
+                            </label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
+                                <input type="checkbox" name="critical-assets" value="healthcare" style="margin-right: 8px;">
+                                Healthcare Records
+                            </label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
+                                <input type="checkbox" name="critical-assets" value="government" style="margin-right: 8px;">
+                                Government/Classified
+                            </label>
+                            <label style="display: block; margin-bottom: 0; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
+                                <input type="checkbox" name="critical-assets" value="operational" style="margin-right: 8px;">
+                                Operational Systems
+                            </label>
+                        </div>
+                    </div>
+
+                <!-- Row 4: Data Types -->
+                <div class="form-group">
+                    <label for="data-sensitivity">Data Sensitivity *</label>
+                    <select id="data-sensitivity">
+                        <option value="">Select Data Type...</option>
+                        <option value="public">Mostly Public Data</option>
+                        <option value="internal">Internal Business Data</option>
+                        <option value="confidential">Confidential Data</option>
+                        <option value="regulated">Regulated Data (PCI, HIPAA)</option>
+                        <option value="classified">Classified/Top Secret</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="analyze-button" onclick="analyzeThreats()">Analyze Threat Landscape</button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading">
+            <div class="spinner"></div>
+            <p>Analyzing threat actor database...</p>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="results-container">
+            <!-- Results populated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+
+        async function analyzeThreats() {
+            const industry = document.getElementById('industry').value;
+            const location = document.getElementById('location').value;
+            const companySize = document.getElementById('company-size').value;
+            const techStack = document.getElementById('tech-stack').value;
+            const cloudUsage = document.getElementById('cloud-usage').value;
+            const remoteWork = document.getElementById('remote-work').value;
+            const securityMaturity = document.getElementById('security-maturity').value;
+            const internetFacing = document.getElementById('internet-facing').value;
+            const criticalAssetsCheckboxes = document.querySelectorAll('input[name="critical-assets"]:checked');
+            const criticalAssets = Array.from(criticalAssetsCheckboxes).map(cb => cb.value);
+            const dataSensitivity = document.getElementById('data-sensitivity').value;
+
+            // Validate all fields
+            if (!industry || !location || !companySize || !techStack || !cloudUsage || 
+                !remoteWork || !securityMaturity || !internetFacing || criticalAssets.length === 0 || !dataSensitivity) {
+                alert('Please fill in all required fields (*) - You must select at least one Critical Asset');
+                return;
+            }
+
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/adversary/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        industry,
+                        location,
+                        company_size: companySize,
+                        tech_stack: techStack,
+                        cloud_usage: cloudUsage,
+                        remote_work: remoteWork,
+                        security_maturity: securityMaturity,
+                        internet_facing: internetFacing,
+                        critical_assets: criticalAssets,
+                        data_sensitivity: dataSensitivity
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayThreats(result.threats);
+                } else {
+                    alert('Analysis failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Analysis error:', error);
+                alert('Failed to connect to analysis engine. Ensure backend is running.');
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        }
+
+        function getThreatLevel(score) {
+            if (score >= 80) {
+                return { class: 'critical', icon: '⚠️', label: 'CRITICAL THREAT' };
+            } else if (score >= 60) {
+                return { class: 'high', icon: '🔴', label: 'HIGH RISK' };
+            } else {
+                return { class: 'medium', icon: '🟡', label: 'MODERATE RISK' };
+            }
+        }
+
+        function displayThreats(threats) {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+
+            if (!threats || threats.length === 0) {
+                container.innerHTML = '<div class="no-results">No significant threats identified for your profile.</div>';
+                // Add threshold note
+                const note = document.createElement('div');
+                note.style.cssText = 'text-align: center; margin-top: 30px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 6px; font-size: 0.85em; color: #888; font-style: italic;';
+                note.innerHTML = `
+                    📊 Showing threats with 30% or higher match confidence. 
+                    Lower-confidence matches are excluded to reduce false positives.
+                    <br><br>
+                    <strong>Match Scoring:</strong> Industry (35%) + Region (25%) + Tech Stack (20%) + Attack Surface (10%) + Data Profile (10%)
+                `;
+                container.appendChild(note);
+                container.style.display = 'block';
+                return;
+            }
+
+            threats.forEach(threat => {
+                const card = document.createElement('div');
+                card.className = 'threat-card';
+                
+                card.innerHTML = `
+                    <div class="threat-header">
+                        <div class="threat-name">${threat.name} ${threat.aliases ? `(${threat.aliases})` : ''}</div>
+                        <div class="threat-match ${getThreatLevel(threat.match_score).class}">
+                            <span class="threat-icon">${getThreatLevel(threat.match_score).icon}</span>
+                            ${threat.match_score}% Match
+                    </div>
+                    </div>
+
+                    <div class="threat-info">
+                        <div class="info-item">
+                            <div class="info-label">Origin</div>
+                            <div class="info-value">${threat.origin || 'Unknown'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Active Since</div>
+                            <div class="info-value">${threat.active_since || 'Unknown'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Sophistication</div>
+                            <div class="info-value">${threat.sophistication || 'Unknown'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Recent Activity</div>
+                            <div class="info-value">${threat.recent_activity || 'Unknown'}</div>
+                        </div>
+                    </div>
+
+                    <div class="threat-description">
+                        ${threat.description || 'No description available.'}
+                    </div>
+
+                    <div class="ttps-section">
+                        <div class="ttps-title">Known Tactics, Techniques & Procedures (TTPs)</div>
+                        ${threat.ttps.map(ttp => `<div class="ttp-item">${ttp}</div>`).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+
+            container.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

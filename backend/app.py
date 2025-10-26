@@ -6,6 +6,7 @@ import os
 import json
 from datetime import datetime
 from unified_search import UnifiedSearch
+from adversary_matcher import AdversaryMatcher
 
 app = Flask(__name__)
 CORS(app)
@@ -186,6 +187,36 @@ def unified_search_endpoint():
     
     return jsonify(result)
 
+# Initialize adversary matcher
+adversary_matcher = AdversaryMatcher()
+
+@app.route('/api/adversary/analyze', methods=['POST'])
+def analyze_adversary():
+    """Analyze threat landscape based on organization profile"""
+    try:
+        data = request.json
+        
+        # Validate required fields
+        required = ['industry', 'location', 'company_size', 'tech_stack', 
+                   'cloud_usage', 'remote_work', 'security_maturity', 
+                   'internet_facing', 'critical_assets', 'data_sensitivity']
+        
+        for field in required:
+            if field not in data:
+                return jsonify({'success': False, 'error': f'Missing field: {field}'}), 400
+        
+        # Analyze threats
+        threats = adversary_matcher.analyze_threat_landscape(data)
+        
+        return jsonify({
+            'success': True,
+            'threats': threats,
+            'total_matches': len(threats)
+        })
+        
+    except Exception as e:
+        print(f"❌ Adversary analysis error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Ghost backend starting...")

@@ -3,8 +3,8 @@ import time
 import os
 from dotenv import load_dotenv
 from database import get_db, Profile, Breach
-from breach_checker import get_breach_summary, check_local_breaches
-from api_breaches import check_all_apis
+from modules.ghost.breach_checker import get_breach_summary, check_local_breaches
+from modules.ghost.api_breaches import check_all_apis
 
 load_dotenv()
 

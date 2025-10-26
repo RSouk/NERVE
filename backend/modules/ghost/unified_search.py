@@ -1,7 +1,7 @@
 import time
 from typing import Dict, List
-from search_engine import analyze_query
-from hudson_rock import (
+from modules.ghost.search_engine import analyze_query
+from modules.ghost.hudson_rock import (
     search_by_email, 
     search_by_domain, 
     search_by_password,
@@ -9,9 +9,9 @@ from hudson_rock import (
     search_by_ip,
     search_by_keyword
 )
-from api_breaches import check_leakcheck_api, check_breachdirectory_api
-from breach_checker import check_local_breaches
-from intelligence_x import search_email_intelx, search_domain_intelx, search_keyword_intelx
+from modules.ghost.api_breaches import check_leakcheck_api, check_breachdirectory_api
+from modules.ghost.breach_checker import check_local_breaches
+from modules.ghost.intelligence_x import search_email_intelx, search_domain_intelx, search_keyword_intelx
 from datetime import datetime
 
 class UnifiedSearch:

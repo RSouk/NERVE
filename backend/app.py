@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from database import get_db, Profile, SocialMedia, Breach, Device
-from osint import scan_profile_breaches
+from modules.ghost.osint import scan_profile_breaches
 import os
 import json
 from datetime import datetime
-from unified_search import UnifiedSearch
-from adversary_matcher import AdversaryMatcher
+from modules.ghost.unified_search import UnifiedSearch
+from modules.ghost.adversary_matcher import AdversaryMatcher
 
 app = Flask(__name__)
 CORS(app)

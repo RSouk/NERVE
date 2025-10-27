@@ -1,0 +1,14 @@
+[
+  {
+    "platform": "pastebin",
+    "url": "https://pastebin.com/test123",
+    "title": "AWS Config",
+    "timestamp": "2025-10-27T12:40:45.453427"
+  },
+  {
+    "platform": "local_file",
+    "path": "./test.txt",
+    "title": "Database Config",
+    "timestamp": "2025-10-27T12:40:45.453437"
+  }
+]

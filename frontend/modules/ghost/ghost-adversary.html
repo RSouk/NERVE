@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHOST - Adversary Intelligence</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -293,6 +294,36 @@
             padding: 60px;
             color: #666;
         }
+
+        /* Export Buttons */
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #D4AF37;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+        }
     </style>
 </head>
 <body>
@@ -482,10 +513,22 @@
         <div id="resultsContainer" class="results-container">
             <!-- Results populated by JavaScript -->
         </div>
+
+        <!-- Export Buttons (shown when results are available) -->
+        <div id="exportSection" class="export-buttons" style="display: none;">
+            <button class="export-btn" onclick="exportToJSON()">
+                <span>📥</span> Export JSON
+            </button>
+            <button class="export-btn" onclick="exportToPDF()">
+                <span>📄</span> Export PDF
+            </button>
+        </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:5000';
+        let currentThreats = null;
+        let currentFormData = null;
 
         async function analyzeThreats() {
             const industry = document.getElementById('industry').value;
@@ -501,11 +544,25 @@
             const dataSensitivity = document.getElementById('data-sensitivity').value;
 
             // Validate all fields
-            if (!industry || !location || !companySize || !techStack || !cloudUsage || 
+            if (!industry || !location || !companySize || !techStack || !cloudUsage ||
                 !remoteWork || !securityMaturity || !internetFacing || criticalAssets.length === 0 || !dataSensitivity) {
                 alert('Please fill in all required fields (*) - You must select at least one Critical Asset');
                 return;
             }
+
+            // Store form data for export
+            currentFormData = {
+                industry,
+                location,
+                company_size: companySize,
+                tech_stack: techStack,
+                cloud_usage: cloudUsage,
+                remote_work: remoteWork,
+                security_maturity: securityMaturity,
+                internet_facing: internetFacing,
+                critical_assets: criticalAssets,
+                data_sensitivity: dataSensitivity
+            };
 
             document.getElementById('loadingIndicator').style.display = 'block';
             document.getElementById('resultsContainer').style.display = 'none';
@@ -555,7 +612,10 @@
 
         function displayThreats(threats) {
             const container = document.getElementById('resultsContainer');
+            const exportSection = document.getElementById('exportSection');
             container.innerHTML = '';
+
+            currentThreats = threats;
 
             if (!threats || threats.length === 0) {
                 container.innerHTML = '<div class="no-results">No significant threats identified for your profile.</div>';
@@ -563,15 +623,18 @@
                 const note = document.createElement('div');
                 note.style.cssText = 'text-align: center; margin-top: 30px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 6px; font-size: 0.85em; color: #888; font-style: italic;';
                 note.innerHTML = `
-                    📊 Showing threats with 30% or higher match confidence. 
+                    📊 Showing threats with 30% or higher match confidence.
                     Lower-confidence matches are excluded to reduce false positives.
                     <br><br>
                     <strong>Match Scoring:</strong> Industry (35%) + Region (25%) + Tech Stack (20%) + Attack Surface (10%) + Data Profile (10%)
                 `;
                 container.appendChild(note);
                 container.style.display = 'block';
+                exportSection.style.display = 'none';
                 return;
             }
+
+            exportSection.style.display = 'flex';
 
             threats.forEach(threat => {
                 const card = document.createElement('div');
@@ -619,6 +682,191 @@
             });
 
             container.style.display = 'block';
+        }
+
+        // Export to JSON
+        function exportToJSON() {
+            if (!currentThreats || !currentFormData) {
+                alert('No threat analysis to export');
+                return;
+            }
+
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                organization_profile: currentFormData,
+                threats_identified: currentThreats.length,
+                threats: currentThreats
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ghost-adversary-analysis-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Export to PDF
+        function exportToPDF() {
+            if (!currentThreats || !currentFormData) {
+                alert('No threat analysis to export');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let yPos = 20;
+            const lineHeight = 7;
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 20;
+            const maxWidth = doc.internal.pageSize.width - (margin * 2);
+
+            // Helper function to check if we need a new page
+            function checkPageBreak(additionalHeight = lineHeight) {
+                if (yPos + additionalHeight > pageHeight - margin) {
+                    doc.addPage();
+                    yPos = margin;
+                    return true;
+                }
+                return false;
+            }
+
+            // Helper function to wrap text
+            function addWrappedText(text, x, y, maxWidth, lineHeight) {
+                const lines = doc.splitTextToSize(text, maxWidth);
+                lines.forEach(line => {
+                    checkPageBreak();
+                    doc.text(line, x, yPos);
+                    yPos += lineHeight;
+                });
+            }
+
+            // Title
+            doc.setFontSize(20);
+            doc.setTextColor(212, 175, 55);
+            doc.text('GHOST - Adversary Intelligence Report', margin, yPos);
+            yPos += 15;
+
+            // Organization Profile
+            doc.setFontSize(14);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Organization Profile', margin, yPos);
+            yPos += 10;
+
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Industry: ${currentFormData.industry}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Location: ${currentFormData.location}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Company Size: ${currentFormData.company_size}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Tech Stack: ${currentFormData.tech_stack}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Cloud Usage: ${currentFormData.cloud_usage}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Remote Work: ${currentFormData.remote_work}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Security Maturity: ${currentFormData.security_maturity}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Internet-Facing: ${currentFormData.internet_facing}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Critical Assets: ${currentFormData.critical_assets.join(', ')}`, margin + 5, yPos);
+            yPos += lineHeight;
+            doc.text(`Data Sensitivity: ${currentFormData.data_sensitivity}`, margin + 5, yPos);
+            yPos += 15;
+
+            // Summary
+            checkPageBreak(20);
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Analysis Date: ${new Date().toLocaleString()}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Threats Identified: ${currentThreats.length}`, margin, yPos);
+            yPos += 15;
+
+            // Threats
+            doc.setFontSize(14);
+            doc.setTextColor(212, 175, 55);
+            doc.text('Identified Threat Actors', margin, yPos);
+            yPos += 10;
+
+            currentThreats.forEach((threat, index) => {
+                checkPageBreak(50);
+
+                // Threat Name
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'bold');
+                doc.text(`${index + 1}. ${threat.name}${threat.aliases ? ` (${threat.aliases})` : ''}`, margin + 5, yPos);
+                yPos += lineHeight + 2;
+
+                // Match Score
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(10);
+                const threatLevel = getThreatLevel(threat.match_score);
+                if (threat.match_score >= 80) {
+                    doc.setTextColor(239, 68, 68);
+                } else if (threat.match_score >= 60) {
+                    doc.setTextColor(251, 146, 60);
+                } else {
+                    doc.setTextColor(251, 191, 36);
+                }
+                doc.text(`Match Score: ${threat.match_score}% - ${threatLevel.label}`, margin + 10, yPos);
+                yPos += lineHeight + 2;
+
+                // Threat Info
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Origin: ${threat.origin || 'Unknown'}`, margin + 10, yPos);
+                yPos += lineHeight;
+                doc.text(`Active Since: ${threat.active_since || 'Unknown'}`, margin + 10, yPos);
+                yPos += lineHeight;
+                doc.text(`Sophistication: ${threat.sophistication || 'Unknown'}`, margin + 10, yPos);
+                yPos += lineHeight;
+                doc.text(`Recent Activity: ${threat.recent_activity || 'Unknown'}`, margin + 10, yPos);
+                yPos += lineHeight + 2;
+
+                // Description
+                if (threat.description) {
+                    checkPageBreak(20);
+                    doc.setFont(undefined, 'italic');
+                    addWrappedText(threat.description, margin + 10, yPos, maxWidth - 10, lineHeight);
+                    yPos += 3;
+                }
+
+                // TTPs
+                if (threat.ttps && threat.ttps.length > 0) {
+                    checkPageBreak(20);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Tactics, Techniques & Procedures:', margin + 10, yPos);
+                    yPos += lineHeight;
+
+                    doc.setFont(undefined, 'normal');
+                    threat.ttps.forEach(ttp => {
+                        checkPageBreak(10);
+                        addWrappedText(`• ${ttp}`, margin + 15, yPos, maxWidth - 15, lineHeight);
+                    });
+                }
+
+                yPos += 10;
+            });
+
+            // Footer
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width / 2, pageHeight - 10, { align: 'center' });
+                doc.text('Generated by NERVE GHOST System', doc.internal.pageSize.width / 2, pageHeight - 5, { align: 'center' });
+            }
+
+            doc.save(`ghost-adversary-analysis-${new Date().toISOString().split('T')[0]}.pdf`);
         }
     </script>
 </body>

@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAIT - Decoy Intelligence</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(0, 0, 0, 0.9) 100%);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-left img {
+            height: 60px;
+        }
+
+        .header-content h1 {
+            font-size: 2.5em;
+            color: #D4AF37;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .header-content .subtitle {
+            color: #888;
+            font-size: 0.95em;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .header-content .description {
+            color: #aaa;
+            font-size: 0.9em;
+            max-width: 700px;
+            line-height: 1.5;
+        }
+
+        .back-button {
+            padding: 12px 24px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #D4AF37;
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* Three Column Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr 400px;
+            gap: 25px;
+        }
+
+        @media (max-width: 1400px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Premium Card Styling */
+        .card {
+            background: #000000;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            color: #D4AF37;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: rgba(212, 175, 55, 0.2);
+            color: #D4AF37;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        /* Left Column - Deployment Control */
+        .generate-section {
+            margin-bottom: 25px;
+        }
+
+        .bait-type-selector {
+            width: 100%;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+            color: #e0e0e0;
+            font-size: 1em;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .bait-type-selector:hover {
+            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .bait-type-selector option {
+            background: #0a0a0a;
+            padding: 10px;
+        }
+
+        .generate-btn, .deploy-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #D4AF37 0%, #B8941F 100%);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .generate-btn:hover, .deploy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(212, 175, 55, 0.5);
+        }
+
+        .generate-btn:active, .deploy-btn:active {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled, .deploy-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Result Display */
+        .result-area {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-area.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 30px;
+            color: #D4AF37;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(212, 175, 55, 0.3);
+            border-top-color: #D4AF37;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .credential-block {
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .credential-item {
+            margin-bottom: 12px;
+        }
+
+        .credential-label {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .credential-value {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 4px;
+            color: #D4AF37;
+            font-size: 0.9em;
+            word-break: break-all;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-btn {
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: #D4AF37;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(212, 175, 55, 0.3);
+        }
+
+        .copy-btn.copied {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        /* Deployment Options */
+        .deployment-options {
+            margin-bottom: 25px;
+        }
+
+        .input-field {
+            width: 100%;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 15px;
+            color: #10b981;
+            margin-top: 15px;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .success-message a {
+            color: #10b981;
+            text-decoration: underline;
+        }
+
+        /* Center Column - Active Honeytokens */
+        .search-box {
+            width: 100%;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+            margin-bottom: 20px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+
+        .honeytoken-card {
+            background: rgba(212, 175, 55, 0.03);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .honeytoken-card:hover {
+            border-color: #D4AF37;
+            transform: translateX(5px);
+        }
+
+        .honeytoken-card.triggered {
+            border-color: #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .honeytoken-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .type-badge.aws { background: rgba(255, 153, 0, 0.2); color: #ff9900; }
+        .type-badge.stripe { background: rgba(99, 91, 255, 0.2); color: #635BFF; }
+        .type-badge.database { background: rgba(59, 130, 246, 0.2); color: #3B82F6; }
+        .type-badge.ssh { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .type-badge.github { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
+        .type-badge.slack { background: rgba(236, 72, 153, 0.2); color: #EC4899; }
+
+        .honeytoken-id {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .honeytoken-info {
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+
+        .info-label {
+            color: #888;
+        }
+
+        .info-value {
+            color: #D4AF37;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-indicator.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-indicator.triggered {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .view-timeline-btn {
+            width: 100%;
+            padding: 10px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #D4AF37;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .view-timeline-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-title {
+            font-size: 1.3em;
+            color: #D4AF37;
+            margin-bottom: 10px;
+        }
+
+        /* Right Column - Live Intelligence Feed */
+        .threat-feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ef4444;
+            font-size: 0.9em;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .threat-item {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+            animation: fadeIn 0.5s;
+        }
+
+        .threat-timestamp {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .threat-details {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+
+        .threat-ip {
+            color: #D4AF37;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .threat-level {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .threat-level.critical {
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .threat-level.high {
+            background: rgba(251, 146, 60, 0.3);
+            color: #fb923c;
+        }
+
+        .threat-level.medium {
+            background: rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .view-details-link {
+            color: #D4AF37;
+            text-decoration: none;
+            font-size: 0.85em;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .view-details-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Statistics Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .mini-stat {
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .mini-stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #D4AF37;
+            margin-bottom: 5px;
+        }
+
+        .mini-stat-value.red {
+            color: #ef4444;
+        }
+
+        .mini-stat-value.orange {
+            color: #fb923c;
+        }
+
+        .mini-stat-label {
+            font-size: 0.8em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Threat Heatmap */
+        .heatmap-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(212, 175, 55, 0.05);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .heatmap-country {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .heatmap-count {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #000;
+            border: 1px solid #D4AF37;
+            border-radius: 8px;
+            padding: 16px 24px;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+            z-index: 1000;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .toast.error {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <img src="ghost-logo.png" alt="GHOST">
+            <div class="header-content">
+                <h1>DECOY INTELLIGENCE</h1>
+                <div class="subtitle">Reality-Integrated Honeytoken Deployment & Threat Detection</div>
+                <div class="description">
+                    Deploy fake credentials to public surfaces and monitor when attackers discover and attempt to use them.
+                    Prove real-world adversary interest with concrete evidence.
+                </div>
+            </div>
+        </div>
+        <a href="ghost.html" class="back-button">← Back to GHOST</a>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="main-grid">
+            <!-- LEFT COLUMN - Deployment Control -->
+            <div class="left-column">
+                <!-- Generate Honeytoken -->
+                <div class="card generate-section">
+                    <div class="card-title">🎣 Generate Honeytoken</div>
+
+                    <select class="bait-type-selector" id="baitType">
+                        <option value="">Select credential type...</option>
+                        <option value="aws_key">🔑 AWS Access Keys</option>
+                        <option value="stripe_token">💳 Stripe API Token</option>
+                        <option value="database">🗄️ Database Credentials</option>
+                        <option value="ssh_key">🔐 SSH Private Key</option>
+                        <option value="github_token">📦 GitHub Token</option>
+                        <option value="slack_token">💬 Slack Token</option>
+                    </select>
+
+                    <button class="generate-btn" id="generateBtn">Generate Honeytoken</button>
+
+                    <!-- Result Area -->
+                    <div class="result-area" id="resultArea">
+                        <div class="loading-spinner" id="loadingSpinner">
+                            <div class="spinner"></div>
+                            <p style="margin-top: 10px;">Generating...</p>
+                        </div>
+
+                        <div id="credentialDisplay" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Deployment Options -->
+                <div class="card deployment-options" id="deploymentSection" style="display: none;">
+                    <div class="card-title">📤 Deployment Options</div>
+
+                    <input type="text" class="input-field" id="pastebinTitle" placeholder="Pastebin title (e.g., 'AWS Config Backup')" value="Configuration File">
+
+                    <button class="deploy-btn" id="deployBtn">Deploy to Pastebin</button>
+
+                    <div id="deploymentSuccess" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- CENTER COLUMN - Active Honeytokens -->
+            <div class="center-column">
+                <div class="card">
+                    <div class="card-title">
+                        🎯 Deployed Honeytokens
+                        <span class="badge" id="honeytokenCount">0</span>
+                    </div>
+
+                    <select class="bait-type-selector" id="typeFilter" style="margin-bottom: 15px;">
+                        <option value="">All Types</option>
+                        <option value="aws_key">🔑 AWS Keys</option>
+                        <option value="api_token">💳 API Tokens</option>
+                        <option value="database">🗄️ Database</option>
+                        <option value="ssh_key">🔐 SSH Keys</option>
+                    </select>
+
+                    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search honeytokens...">
+
+                    <div id="honeytokenList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🎣</div>
+                            <div class="empty-state-title">No honeytokens deployed yet</div>
+                            <div>Generate and deploy your first honeytoken to start detecting attackers</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN - Live Intelligence Feed -->
+            <div class="right-column">
+                <!-- Threat Detection Feed -->
+                <div class="card">
+                    <div class="threat-feed-header">
+                        <div class="card-title">🚨 Threat Detection Feed</div>
+                        <div class="live-indicator">
+                            <div class="pulse-dot"></div>
+                            LIVE
+                        </div>
+                    </div>
+
+                    <div id="threatFeed">
+                        <div class="empty-state">
+                            <div style="font-size: 0.9em; color: #888;">No threats detected yet</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Dashboard -->
+                <div class="card" style="margin-top: 25px;">
+                    <div class="card-title">📊 Statistics Dashboard</div>
+
+                    <div class="stats-grid">
+                        <div class="mini-stat">
+                            <div class="mini-stat-value" id="statTotalBaits">0</div>
+                            <div class="mini-stat-label">Total Deployments</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-value red" id="statTotalAttempts">0</div>
+                            <div class="mini-stat-label">Access Attempts</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-value orange" id="statUniqueIPs">0</div>
+                            <div class="mini-stat-label">Unique IPs</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-value" id="statAvgTime">N/A</div>
+                            <div class="mini-stat-label">Avg Discovery</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threat Heatmap -->
+                <div class="card" style="margin-top: 25px;">
+                    <div class="card-title">🗺️ Threat Heatmap</div>
+                    <div id="heatmapList">
+                        <div class="empty-state">
+                            <div style="font-size: 0.9em; color: #888;">No geographic data yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let currentGeneratedBait = null;
+        let refreshInterval = null;
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            loadActiveHoneytokens();
+            loadTriggeredBaits();
+            refreshStats();
+
+            // Auto-refresh every 10 seconds
+            refreshInterval = setInterval(() => {
+                loadTriggeredBaits();
+                refreshStats();
+            }, 10000);
+        });
+
+        // Generate Button
+        document.getElementById('generateBtn').addEventListener('click', async function() {
+            const baitType = document.getElementById('baitType').value;
+
+            if (!baitType) {
+                showToast('Please select a credential type', 'error');
+                return;
+            }
+
+            const resultArea = document.getElementById('resultArea');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const credentialDisplay = document.getElementById('credentialDisplay');
+            const generateBtn = this;
+
+            // Show loading state
+            resultArea.classList.add('show');
+            loadingSpinner.style.display = 'block';
+            credentialDisplay.style.display = 'none';
+            generateBtn.disabled = true;
+
+            try {
+                // Log the request being sent
+                const requestBody = { type: baitType };
+                console.log('\n=== BAIT GENERATION REQUEST ===');
+                console.log('Request body:', requestBody);
+                console.log('Request URL:', `${API_URL}/api/ghost/bait/generate`);
+
+                const response = await fetch(`${API_URL}/api/ghost/bait/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                // Log full response details
+                console.log('\n=== BAIT GENERATION RESPONSE ===');
+                console.log('Response status:', response.status, response.statusText);
+                console.log('Response ok:', response.ok);
+                console.log('Response headers:', {
+                    'content-type': response.headers.get('content-type'),
+                    'content-length': response.headers.get('content-length')
+                });
+
+                // Read response as text first
+                const responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                console.log('Response text length:', responseText.length);
+
+                // Check if response is ok before parsing
+                if (!response.ok) {
+                    console.error('❌ Response not OK');
+                    console.error('Status code:', response.status);
+                    console.error('Response body:', responseText);
+
+                    // Try to parse as JSON if possible
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        console.error('Parsed error data:', errorData);
+                        throw new Error(errorData.error || `Server error: ${response.status}`);
+                    } catch (parseError) {
+                        console.error('Could not parse error as JSON:', parseError);
+                        // If not JSON, use the text directly
+                        throw new Error(responseText || `Server error: ${response.status} ${response.statusText}`);
+                    }
+                }
+
+                // Parse successful response as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    console.log('✓ Parsed JSON data:', data);
+                } catch (parseError) {
+                    console.error('❌ Failed to parse response as JSON:', parseError);
+                    console.error('Response was:', responseText);
+                    throw new Error('Server returned invalid response format');
+                }
+
+                // Check if generation was successful
+                console.log('Checking data.success:', data.success);
+                console.log('Checking data.data:', data.data ? 'exists' : 'missing');
+
+                if (data.success && data.data) {
+                    console.log('✓ Generation successful!');
+                    console.log('Generated bait data:', data.data);
+                    console.log('Bait identifier:', data.data.identifier);
+                    console.log('Bait type:', data.data.type);
+
+                    currentGeneratedBait = data.data;
+                    displayGeneratedCredential(data.data);
+                    document.getElementById('deploymentSection').style.display = 'block';
+                    showToast('Honeytoken generated successfully!', 'success');
+
+                    console.log('=== GENERATION COMPLETE ===\n');
+                } else {
+                    console.error('❌ Generation failed');
+                    console.error('data.success:', data.success);
+                    console.error('data.error:', data.error);
+                    throw new Error(data.error || 'Failed to generate honeytoken - no data returned');
+                }
+            } catch (error) {
+                console.error('\n❌ Generation error occurred:');
+                console.error('Error type:', error.constructor.name);
+                console.error('Error message:', error.message);
+                console.error('Full error:', error);
+                console.error('=== GENERATION FAILED ===\n');
+
+                showToast('Error generating honeytoken: ' + error.message, 'error');
+                resultArea.classList.remove('show');
+            } finally {
+                loadingSpinner.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        });
+
+        // Display Generated Credential
+        function displayGeneratedCredential(credential) {
+            console.log('Displaying credential:', credential);
+            console.log('Credential type:', credential.type);
+
+            // credential is already a parsed JavaScript object - don't parse it again
+            const credentialDisplay = document.getElementById('credentialDisplay');
+
+            let html = '<div class="credential-block">';
+            html += `<div style="color: #D4AF37; font-weight: 600; margin-bottom: 15px;">Identifier: ${credential.identifier}</div>`;
+            html += `<div style="color: #888; font-size: 0.9em; margin-bottom: 20px;">Type: ${formatBaitType(credential.type)}</div>`;
+
+            // Display credentials based on type
+            const credType = credential.type;
+
+            if (credType === 'aws_credentials') {
+                // AWS Credentials
+                html += createCredentialItem('AWS Access Key ID', credential.aws_access_key_id);
+                html += createCredentialItem('AWS Secret Access Key', credential.aws_secret_access_key);
+                if (credential.aws_session_token) {
+                    html += createCredentialItem('Session Token', credential.aws_session_token);
+                }
+                html += createCredentialItem('Region', credential.region);
+                html += createCredentialItem('Account ID', credential.account_id);
+
+            } else if (credType === 'api_token') {
+                // API Token (Stripe, GitHub, Slack, etc.)
+                html += createCredentialItem('Service', credential.service_name);
+                html += createCredentialItem('API Token', credential.token);
+
+            } else if (credType === 'database_credentials') {
+                // Database Credentials
+                html += createCredentialItem('Database Type', credential.db_type);
+                html += createCredentialItem('Host', credential.host);
+                html += createCredentialItem('Port', credential.port);
+                html += createCredentialItem('Database', credential.database);
+                html += createCredentialItem('Username', credential.username);
+                html += createCredentialItem('Password', credential.password);
+                html += createCredentialItem('Connection String', credential.connection_string);
+
+            } else if (credType === 'ssh_key') {
+                // SSH Key
+                html += createCredentialItem('Key Name', credential.key_name);
+                html += createCredentialItem('Key Comment', credential.key_comment);
+                html += createCredentialItem('Fingerprint', credential.fingerprint);
+                html += createCredentialItem('Public Key', credential.public_key, true);
+                html += createCredentialItem('Private Key', credential.private_key, true);
+
+            } else if (credType === 'jwt_token') {
+                // JWT Token
+                html += createCredentialItem('Service', credential.service_name);
+                html += createCredentialItem('JWT Token', credential.token);
+
+            } else if (credType === 'oauth_token') {
+                // OAuth Token
+                html += createCredentialItem('Provider', credential.provider);
+                html += createCredentialItem('Access Token', credential.access_token);
+                html += createCredentialItem('Refresh Token', credential.refresh_token);
+                html += createCredentialItem('Token Type', credential.token_type);
+
+            } else {
+                // Fallback: display all properties
+                console.log('Unknown credential type, displaying all properties');
+                for (const [key, value] of Object.entries(credential)) {
+                    if (key !== 'tracking_id' && key !== 'identifier' && key !== 'type' &&
+                        key !== 'generated_at' && key !== 'description' && key !== 'db_id') {
+                        html += createCredentialItem(formatLabel(key), value);
+                    }
+                }
+            }
+
+            html += '</div>';
+            credentialDisplay.innerHTML = html;
+            credentialDisplay.style.display = 'block';
+        }
+
+        // Helper function to create credential display item
+        function createCredentialItem(label, value, isMultiline = false) {
+            if (!value) return '';
+
+            const displayValue = isMultiline ? truncateValue(String(value), 100) : String(value);
+            const fullValue = String(value);
+
+            return `
+                <div class="credential-item">
+                    <div class="credential-label">${label}</div>
+                    <div class="credential-value">
+                        <span class="value-text" style="${isMultiline ? 'word-break: break-all; font-size: 0.85em;' : ''}">${escapeHtml(displayValue)}</span>
+                        <button class="copy-btn" onclick="copyToClipboard(\`${escapeHtml(fullValue)}\`, this)">Copy</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Deploy Button
+        document.getElementById('deployBtn').addEventListener('click', async function() {
+            if (!currentGeneratedBait) {
+                showToast('No honeytoken to deploy', 'error');
+                return;
+            }
+
+            const title = document.getElementById('pastebinTitle').value;
+            const deployBtn = this;
+            deployBtn.disabled = true;
+            deployBtn.textContent = 'Deploying...';
+
+            try {
+                // Log the request being sent
+                const requestBody = {
+                    identifier: currentGeneratedBait.identifier,
+                    title: title
+                };
+                console.log('Sending deploy request:', requestBody);
+
+                const response = await fetch(`${API_URL}/api/ghost/bait/seed`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                // Log response status
+                console.log('Deploy response status:', response.status, response.statusText);
+
+                // Check if response is ok before parsing
+                if (!response.ok) {
+                    // Try to read as text first for error messages
+                    const errorText = await response.text();
+                    console.error('Deploy error response body:', errorText);
+
+                    // Try to parse as JSON if possible
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        throw new Error(errorData.error || `Server error: ${response.status}`);
+                    } catch (parseError) {
+                        // If not JSON, use the text directly
+                        throw new Error(errorText || `Server error: ${response.status} ${response.statusText}`);
+                    }
+                }
+
+                // Try to parse successful response as JSON
+                let data;
+                try {
+                    const responseText = await response.text();
+                    console.log('Deploy response body:', responseText);
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Failed to parse deploy response as JSON:', parseError);
+                    throw new Error('Server returned invalid response format');
+                }
+
+                // Check if deployment was successful
+                if (data.success && data.url) {
+                    console.log('Successfully deployed to:', data.url);
+                    const successDiv = document.getElementById('deploymentSuccess');
+                    successDiv.innerHTML = `
+                        <div class="success-message">
+                            ✓ Successfully deployed!<br>
+                            <a href="${data.url}" target="_blank">${data.url}</a>
+                        </div>
+                    `;
+                    successDiv.style.display = 'block';
+                    showToast('Honeytoken deployed to Pastebin!', 'success');
+
+                    // Refresh the list
+                    setTimeout(() => {
+                        loadActiveHoneytokens();
+                        refreshStats();
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Deployment failed - no URL returned');
+                }
+            } catch (error) {
+                console.error('Deployment error:', error);
+                showToast('Error deploying honeytoken: ' + error.message, 'error');
+            } finally {
+                deployBtn.disabled = false;
+                deployBtn.textContent = 'Deploy to Pastebin';
+            }
+        });
+
+        // Load Active Honeytokens
+        async function loadActiveHoneytokens() {
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/bait/active`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayHoneytokens(data.baits || []);
+                    document.getElementById('honeytokenCount').textContent = data.count || 0;
+                }
+            } catch (error) {
+                console.error('Error loading active honeytokens:', error);
+            }
+        }
+
+        // Load Triggered Baits
+        async function loadTriggeredBaits() {
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/bait/triggered`);
+                const data = await response.json();
+
+                if (data.success && data.baits && data.baits.length > 0) {
+                    displayThreatFeed(data.baits);
+                }
+            } catch (error) {
+                console.error('Error loading triggered baits:', error);
+            }
+        }
+
+        // Load Statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/bait/stats`);
+                const data = await response.json();
+
+                if (data.success && data.stats) {
+                    document.getElementById('statTotalBaits').textContent = data.stats.total_baits || 0;
+                    document.getElementById('statTotalAttempts').textContent = data.stats.total_attempts || 0;
+                    document.getElementById('statUniqueIPs').textContent = data.stats.unique_ips || 0;
+                    document.getElementById('statAvgTime').textContent = 'N/A'; // Can be calculated from data
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Display Honeytokens
+        //Store all baits for filtering
+        let allBaits = [];
+
+        function displayHoneytokens(baits) {
+            // Store baits for filtering
+            allBaits = baits || [];
+
+            const container = document.getElementById('honeytokenList');
+
+            if (!baits || baits.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎣</div>
+                        <div class="empty-state-title">No honeytokens deployed yet</div>
+                        <div>Generate and deploy your first honeytoken to start detecting attackers</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            baits.forEach(bait => {
+                // Null safety checks
+                const identifier = bait.identifier || 'unknown';
+                const baitType = bait.bait_type || 'unknown';
+                const accessCount = bait.access_count || 0;
+                const isTriggered = accessCount > 0;
+                const seededAt = bait.seeded_at || null;
+                const seededLocation = bait.seeded_location || null;
+
+                html += `
+                    <div class="honeytoken-card ${isTriggered ? 'triggered' : ''}" data-bait-type="${baitType}" data-bait-id="${identifier}">
+                        <div class="honeytoken-header">
+                            <span class="type-badge ${getBaitTypeClass(baitType)}">
+                                ${getBaitTypeIcon(baitType)} ${formatBaitType(baitType)}
+                            </span>
+                            <span class="honeytoken-id">${identifier}</span>
+                        </div>
+                        <div class="honeytoken-info">
+                            <div class="info-row">
+                                <span class="info-label">Deployed:</span>
+                                <span class="info-value">${seededAt ? formatRelativeTime(seededAt) : 'Unknown'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Location:</span>
+                                <span class="info-value">${seededLocation ? (seededLocation.includes('pastebin') ? 'Pastebin' : 'External') : 'Not seeded'}</span>
+                            </div>
+                        </div>
+                        <div class="status-indicator ${isTriggered ? 'triggered' : 'active'}">
+                            ${isTriggered ? '🔴' : '🟢'}
+                            ${isTriggered ? `TRIGGERED (${accessCount} access${accessCount > 1 ? 'es' : ''})` : 'ACTIVE - Monitoring'}
+                        </div>
+                        ${seededLocation ? `<a href="${seededLocation}" target="_blank" class="view-details-link" onclick="event.stopPropagation()">View on Pastebin →</a>` : ''}
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="view-timeline-btn" onclick="event.stopPropagation(); viewTimeline('${identifier}')">
+                                📊 View Timeline
+                            </button>
+                            <button class="view-timeline-btn" onclick="event.stopPropagation(); deleteBait('${identifier}')" style="background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444;">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Display Threat Feed
+        function displayThreatFeed(baits) {
+            const container = document.getElementById('threatFeed');
+            let html = '';
+
+            // Get recent accesses (max 10)
+            const recentAccesses = [];
+            baits.forEach(bait => {
+                if (bait.latest_access) {
+                    recentAccesses.push({
+                        ...bait.latest_access,
+                        bait_identifier: bait.identifier,
+                        bait_type: bait.bait_type
+                    });
+                }
+            });
+
+            // Sort by time
+            recentAccesses.sort((a, b) => new Date(b.accessed_at) - new Date(a.accessed_at));
+
+            if (recentAccesses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 0.9em; color: #888;">No threats detected yet</div>
+                    </div>
+                `;
+                return;
+            }
+
+            recentAccesses.slice(0, 10).forEach(access => {
+                html += `
+                    <div class="threat-item">
+                        <div class="threat-timestamp">${formatTimestamp(access.accessed_at)}</div>
+                        <div class="threat-details">
+                            <div>
+                                <strong>IP:</strong>
+                                <span class="threat-ip">${access.source_ip}</span>
+                                ${access.geolocation && access.geolocation !== 'Unknown' ? ` 🌍 ${access.geolocation}` : ''}
+                            </div>
+                            <div>
+                                <span class="threat-level ${access.threat_level}">${access.threat_level.toUpperCase()}</span>
+                            </div>
+                            <div><strong>Scanner:</strong> ${extractScanner(access.user_agent)}</div>
+                            <div><strong>Target:</strong> ${access.bait_identifier}</div>
+                        </div>
+                        <a href="ghost-bait-timeline.html?id=${access.bait_identifier}" class="view-details-link">View Full Details →</a>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // View Timeline
+        function viewTimeline(identifier) {
+            window.location.href = `ghost-bait-timeline.html?id=${identifier}`;
+        }
+
+        // Utility Functions
+        function formatLabel(key) {
+            return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function truncateValue(value, maxLength = 50) {
+            if (typeof value !== 'string') return value;
+            return value.length > maxLength ? value.substring(0, maxLength) + '...' : value;
+        }
+
+        function escapeHtml(text) {
+            if (text == null) return '';
+            const str = String(text);
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return str.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        async function copyToClipboard(text, button) {
+            try {
+                await navigator.clipboard.writeText(text);
+                button.classList.add('copied');
+                button.textContent = '✓ Copied';
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = 'Copy';
+                }, 2000);
+            } catch (error) {
+                showToast('Failed to copy', 'error');
+            }
+        }
+
+        function formatRelativeTime(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        function getBaitTypeIcon(type) {
+            const icons = {
+                'aws_key': '🔑',
+                'stripe_token': '💳',
+                'database': '🗄️',
+                'ssh_key': '🔐',
+                'github_token': '📦',
+                'slack_token': '💬'
+            };
+            return icons[type] || '🎣';
+        }
+
+        function getBaitTypeClass(type) {
+            const map = {
+                'aws_key': 'aws',
+                'stripe_token': 'stripe',
+                'database': 'database',
+                'ssh_key': 'ssh',
+                'github_token': 'github',
+                'slack_token': 'slack'
+            };
+            return map[type] || 'aws';
+        }
+
+        function formatBaitType(type) {
+            return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function extractScanner(userAgent) {
+            if (!userAgent) return 'Unknown';
+
+            const ua = userAgent.toLowerCase();
+            if (ua.includes('curl')) return 'curl';
+            if (ua.includes('python')) return 'Python script';
+            if (ua.includes('aws-cli')) return 'AWS CLI';
+            if (ua.includes('postman')) return 'Postman';
+            if (ua.includes('insomnia')) return 'Insomnia';
+            if (ua.includes('wget')) return 'wget';
+            if (ua.includes('scanner')) return 'Security Scanner';
+            if (ua.includes('bot')) return 'Bot';
+
+            return userAgent.substring(0, 30) + (userAgent.length > 30 ? '...' : '');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Delete Bait Function
+        async function deleteBait(identifier) {
+            if (!confirm(`Delete honeytoken ${identifier}? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                console.log('Deleting bait:', identifier);
+
+                const response = await fetch(`${API_URL}/api/ghost/bait/delete/${identifier}`, {
+                    method: 'DELETE'
+                });
+
+                console.log('Delete response status:', response.status);
+
+                const responseText = await response.text();
+                const data = JSON.parse(responseText);
+
+                if (data.success) {
+                    showToast(`Honeytoken ${identifier} deleted successfully`, 'success');
+
+                    // Remove card from UI
+                    const card = document.querySelector(`[data-bait-id="${identifier}"]`);
+                    if (card) {
+                        card.style.animation = 'fadeOut 0.3s';
+                        setTimeout(() => card.remove(), 300);
+                    }
+
+                    // Refresh stats and lists
+                    setTimeout(() => {
+                        loadActiveHoneytokens();
+                        refreshStats();
+                    }, 500);
+                } else {
+                    throw new Error(data.error || 'Failed to delete honeytoken');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Error deleting honeytoken: ' + error.message, 'error');
+            }
+        }
+
+        // Refresh Statistics
+        async function refreshStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/bait/stats`);
+                const data = await response.json();
+
+                if (data.success && data.stats) {
+                    document.getElementById('statTotalBaits').textContent = data.stats.total_baits || 0;
+                    document.getElementById('statTotalAttempts').textContent = data.stats.total_attempts || 0;
+                    document.getElementById('statUniqueIPs').textContent = data.stats.unique_ips || 0;
+                    document.getElementById('statAvgTime').textContent = data.stats.attempts_today || 0;
+                }
+            } catch (error) {
+                console.error('Error refreshing stats:', error);
+            }
+        }
+
+        // Type Filter functionality
+        document.getElementById('typeFilter').addEventListener('change', function(e) {
+            const selectedType = e.target.value;
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+
+            applyFilters(selectedType, searchTerm);
+        });
+
+        // Search functionality (updated to work with type filter)
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const selectedType = document.getElementById('typeFilter').value;
+
+            applyFilters(selectedType, searchTerm);
+        });
+
+        // Apply both filters
+        function applyFilters(typeFilter, searchTerm) {
+            const cards = document.querySelectorAll('.honeytoken-card');
+
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const baitType = card.getAttribute('data-bait-type');
+
+                const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+                const matchesType = typeFilter === '' || baitType === typeFilter;
+
+                card.style.display = (matchesSearch && matchesType) ? 'block' : 'none';
+            });
+        }
+
+        // Update stats display labels
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update the 4th stat label to show "Triggered Today"
+            const statLabels = document.querySelectorAll('.mini-stat-label');
+            if (statLabels.length >= 4) {
+                statLabels[3].textContent = 'TRIGGERED TODAY';
+            }
+        });
+    </script>
+</body>
+</html>

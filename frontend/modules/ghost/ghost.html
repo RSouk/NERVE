@@ -272,6 +272,10 @@
                     <span class="nav-icon">🎯</span>
                     <span class="nav-text">Adversary Matching</span>
                 </a>
+                <a href="ghost-bait.html" class="nav-item">
+                    <span class="nav-icon">🎣</span>
+                    <span class="nav-text">BAIT</span>
+                </a>
             </div>
 
             <!-- Main Content -->
@@ -279,8 +283,8 @@
                 <!-- Welcome Section -->
                 <div class="welcome-section">
                     <h2>Welcome to GHOST</h2>
-                    <p>GHOST is your comprehensive cyber threat intelligence platform. Track compromised credentials, analyze stealer campaigns, and identify threat actors targeting your organization.</p>
-                    <p>Use the navigation panel to access credential search or adversary intelligence features.</p>
+                    <p>GHOST is your comprehensive cyber threat intelligence platform. Track compromised credentials, analyze stealer campaigns, identify threat actors targeting your organization, and deploy honeytokens to detect active reconnaissance.</p>
+                    <p>Use the navigation panel to access credential search, adversary intelligence, or BAIT deployment features.</p>
                 </div>
 
                 <!-- Stats Grid -->
@@ -304,9 +308,9 @@
                     </div>
 
                     <div class="stat-card">
-                        <div class="stat-value" id="highRisk">234</div>
-                        <div class="stat-label">High Risk Targets</div>
-                        <div class="stat-change negative">↓ 3 resolved</div>
+                        <div class="stat-value" id="activeHoneytokens">0</div>
+                        <div class="stat-label">Active Honeytokens</div>
+                        <div class="stat-change positive">↑ BAIT module active</div>
                     </div>
                 </div>
 
@@ -316,12 +320,33 @@
                     <div class="action-buttons">
                         <a href="ghost-search.html" class="action-btn">🔍 Start Credential Search</a>
                         <a href="ghost-adversary.html" class="action-btn">🎯 Analyze Threat Actors</a>
-                        <a href="#" class="action-btn">📊 View Reports (Coming Soon)</a>
+                        <a href="ghost-bait.html" class="action-btn">🎣 Deploy Honeytokens</a>
                         <a href="#" class="action-btn">⚙️ Settings (Coming Soon)</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // Fetch BAIT stats on page load
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('http://localhost:5000/api/ghost/bait/stats');
+                const data = await response.json();
+
+                if (data.success && data.stats) {
+                    // Update the active honeytokens stat
+                    const activeHoneytokensElement = document.getElementById('activeHoneytokens');
+                    if (activeHoneytokensElement) {
+                        activeHoneytokensElement.textContent = data.stats.total_baits || 0;
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch BAIT stats:', error);
+                // Keep default value of 0 if API is not available
+            }
+        });
+    </script>
 </body>
 </html>

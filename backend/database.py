@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
 
@@ -55,7 +55,7 @@ class Breach(Base):
 
 class Device(Base):
     __tablename__ = 'devices'
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     profile_id = Column(String)
     ip_address = Column(String)
@@ -65,6 +65,42 @@ class Device(Base):
     vulnerabilities = Column(Text)
     location = Column(String)
     discovered_at = Column(DateTime, default=datetime.utcnow)
+
+class BaitToken(Base):
+    __tablename__ = 'bait_tokens'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    identifier = Column(String, unique=True, nullable=False)  # format: "bait_abc123"
+    bait_type = Column(String)  # aws_key, stripe_token, database, ssh_key, github_token, slack_token
+    token_value = Column(Text)  # JSON serialized fake credential
+    seeded_at = Column(DateTime, default=datetime.utcnow)
+    seeded_location = Column(String)  # URL where posted (e.g., Pastebin URL)
+    first_access = Column(DateTime, nullable=True)
+    access_count = Column(Integer, default=0)
+    last_access = Column(DateTime, nullable=True)
+    status = Column(String, default='active')  # active, triggered, expired, revoked
+
+    # Relationship to access logs
+    accesses = relationship('BaitAccess', back_populates='bait_token', cascade='all, delete-orphan')
+
+class BaitAccess(Base):
+    __tablename__ = 'bait_accesses'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    bait_id = Column(Integer, ForeignKey('bait_tokens.id'), nullable=False)
+    accessed_at = Column(DateTime, default=datetime.utcnow)
+    source_ip = Column(String)
+    user_agent = Column(String)
+    request_type = Column(String)  # http, api, ssh, database
+    request_headers = Column(Text)  # JSON serialized headers
+    request_body = Column(Text)  # JSON serialized request data
+    fingerprint = Column(Text)  # scanner fingerprint analysis
+    geolocation = Column(String)  # format: "City, Country"
+    threat_level = Column(String, default='medium')  # low, medium, high, critical
+    notes = Column(Text)  # additional analysis notes
+
+    # Relationship to bait token
+    bait_token = relationship('BaitToken', back_populates='accesses')
 
 def init_db():
     """Initialize the database and create all tables"""

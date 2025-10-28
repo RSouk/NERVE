@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHOST - Credential Intelligence</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -211,6 +212,33 @@
             font-size: 1.1em;
             color: #D4AF37;
             margin-top: 3px;
+        }
+
+        /* Export Buttons */
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #D4AF37;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
         }
 
         /* FILTER SECTION - NEW */
@@ -483,6 +511,14 @@
                 <div class="query-display">
                     <div class="query-type" id="queryType">EMAIL</div>
                     <div class="query-text" id="queryText">searching...</div>
+                    <div class="export-buttons">
+                        <button class="export-btn" onclick="exportToJSON()">
+                            <span>📥</span> Export JSON
+                        </button>
+                        <button class="export-btn" onclick="exportToPDF()">
+                            <span>📄</span> Export PDF
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -498,9 +534,9 @@
                 </select>
                 <select id="filterSource" class="filter-select">
                     <option value="all">All Sources</option>
-                    <option value="Hudson Rock">Hudson Rock</option>
-                    <option value="leakcheck">LeakCheck</option>
-                    <option value="breachdirectory">BreachDirectory</option>
+                    <option value="Infostealer Logs">Infostealer Logs</option>
+                    <option value="Public Breach Database">Public Breach Database</option>
+                    <option value="Dark Web Channels">Dark Web Channels</option>
                 </select>
                 <button id="clearFilters" class="filter-clear">Clear Filters</button>
             </div>
@@ -667,6 +703,22 @@
             applyFilters();
         }
 
+        // Map actual API source names to branded display names
+        function mapSourceName(source) {
+            const sourceMap = {
+                'hudson_rock': 'Infostealer Logs',
+                'Hudson Rock': 'Infostealer Logs',
+                'leakcheck': 'Public Breach Database',
+                'LeakCheck': 'Public Breach Database',
+                'telegram': 'Dark Web Channels',
+                'Telegram': 'Dark Web Channels',
+                'leakbase': 'Dark Web Channels',
+                'breachdirectory': 'Public Breach Database',
+                'BreachDirectory': 'Public Breach Database'
+            };
+            return sourceMap[source] || source;
+        }
+
         function categorizeData(results) {
             console.log('Results received:', results);
             const categorized = {
@@ -688,21 +740,23 @@
                     console.log('Processing infostealer logs');
                     items.forEach(item => {
                         console.log('Processing item:', item);
+                        // Calculate credential count for display
+                        const credCount = item.credentials ? item.credentials.length : 0;
                         categorized.machines.push({
-                            source: 'Hudson Rock',
+                            source: `Infostealer Logs (${credCount} credentials)`,
                             stealer: item.stealer_family,
                             computer: item.computer_name,
                             os: item.operating_system,
                             ip: item.ip,
                             date: item.date_compromised,
-                            cred_count: item.credentials ? item.credentials.length : 0,
+                            cred_count: credCount,
                             credentials: item.credentials || []
                         });
 
                         if (item.credentials) {
                             item.credentials.forEach(cred => {
                                 categorized.credentials.push({
-                                    source: 'Hudson Rock',
+                                    source: 'Infostealer Logs',
                                     url: cred.url,
                                     domain: cred.domain,
                                     username: cred.username,
@@ -717,7 +771,7 @@
                 if (data.type === 'breach_data') {
                     items.forEach(item => {
                         categorized.breaches.push({
-                            source: source,
+                            source: mapSourceName(source),
                             name: item.name,
                             date: item.date,
                             data_types: item.data_types
@@ -940,6 +994,184 @@
             `;
 
             return section;
+        }
+
+        // Export to JSON
+        function exportToJSON() {
+            if (!currentResults) {
+                alert('No results to export');
+                return;
+            }
+
+            const exportData = {
+                query: currentResults.query,
+                query_type: currentResults.query_type,
+                timestamp: new Date().toISOString(),
+                total_findings: currentResults.total_findings,
+                results: currentResults.results
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ghost-search-${currentResults.query}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Export to PDF
+        function exportToPDF() {
+            if (!currentResults) {
+                alert('No results to export');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let yPos = 20;
+            const lineHeight = 7;
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 20;
+
+            // Helper function to check if we need a new page
+            function checkPageBreak(additionalHeight = lineHeight) {
+                if (yPos + additionalHeight > pageHeight - margin) {
+                    doc.addPage();
+                    yPos = margin;
+                    return true;
+                }
+                return false;
+            }
+
+            // Title
+            doc.setFontSize(20);
+            doc.setTextColor(212, 175, 55);
+            doc.text('GHOST - Credential Intelligence Report', margin, yPos);
+            yPos += 15;
+
+            // Query Info
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Query: ${currentResults.query} (${currentResults.query_type})`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Date: ${new Date().toLocaleString()}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Total Findings: ${currentResults.total_findings}`, margin, yPos);
+            yPos += 15;
+
+            const categorized = categorizeData(currentResults.results);
+
+            // Credentials Section
+            if (categorized.credentials.length > 0) {
+                checkPageBreak(20);
+                doc.setFontSize(14);
+                doc.setTextColor(212, 175, 55);
+                doc.text(`Compromised Credentials (${categorized.credentials.length})`, margin, yPos);
+                yPos += 10;
+
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+
+                categorized.credentials.forEach((cred, index) => {
+                    checkPageBreak(30);
+
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${index + 1}. ${cred.domain || cred.url || 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`   Username: ${cred.username || 'N/A'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   Password: ${cred.password || '[Hidden]'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   Source: ${cred.source}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   Date: ${cred.date ? new Date(cred.date).toLocaleDateString() : 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight + 2;
+                });
+                yPos += 5;
+            }
+
+            // Machines Section
+            if (categorized.machines.length > 0) {
+                checkPageBreak(20);
+                doc.setFontSize(14);
+                doc.setTextColor(212, 175, 55);
+                doc.text(`Infected Machines (${categorized.machines.length})`, margin, yPos);
+                yPos += 10;
+
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+
+                categorized.machines.forEach((machine, index) => {
+                    checkPageBreak(35);
+
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${index + 1}. ${machine.computer || 'Unknown Computer'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`   Stealer: ${machine.stealer || 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   OS: ${machine.os || 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   IP: ${machine.ip || 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   Credentials Exposed: ${machine.cred_count}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   Source: ${machine.source}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   Date: ${machine.date ? new Date(machine.date).toLocaleDateString() : 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight + 2;
+                });
+                yPos += 5;
+            }
+
+            // Breaches Section
+            if (categorized.breaches.length > 0) {
+                checkPageBreak(20);
+                doc.setFontSize(14);
+                doc.setTextColor(212, 175, 55);
+                doc.text(`Breach History (${categorized.breaches.length})`, margin, yPos);
+                yPos += 10;
+
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+
+                categorized.breaches.forEach((breach, index) => {
+                    checkPageBreak(25);
+
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${index + 1}. ${breach.name}`, margin + 5, yPos);
+                    yPos += lineHeight;
+
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`   Date: ${breach.date || 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    const dataTypes = Array.isArray(breach.data_types) ? breach.data_types.join(', ') : breach.data_types;
+                    doc.text(`   Exposed: ${dataTypes || 'Unknown'}`, margin + 5, yPos);
+                    yPos += lineHeight;
+                    doc.text(`   Source: ${breach.source}`, margin + 5, yPos);
+                    yPos += lineHeight + 2;
+                });
+            }
+
+            // Footer
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width / 2, pageHeight - 10, { align: 'center' });
+                doc.text('Generated by NERVE GHOST System', doc.internal.pageSize.width / 2, pageHeight - 5, { align: 'center' });
+            }
+
+            doc.save(`ghost-search-${currentResults.query}-${new Date().toISOString().split('T')[0]}.pdf`);
         }
     </script>
 </body>

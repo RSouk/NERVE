@@ -637,6 +637,145 @@ def delete_bait(identifier):
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# IP Reputation Check Endpoint
+@app.route('/api/ghost/bait/check-ip/<ip>', methods=['GET'])
+def check_ip_reputation(ip):
+    """
+    Check IP reputation by querying database and ip-api.com
+    """
+    db = None
+    try:
+        print(f"\n{'='*60}")
+        print(f"[IP CHECK] Checking reputation for IP: {ip}")
+
+        db = get_db()
+
+        # 1. Query database for other hits by this IP
+        print(f"[IP CHECK] Querying database for other hits...")
+        other_hits = db.query(BaitAccess).filter(BaitAccess.source_ip == ip).all()
+        hits_count = len(other_hits)
+
+        # Get unique baits hit by this IP
+        unique_baits = set()
+        for hit in other_hits:
+            if hit.bait_token:
+                unique_baits.add(hit.bait_token.identifier)
+
+        print(f"[IP CHECK] Found {hits_count} hits across {len(unique_baits)} different baits")
+
+        # 2. Query ip-api.com for detailed information
+        print(f"[IP CHECK] Querying ip-api.com for IP details...")
+        import requests
+
+        # ip-api.com provides fields for VPN/proxy/hosting detection
+        # Using fields parameter to get specific data
+        api_url = f"http://ip-api.com/json/{ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,asname,mobile,proxy,hosting,query"
+
+        response = requests.get(api_url, timeout=5)
+        geo_data = response.json()
+
+        print(f"[IP CHECK] ip-api.com response: {geo_data}")
+
+        # 3. Determine VPN/Proxy/Hosting status
+        is_proxy = geo_data.get('proxy', False)
+        is_hosting = geo_data.get('hosting', False)
+        is_mobile = geo_data.get('mobile', False)
+
+        # VPN detection is tricky - we can infer from hosting providers and ISP names
+        isp = geo_data.get('isp', '').lower()
+        org = geo_data.get('org', '').lower()
+
+        vpn_keywords = ['vpn', 'virtual private', 'proxy', 'anonymizer', 'hide', 'private internet access',
+                        'nordvpn', 'expressvpn', 'surfshark', 'cyberghost', 'protonvpn', 'mullvad']
+
+        is_vpn = any(keyword in isp or keyword in org for keyword in vpn_keywords)
+
+        # If it's a hosting provider, more likely to be a VPN exit node
+        if is_hosting:
+            hosting_providers = ['digitalocean', 'aws', 'amazon', 'google cloud', 'azure', 'linode',
+                                'vultr', 'ovh', 'hetzner', 'choopa', 'quadranet']
+            is_likely_vpn = any(provider in isp or provider in org for provider in hosting_providers)
+            if is_likely_vpn:
+                is_vpn = True
+
+        company = geo_data.get('org', geo_data.get('isp', 'Unknown'))
+
+        print(f"[IP CHECK] Analysis: VPN={is_vpn}, Proxy={is_proxy}, Hosting={is_hosting}, Company={company}")
+
+        # 4. Threat Assessment
+        threat_assessment = "Clean"
+
+        if hits_count >= 5:
+            threat_assessment = "Known Scanner"
+        elif hits_count >= 2:
+            threat_assessment = "Suspicious"
+        elif is_vpn or is_proxy:
+            threat_assessment = "Suspicious"
+        elif is_hosting and hits_count > 0:
+            threat_assessment = "Suspicious"
+
+        print(f"[IP CHECK] Threat Assessment: {threat_assessment}")
+
+        # 5. Build response
+        result = {
+            'success': True,
+            'ip': ip,
+            'is_vpn': is_vpn,
+            'is_proxy': is_proxy,
+            'is_hosting': is_hosting,
+            'is_mobile': is_mobile,
+            'company': company,
+            'isp': geo_data.get('isp', 'Unknown'),
+            'country': geo_data.get('country', 'Unknown'),
+            'city': geo_data.get('city', 'Unknown'),
+            'hits_on_other_baits': hits_count,
+            'unique_baits_hit': len(unique_baits),
+            'threat_assessment': threat_assessment,
+            'baits_hit': list(unique_baits)[:10]  # Limit to first 10
+        }
+
+        print(f"[IP CHECK] ✓ Reputation check complete")
+        print(f"{'='*60}\n")
+
+        db.close()
+        return jsonify(result), 200
+
+    except requests.exceptions.RequestException as e:
+        # Handle network errors gracefully
+        print(f"[IP CHECK] ⚠️ Error contacting ip-api.com: {e}")
+
+        # Still return database results
+        result = {
+            'success': True,
+            'ip': ip,
+            'is_vpn': False,
+            'is_proxy': False,
+            'is_hosting': False,
+            'is_mobile': False,
+            'company': 'Unknown',
+            'isp': 'Unknown',
+            'country': 'Unknown',
+            'city': 'Unknown',
+            'hits_on_other_baits': hits_count if 'hits_count' in locals() else 0,
+            'unique_baits_hit': len(unique_baits) if 'unique_baits' in locals() else 0,
+            'threat_assessment': 'Unknown',
+            'baits_hit': list(unique_baits)[:10] if 'unique_baits' in locals() else [],
+            'error': 'Could not fetch IP geolocation data'
+        }
+
+        if db:
+            db.close()
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[IP CHECK] ❌ Error checking IP reputation: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("Ghost backend starting...")
     print("API running at http://localhost:5000")

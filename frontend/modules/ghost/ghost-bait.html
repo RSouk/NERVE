@@ -400,6 +400,38 @@
         .type-badge.github { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
         .type-badge.slack { background: rgba(236, 72, 153, 0.2); color: #EC4899; }
 
+        .demo-badge {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
+            border: 1.5px solid rgba(212, 175, 55, 0.5);
+            color: #D4AF37;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+            animation: demoGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes demoGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
+        }
+
+        .demo-notice {
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 3px solid #D4AF37;
+            padding: 10px 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #D4AF37;
+        }
+
         .honeytoken-id {
             font-family: 'Consolas', 'Monaco', monospace;
             color: #888;
@@ -665,6 +697,397 @@
             border-color: #ef4444;
             color: #ef4444;
         }
+
+        /* Tabbed Interface */
+        .tab-container {
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #888;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            top: 2px;
+        }
+
+        .tab-btn:hover {
+            color: #D4AF37;
+        }
+
+        .tab-btn.active {
+            color: #D4AF37;
+            border-bottom-color: #D4AF37;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Timeline Visualization */
+        .timeline-container {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.5) 0%, rgba(212, 175, 55, 0.1) 100%);
+        }
+
+        .timeline-event {
+            position: relative;
+            margin-bottom: 25px;
+            padding-left: 20px;
+        }
+
+        .timeline-event::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            background: #D4AF37;
+            border-radius: 50%;
+            border: 2px solid #0a0a0a;
+            z-index: 1;
+        }
+
+        .timeline-event.triggered::before {
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .timeline-event-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .timeline-icon {
+            font-size: 1.2em;
+        }
+
+        .timeline-title {
+            color: #D4AF37;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .timeline-time {
+            color: #888;
+            font-size: 0.85em;
+            margin-left: auto;
+        }
+
+        .timeline-details {
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+
+        .timeline-details-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            padding: 4px 0;
+        }
+
+        .timeline-details-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-label {
+            color: #888;
+        }
+
+        .timeline-value {
+            color: #e0e0e0;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .expandable-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .expandable-details.expanded {
+            max-height: 500px;
+        }
+
+        .expand-indicator {
+            color: #888;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+
+        /* Scanner Badge */
+        .scanner-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: rgba(212, 175, 55, 0.15);
+            color: #D4AF37;
+        }
+
+        .scanner-badge.automated {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .scanner-badge.manual {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        /* Intelligence Summary */
+        .intelligence-section {
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+
+        .intelligence-title {
+            color: #D4AF37;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .intelligence-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .intelligence-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .intelligence-item-label {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .intelligence-item-value {
+            color: #D4AF37;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .intelligence-list {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        .intelligence-list-title {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .intelligence-list-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .intelligence-chip {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 0.9em;
+            color: #e0e0e0;
+        }
+
+        /* Country Flag Emoji */
+        .country-flag {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
+
+        /* Back to Feed Button */
+        .back-to-feed-btn {
+            padding: 10px 16px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #D4AF37;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+
+        .back-to-feed-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        /* IP Reputation Display */
+        .ip-reputation-container {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 12px;
+            animation: fadeIn 0.3s;
+        }
+
+        .ip-reputation-title {
+            color: #D4AF37;
+            font-weight: 600;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ip-reputation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .ip-reputation-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+
+        .ip-reputation-icon {
+            font-size: 1.1em;
+        }
+
+        .ip-reputation-label {
+            color: #888;
+        }
+
+        .ip-reputation-value {
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .ip-reputation-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .ip-reputation-badge.clean {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .ip-reputation-badge.suspicious {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .ip-reputation-badge.scanner {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .check-ip-btn {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: #D4AF37;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .check-ip-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .check-ip-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ip-reputation-flags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .ip-flag {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8em;
+            color: #e0e0e0;
+        }
+
+        .ip-flag.warning {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .ip-flag.danger {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -681,7 +1104,12 @@
                 </div>
             </div>
         </div>
-        <a href="ghost.html" class="back-button">← Back to GHOST</a>
+        <div style="display: flex; gap: 15px;">
+            <button onclick="showTutorial()" class="back-button" style="cursor: pointer; background: rgba(212, 175, 55, 0.15);">
+                [?] How to Use BAIT
+            </button>
+            <a href="ghost.html" class="back-button">← Back to GHOST</a>
+        </div>
     </div>
 
     <!-- Main Container -->
@@ -691,16 +1119,16 @@
             <div class="left-column">
                 <!-- Generate Honeytoken -->
                 <div class="card generate-section">
-                    <div class="card-title">🎣 Generate Honeytoken</div>
+                    <div class="card-title">[GENERATE] Honeytoken</div>
 
                     <select class="bait-type-selector" id="baitType">
                         <option value="">Select credential type...</option>
-                        <option value="aws_key">🔑 AWS Access Keys</option>
-                        <option value="stripe_token">💳 Stripe API Token</option>
-                        <option value="database">🗄️ Database Credentials</option>
-                        <option value="ssh_key">🔐 SSH Private Key</option>
-                        <option value="github_token">📦 GitHub Token</option>
-                        <option value="slack_token">💬 Slack Token</option>
+                        <option value="aws_key">[AWS] Access Keys</option>
+                        <option value="stripe_token">[STRIPE] API Token</option>
+                        <option value="database">[DATABASE] Credentials</option>
+                        <option value="ssh_key">[SSH] Private Key</option>
+                        <option value="github_token">[GITHUB] Token</option>
+                        <option value="slack_token">[SLACK] Token</option>
                     </select>
 
                     <button class="generate-btn" id="generateBtn">Generate Honeytoken</button>
@@ -718,9 +1146,30 @@
 
                 <!-- Deployment Options -->
                 <div class="card deployment-options" id="deploymentSection" style="display: none;">
-                    <div class="card-title">📤 Deployment Options</div>
+                    <div class="card-title">[DEPLOY] Deployment Options</div>
 
-                    <input type="text" class="input-field" id="pastebinTitle" placeholder="Pastebin title (e.g., 'AWS Config Backup')" value="Configuration File">
+                    <input type="text" class="input-field" id="pastebinTitle" placeholder="Pastebin title (e.g., 'AWS Config Backup')" value="Configuration Backup - DO NOT SHARE">
+
+                    <label style="color: #888; font-size: 0.9em; margin-bottom: 8px; display: block;">Deployment Target</label>
+                    <select class="bait-type-selector" id="deploymentTarget" style="margin-bottom: 15px;">
+                        <option value="pastebin_public">Pastebin (Public)</option>
+                        <option value="pastebin_unlisted">Pastebin (Unlisted)</option>
+                        <option value="github_public">GitHub Gist (Public) - Coming Soon</option>
+                        <option value="github_secret">GitHub Gist (Secret) - Coming Soon</option>
+                        <option value="manual">Manual Deployment</option>
+                    </select>
+
+                    <div id="manualDeploymentArea" style="display: none;">
+                        <div style="color: #888; font-size: 0.9em; margin-bottom: 10px;">
+                            Copy this configuration and post it wherever you want attackers to find it:
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85em; max-height: 300px; overflow-y: auto;">
+                            <pre id="manualConfigDisplay" style="margin: 0; color: #D4AF37; white-space: pre-wrap; word-wrap: break-word;"></pre>
+                        </div>
+                        <button class="view-timeline-btn" onclick="copyManualConfig()" style="width: 100%; margin-bottom: 10px;">
+                            Copy Configuration
+                        </button>
+                    </div>
 
                     <button class="deploy-btn" id="deployBtn">Deploy to Pastebin</button>
 
@@ -732,19 +1181,22 @@
             <div class="center-column">
                 <div class="card">
                     <div class="card-title">
-                        🎯 Deployed Honeytokens
+                        Created Honeytokens
                         <span class="badge" id="honeytokenCount">0</span>
                     </div>
 
                     <select class="bait-type-selector" id="typeFilter" style="margin-bottom: 15px;">
                         <option value="">All Types</option>
-                        <option value="aws_key">🔑 AWS Keys</option>
-                        <option value="api_token">💳 API Tokens</option>
-                        <option value="database">🗄️ Database</option>
-                        <option value="ssh_key">🔐 SSH Keys</option>
+                        <option value="aws_key">AWS Keys</option>
+                        <option value="stripe_token">Stripe Tokens</option>
+                        <option value="slack_token">Slack Tokens</option>
+                        <option value="github_token">GitHub Tokens</option>
+                        <option value="api_token">API Tokens</option>
+                        <option value="database">Database</option>
+                        <option value="ssh_key">SSH Keys</option>
                     </select>
 
-                    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search honeytokens...">
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search honeytokens...">
 
                     <div id="honeytokenList">
                         <div class="empty-state">
@@ -758,19 +1210,47 @@
 
             <!-- RIGHT COLUMN - Live Intelligence Feed -->
             <div class="right-column">
-                <!-- Threat Detection Feed -->
+                <!-- Threat Detection Feed with Tabs -->
                 <div class="card">
                     <div class="threat-feed-header">
-                        <div class="card-title">🚨 Threat Detection Feed</div>
+                        <div class="card-title">🚨 Threat Intelligence</div>
                         <div class="live-indicator">
                             <div class="pulse-dot"></div>
                             LIVE
                         </div>
                     </div>
 
-                    <div id="threatFeed">
-                        <div class="empty-state">
-                            <div style="font-size: 0.9em; color: #888;">No threats detected yet</div>
+                    <!-- Tab Buttons -->
+                    <div class="tab-container">
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" data-tab="liveFeed" onclick="switchTab('liveFeed')">Live Feed</button>
+                            <button class="tab-btn" data-tab="timeline" onclick="switchTab('timeline')">Timeline</button>
+                        </div>
+
+                        <!-- TAB 1: Live Feed -->
+                        <div id="liveFeedTab" class="tab-content active">
+                            <div id="threatFeed">
+                                <div class="empty-state">
+                                    <div style="font-size: 0.9em; color: #888;">No threats detected yet</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: Timeline -->
+                        <div id="timelineTab" class="tab-content">
+                            <button class="back-to-feed-btn" onclick="switchTab('liveFeed')" style="display: none;">
+                                ← Back to Live Feed
+                            </button>
+
+                            <div id="timelineContent">
+                                <div class="empty-state">
+                                    <div style="font-size: 0.9em; color: #888;">Select a honeytoken to view its timeline</div>
+                                </div>
+                            </div>
+
+                            <!-- Attacker Intelligence Section -->
+                            <div id="attackerIntelligence" style="display: none;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -817,6 +1297,103 @@
         let currentGeneratedBait = null;
         let refreshInterval = null;
 
+        // Demo Token Configuration
+        const DEMO_TOKEN_ID = 'DEMO-TEST-TOKEN-001';
+
+        // Create Demo Token Data
+        function createDemoToken() {
+            const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+
+            return {
+                identifier: DEMO_TOKEN_ID,
+                bait_type: 'aws_key',
+                access_count: 5,
+                seeded_at: twoDaysAgo,
+                seeded_location: 'https://pastebin.com/demo123',
+                status: 'DEMO - For Testing',
+                is_demo: true,
+                created_at: twoDaysAgo
+            };
+        }
+
+        // Create Mock Timeline Data for Demo Token
+        function getMockDemoTimeline() {
+            const baseTime = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // 2 days ago
+            const deployTime = new Date(baseTime);
+
+            const accesses = [
+                {
+                    id: 'demo-access-1',
+                    accessed_at: new Date(deployTime.getTime() + 4 * 60 * 60 * 1000).toISOString(), // 4 hours after
+                    source_ip: '185.220.101.45',
+                    user_agent: 'python-requests/2.28.0',
+                    geolocation: JSON.stringify({ country: 'Russia', city: 'Moscow', latitude: 55.7558, longitude: 37.6173 }),
+                    headers: JSON.stringify({ 'User-Agent': 'python-requests/2.28.0', 'Accept': '*/*' }),
+                    request_data: JSON.stringify({ method: 'GET' }),
+                    threat_level: 'HIGH',
+                    scanner_type: 'Python Script (Automated)'
+                },
+                {
+                    id: 'demo-access-2',
+                    accessed_at: new Date(deployTime.getTime() + 8 * 60 * 60 * 1000).toISOString(), // 8 hours after
+                    source_ip: '47.88.54.23',
+                    user_agent: 'aws-cli/2.13.0',
+                    geolocation: JSON.stringify({ country: 'China', city: 'Shanghai', latitude: 31.2304, longitude: 121.4737 }),
+                    headers: JSON.stringify({ 'User-Agent': 'aws-cli/2.13.0', 'Accept': 'application/json' }),
+                    request_data: JSON.stringify({ method: 'POST' }),
+                    threat_level: 'CRITICAL',
+                    scanner_type: 'AWS CLI (Manual)'
+                },
+                {
+                    id: 'demo-access-3',
+                    accessed_at: new Date(deployTime.getTime() + 12 * 60 * 60 * 1000).toISOString(), // 12 hours after
+                    source_ip: '104.244.72.115',
+                    user_agent: 'curl/7.68.0',
+                    geolocation: JSON.stringify({ country: 'USA', city: 'Los Angeles', latitude: 34.0522, longitude: -118.2437 }),
+                    headers: JSON.stringify({ 'User-Agent': 'curl/7.68.0' }),
+                    request_data: JSON.stringify({ method: 'GET' }),
+                    threat_level: 'MEDIUM',
+                    scanner_type: 'cURL (Manual)'
+                },
+                {
+                    id: 'demo-access-4',
+                    accessed_at: new Date(deployTime.getTime() + 24 * 60 * 60 * 1000).toISOString(), // 1 day after
+                    source_ip: '185.220.101.45',
+                    user_agent: 'python-requests/2.28.0',
+                    geolocation: JSON.stringify({ country: 'Russia', city: 'Moscow', latitude: 55.7558, longitude: 37.6173 }),
+                    headers: JSON.stringify({ 'User-Agent': 'python-requests/2.28.0', 'Accept': '*/*', 'X-Note': 'Repeat attacker' }),
+                    request_data: JSON.stringify({ method: 'GET', note: 'Repeat attacker' }),
+                    threat_level: 'HIGH',
+                    scanner_type: 'Python Script (Automated)'
+                },
+                {
+                    id: 'demo-access-5',
+                    accessed_at: new Date(deployTime.getTime() + 36 * 60 * 60 * 1000).toISOString(), // 1.5 days after
+                    source_ip: '91.203.5.146',
+                    user_agent: 'Boto3/1.26.0 Python/3.9.7',
+                    geolocation: JSON.stringify({ country: 'Netherlands', city: 'Amsterdam', latitude: 52.3676, longitude: 4.9041 }),
+                    headers: JSON.stringify({ 'User-Agent': 'Boto3/1.26.0 Python/3.9.7' }),
+                    request_data: JSON.stringify({ method: 'POST' }),
+                    threat_level: 'HIGH',
+                    scanner_type: 'AWS SDK (Automated)'
+                }
+            ];
+
+            return {
+                success: true,
+                timeline: {
+                    identifier: DEMO_TOKEN_ID,
+                    bait_type: 'aws_key',
+                    created_at: baseTime.toISOString(),
+                    seeded_at: deployTime.toISOString(),
+                    seeded_location: 'https://pastebin.com/demo123',
+                    first_access: accesses[0].accessed_at,
+                    accesses: accesses,
+                    is_demo: true
+                }
+            };
+        }
+
         // Initialize on page load
         window.addEventListener('load', function() {
             loadActiveHoneytokens();
@@ -828,6 +1405,11 @@
                 loadTriggeredBaits();
                 refreshStats();
             }, 10000);
+
+            // Update time displays every minute to keep "X minutes ago" accurate
+            setInterval(() => {
+                loadActiveHoneytokens(); // Refresh to update time displays
+            }, 60000); // 60 seconds
         });
 
         // Generate Button
@@ -920,6 +1502,13 @@
                     displayGeneratedCredential(data.data);
                     document.getElementById('deploymentSection').style.display = 'block';
                     showToast('Honeytoken generated successfully!', 'success');
+
+                    // Auto-refresh the active honeytokens list
+                    console.log('Auto-refreshing honeytoken list...');
+                    setTimeout(() => {
+                        loadActiveHoneytokens();
+                        refreshStats();
+                    }, 500);
 
                     console.log('=== GENERATION COMPLETE ===\n');
                 } else {
@@ -1099,7 +1688,7 @@
                     const successDiv = document.getElementById('deploymentSuccess');
                     successDiv.innerHTML = `
                         <div class="success-message">
-                            ✓ Successfully deployed!<br>
+                            Successfully deployed!<br>
                             <a href="${data.url}" target="_blank">${data.url}</a>
                         </div>
                     `;
@@ -1130,11 +1719,21 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    displayHoneytokens(data.baits || []);
+                    let baits = data.baits || [];
+
+                    // Inject demo token at the beginning if not already present
+                    const hasDemoToken = baits.some(bait => bait.identifier === DEMO_TOKEN_ID);
+                    if (!hasDemoToken) {
+                        baits = [createDemoToken(), ...baits];
+                    }
+
+                    displayHoneytokens(baits);
                     document.getElementById('honeytokenCount').textContent = data.count || 0;
                 }
             } catch (error) {
                 console.error('Error loading active honeytokens:', error);
+                // Even on error, show demo token
+                displayHoneytokens([createDemoToken()]);
             }
         }
 
@@ -1195,19 +1794,23 @@
                 // Null safety checks
                 const identifier = bait.identifier || 'unknown';
                 const baitType = bait.bait_type || 'unknown';
+                const serviceName = bait.service_name || null;
                 const accessCount = bait.access_count || 0;
                 const isTriggered = accessCount > 0;
                 const seededAt = bait.seeded_at || null;
                 const seededLocation = bait.seeded_location || null;
+                const isDemo = bait.is_demo || bait.identifier === DEMO_TOKEN_ID;
 
                 html += `
-                    <div class="honeytoken-card ${isTriggered ? 'triggered' : ''}" data-bait-type="${baitType}" data-bait-id="${identifier}">
+                    <div class="honeytoken-card ${isTriggered ? 'triggered' : ''}" data-bait-type="${baitType}" data-service-name="${serviceName || ''}" data-bait-id="${identifier}">
                         <div class="honeytoken-header">
                             <span class="type-badge ${getBaitTypeClass(baitType)}">
-                                ${getBaitTypeIcon(baitType)} ${formatBaitType(baitType)}
+                                ${getBaitTypeIcon(baitType)} ${formatBaitType(bait)}
                             </span>
+                            ${isDemo ? '<span class="demo-badge">DEMO TOKEN</span>' : ''}
                             <span class="honeytoken-id">${identifier}</span>
                         </div>
+                        ${isDemo ? '<div class="demo-notice">This is example data for demonstration purposes</div>' : ''}
                         <div class="honeytoken-info">
                             <div class="info-row">
                                 <span class="info-label">Deployed:</span>
@@ -1219,16 +1822,24 @@
                             </div>
                         </div>
                         <div class="status-indicator ${isTriggered ? 'triggered' : 'active'}">
-                            ${isTriggered ? '🔴' : '🟢'}
                             ${isTriggered ? `TRIGGERED (${accessCount} access${accessCount > 1 ? 'es' : ''})` : 'ACTIVE - Monitoring'}
                         </div>
-                        ${seededLocation ? `<a href="${seededLocation}" target="_blank" class="view-details-link" onclick="event.stopPropagation()">View on Pastebin →</a>` : ''}
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                            ${seededLocation ? `
+                                <button class="view-timeline-btn" disabled style="background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #10b981; cursor: default;">
+                                    Deployed
+                                </button>
+                                <a href="${seededLocation}" target="_blank" class="view-details-link" onclick="event.stopPropagation()" style="display: inline-block; padding: 8px 12px; text-decoration: none;">View Location →</a>
+                            ` : `
+                                <button class="view-timeline-btn" onclick="event.stopPropagation(); openDeployModal('${identifier}')" style="background: rgba(212, 175, 55, 0.1); border-color: #D4AF37; color: #D4AF37;">
+                                    Deploy
+                                </button>
+                            `}
                             <button class="view-timeline-btn" onclick="event.stopPropagation(); viewTimeline('${identifier}')">
-                                📊 View Timeline
+                                View Timeline
                             </button>
-                            <button class="view-timeline-btn" onclick="event.stopPropagation(); deleteBait('${identifier}')" style="background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444;">
-                                🗑️ Delete
+                            <button class="view-timeline-btn" onclick="event.stopPropagation(); deleteBait('${identifier}')" style="background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444;" ${isDemo ? 'disabled title="Demo token cannot be deleted"' : ''}>
+                                Delete
                             </button>
                         </div>
                     </div>
@@ -1283,7 +1894,7 @@
                             <div><strong>Scanner:</strong> ${extractScanner(access.user_agent)}</div>
                             <div><strong>Target:</strong> ${access.bait_identifier}</div>
                         </div>
-                        <a href="ghost-bait-timeline.html?id=${access.bait_identifier}" class="view-details-link">View Full Details →</a>
+                        <a href="javascript:void(0)" onclick="viewTimeline('${access.bait_identifier}')" class="view-details-link">View Full Details →</a>
                     </div>
                 `;
             });
@@ -1317,7 +1928,7 @@
             try {
                 await navigator.clipboard.writeText(text);
                 button.classList.add('copied');
-                button.textContent = '✓ Copied';
+                button.textContent = 'Copied';
                 setTimeout(() => {
                     button.classList.remove('copied');
                     button.textContent = 'Copy';
@@ -1333,10 +1944,14 @@
             const now = new Date();
             const seconds = Math.floor((now - date) / 1000);
 
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(seconds / 3600);
+            const days = Math.floor(seconds / 86400);
+
             if (seconds < 60) return 'Just now';
-            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-            return `${Math.floor(seconds / 86400)}d ago`;
+            if (seconds < 3600) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            if (seconds < 86400) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            return `${days} day${days !== 1 ? 's' : ''} ago`;
         }
 
         function formatTimestamp(timestamp) {
@@ -1346,15 +1961,8 @@
         }
 
         function getBaitTypeIcon(type) {
-            const icons = {
-                'aws_key': '🔑',
-                'stripe_token': '💳',
-                'database': '🗄️',
-                'ssh_key': '🔐',
-                'github_token': '📦',
-                'slack_token': '💬'
-            };
-            return icons[type] || '🎣';
+            // Icons removed for cleaner UI
+            return '';
         }
 
         function getBaitTypeClass(type) {
@@ -1369,7 +1977,24 @@
             return map[type] || 'aws';
         }
 
-        function formatBaitType(type) {
+        function formatBaitType(typeOrBait, serviceName = null) {
+            // Handle both string and object input
+            let type, service;
+            if (typeof typeOrBait === 'object' && typeOrBait !== null) {
+                type = typeOrBait.bait_type || typeOrBait.type;
+                service = typeOrBait.service_name || serviceName;
+            } else {
+                type = typeOrBait;
+                service = serviceName;
+            }
+
+            // If type is api_token and service_name exists, return "{service} API Token"
+            if (type === 'api_token' && service) {
+                const serviceCap = service.charAt(0).toUpperCase() + service.slice(1);
+                return `${serviceCap} API Token`;
+            }
+
+            // Default formatting
             return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         }
 
@@ -1389,6 +2014,457 @@
             return userAgent.substring(0, 30) + (userAgent.length > 30 ? '...' : '');
         }
 
+        // Enhanced Scanner Identification
+        function identifyScanner(userAgent) {
+            if (!userAgent) return { name: 'Unknown Tool', type: 'unknown', isAutomated: false };
+
+            const ua = userAgent.toLowerCase();
+
+            // Manual tools
+            if (ua.includes('curl')) return { name: 'cURL', type: 'manual', isAutomated: false };
+            if (ua.includes('postman')) return { name: 'Postman', type: 'manual', isAutomated: false };
+            if (ua.includes('insomnia')) return { name: 'Insomnia', type: 'manual', isAutomated: false };
+            if (ua.includes('httpie')) return { name: 'HTTPie', type: 'manual', isAutomated: false };
+
+            // AWS tools
+            if (ua.includes('aws-cli')) return { name: 'AWS CLI', type: 'manual', isAutomated: false };
+            if (ua.includes('boto')) return { name: 'AWS SDK (Boto)', type: 'automated', isAutomated: true };
+
+            // Automated scripts
+            if (ua.includes('python-requests')) return { name: 'Python Requests', type: 'automated', isAutomated: true };
+            if (ua.includes('python-urllib')) return { name: 'Python urllib', type: 'automated', isAutomated: true };
+            if (ua.includes('python')) return { name: 'Python Script', type: 'automated', isAutomated: true };
+            if (ua.includes('go-http-client')) return { name: 'Go HTTP Client', type: 'automated', isAutomated: true };
+            if (ua.includes('node-fetch')) return { name: 'Node.js Script', type: 'automated', isAutomated: true };
+            if (ua.includes('axios')) return { name: 'Axios (Node.js)', type: 'automated', isAutomated: true };
+
+            // Scanners
+            if (ua.includes('masscan')) return { name: 'Masscan', type: 'automated', isAutomated: true };
+            if (ua.includes('nmap')) return { name: 'Nmap', type: 'automated', isAutomated: true };
+            if (ua.includes('zgrab')) return { name: 'ZGrab', type: 'automated', isAutomated: true };
+            if (ua.includes('scanner')) return { name: 'Security Scanner', type: 'automated', isAutomated: true };
+            if (ua.includes('bot')) return { name: 'Bot', type: 'automated', isAutomated: true };
+
+            // Other tools
+            if (ua.includes('wget')) return { name: 'wget', type: 'manual', isAutomated: false };
+            if (ua.includes('powershell')) return { name: 'PowerShell', type: 'automated', isAutomated: true };
+
+            return { name: 'Unknown Tool', type: 'unknown', isAutomated: false };
+        }
+
+        // Get Country Flag Emoji
+        function getCountryFlag(country) {
+            if (!country || country === 'Unknown') return '🏳️';
+
+            const flagMap = {
+                'United States': '🇺🇸',
+                'United Kingdom': '🇬🇧',
+                'China': '🇨🇳',
+                'Russia': '🇷🇺',
+                'Germany': '🇩🇪',
+                'France': '🇫🇷',
+                'India': '🇮🇳',
+                'Brazil': '🇧🇷',
+                'Canada': '🇨🇦',
+                'Australia': '🇦🇺',
+                'Japan': '🇯🇵',
+                'South Korea': '🇰🇷',
+                'Netherlands': '🇳🇱',
+                'Singapore': '🇸🇬',
+                'Mexico': '🇲🇽',
+                'Spain': '🇪🇸',
+                'Italy': '🇮🇹',
+                'Poland': '🇵🇱',
+                'Ukraine': '🇺🇦',
+                'Romania': '🇷🇴'
+            };
+
+            return flagMap[country] || '🌍';
+        }
+
+        // Switch Tab Function
+        function switchTab(tabName) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // Add active class to selected tab
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+
+            // Show/hide back button
+            const backBtn = document.querySelector('.back-to-feed-btn');
+            if (tabName === 'timeline' && document.getElementById('timelineContent').querySelector('.timeline-container')) {
+                backBtn.style.display = 'block';
+            } else {
+                backBtn.style.display = 'none';
+            }
+        }
+
+        // View Timeline - Updated
+        async function viewTimeline(identifier) {
+            try {
+                console.log('Fetching timeline for:', identifier);
+
+                // Switch to timeline tab
+                switchTab('timeline');
+
+                // Show loading state
+                document.getElementById('timelineContent').innerHTML = `
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 10px;">Loading timeline...</p>
+                    </div>
+                `;
+
+                // Check if this is the demo token
+                let data;
+                if (identifier === DEMO_TOKEN_ID) {
+                    // Use mock data for demo token
+                    console.log('Loading demo token timeline');
+                    data = getMockDemoTimeline();
+                } else {
+                    // Fetch real data for non-demo tokens
+                    const response = await fetch(`${API_URL}/api/ghost/bait/timeline/${identifier}`);
+                    data = await response.json();
+                }
+
+                if (data.success && data.timeline) {
+                    renderTimelineVisualization(data.timeline, identifier);
+                    renderAttackerIntelligence(data.timeline, identifier);
+                    document.querySelector('.back-to-feed-btn').style.display = 'block';
+                } else {
+                    throw new Error(data.error || 'Failed to load timeline');
+                }
+            } catch (error) {
+                console.error('Timeline error:', error);
+                document.getElementById('timelineContent').innerHTML = `
+                    <div class="empty-state">
+                        <div style="color: #ef4444;">Error loading timeline</div>
+                        <div style="font-size: 0.9em; color: #888; margin-top: 10px;">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render Timeline Visualization
+        function renderTimelineVisualization(timeline, identifier) {
+            console.log('\n=== TIMELINE VISUALIZATION ===');
+            console.log('Timeline data received:', timeline);
+            console.log('Identifier:', identifier);
+            console.log('Has accesses:', timeline.accesses ? timeline.accesses.length : 0);
+            console.log('Created at:', timeline.created_at);
+            console.log('Seeded at:', timeline.seeded_at);
+            console.log('Full timeline object:', JSON.stringify(timeline, null, 2));
+
+            const container = document.getElementById('timelineContent');
+            const isDemo = timeline.is_demo || identifier === DEMO_TOKEN_ID;
+
+            let html = `
+                <div style="color: #D4AF37; font-weight: 600; font-size: 1.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                    Timeline: ${identifier}
+                    ${isDemo ? '<span class="demo-badge">DEMO DATA</span>' : ''}
+                </div>
+                ${isDemo ? '<div class="demo-notice" style="margin-bottom: 20px;">This timeline shows example attack data for demonstration purposes</div>' : ''}
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+            `;
+
+            // Created event
+            if (timeline.created_at) {
+                console.log('Rendering created event');
+                html += `
+                    <div class="timeline-event">
+                        <div class="timeline-event-header">
+                            <span class="timeline-icon">[CREATED]</span>
+                            <span class="timeline-title">Honeytoken Created</span>
+                            <span class="timeline-time">${formatTimestamp(timeline.created_at)}</span>
+                        </div>
+                        <div class="timeline-details">
+                            <div class="timeline-details-row">
+                                <span class="timeline-label">Type:</span>
+                                <span class="timeline-value">${formatBaitType(timeline.bait_type)}</span>
+                            </div>
+                            <div class="timeline-details-row">
+                                <span class="timeline-label">Identifier:</span>
+                                <span class="timeline-value">${timeline.identifier}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                console.log('No created_at timestamp found');
+            }
+
+            // Deployed event
+            if (timeline.seeded_at) {
+                console.log('Rendering deployed event');
+                html += `
+                    <div class="timeline-event">
+                        <div class="timeline-event-header">
+                            <span class="timeline-icon">[DEPLOYED]</span>
+                            <span class="timeline-title">Deployed to Public Surface</span>
+                            <span class="timeline-time">${formatTimestamp(timeline.seeded_at)}</span>
+                        </div>
+                        <div class="timeline-details">
+                            <div class="timeline-details-row">
+                                <span class="timeline-label">Location:</span>
+                                <span class="timeline-value">
+                                    ${timeline.seeded_location ? (timeline.seeded_location.includes('pastebin') ? 'Pastebin' : 'External') : 'Unknown'}
+                                </span>
+                            </div>
+                            ${timeline.seeded_location ? `
+                            <div class="timeline-details-row">
+                                <span class="timeline-label">URL:</span>
+                                <span class="timeline-value">
+                                    <a href="${timeline.seeded_location}" target="_blank" style="color: #D4AF37;">${timeline.seeded_location.substring(0, 50)}...</a>
+                                </span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                console.log('No seeded_at timestamp found');
+            }
+
+            // Access attempts
+            if (timeline.accesses && timeline.accesses.length > 0) {
+                console.log(`Rendering ${timeline.accesses.length} access attempts`);
+                timeline.accesses.forEach((access, index) => {
+                    console.log(`Access ${index}:`, access);
+                    const scanner = identifyScanner(access.user_agent);
+                    const eventId = `event-${index}`;
+
+                    html += `
+                        <div class="timeline-event triggered">
+                            <div class="timeline-event-header" onclick="toggleEventDetails('${eventId}')">
+                                <span class="timeline-icon">[ALERT]</span>
+                                <span class="timeline-title">Access Attempt Detected</span>
+                                <span class="expand-indicator" id="${eventId}-indicator">▼</span>
+                                <span class="timeline-time">${formatTimestamp(access.accessed_at)}</span>
+                            </div>
+                            <div id="${eventId}" class="expandable-details">
+                                <div class="timeline-details">
+                                    <div class="timeline-details-row">
+                                        <span class="timeline-label">Source IP:</span>
+                                        <span class="timeline-value">${access.source_ip}</span>
+                                    </div>
+                                    ${access.geolocation && access.geolocation !== 'Unknown' ? `
+                                    <div class="timeline-details-row">
+                                        <span class="timeline-label">Location:</span>
+                                        <span class="timeline-value">
+                                            ${getLocationFromGeo(access.geolocation)}
+                                        </span>
+                                    </div>
+                                    ` : ''}
+                                    <div class="timeline-details-row">
+                                        <span class="timeline-label">Scanner:</span>
+                                        <span class="timeline-value">
+                                            <span class="scanner-badge ${scanner.type}">${scanner.name}</span>
+                                            ${scanner.isAutomated ? '<span style="color: #ef4444; margin-left: 8px;">[Automated]</span>' : '<span style="color: #fbbf24; margin-left: 8px;">[Manual]</span>'}
+                                        </span>
+                                    </div>
+                                    <div class="timeline-details-row">
+                                        <span class="timeline-label">Threat Level:</span>
+                                        <span class="timeline-value">
+                                            <span class="threat-level ${access.threat_level}">${access.threat_level.toUpperCase()}</span>
+                                        </span>
+                                    </div>
+                                    <div class="timeline-details-row">
+                                        <span class="timeline-label">User Agent:</span>
+                                        <span class="timeline-value" style="font-size: 0.85em; word-break: break-all;">
+                                            ${access.user_agent || 'Unknown'}
+                                        </span>
+                                    </div>
+                                    ${access.request_type ? `
+                                    <div class="timeline-details-row">
+                                        <span class="timeline-label">Request Type:</span>
+                                        <span class="timeline-value">${access.request_type}</span>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <button class="check-ip-btn" onclick="checkIPReputation('${access.source_ip}', 'event-${index}')">
+                                    Check IP Reputation
+                                </button>
+                                <div id="ip-reputation-event-${index}" style="display: none;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                console.log('No access attempts found');
+                html += `
+                    <div class="timeline-event">
+                        <div class="timeline-event-header">
+                            <span class="timeline-icon">[INFO]</span>
+                            <span class="timeline-title">No Access Attempts Yet</span>
+                        </div>
+                        <div class="timeline-details">
+                            <div style="color: #888; font-size: 0.9em;">
+                                This honeytoken has not been accessed yet. When an attacker discovers and attempts to use it, the access will appear here.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += '</div>'; // Close timeline-container
+            console.log('Timeline HTML generated, length:', html.length);
+            container.innerHTML = html;
+            console.log('=== TIMELINE RENDERING COMPLETE ===\n');
+        }
+
+        // Toggle Event Details
+        function toggleEventDetails(eventId) {
+            const details = document.getElementById(eventId);
+            const indicator = document.getElementById(`${eventId}-indicator`);
+
+            if (details.classList.contains('expanded')) {
+                details.classList.remove('expanded');
+                indicator.textContent = '▼';
+            } else {
+                details.classList.add('expanded');
+                indicator.textContent = '▲';
+            }
+        }
+
+        // Extract Location from Geolocation String
+        function getLocationFromGeo(geolocation) {
+            if (!geolocation || geolocation === 'Unknown') return 'Unknown';
+
+            try {
+                const geo = JSON.parse(geolocation);
+                const city = geo.city || '';
+                const country = geo.country || '';
+
+                return `${city ? city + ', ' : ''}${country}`;
+            } catch (e) {
+                // If not JSON, try to parse as string
+                return geolocation;
+            }
+        }
+
+        // Render Attacker Intelligence
+        function renderAttackerIntelligence(timeline, identifier) {
+            const container = document.getElementById('attackerIntelligence');
+
+            if (!timeline.accesses || timeline.accesses.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // Calculate intelligence
+            const totalAttempts = timeline.accesses.length;
+            const uniqueIPs = [...new Set(timeline.accesses.map(a => a.source_ip))];
+            const countries = new Set();
+            const scanners = new Set();
+            let automatedCount = 0;
+            let manualCount = 0;
+
+            timeline.accesses.forEach(access => {
+                // Extract country
+                if (access.geolocation && access.geolocation !== 'Unknown') {
+                    try {
+                        const geo = JSON.parse(access.geolocation);
+                        if (geo.country) countries.add(geo.country);
+                    } catch (e) {}
+                }
+
+                // Identify scanner
+                const scanner = identifyScanner(access.user_agent);
+                scanners.add(scanner.name);
+                if (scanner.isAutomated) {
+                    automatedCount++;
+                } else {
+                    manualCount++;
+                }
+            });
+
+            // Calculate time to first discovery
+            let timeToDiscovery = 'N/A';
+            if (timeline.seeded_at && timeline.first_access) {
+                const seeded = new Date(timeline.seeded_at);
+                const firstAccess = new Date(timeline.first_access);
+                const diffMs = firstAccess - seeded;
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffDays = Math.floor(diffHours / 24);
+
+                if (diffDays > 0) {
+                    timeToDiscovery = `${diffDays}d ${diffHours % 24}h`;
+                } else {
+                    timeToDiscovery = `${diffHours}h`;
+                }
+            }
+
+            // Determine attack pattern
+            const attackPattern = automatedCount > manualCount ? 'Automated' : (manualCount > automatedCount ? 'Manual' : 'Mixed');
+            const isDemo = timeline.is_demo || identifier === DEMO_TOKEN_ID;
+
+            let html = `
+                <div class="intelligence-section">
+                    <div class="intelligence-title">Attacker Intelligence Summary</div>
+                    ${isDemo ? '<div class="demo-notice" style="margin: 10px 0;">This intelligence summary is based on example attack patterns</div>' : ''}
+
+                    <div class="intelligence-grid">
+                        <div class="intelligence-item">
+                            <div class="intelligence-item-label">Total Attempts</div>
+                            <div class="intelligence-item-value">${totalAttempts}</div>
+                        </div>
+                        <div class="intelligence-item">
+                            <div class="intelligence-item-label">Unique IPs</div>
+                            <div class="intelligence-item-value">${uniqueIPs.length}</div>
+                        </div>
+                        <div class="intelligence-item">
+                            <div class="intelligence-item-label">Countries</div>
+                            <div class="intelligence-item-value">${countries.size}</div>
+                        </div>
+                        <div class="intelligence-item">
+                            <div class="intelligence-item-label">Time to Discovery</div>
+                            <div class="intelligence-item-value">${timeToDiscovery}</div>
+                        </div>
+                    </div>
+
+                    <div class="intelligence-list">
+                        <div class="intelligence-list-title">Unique IP Addresses</div>
+                        <div class="intelligence-list-items">
+                            ${uniqueIPs.slice(0, 10).map(ip => `<div class="intelligence-chip">${ip}</div>`).join('')}
+                            ${uniqueIPs.length > 10 ? `<div class="intelligence-chip">+${uniqueIPs.length - 10} more</div>` : ''}
+                        </div>
+                    </div>
+
+                    ${countries.size > 0 ? `
+                    <div class="intelligence-list">
+                        <div class="intelligence-list-title">Countries Attacked From</div>
+                        <div class="intelligence-list-items">
+                            ${[...countries].map(country => `<div class="intelligence-chip">${getCountryFlag(country)} ${country}</div>`).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="intelligence-list">
+                        <div class="intelligence-list-title">Scanners Detected</div>
+                        <div class="intelligence-list-items">
+                            ${[...scanners].map(scanner => `<div class="intelligence-chip">${scanner}</div>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="intelligence-list">
+                        <div class="intelligence-list-title">Attack Pattern</div>
+                        <div class="intelligence-list-items">
+                            <div class="intelligence-chip">
+                                ${attackPattern}
+                                (${automatedCount} automated, ${manualCount} manual)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -1401,8 +2477,138 @@
             }, 3000);
         }
 
+        // Check IP Reputation
+        async function checkIPReputation(ip, eventId) {
+            const button = event.target;
+            const container = document.getElementById(`ip-reputation-${eventId}`);
+
+            // If already showing, hide it
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                button.textContent = '🔍 Check IP Reputation';
+                return;
+            }
+
+            // Show loading state
+            button.disabled = true;
+            button.textContent = '⏳ Checking...';
+
+            try {
+                console.log('Checking IP reputation for:', ip);
+
+                const response = await fetch(`${API_URL}/api/ghost/bait/check-ip/${ip}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayIPReputation(data, container);
+                    container.style.display = 'block';
+                    button.textContent = 'IP Reputation Checked';
+                    showToast('IP reputation check complete', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to check IP reputation');
+                }
+            } catch (error) {
+                console.error('IP reputation check error:', error);
+                showToast('Error checking IP reputation: ' + error.message, 'error');
+                button.textContent = '🔍 Check IP Reputation';
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // Display IP Reputation Results
+        function displayIPReputation(data, container) {
+            // Determine threat badge class
+            let threatClass = 'clean';
+            if (data.threat_assessment === 'Known Scanner') {
+                threatClass = 'scanner';
+            } else if (data.threat_assessment === 'Suspicious') {
+                threatClass = 'suspicious';
+            }
+
+            let html = `
+                <div class="ip-reputation-container">
+                    <div class="ip-reputation-title">
+                        <span>🛡️ IP Reputation Report</span>
+                        <span class="ip-reputation-badge ${threatClass}">${data.threat_assessment}</span>
+                    </div>
+
+                    <div class="ip-reputation-grid">
+                        <div class="ip-reputation-item">
+                            <span class="ip-reputation-label">Location:</span>
+                            <span class="ip-reputation-value">${data.city}, ${data.country}</span>
+                        </div>
+
+                        <div class="ip-reputation-item">
+                            <span class="ip-reputation-label">Company:</span>
+                            <span class="ip-reputation-value">${data.company || data.isp}</span>
+                        </div>
+
+                        <div class="ip-reputation-item">
+                            <span class="ip-reputation-label">Total Hits:</span>
+                            <span class="ip-reputation-value">${data.hits_on_other_baits}</span>
+                        </div>
+
+                        <div class="ip-reputation-item">
+                            <span class="ip-reputation-label">Unique Baits:</span>
+                            <span class="ip-reputation-value">${data.unique_baits_hit}</span>
+                        </div>
+                    </div>
+
+                    <div class="ip-reputation-flags">
+            `;
+
+            // Add warning flags
+            if (data.is_vpn) {
+                html += '<div class="ip-flag warning">[VPN] VPN Detected</div>';
+            }
+            if (data.is_proxy) {
+                html += '<div class="ip-flag warning">[PROXY] Proxy Detected</div>';
+            }
+            if (data.is_hosting) {
+                html += '<div class="ip-flag warning">[HOSTING] Hosting Provider</div>';
+            }
+            if (data.is_mobile) {
+                html += '<div class="ip-flag">[MOBILE] Mobile Network</div>';
+            }
+            if (data.hits_on_other_baits >= 5) {
+                html += '<div class="ip-flag danger">[ALERT] Known Scanner</div>';
+            } else if (data.hits_on_other_baits >= 2) {
+                html += '<div class="ip-flag warning">[WARNING] Multiple Attempts</div>';
+            }
+
+            html += '</div>';
+
+            // Show baits hit if any
+            if (data.baits_hit && data.baits_hit.length > 0) {
+                html += `
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(212, 175, 55, 0.2);">
+                        <div style="color: #888; font-size: 0.85em; margin-bottom: 6px;">
+                            Other Baits Hit by This IP:
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                `;
+
+                data.baits_hit.forEach(bait => {
+                    html += `<div class="intelligence-chip" style="font-size: 0.8em;">${bait}</div>`;
+                });
+
+                html += '</div></div>';
+            }
+
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
         // Delete Bait Function
         async function deleteBait(identifier) {
+            // Prevent deletion of demo token
+            if (identifier === DEMO_TOKEN_ID) {
+                showToast('Demo token cannot be deleted', 'error');
+                return;
+            }
+
             if (!confirm(`Delete honeytoken ${identifier}? This cannot be undone.`)) {
                 return;
             }
@@ -1483,9 +2689,23 @@
             cards.forEach(card => {
                 const text = card.textContent.toLowerCase();
                 const baitType = card.getAttribute('data-bait-type');
+                const serviceName = card.getAttribute('data-service-name');
 
                 const matchesSearch = searchTerm === '' || text.includes(searchTerm);
-                const matchesType = typeFilter === '' || baitType === typeFilter;
+
+                // Enhanced type matching: check both bait_type and service_name
+                let matchesType = typeFilter === '';
+                if (!matchesType) {
+                    // Direct type match
+                    matchesType = baitType === typeFilter;
+
+                    // If filtering by api_token service (e.g., "stripe_token"),
+                    // also match api_token with matching service_name
+                    if (!matchesType && typeFilter.endsWith('_token') && serviceName) {
+                        const serviceFromFilter = typeFilter.replace('_token', '');
+                        matchesType = (baitType === 'api_token' && serviceName === serviceFromFilter);
+                    }
+                }
 
                 card.style.display = (matchesSearch && matchesType) ? 'block' : 'none';
             });
@@ -1499,6 +2719,300 @@
                 statLabels[3].textContent = 'TRIGGERED TODAY';
             }
         });
+
+        // Tutorial Modal Functions
+        function showTutorial() {
+            document.getElementById('tutorialModal').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('tutorialModal').style.opacity = '1';
+            }, 10);
+        }
+
+        function closeTutorial() {
+            const modal = document.getElementById('tutorialModal');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        // Close on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeTutorial();
+            }
+        });
+
+        // Deployment Target Change Handler
+        document.getElementById('deploymentTarget').addEventListener('change', function(e) {
+            const target = e.target.value;
+            const manualArea = document.getElementById('manualDeploymentArea');
+            const deployBtn = document.getElementById('deployBtn');
+
+            if (target === 'manual') {
+                manualArea.style.display = 'block';
+                deployBtn.textContent = 'Mark as Deployed';
+                generateManualConfig();
+            } else {
+                manualArea.style.display = 'none';
+                if (target.startsWith('pastebin')) {
+                    deployBtn.textContent = '📤 Deploy to Pastebin';
+                } else if (target.startsWith('github')) {
+                    deployBtn.textContent = '📤 Deploy to GitHub Gist';
+                }
+            }
+        });
+
+        // Generate Manual Configuration
+        function generateManualConfig() {
+            if (!currentGeneratedBait) return;
+
+            const cred = currentGeneratedBait;
+            let config = '';
+
+            if (cred.type === 'aws_credentials') {
+                config = `# AWS Configuration
+# Generated: ${new Date().toISOString()}
+# DO NOT COMMIT TO VERSION CONTROL
+
+[default]
+aws_access_key_id = ${cred.aws_access_key_id}
+aws_secret_access_key = ${cred.aws_secret_access_key}
+region = ${cred.region}
+
+# Account ID: ${cred.account_id}
+`;
+            } else if (cred.type === 'api_token') {
+                config = `# ${cred.service_name.toUpperCase()} API Configuration
+# Generated: ${new Date().toISOString()}
+# CONFIDENTIAL - DO NOT SHARE
+
+${cred.service_name.toUpperCase()}_API_KEY=${cred.token}
+${cred.service_name.toUpperCase()}_API_SECRET=${cred.token}
+
+# Service: ${cred.service_name}
+`;
+            } else if (cred.type === 'database_credentials') {
+                config = `# Database Configuration
+# Generated: ${new Date().toISOString()}
+# PRODUCTION CREDENTIALS - KEEP SECURE
+
+DB_TYPE=${cred.db_type}
+DB_HOST=${cred.host}
+DB_PORT=${cred.port}
+DB_NAME=${cred.database}
+DB_USER=${cred.username}
+DB_PASSWORD=${cred.password}
+
+DATABASE_URL=${cred.connection_string}
+`;
+            } else if (cred.type === 'ssh_key') {
+                config = `# SSH Private Key
+# ${cred.key_comment}
+# DO NOT SHARE
+
+${cred.private_key}
+
+# Public Key:
+# ${cred.public_key}
+`;
+            } else {
+                config = JSON.stringify(cred, null, 2);
+            }
+
+            document.getElementById('manualConfigDisplay').textContent = config;
+        }
+
+        // Copy Manual Configuration
+        async function copyManualConfig() {
+            const config = document.getElementById('manualConfigDisplay').textContent;
+            try {
+                await navigator.clipboard.writeText(config);
+                showToast('Configuration copied to clipboard!', 'success');
+            } catch (error) {
+                showToast('Failed to copy configuration', 'error');
+            }
+        }
+
+        // Deployment Modal Functions
+        let currentDeployIdentifier = null;
+
+        function openDeployModal(identifier) {
+            currentDeployIdentifier = identifier;
+            const modal = document.getElementById('deployModal');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.style.opacity = '1';
+            }, 10);
+
+            // Reset form
+            document.getElementById('deployTitle').value = '';
+            document.getElementById('deployTarget').value = 'pastebin';
+        }
+
+        function closeDeployModal() {
+            const modal = document.getElementById('deployModal');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+            currentDeployIdentifier = null;
+        }
+
+        async function submitDeployment() {
+            if (!currentDeployIdentifier) {
+                showToast('No token selected for deployment', 'error');
+                return;
+            }
+
+            const title = document.getElementById('deployTitle').value.trim();
+            const target = document.getElementById('deployTarget').value;
+
+            if (!title) {
+                showToast('Please enter a title for the deployment', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/bait/deploy`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        identifier: currentDeployIdentifier,
+                        title: title,
+                        target: target
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Honeytoken deployed successfully!', 'success');
+                    closeDeployModal();
+
+                    // Reload honeytokens to show updated deployment status
+                    setTimeout(() => {
+                        loadActiveHoneytokens();
+                    }, 500);
+                } else {
+                    throw new Error(data.error || 'Failed to deploy honeytoken');
+                }
+            } catch (error) {
+                console.error('Deploy error:', error);
+                showToast('Error deploying honeytoken: ' + error.message, 'error');
+            }
+        }
     </script>
+
+    <!-- Deployment Modal -->
+    <div id="deployModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 2000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s;" onclick="event.target === this && closeDeployModal()">
+        <div style="background: #000; border: 2px solid #D4AF37; border-radius: 12px; max-width: 500px; width: 90%; padding: 30px; position: relative; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3);" onclick="event.stopPropagation()">
+            <button onclick="closeDeployModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #D4AF37; font-size: 1.5em; cursor: pointer; padding: 5px 10px;">×</button>
+
+            <h2 style="color: #D4AF37; font-size: 1.5em; margin-bottom: 20px;">Deploy Honeytoken</h2>
+
+            <div style="color: #aaa; margin-bottom: 20px; font-size: 0.9em;">
+                Deploy this honeytoken to a public location where attackers might discover it.
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #D4AF37; margin-bottom: 8px; font-size: 0.9em;">Deployment Title</label>
+                <input type="text" id="deployTitle" placeholder="e.g., Production AWS Keys Backup" style="width: 100%; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; color: #fff; font-size: 1em;">
+                <div style="color: #888; font-size: 0.8em; margin-top: 5px;">Make it look realistic to attract attackers</div>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; color: #D4AF37; margin-bottom: 8px; font-size: 0.9em;">Deployment Target</label>
+                <select id="deployTarget" style="width: 100%; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; color: #fff; font-size: 1em;">
+                    <option value="pastebin">Pastebin (Automatic)</option>
+                    <option value="manual">Manual (Copy & Deploy Yourself)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="submitDeployment()" style="flex: 1; padding: 12px; background: rgba(212, 175, 55, 0.1); border: 1px solid #D4AF37; border-radius: 6px; color: #D4AF37; font-size: 1em; cursor: pointer; font-weight: 600;">
+                    Deploy Now
+                </button>
+                <button onclick="closeDeployModal()" style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; color: #aaa; font-size: 1em; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div id="tutorialModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 2000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s;" onclick="event.target === this && closeTutorial()">
+        <div style="background: #000; border: 2px solid #D4AF37; border-radius: 12px; max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 40px; position: relative; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3);">
+            <button onclick="closeTutorial()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: #D4AF37; font-size: 1.5em; cursor: pointer; padding: 5px 10px;">×</button>
+
+            <h2 style="color: #D4AF37; font-size: 2em; margin-bottom: 20px;">BAIT Module Tutorial</h2>
+
+            <div style="color: #aaa; line-height: 1.8;">
+                <h3 style="color: #D4AF37; margin-top: 25px; margin-bottom: 15px;">📚 WHAT IS BAIT?</h3>
+                <p>BAIT (Breadcrumb Analysis & Intelligence Tracking) is a reality-integrated honeytoken system. Unlike traditional honeypots that create fake infrastructure, BAIT deploys fake credentials into real-world locations where attackers actually hunt for secrets: GitHub repositories, Pastebin dumps, Discord servers, and misconfigured S3 buckets.</p>
+                <p>When an attacker discovers and tries to use your honeytoken, you get immediate notification with full context: their IP address, location, tools they're using, and behavioral patterns. This provides concrete evidence of active targeting and helps you understand real-world attacker tradecraft.</p>
+
+                <h3 style="color: #D4AF37; margin-top: 25px; margin-bottom: 15px;">🎯 HOW TO USE BAIT:</h3>
+
+                <div style="background: rgba(212, 175, 55, 0.05); border-left: 3px solid #D4AF37; padding: 15px; margin: 15px 0;">
+                    <h4 style="color: #D4AF37; margin-bottom: 10px;">Step 1: Generate a Honeytoken</h4>
+                    <p>Choose a credential type that matches your threat model:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>AWS Keys:</strong> Perfect for cloud-targeting attackers</li>
+                        <li><strong>API Tokens:</strong> Attracts data scrapers and credential stuffers</li>
+                        <li><strong>Database Credentials:</strong> Catches SQL injection and database scanners</li>
+                        <li><strong>SSH Keys:</strong> Identifies lateral movement attempts</li>
+                    </ul>
+                    <p>Each credential contains a unique tracking identifier that's invisible to attackers but allows us to trace usage back to your specific deployment.</p>
+                </div>
+
+                <div style="background: rgba(212, 175, 55, 0.05); border-left: 3px solid #D4AF37; padding: 15px; margin: 15px 0;">
+                    <h4 style="color: #D4AF37; margin-bottom: 10px;">Step 2: Deploy to Public Surface</h4>
+                    <p>Post your honeytoken where attackers are actively searching:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Pastebin:</strong> One of the largest sources of leaked credentials</li>
+                        <li><strong>GitHub Gists:</strong> Attackers scan for accidentally committed secrets</li>
+                        <li><strong>Manual Deployment:</strong> Post to forums, Discord, Slack, or anywhere</li>
+                    </ul>
+                    <p>Make it look realistic! Use titles like "Production AWS Backup" or "Database Config - DO NOT SHARE" to increase authenticity.</p>
+                </div>
+
+                <div style="background: rgba(212, 175, 55, 0.05); border-left: 3px solid #D4AF37; padding: 15px; margin: 15px 0;">
+                    <h4 style="color: #D4AF37; margin-bottom: 10px;">Step 3: Monitor for Detection</h4>
+                    <p>Watch the "Deployed Honeytokens" panel:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>🟢 ACTIVE:</strong> Deployed and monitoring (no one has tried it yet)</li>
+                        <li><strong>🔴 TRIGGERED:</strong> Someone attempted to use your honeytoken!</li>
+                    </ul>
+                    <p>The "Threat Detection Feed" shows real-time alerts as attackers discover your baits. You'll see their IP addresses, geolocation, and what tools they're using (curl, Python scripts, AWS CLI, etc.).</p>
+                </div>
+
+                <div style="background: rgba(212, 175, 55, 0.05); border-left: 3px solid #D4AF37; padding: 15px; margin: 15px 0;">
+                    <h4 style="color: #D4AF37; margin-bottom: 10px;">Step 4: Analyze Attacker Behavior</h4>
+                    <p>Click "View Timeline" on any triggered honeytoken to see:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Timeline:</strong> Every access attempt with timestamps</li>
+                        <li><strong>Geolocation Data:</strong> Where attackers are operating from</li>
+                        <li><strong>Tool Fingerprinting:</strong> What scanners and automation they use</li>
+                        <li><strong>Threat Scoring:</strong> Automated risk assessment (LOW/MEDIUM/HIGH/CRITICAL)</li>
+                    </ul>
+                    <p>Use this intelligence to understand if you're being actively targeted, what tactics attackers are using, and whether they're sophisticated threat actors or opportunistic script kiddies.</p>
+                </div>
+
+                <h3 style="color: #D4AF37; margin-top: 25px; margin-bottom: 15px;">🎯 WHY THIS MATTERS:</h3>
+                <p>Traditional security is reactive - you only find out about breaches after damage is done. BAIT is proactive threat intelligence. You're not waiting for attackers to compromise real systems; you're observing them in controlled conditions. This gives you:</p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Early Warning:</strong> Know you're being targeted before real credentials are stolen</li>
+                    <li><strong>Attribution Data:</strong> IP addresses, geolocation, and TTPs for incident response</li>
+                    <li><strong>Threat Intelligence:</strong> Understand attacker tools, techniques, and procedures</li>
+                    <li><strong>Legal Evidence:</strong> Concrete proof of unauthorized access attempts</li>
+                </ul>
+            </div>
+
+            <button onclick="closeTutorial()" class="deploy-btn" style="width: 100%; margin-top: 25px;">Got It!</button>
+        </div>
+    </div>
 </body>
 </html>

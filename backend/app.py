@@ -1,15 +1,18 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from database import get_db, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess
+from database import get_db, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding
 from modules.ghost.osint import scan_profile_breaches
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import func, distinct
 from modules.ghost.unified_search import UnifiedSearch
 from modules.ghost.adversary_matcher import AdversaryMatcher
 from modules.ghost.bait_generator import BaitGenerator
 from modules.ghost.bait_seeder import BaitSeeder
+import re
+import secrets
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -776,8 +779,256 @@ def check_ip_reputation(ip):
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ============================================================================
+# FILE UPLOAD ENDPOINTS
+# ============================================================================
+
+# Ensure upload directory exists
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'uploaded_files')
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def cleanup_old_files():
+    """Delete files older than 24 hours"""
+    try:
+        db = get_db()
+        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+
+        # Find old uploads
+        old_uploads = db.query(UploadedFile).filter(
+            UploadedFile.upload_time < cutoff_time
+        ).all()
+
+        for upload in old_uploads:
+            print(f"[CLEANUP] Deleting old upload: {upload.upload_id}")
+
+            # Delete physical file
+            if os.path.exists(upload.file_path):
+                os.remove(upload.file_path)
+                print(f"[CLEANUP] Deleted file: {upload.file_path}")
+
+            # Delete credentials (cascade should handle this)
+            db.query(UploadedCredential).filter(
+                UploadedCredential.upload_id == upload.upload_id
+            ).delete()
+
+            # Delete database record
+            db.delete(upload)
+
+        db.commit()
+        db.close()
+
+        if old_uploads:
+            print(f"[CLEANUP] Cleaned up {len(old_uploads)} old uploads")
+
+    except Exception as e:
+        print(f"[CLEANUP] Error during cleanup: {e}")
+        if db:
+            db.close()
+
+@app.route('/api/ghost/upload-breach-file', methods=['POST'])
+def upload_breach_file():
+    """Upload and parse a breach compilation file"""
+    db = None
+    try:
+        print(f"\n{'='*60}")
+        print(f"[UPLOAD] Starting file upload...")
+
+        # Check if file is in request
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+        file = request.files['file']
+
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        # Check file extension
+        allowed_extensions = {'.txt', '.csv'}
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid file type. Allowed: {", ".join(allowed_extensions)}'
+            }), 400
+
+        # Generate unique upload ID
+        timestamp = int(time.time())
+        random_str = secrets.token_hex(4)
+        upload_id = f"upload_{timestamp}_{random_str}"
+
+        # Save file
+        file_path = os.path.join(UPLOAD_DIR, f"{upload_id}{file_ext}")
+        file.save(file_path)
+        file_size = os.path.getsize(file_path)
+
+        print(f"[UPLOAD] File saved: {file_path}")
+        print(f"[UPLOAD] File size: {file_size} bytes")
+
+        # Parse file line by line
+        print(f"[UPLOAD] Parsing credentials...")
+
+        db = get_db()
+
+        # Create UploadedFile record
+        uploaded_file = UploadedFile(
+            upload_id=upload_id,
+            filename=file.filename,
+            file_path=file_path,
+            file_size_bytes=file_size,
+            upload_time=datetime.utcnow()
+        )
+
+        db.add(uploaded_file)
+        db.flush()  # Get the ID without committing
+
+        # Parse file
+        line_count = 0
+        parsed_count = 0
+
+        # Patterns to match: email:password, email;password, email|password
+        patterns = [
+            r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})[:|;](.+)',  # email:pass or email;pass or email|pass
+            r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})',  # just email
+        ]
+
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            for line_number, line in enumerate(f, 1):
+                line_count += 1
+                line = line.strip()
+
+                if not line:
+                    continue
+
+                # Try to match patterns
+                matched = False
+                for pattern in patterns:
+                    match = re.match(pattern, line)
+                    if match:
+                        email = match.group(1)
+                        password = match.group(2) if len(match.groups()) > 1 else None
+
+                        # Store in database
+                        credential = UploadedCredential(
+                            upload_id=upload_id,
+                            email=email,
+                            password=password,
+                            line_number=line_number
+                        )
+                        db.add(credential)
+                        parsed_count += 1
+                        matched = True
+                        break
+
+                # Batch commit every 1000 lines for performance
+                if line_count % 1000 == 0:
+                    db.commit()
+                    print(f"[UPLOAD] Processed {line_count} lines, parsed {parsed_count} credentials...")
+
+        # Final commit
+        uploaded_file.line_count = line_count
+        uploaded_file.parsed_credential_count = parsed_count
+        db.commit()
+
+        print(f"[UPLOAD] ✓ Upload complete!")
+        print(f"[UPLOAD] Total lines: {line_count}")
+        print(f"[UPLOAD] Parsed credentials: {parsed_count}")
+        print(f"{'='*60}\n")
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'upload_id': upload_id,
+            'filename': file.filename,
+            'line_count': line_count,
+            'parsed_credential_count': parsed_count,
+            'file_size_bytes': file_size
+        }), 201
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[UPLOAD] ❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ghost/search-uploaded-file', methods=['POST'])
+def search_uploaded_file():
+    """Search an uploaded file for credentials"""
+    db = None
+    try:
+        data = request.json
+        upload_id = data.get('upload_id', '').strip()
+        query = data.get('query', '').strip().lower()
+
+        if not upload_id:
+            return jsonify({'success': False, 'error': 'upload_id is required'}), 400
+
+        if not query:
+            return jsonify({'success': False, 'error': 'query is required'}), 400
+
+        print(f"\n[SEARCH UPLOAD] Searching upload {upload_id} for: {query}")
+
+        db = get_db()
+
+        # Check if upload exists
+        uploaded_file = db.query(UploadedFile).filter(
+            UploadedFile.upload_id == upload_id
+        ).first()
+
+        if not uploaded_file:
+            db.close()
+            return jsonify({'success': False, 'error': 'Upload not found'}), 404
+
+        # Search credentials
+        results = db.query(UploadedCredential).filter(
+            UploadedCredential.upload_id == upload_id,
+            func.lower(UploadedCredential.email).contains(query)
+        ).limit(100).all()  # Limit to 100 results
+
+        # Format results in same format as unified_search
+        credentials = []
+        for cred in results:
+            credentials.append({
+                'email': cred.email,
+                'password': cred.password or 'N/A',
+                'source': 'User Upload',
+                'line_number': cred.line_number
+            })
+
+        print(f"[SEARCH UPLOAD] Found {len(credentials)} results")
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'query': query,
+            'credentials': credentials,
+            'total_found': len(credentials),
+            'upload_info': {
+                'filename': uploaded_file.filename,
+                'upload_time': uploaded_file.upload_time.isoformat() if uploaded_file.upload_time else None,
+                'total_credentials': uploaded_file.parsed_credential_count
+            }
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[SEARCH UPLOAD] ❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("Ghost backend starting...")
+
+    # Run cleanup on startup
+    print("[STARTUP] Running cleanup for old uploaded files...")
+    cleanup_old_files()
+
     print("API running at http://localhost:5000")
     print("Press Ctrl+C to stop")
     app.run(debug=True, port=5000, host='127.0.0.1')

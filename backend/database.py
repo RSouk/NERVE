@@ -102,6 +102,63 @@ class BaitAccess(Base):
     # Relationship to bait token
     bait_token = relationship('BaitToken', back_populates='accesses')
 
+class UploadedFile(Base):
+    __tablename__ = 'uploaded_files'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    upload_id = Column(String, unique=True, nullable=False, index=True)  # format: "upload_timestamp_randomstring"
+    filename = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)  # path to stored file
+    upload_time = Column(DateTime, default=datetime.utcnow)
+    line_count = Column(Integer, default=0)
+    parsed_credential_count = Column(Integer, default=0)
+    file_size_bytes = Column(Integer, default=0)
+
+    # Relationship to credentials
+    credentials = relationship('UploadedCredential', back_populates='uploaded_file', cascade='all, delete-orphan')
+
+class UploadedCredential(Base):
+    __tablename__ = 'uploaded_credentials'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    upload_id = Column(String, ForeignKey('uploaded_files.upload_id'), nullable=False, index=True)
+    email = Column(String, nullable=False, index=True)  # indexed for fast searching
+    password = Column(String)
+    additional_data = Column(Text)  # any extra fields from the line
+    line_number = Column(Integer)
+
+    # Relationship to uploaded file
+    uploaded_file = relationship('UploadedFile', back_populates='credentials')
+
+class GitHubFinding(Base):
+    __tablename__ = 'github_findings'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    gist_id = Column(String, unique=True, nullable=False, index=True)  # GitHub gist ID
+    gist_url = Column(String, nullable=False)
+    filename = Column(String)
+    created_at = Column(DateTime)  # when the gist was created
+    query_term = Column(String, index=True)  # the email/api_key/credential found
+    query_type = Column(String, index=True)  # email, api_key, database, password
+    credential_type = Column(String)  # aws_key, stripe_token, password, github_token, etc
+    credential_value = Column(Text)  # the actual credential/password
+    context = Column(Text)  # surrounding 500 chars
+    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+
+class PasteBinFinding(Base):
+    __tablename__ = 'pastebin_findings'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    paste_id = Column(String, unique=True, nullable=False, index=True)  # 8 char PasteBin ID
+    paste_title = Column(String)
+    paste_url = Column(String, nullable=False)
+    posted_date = Column(String)  # date from archive page
+    query_term = Column(String, index=True)  # email/domain/username found
+    query_type = Column(String, index=True)  # email, domain, username, password
+    credential_password = Column(String)  # password if found
+    context = Column(Text)  # surrounding 500 chars
+    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+
 def init_db():
     """Initialize the database and create all tables"""
     Base.metadata.create_all(engine)

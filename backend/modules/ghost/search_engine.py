@@ -62,14 +62,18 @@ def get_applicable_sources(search_type: str) -> List[str]:
             'leakcheck',
             'breachdirectory',
             'intelligence_x',
-            'local_files'
+            'local_files',
+            'github',
+            'pastebin'
         ],
         'domain': [
             'hudson_rock',
             'breachdirectory',
             'intelligence_x',
             'urlscan',
-            'certificate_transparency'
+            'certificate_transparency',
+            'github',
+            'pastebin'
         ],
         'ip': [
             'hudson_rock',
@@ -85,16 +89,21 @@ def get_applicable_sources(search_type: str) -> List[str]:
             'hudson_rock',
             'intelligence_x',
             'local_files',
-            'sherlock'
+            'sherlock',
+            'github',
+            'pastebin'
         ],
         'password': [
             'hudson_rock',
-            'local_files'
+            'local_files',
+            'github',
+            'pastebin'
         ],
         'keyword': [
             'hudson_rock',
             'intelligence_x',
-            'pastebin'
+            'pastebin',
+            'github'
         ]
     }
     

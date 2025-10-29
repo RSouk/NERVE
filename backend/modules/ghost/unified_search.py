@@ -2,8 +2,8 @@ import time
 from typing import Dict, List
 from modules.ghost.search_engine import analyze_query
 from modules.ghost.hudson_rock import (
-    search_by_email, 
-    search_by_domain, 
+    search_by_email,
+    search_by_domain,
     search_by_password,
     search_by_username,
     search_by_ip,
@@ -12,7 +12,9 @@ from modules.ghost.hudson_rock import (
 from modules.ghost.api_breaches import check_leakcheck_api, check_breachdirectory_api
 from modules.ghost.breach_checker import check_local_breaches
 from modules.ghost.intelligence_x import search_email_intelx, search_domain_intelx, search_keyword_intelx
+from modules.ghost.hibp_passwords import check_password_pwned
 from datetime import datetime
+from database import get_db, GitHubFinding, PasteBinFinding
 
 class UnifiedSearch:
     """
@@ -99,34 +101,51 @@ class UnifiedSearch:
         self._query_source('breachdirectory', lambda: self._breachdirectory_search(email))
         self._query_source('intelligence_x', lambda: self._intelx_email_search(email))
         self._query_source('local_files', lambda: self._local_search(email))
+        self._query_source('github', lambda: self._search_github_data(email, 'email'))
+        self._query_source('pastebin', lambda: self._search_pastebin_data(email, 'email'))
     
     def _search_domain(self, domain: str):
         """Search all domain-capable sources"""
         print("🔍 Searching domain across sources...\n")
-        
+
         # Hudson Rock domain search
         self._query_source('hudson_rock', lambda: self._hudson_rock_domain(domain))
-        
+
         # BreachDirectory can also search domains
         self._query_source('breachdirectory', lambda: self._breachdirectory_search(domain))
+
+        # GitHub and PasteBin domain search
+        self._query_source('github', lambda: self._search_github_data(domain, 'domain'))
+        self._query_source('pastebin', lambda: self._search_pastebin_data(domain, 'domain'))
     
     def _search_password(self, password: str):
         """Search password across sources"""
         print("🔍 Searching password across sources...\n")
-        
+
         # Hudson Rock password search
         self._query_source('hudson_rock', lambda: self._hudson_rock_password(password))
-        
+
+        # Have I Been Pwned Passwords API check
+        self._query_source('pwned_passwords', lambda: self._check_pwned_password(password))
+
+        # GitHub and PasteBin password search
+        self._query_source('github', lambda: self._search_github_data(password, 'password'))
+        self._query_source('pastebin', lambda: self._search_pastebin_data(password, 'password'))
+
         # Local files (if implemented)
         # self._query_source('local_files', lambda: self._local_password_search(password))
     
     def _search_username(self, username: str):
         """Search username across sources"""
         print("🔍 Searching username across sources...\n")
-        
+
         # Hudson Rock username search
         self._query_source('hudson_rock', lambda: self._hudson_rock_username(username))
-        
+
+        # GitHub and PasteBin username search
+        self._query_source('github', lambda: self._search_github_data(username, 'username'))
+        self._query_source('pastebin', lambda: self._search_pastebin_data(username, 'username'))
+
         # Local files
         # self._query_source('local_files', lambda: self._local_username_search(username))
     
@@ -140,9 +159,13 @@ class UnifiedSearch:
     def _search_keyword(self, keyword: str):
         """Search keyword across sources"""
         print("🔍 Searching keyword across sources...\n")
-        
+
         # Hudson Rock keyword search
         self._query_source('hudson_rock', lambda: self._hudson_rock_keyword(keyword))
+
+        # GitHub and PasteBin keyword search
+        self._query_source('github', lambda: self._search_github_data(keyword, 'keyword'))
+        self._query_source('pastebin', lambda: self._search_pastebin_data(keyword, 'keyword'))
     
     def _search_generic(self, query: str):
         """Generic search when type is unclear"""
@@ -356,7 +379,7 @@ class UnifiedSearch:
     def _intelx_keyword_search(self, keyword: str):
         """Query Intelligence X for keyword"""
         results, count = search_keyword_intelx(keyword)
-        
+
         if count and count > 0:
             return {
                 'found': True,
@@ -365,7 +388,141 @@ class UnifiedSearch:
                 'type': 'intelx_records'
             }
         return {'found': False, 'count': 0}
-    
+
+    def _check_pwned_password(self, password: str):
+        """Query Have I Been Pwned Passwords API"""
+        breach_count = check_password_pwned(password)
+
+        # Handle API failure (None returned)
+        if breach_count is None:
+            return {
+                'found': False,
+                'count': 0,
+                'error': 'API unavailable',
+                'type': 'breach_count'
+            }
+
+        # Password found in breaches
+        if breach_count > 0:
+            return {
+                'found': True,
+                'count': breach_count,
+                'data': {
+                    'breach_count': breach_count,
+                    'severity': self._assess_password_severity(breach_count)
+                },
+                'type': 'breach_count'
+            }
+
+        # Password not found (safe)
+        return {
+            'found': True,
+            'count': 0,
+            'data': {
+                'breach_count': 0,
+                'severity': 'safe'
+            },
+            'type': 'breach_count'
+        }
+
+    def _assess_password_severity(self, count: int) -> str:
+        """Assess password breach severity based on count"""
+        if count == 0:
+            return 'safe'
+        elif count < 10:
+            return 'low'
+        elif count < 100:
+            return 'medium'
+        elif count < 1000:
+            return 'high'
+        elif count < 10000:
+            return 'very_high'
+        else:
+            return 'critical'
+
+    def _search_github_data(self, query: str, query_type: str):
+        """Query GitHub findings database"""
+        db = get_db()
+
+        try:
+            # Query based on query_term and query_type
+            findings = db.query(GitHubFinding).filter(
+                GitHubFinding.query_term.like(f'%{query}%'),
+                GitHubFinding.query_type == query_type
+            ).all()
+
+            if findings:
+                # Structure data to match expected format
+                structured_data = []
+                for finding in findings:
+                    structured_data.append({
+                        'source': 'GitHub',
+                        'url': finding.gist_url,
+                        'filename': finding.filename,
+                        'credential_type': finding.credential_type,
+                        'credential_value': finding.credential_value,
+                        'date': finding.created_at.isoformat() if finding.created_at else 'Unknown',
+                        'context': finding.context[:500] if finding.context else '',
+                        'discovered_at': finding.discovered_at.isoformat() if finding.discovered_at else 'Unknown'
+                    })
+
+                db.close()
+                return {
+                    'found': True,
+                    'count': len(findings),
+                    'data': structured_data,
+                    'type': 'github_exposure'
+                }
+
+            db.close()
+            return {'found': False, 'count': 0}
+
+        except Exception as e:
+            print(f"[ERROR] GitHub search failed: {e}")
+            db.close()
+            return {'found': False, 'count': 0, 'error': str(e)}
+
+    def _search_pastebin_data(self, query: str, query_type: str):
+        """Query PasteBin findings database"""
+        db = get_db()
+
+        try:
+            # Query based on query_term and query_type
+            findings = db.query(PasteBinFinding).filter(
+                PasteBinFinding.query_term.like(f'%{query}%'),
+                PasteBinFinding.query_type == query_type
+            ).all()
+
+            if findings:
+                # Structure data to match expected format
+                structured_data = []
+                for finding in findings:
+                    structured_data.append({
+                        'source': 'PasteBin',
+                        'url': finding.paste_url,
+                        'title': finding.paste_title,
+                        'credential_value': finding.credential_password if finding.credential_password else '',
+                        'date': finding.posted_date if finding.posted_date else 'Unknown',
+                        'context': finding.context[:500] if finding.context else '',
+                        'discovered_at': finding.discovered_at.isoformat() if finding.discovered_at else 'Unknown'
+                    })
+
+                db.close()
+                return {
+                    'found': True,
+                    'count': len(findings),
+                    'data': structured_data,
+                    'type': 'paste_exposure'
+                }
+
+            db.close()
+            return {'found': False, 'count': 0}
+
+        except Exception as e:
+            print(f"[ERROR] PasteBin search failed: {e}")
+            db.close()
+            return {'found': False, 'count': 0, 'error': str(e)}
+
     def _query_source(self, source_name: str, query_func):
         """
         Execute query against a source with error handling

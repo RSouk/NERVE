@@ -231,7 +231,18 @@ def analyze_adversary():
         })
         
     except Exception as e:
-        print(f"❌ Adversary analysis error: {e}")
+        import traceback
+        import sys
+
+        print("\n" + "="*80)
+        print("FULL ERROR TRACEBACK:")
+        traceback.print_exc(file=sys.stdout)
+        print("="*80)
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print(f"Request data: {request.json}")
+        print("="*80 + "\n")
+
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================================

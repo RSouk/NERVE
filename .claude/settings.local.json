@@ -4,7 +4,9 @@
       "Bash(python -m modules.ghost.hibp_passwords:*)",
       "Bash(python:*)",
       "Bash(del:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(pip install:*)",
+      "Bash(timeout 5 bash:*)"
     ],
     "deny": [],
     "ask": []

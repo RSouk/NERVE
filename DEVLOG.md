@@ -1067,4 +1067,235 @@ This is a complete, functional threat intelligence platform for credential secur
 **Status:** Module 1 (GHOST) - 100% complete, ready for enhancement phase
 **Next Decision:** Data sources vs UI polish vs Module 2
 **Blocker:** None - all core functionality operational
+
+📋 DEVLOG - Ghost Module Enhancements (Phase 2)
+
+MODULE 1: GHOST SEARCH ✅ Complete
+Original State:
+
+Hudson Rock, LeakCheck, BreachDirectory, Intelligence X APIs
+Basic unified search across sources
+No file upload capability
+Password searches existed but no breach count data
+
+Enhancements Added:
+
+HIBP Pwned Passwords Integration
+
+Free API, no key required
+Shows password breach count (0 to millions)
+Color-coded severity (green/yellow/orange/red)
+K-anonymity implementation (privacy-safe)
+
+
+GitHub Gist Scraper
+
+Scrapes public gists for leaked credentials
+Finds: emails, passwords, API keys, database credentials
+Stores in github_findings table
+Daily scraper: run_github_scraper.py
+Integrated into unified search results
+
+
+PasteBin Archive Scraper
+
+Scrapes pastebin.com/archive for breach posts
+Filters by keywords (combo, leak, breach, dump)
+Stores in pastebin_findings table
+Daily scraper: run_pastebin_scraper.py
+Integrated into unified search results
+
+
+Search My Files Feature
+
+Users upload breach compilations (.txt, .csv)
+Parse email:password combos
+Store in uploaded_files + uploaded_credentials tables
+Search uploaded files separately from global search
+Auto-delete after 24 hours (beta limitation)
+Unique feature competitors don't have
+
+
+Automated Scraping
+
+Master scheduler: run_all_scrapers.py
+Windows Task Scheduler integration
+Runs daily at 3 AM automatically
+Accumulates data over time
+
+
+
+New Files:
+
+backend/modules/ghost/hibp_passwords.py
+backend/modules/ghost/github_scraper.py
+backend/run_github_scraper.py
+backend/modules/ghost/pastebin_scraper.py
+backend/run_pastebin_scraper.py
+backend/run_all_scrapers.py
+run_scrapers.bat
+
+New Database Tables:
+
+uploaded_files
+uploaded_credentials
+github_findings
+pastebin_findings
+
+Impact: Search now has 6 data sources (was 4), automated daily ingestion, and user file upload capability.
+
+MODULE 2: ADVERSARY INTELLIGENCE ✅ Complete
+Original State:
+
+863 MISP threat actors
+Black-box scoring (just a percentage)
+Generic threat descriptions
+No actionable output
+
+Enhancements Added:
+
+Reason-Based Matching
+
+Transparent scoring - shows WHY each APT matched
+Top 5 reasons with point values
+Color-coded by strength (high/medium/low)
+Evidence links back to APT descriptions
+Example: "Finance Industry (+35 pts) - Targets financial institutions"
+
+
+Attack-Path Simulation
+
+Intelligent, tailored attack chains (4-6 steps)
+Based on APT's REAL TTPs from MISP data
+Mapped to user's specific vulnerabilities
+Shows: Initial Access → Credential Theft → Lateral Movement → Exfiltration
+Includes likelihood per step (high/medium/low)
+Specific mitigations for each step
+Dynamic scenarios (not templated - adapts to each org)
+
+
+Bug Fixes
+
+Fixed critical_assets list handling (was crashing on .lower())
+Fixed incident_types list handling in impact generation
+Proper handling of checkbox arrays from frontend
+
+
+
+Modified Files:
+
+backend/modules/ghost/adversary_matcher.py (heavily enhanced)
+frontend/modules/ghost/ghost-adversary.html (display improvements)
+
+Impact: Adversary matching went from "interesting data" to "actionable intelligence with prosecution-ready attack scenarios."
+
+MODULE 3: BAIT (HONEYTOKENS) ✅ Complete
+Original State:
+
+Generate fake credentials
+Deploy to Pastebin (mock)
+Log access attempts (IP, user-agent, timestamp)
+Basic timeline view
+
+Enhancements Added:
+
+IP Reputation Intelligence
+
+AbuseIPDB API integration (1000 checks/day free)
+
+Abuse confidence score (0-100)
+Total reports count
+Usage type (datacenter, residential, Tor)
+
+
+IPQualityScore API integration (35 checks/day free)
+
+VPN/Proxy/Tor detection
+Fraud score (0-100)
+Residential vs datacenter classification
+ISP and geolocation
+
+
+Combined threat level: critical/high/medium/low
+Attribution confidence: Can we legally ID this person?
+
+HIGH: Residential IP, not VPN/Tor (ISP subpoena viable)
+MEDIUM: Datacenter with abuse history
+LOW: VPN/Tor/Proxy (identity hidden)
+
+
+Real-time checks when viewing timeline
+"View Full IP Report" button with detailed intelligence
+
+
+Attacker Fingerprinting (Legal Evidence)
+
+Enhanced header collection:
+
+Accept-Language (reveals location/preferences)
+Referer (shows where they came from)
+Sec-Fetch-* headers (Chrome-specific, reveals automation)
+X-Forwarded-For (real IP if behind proxy)
+
+
+Attribution type classification:
+
+👤 Human Browser (full headers, Accept-Language, Sec-Fetch)
+🛠️ Automated Tool (curl, Python, AWS CLI, Postman)
+🤖 Bot/Spoofed (browser UA but missing Sec-Fetch)
+
+
+Evidence strength assessment:
+
+⚖️ COURT READY: Residential IP + full browser headers (prosecution-viable)
+📋 MODERATE: Tool + datacenter IP (some evidence)
+❌ WEAK: VPN/Tor + spoofed headers (not useful legally)
+
+
+Legal notes: "Human using Chrome from residential IP - ISP subpoena viable"
+Timeline displays both IP reputation AND fingerprinting together
+
+
+
+New Files:
+
+backend/modules/ghost/ip_intelligence.py
+backend/modules/ghost/attacker_fingerprinting.py
+
+New Database Columns (BaitAccess table):
+
+accept_language
+referer
+sec_fetch_headers
+attribution_type
+evidence_strength
+
+New API Keys (.env):
+
+ABUSEIPDB_API_KEY
+IPQUALITYSCORE_API_KEY
+
+Impact: BAIT transformed from "logging tool" to "evidence collection system" that produces legally-actionable intelligence for law enforcement.
+
+SUMMARY OF ALL CHANGES
+Files Created: 9 new backend modules + 1 batch script
+Database Tables Added: 4 new tables
+Database Columns Added: 5 new columns
+API Integrations Added: 4 (HIBP, AbuseIPDB, IPQualityScore, GitHub)
+Scrapers Built: 2 automated daily scrapers
+Lines of Code Added: ~2000+ across backend/frontend
+Before Phase 2:
+
+Basic search with 4 APIs
+Black-box adversary scoring
+Simple honeytoken logging
+
+After Phase 2:
+
+6-source search with automated ingestion + file upload
+Transparent adversary matching with attack simulation
+Legal-grade evidence collection with IP intelligence + fingerprinting
+
+Next: Dashboard + UI Polish
+
 ---

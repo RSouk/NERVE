@@ -35,16 +35,27 @@
             margin-bottom: 30px;
         }
 
-        .header-left h1 {
-            font-size: 2em;
-            color: #D4AF37;
-            font-weight: 700;
-            letter-spacing: 2px;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
 
-        .header-left p {
-            color: #888;
-            font-size: 0.9em;
+        .header-left img {
+            height: 70px;
+        }
+
+        .header-title h1 {
+            font-size: 2.5em;
+            color: #D4AF37;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .header-title p {
+            color: #D4AF37;
+            font-size: 1em;
             margin-top: 5px;
         }
 
@@ -707,12 +718,13 @@
 <body>
     <div class="header">
         <div class="header-left">
-            <div style="display: inline-block; vertical-align: middle;">
-                <img src="ghost-logo.png" alt="GHOST" style="height: 60px; margin-right: 15px; vertical-align: middle;">
-                <p style="margin: 0;">Credential Intelligence</p>
+            <img src="ghost-logo.png" alt="GHOST">
+            <div class="header-title">
+                <h1>GHOST</h1>
+                <p>Credential Intelligence</p>
             </div>
         </div>
-        <a href="index.html" class="back-button">← Back to Dashboard</a>
+        <a href="ghost.html" class="back-button">← Back to Dashboard</a>
     </div>
 
         <div class="search-container">
@@ -1418,9 +1430,10 @@
                         console.log('Processing item:', item);
                         // Calculate credential count for display
                         const credCount = item.credentials ? item.credentials.length : 0;
+                        const stealerFamily = item.stealer_family || 'Unknown Stealer';
                         categorized.machines.push({
-                            source: `Infostealer Logs (${credCount} credentials)`,
-                            stealer: item.stealer_family,
+                            source: `${stealerFamily} (${credCount} credentials)`,
+                            stealer: stealerFamily,
                             computer: item.computer_name,
                             os: item.operating_system,
                             ip: item.ip,
@@ -1432,7 +1445,8 @@
                         if (item.credentials) {
                             item.credentials.forEach(cred => {
                                 categorized.credentials.push({
-                                    source: 'Infostealer Logs',
+                                    source: `${stealerFamily} Stealer`,
+                                    stealer_family: stealerFamily,
                                     url: cred.url,
                                     domain: cred.domain,
                                     username: cred.username,

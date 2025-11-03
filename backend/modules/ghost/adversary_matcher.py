@@ -175,24 +175,31 @@ class AdversaryMatcher:
     
     def _match_region(self, user_location: str, actor: Dict) -> Dict:
         """Match user's location against threat actor targeting"""
-        
+
         # Region mapping
         region_map = {
-            'north-america': ['United States', 'Canada', 'Mexico', 'US', 'USA', 'North America'],
+            'north-america': ['United States', 'Canada', 'Mexico', 'USA', 'North America'],
             'europe': ['United Kingdom', 'Germany', 'France', 'Europe', 'EU', 'UK', 'Spain', 'Italy'],
             'asia-pacific': ['China', 'Japan', 'South Korea', 'Taiwan', 'Singapore', 'Australia', 'India', 'Asia'],
             'middle-east': ['Israel', 'Saudi Arabia', 'UAE', 'Middle East', 'Iran', 'Turkey'],
             'latin-america': ['Brazil', 'Argentina', 'Colombia', 'Latin America', 'South America'],
             'africa': ['South Africa', 'Nigeria', 'Africa', 'Kenya']
         }
-        
+
         user_countries = region_map.get(user_location, [user_location])
-        
-        # Check victims field
+
+        # Check victims field - use word boundary matching to avoid false positives
         victims = actor.get('victims', [])
-        for country in user_countries:
-            for victim in victims:
-                if country.lower() in victim.lower():
+        for victim in victims:
+            victim_lower = victim.lower()
+            for country in user_countries:
+                country_lower = country.lower()
+                # Check if country is a standalone word in victim string
+                # This prevents "US" from matching "RUSsia" or "Australia"
+                if (f' {country_lower} ' in f' {victim_lower} ' or
+                    victim_lower == country_lower or
+                    victim_lower.startswith(country_lower + ' ') or
+                    victim_lower.endswith(' ' + country_lower)):
                     return {
                         'matched': True,
                         'evidence': f"Has previously targeted organizations in {victim}"

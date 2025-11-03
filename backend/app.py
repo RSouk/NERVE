@@ -12,12 +12,17 @@ from modules.ghost.bait_generator import BaitGenerator
 from modules.ghost.bait_seeder import BaitSeeder
 from modules.ghost.ip_intelligence import check_ip_reputation as check_ip_intel, get_ip_badge_type
 from modules.ghost.attacker_fingerprinting import analyze_attacker, get_evidence_badge_info, get_attribution_badge_info
+from modules.ghost.cti_newsfeed import get_news_feed, get_feed_stats
 import re
 import secrets
 import time
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]}})
 
 @app.route('/')
 def index():
@@ -336,11 +341,12 @@ def generate_bait():
 
 @app.route('/api/ghost/bait/seed', methods=['POST'])
 def seed_bait():
-    """Seed a bait credential to Pastebin"""
+    """Seed a bait credential to GitHub Gist or Pastebin"""
     db = None
     try:
         data = request.json
         identifier = data.get('identifier', '').strip()
+        deployment_method = data.get('deployment_method', 'github').lower()  # 'github' or 'pastebin'
         title = data.get('title', 'Configuration File')
 
         if not identifier:
@@ -361,9 +367,13 @@ def seed_bait():
             db.close()
             return jsonify({'success': False, 'error': 'Invalid token data'}), 500
 
-        # Create seeder and seed to Pastebin
-        seeder = BaitSeeder()
-        result = seeder.seed_to_pastebin(token_data, title)
+        # Deploy based on method
+        if deployment_method == 'github':
+            result = deploy_to_github_gist(token_data, title)
+        else:
+            # Fallback to Pastebin
+            seeder = BaitSeeder()
+            result = seeder.seed_to_pastebin(token_data, title)
 
         if result.get('success'):
             # Update bait token with seeded location
@@ -379,6 +389,73 @@ def seed_bait():
             db.close()
         print(f"❌ Bait seeding error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+def deploy_to_github_gist(token_data, title):
+    """Deploy bait credential to GitHub Gist"""
+    try:
+        import requests
+
+        # Get GitHub token from environment
+        github_token = os.getenv('GITHUB_TOKEN')
+        if not github_token:
+            return {'success': False, 'error': 'GitHub token not configured'}
+
+        # Format credential as file content
+        if isinstance(token_data, dict):
+            # Pretty format the credential data
+            file_content = json.dumps(token_data, indent=2)
+            filename = f"{title.lower().replace(' ', '_')}.json"
+        else:
+            file_content = str(token_data)
+            filename = f"{title.lower().replace(' ', '_')}.txt"
+
+        # Create gist payload
+        gist_data = {
+            "description": title,
+            "public": True,
+            "files": {
+                filename: {
+                    "content": file_content
+                }
+            }
+        }
+
+        # Make request to GitHub API
+        headers = {
+            'Authorization': f'token {github_token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+
+        print(f"[GITHUB GIST] Creating gist: {title}")
+        response = requests.post(
+            'https://api.github.com/gists',
+            headers=headers,
+            json=gist_data,
+            timeout=10
+        )
+
+        if response.status_code == 201:
+            gist_url = response.json().get('html_url')
+            print(f"[GITHUB GIST] ✓ Created gist: {gist_url}")
+            return {
+                'success': True,
+                'url': gist_url,
+                'message': 'Successfully deployed to GitHub Gist'
+            }
+        else:
+            error_msg = response.json().get('message', 'Unknown error')
+            print(f"[GITHUB GIST] ❌ Failed: {response.status_code} - {error_msg}")
+            return {
+                'success': False,
+                'error': f'GitHub API error: {error_msg}'
+            }
+
+    except Exception as e:
+        print(f"[GITHUB GIST] ❌ Exception: {str(e)}")
+        return {
+            'success': False,
+            'error': f'GitHub Gist deployment failed: {str(e)}'
+        }
 
 
 @app.route('/api/ghost/bait/active', methods=['GET'])
@@ -732,6 +809,117 @@ def check_ip_reputation_endpoint(ip):
             'attribution_confidence': 'unknown',
             'summary': 'IP reputation check failed',
             'badge_type': 'datacenter'
+        }), 500
+
+# ============================================================================
+# CTI DASHBOARD ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/dashboard/feed', methods=['GET'])
+def get_dashboard_feed():
+    """
+    Get CTI dashboard data including news feed and module statistics
+    """
+    db = None
+    try:
+        print("\n" + "="*60)
+        print("[DASHBOARD] Fetching dashboard data...")
+
+        db = get_db()
+
+        # Get news feed
+        force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+        news_articles = get_news_feed(force_refresh=force_refresh)
+        feed_stats = get_feed_stats()
+
+        # Calculate module statistics
+        print("[DASHBOARD] Calculating module statistics...")
+
+        # Credentials monitored (GitHub + PasteBin findings)
+        github_count = db.query(GitHubFinding).count()
+        pastebin_count = db.query(PasteBinFinding).count()
+        credentials_monitored = github_count + pastebin_count
+
+        # Active honeytokens
+        active_honeytokens = db.query(BaitToken).filter(
+            BaitToken.status == 'active'
+        ).count()
+
+        # High risk IPs (threat_level high or critical)
+        high_risk_ips = db.query(distinct(BaitAccess.source_ip)).filter(
+            BaitAccess.threat_level.in_(['high', 'critical'])
+        ).count()
+
+        # Recent breaches (last 5 searches - can be from various sources)
+        recent_breaches = []
+
+        # Get last 5 GitHub findings
+        github_recent = db.query(GitHubFinding).order_by(
+            GitHubFinding.discovered_at.desc()
+        ).limit(5).all()
+
+        for finding in github_recent:
+            recent_breaches.append({
+                'type': 'GitHub Gist',
+                'query_term': finding.query_term,
+                'credential_type': finding.credential_type,
+                'date': finding.discovered_at.isoformat() if finding.discovered_at else None,
+                'url': finding.gist_url
+            })
+
+        # Get last 5 PasteBin findings if we need more
+        if len(recent_breaches) < 5:
+            pastebin_recent = db.query(PasteBinFinding).order_by(
+                PasteBinFinding.discovered_at.desc()
+            ).limit(5 - len(recent_breaches)).all()
+
+            for finding in pastebin_recent:
+                recent_breaches.append({
+                    'type': 'PasteBin',
+                    'query_term': finding.query_term,
+                    'date': finding.discovered_at.isoformat() if finding.discovered_at else None,
+                    'url': finding.paste_url
+                })
+
+        # Sort recent breaches by date
+        recent_breaches.sort(key=lambda x: x['date'] or '', reverse=True)
+        recent_breaches = recent_breaches[:5]  # Limit to 5
+
+        db.close()
+
+        print(f"[DASHBOARD] Statistics:")
+        print(f"[DASHBOARD]   - Credentials monitored: {credentials_monitored}")
+        print(f"[DASHBOARD]   - Active honeytokens: {active_honeytokens}")
+        print(f"[DASHBOARD]   - High risk IPs: {high_risk_ips}")
+        print(f"[DASHBOARD]   - Recent breaches: {len(recent_breaches)}")
+        print(f"[DASHBOARD]   - News articles: {len(news_articles)}")
+        print(f"[DASHBOARD] Dashboard data ready")
+        print("="*60 + "\n")
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'credentials_monitored': credentials_monitored,
+                'active_honeytokens': active_honeytokens,
+                'high_risk_ips': high_risk_ips,
+                'recent_breaches_count': len(recent_breaches)
+            },
+            'recent_breaches': recent_breaches,
+            'news': {
+                'articles': news_articles[:50],  # Limit to 50 most recent
+                'feed_stats': feed_stats
+            }
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[DASHBOARD] Error fetching dashboard data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
 
 # ============================================================================

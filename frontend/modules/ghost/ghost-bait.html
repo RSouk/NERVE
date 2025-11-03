@@ -641,26 +641,100 @@
             letter-spacing: 0.5px;
         }
 
-        /* Threat Heatmap */
-        .heatmap-item {
+        /* Deployment Modal */
+        .deploy-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.85);
+            animation: fadeIn 0.2s;
+        }
+
+        .deploy-modal-content {
+            background: linear-gradient(135deg, rgba(15, 15, 15, 0.98) 0%, rgba(25, 25, 25, 0.98) 100%);
+            border: 2px solid #D4AF37;
+            margin: 8% auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 8px 40px rgba(212, 175, 55, 0.3);
+        }
+
+        .deploy-modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .deploy-modal-title {
+            font-size: 1.3em;
+            color: #D4AF37;
+            font-weight: 700;
+        }
+
+        .deploy-modal-close {
+            color: #888;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .deploy-modal-close:hover {
+            color: #D4AF37;
+        }
+
+        .deploy-option {
             background: rgba(212, 175, 55, 0.05);
-            border-radius: 6px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .deploy-option:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: #D4AF37;
+            transform: translateX(5px);
+        }
+
+        .deploy-option-title {
+            color: #D4AF37;
+            font-size: 1.1em;
+            font-weight: 600;
             margin-bottom: 8px;
         }
 
-        .heatmap-country {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .deploy-option-desc {
+            color: #888;
+            font-size: 0.9em;
+            line-height: 1.5;
         }
 
-        .heatmap-count {
-            color: #ef4444;
-            font-weight: 600;
+        .manual-copy-area {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #e0e0e0;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
 
         /* Toast Notification */
@@ -1496,7 +1570,7 @@
                         </button>
                     </div>
 
-                    <button class="deploy-btn" id="deployBtn">Deploy to Pastebin</button>
+                    <button class="deploy-btn" id="deployBtn">Deploy Honeytoken</button>
 
                     <div id="deploymentSuccess" style="display: none;"></div>
                 </div>
@@ -1604,15 +1678,6 @@
                     </div>
                 </div>
 
-                <!-- Threat Heatmap -->
-                <div class="card" style="margin-top: 25px;">
-                    <div class="card-title">🗺️ Threat Heatmap</div>
-                    <div id="heatmapList">
-                        <div class="empty-state">
-                            <div style="font-size: 0.9em; color: #888;">No geographic data yet</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -2019,74 +2084,75 @@
             `;
         }
 
-        // Deploy Button
-        document.getElementById('deployBtn').addEventListener('click', async function() {
+        // Deploy Button - Opens Deployment Modal
+        document.getElementById('deployBtn').addEventListener('click', function() {
             if (!currentGeneratedBait) {
                 showToast('No honeytoken to deploy', 'error');
                 return;
             }
+            openDeployModal();
+        });
 
-            const title = document.getElementById('pastebinTitle').value;
-            const deployBtn = this;
-            deployBtn.disabled = true;
-            deployBtn.textContent = 'Deploying...';
+        // Open Deployment Modal
+        function openDeployModal() {
+            const modal = document.getElementById('deployModal');
+            const content = document.getElementById('deployModalContent');
+
+            content.innerHTML = `
+                <div class="deploy-option" onclick="deployToGithubGist()">
+                    <div class="deploy-option-title">GitHub Gist (Recommended)</div>
+                    <div class="deploy-option-desc">Automatically deploy to a public GitHub Gist. Free, instant, and tracked by attackers worldwide.</div>
+                </div>
+                <div class="deploy-option" onclick="showManualCopy()">
+                    <div class="deploy-option-title">Manual Copy</div>
+                    <div class="deploy-option-desc">Copy the credential and paste it wherever you want attackers to find it (forums, code repos, etc.)</div>
+                </div>
+            `;
+
+            modal.style.display = 'block';
+        }
+
+        // Close Deployment Modal
+        function closeDeployModal() {
+            document.getElementById('deployModal').style.display = 'none';
+        }
+
+        // Deploy to GitHub Gist
+        async function deployToGithubGist() {
+            const modal = document.getElementById('deployModal');
+            const content = document.getElementById('deployModalContent');
+
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px; color: #888;">Deploying to GitHub Gist...</p>
+                </div>
+            `;
 
             try {
-                // Log the request being sent
-                const requestBody = {
-                    identifier: currentGeneratedBait.identifier,
-                    title: title
-                };
-                console.log('Sending deploy request:', requestBody);
-
+                const title = document.getElementById('pastebinTitle').value || 'Configuration File';
                 const response = await fetch(`${API_URL}/api/ghost/bait/seed`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({
+                        identifier: currentGeneratedBait.identifier,
+                        deployment_method: 'github',
+                        title: title
+                    })
                 });
 
-                // Log response status
-                console.log('Deploy response status:', response.status, response.statusText);
+                const data = await response.json();
 
-                // Check if response is ok before parsing
-                if (!response.ok) {
-                    // Try to read as text first for error messages
-                    const errorText = await response.text();
-                    console.error('Deploy error response body:', errorText);
-
-                    // Try to parse as JSON if possible
-                    try {
-                        const errorData = JSON.parse(errorText);
-                        throw new Error(errorData.error || `Server error: ${response.status}`);
-                    } catch (parseError) {
-                        // If not JSON, use the text directly
-                        throw new Error(errorText || `Server error: ${response.status} ${response.statusText}`);
-                    }
-                }
-
-                // Try to parse successful response as JSON
-                let data;
-                try {
-                    const responseText = await response.text();
-                    console.log('Deploy response body:', responseText);
-                    data = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('Failed to parse deploy response as JSON:', parseError);
-                    throw new Error('Server returned invalid response format');
-                }
-
-                // Check if deployment was successful
                 if (data.success && data.url) {
-                    console.log('Successfully deployed to:', data.url);
-                    const successDiv = document.getElementById('deploymentSuccess');
-                    successDiv.innerHTML = `
-                        <div class="success-message">
-                            Successfully deployed!<br>
-                            <a href="${data.url}" target="_blank">${data.url}</a>
+                    content.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="color: #10b981; font-size: 1.2em; margin-bottom: 15px;">✓ Successfully Deployed!</div>
+                            <div style="color: #888; margin-bottom: 20px;">Your honeytoken is now live on GitHub Gist</div>
+                            <a href="${data.url}" target="_blank" style="color: #D4AF37; text-decoration: underline; word-break: break-all;">${data.url}</a>
+                            <button class="deploy-btn" onclick="closeDeployModal()" style="width: 100%; margin-top: 25px;">Close</button>
                         </div>
                     `;
-                    successDiv.style.display = 'block';
-                    showToast('Honeytoken deployed to Pastebin!', 'success');
+                    showToast('Honeytoken deployed to GitHub Gist!', 'success');
 
                     // Refresh the list
                     setTimeout(() => {
@@ -2094,16 +2160,59 @@
                         refreshStats();
                     }, 1000);
                 } else {
-                    throw new Error(data.error || 'Deployment failed - no URL returned');
+                    throw new Error(data.error || 'Deployment failed');
                 }
             } catch (error) {
-                console.error('Deployment error:', error);
+                console.error('GitHub Gist deployment error:', error);
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="color: #ef4444; font-size: 1.1em; margin-bottom: 15px;">Deployment Failed</div>
+                        <div style="color: #888; margin-bottom: 20px;">${error.message}</div>
+                        <button class="deploy-btn" onclick="openDeployModal()" style="width: 100%;">Try Again</button>
+                    </div>
+                `;
                 showToast('Error deploying honeytoken: ' + error.message, 'error');
-            } finally {
-                deployBtn.disabled = false;
-                deployBtn.textContent = 'Deploy to Pastebin';
             }
-        });
+        }
+
+        // Show Manual Copy Option
+        function showManualCopy() {
+            const content = document.getElementById('deployModalContent');
+
+            // Format credential for display
+            let credentialText = JSON.stringify(currentGeneratedBait, null, 2);
+
+            content.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #D4AF37; font-weight: 600; margin-bottom: 10px;">Copy this credential:</div>
+                    <div class="manual-copy-area" id="manualCopyText">${escapeHtml(credentialText)}</div>
+                    <button class="deploy-btn" onclick="copyManualCredential()" style="width: 100%; margin-bottom: 15px;">Copy to Clipboard</button>
+                    <div style="color: #888; font-size: 0.9em; line-height: 1.6; margin-top: 20px; padding: 15px; background: rgba(212, 175, 55, 0.05); border-left: 3px solid #D4AF37; border-radius: 4px;">
+                        <div style="font-weight: 600; color: #D4AF37; margin-bottom: 8px;">Instructions:</div>
+                        1. Copy the credential above<br>
+                        2. Paste it in a public location where attackers might find it:<br>
+                        &nbsp;&nbsp;• GitHub repositories<br>
+                        &nbsp;&nbsp;• Pastebin or similar sites<br>
+                        &nbsp;&nbsp;• Forums or code-sharing sites<br>
+                        &nbsp;&nbsp;• Internal wikis or documentation<br>
+                        3. The honeytoken will track when it's accessed
+                    </div>
+                    <button class="deploy-btn" onclick="closeDeployModal()" style="width: 100%; margin-top: 20px; background: rgba(100, 100, 100, 0.2); border-color: #666;">Cancel</button>
+                </div>
+            `;
+        }
+
+        // Copy Manual Credential
+        async function copyManualCredential() {
+            const text = JSON.stringify(currentGeneratedBait, null, 2);
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('Credential copied to clipboard!', 'success');
+            } catch (error) {
+                console.error('Copy failed:', error);
+                showToast('Failed to copy', 'error');
+            }
+        }
 
         // Load Active Honeytokens
         async function loadActiveHoneytokens() {
@@ -2293,11 +2402,6 @@
             });
 
             container.innerHTML = html;
-        }
-
-        // View Timeline
-        function viewTimeline(identifier) {
-            window.location.href = `ghost-bait-timeline.html?id=${identifier}`;
         }
 
         // Utility Functions
@@ -2494,7 +2598,7 @@
             }
         }
 
-        // View Timeline - Updated
+        // View Timeline - Inline Display
         async function viewTimeline(identifier) {
             try {
                 console.log('Fetching timeline for:', identifier);
@@ -3100,36 +3204,41 @@
 
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('ipReportModal');
-            if (event.target === modal) {
+            const ipModal = document.getElementById('ipReportModal');
+            const deployModal = document.getElementById('deployModal');
+
+            if (event.target === ipModal) {
                 closeIPModal();
+            }
+            if (event.target === deployModal) {
+                closeDeployModal();
             }
         }
 
         // Get Attribution Badge HTML
         function getAttributionBadgeHTML(attribution_type) {
             const badges = {
-                'human': { emoji: '👤', text: 'HUMAN' },
-                'bot': { emoji: '🤖', text: 'BOT' },
-                'tool': { emoji: '🛠️', text: 'TOOL' },
-                'spoofed': { emoji: '🎭', text: 'SPOOFED' },
-                'unknown': { emoji: '❓', text: 'UNKNOWN' }
+                'human': { text: 'HUMAN' },
+                'bot': { text: 'BOT' },
+                'tool': { text: 'TOOL' },
+                'spoofed': { text: 'SPOOFED' },
+                'unknown': { text: 'UNKNOWN' }
             };
 
             const badge = badges[attribution_type] || badges['unknown'];
-            return `<span class="attribution-badge ${attribution_type}">${badge.emoji} ${badge.text}</span>`;
+            return `<span class="attribution-badge ${attribution_type}">${badge.text}</span>`;
         }
 
         // Get Evidence Badge HTML
         function getEvidenceBadgeHTML(evidence_strength) {
             const badges = {
-                'court_ready': { emoji: '⚖️', text: 'COURT READY' },
-                'moderate': { emoji: '📋', text: 'MODERATE' },
-                'weak': { emoji: '❌', text: 'WEAK' }
+                'court_ready': { text: 'COURT READY' },
+                'moderate': { text: 'MODERATE' },
+                'weak': { text: 'WEAK' }
             };
 
             const badge = badges[evidence_strength] || badges['weak'];
-            return `<span class="evidence-badge ${evidence_strength.replace('_', '-')}">${badge.emoji} ${badge.text}</span>`;
+            return `<span class="evidence-badge ${evidence_strength.replace('_', '-')}">${badge.text}</span>`;
         }
 
         // Get Fingerprint Score Class
@@ -3437,8 +3546,8 @@
             }
         });
 
-        // Deployment Target Change Handler
-        document.getElementById('deploymentTarget').addEventListener('change', function(e) {
+        // Deployment Target Change Handler (Legacy - now using modal)
+        document.getElementById('deploymentTarget')?.addEventListener('change', function(e) {
             const target = e.target.value;
             const manualArea = document.getElementById('manualDeploymentArea');
             const deployBtn = document.getElementById('deployBtn');
@@ -3449,11 +3558,7 @@
                 generateManualConfig();
             } else {
                 manualArea.style.display = 'none';
-                if (target.startsWith('pastebin')) {
-                    deployBtn.textContent = '📤 Deploy to Pastebin';
-                } else if (target.startsWith('github')) {
-                    deployBtn.textContent = '📤 Deploy to GitHub Gist';
-                }
+                deployBtn.textContent = 'Deploy Honeytoken';
             }
         });
 
@@ -3718,6 +3823,19 @@ ${cred.private_key}
             </div>
             <div id="ipReportContent">
                 <!-- Content populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Deployment Modal -->
+    <div id="deployModal" class="deploy-modal">
+        <div class="deploy-modal-content">
+            <div class="deploy-modal-header">
+                <span class="deploy-modal-title">Deploy Honeytoken</span>
+                <span class="deploy-modal-close" onclick="closeDeployModal()">&times;</span>
+            </div>
+            <div id="deployModalContent">
+                <!-- Deployment options populated by JavaScript -->
             </div>
         </div>
     </div>

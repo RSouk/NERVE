@@ -129,6 +129,19 @@ def log_access(bait_id: str, request_data: Dict) -> bool:
         # Determine threat level
         threat_level = determine_threat_level(source_ip, user_agent, bait_token.id, db)
 
+        # Extract additional headers for fingerprinting
+        headers = request_data.get('headers', {})
+        accept_language = headers.get('Accept-Language', headers.get('accept-language'))
+        referer = headers.get('Referer', headers.get('referer'))
+
+        # Collect Sec-Fetch headers for browser fingerprinting
+        sec_fetch_data = {
+            'site': headers.get('Sec-Fetch-Site', headers.get('sec-fetch-site')),
+            'mode': headers.get('Sec-Fetch-Mode', headers.get('sec-fetch-mode')),
+            'dest': headers.get('Sec-Fetch-Dest', headers.get('sec-fetch-dest'))
+        }
+        sec_fetch_headers = json.dumps(sec_fetch_data) if any(sec_fetch_data.values()) else None
+
         # Create BaitAccess record
         bait_access = BaitAccess(
             bait_id=bait_token.id,
@@ -139,7 +152,11 @@ def log_access(bait_id: str, request_data: Dict) -> bool:
             request_body=json.dumps(request_data.get('body')) if request_data.get('body') else None,
             geolocation=geolocation,
             threat_level=threat_level,
-            fingerprint=json.dumps(request_data)
+            fingerprint=json.dumps(request_data),
+            # Advanced fingerprinting fields
+            accept_language=accept_language,
+            referer=referer,
+            sec_fetch_headers=sec_fetch_headers
         )
 
         db.add(bait_access)

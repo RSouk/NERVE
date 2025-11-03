@@ -10,6 +10,8 @@ from modules.ghost.unified_search import UnifiedSearch
 from modules.ghost.adversary_matcher import AdversaryMatcher
 from modules.ghost.bait_generator import BaitGenerator
 from modules.ghost.bait_seeder import BaitSeeder
+from modules.ghost.ip_intelligence import check_ip_reputation as check_ip_intel, get_ip_badge_type
+from modules.ghost.attacker_fingerprinting import analyze_attacker, get_evidence_badge_info, get_attribution_badge_info
 import re
 import secrets
 import time
@@ -500,6 +502,9 @@ def get_bait_timeline(identifier):
         threat_breakdown = {'low': 0, 'medium': 0, 'high': 0, 'critical': 0}
 
         for access in accesses:
+            # Perform attacker fingerprinting analysis
+            fingerprint_analysis = analyze_attacker(access)
+
             timeline.append({
                 'id': access.id,
                 'accessed_at': access.accessed_at.isoformat() if access.accessed_at else None,
@@ -509,7 +514,12 @@ def get_bait_timeline(identifier):
                 'geolocation': access.geolocation,
                 'threat_level': access.threat_level,
                 'request_headers': json.loads(access.request_headers) if access.request_headers else {},
-                'request_body': json.loads(access.request_body) if access.request_body else None
+                'request_body': json.loads(access.request_body) if access.request_body else None,
+                # Fingerprinting data
+                'fingerprint': fingerprint_analysis,
+                'attribution_type': fingerprint_analysis.get('attribution_type'),
+                'evidence_strength': fingerprint_analysis.get('evidence_strength'),
+                'tool_name': fingerprint_analysis.get('tool_name')
             })
 
             unique_ips.add(access.source_ip)
@@ -653,9 +663,9 @@ def delete_bait(identifier):
 
 # IP Reputation Check Endpoint
 @app.route('/api/ghost/bait/check-ip/<ip>', methods=['GET'])
-def check_ip_reputation(ip):
+def check_ip_reputation_endpoint(ip):
     """
-    Check IP reputation by querying database and ip-api.com
+    Check IP reputation using AbuseIPDB and IPQualityScore APIs
     """
     db = None
     try:
@@ -677,110 +687,34 @@ def check_ip_reputation(ip):
 
         print(f"[IP CHECK] Found {hits_count} hits across {len(unique_baits)} different baits")
 
-        # 2. Query ip-api.com for detailed information
-        print(f"[IP CHECK] Querying ip-api.com for IP details...")
-        import requests
+        # 2. Query IP intelligence APIs (AbuseIPDB + IPQualityScore)
+        print(f"[IP CHECK] Querying IP intelligence APIs...")
+        reputation = check_ip_intel(ip)
 
-        # ip-api.com provides fields for VPN/proxy/hosting detection
-        # Using fields parameter to get specific data
-        api_url = f"http://ip-api.com/json/{ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,asname,mobile,proxy,hosting,query"
+        # Add database hits to reputation data
+        reputation['hits_on_other_baits'] = hits_count
+        reputation['unique_baits_hit'] = len(unique_baits)
+        reputation['baits_hit'] = list(unique_baits)[:10]  # Limit to first 10
 
-        response = requests.get(api_url, timeout=5)
-        geo_data = response.json()
+        # Enhance threat level if IP is known scanner
+        if hits_count >= 5 and reputation['threat_level'] == 'low':
+            reputation['threat_level'] = 'high'
+            reputation['summary'] += f" Known scanner ({hits_count} hits on {len(unique_baits)} baits)"
+        elif hits_count >= 2 and reputation['threat_level'] == 'low':
+            reputation['threat_level'] = 'medium'
+            reputation['summary'] += f" Multiple hits detected ({hits_count} hits)"
 
-        print(f"[IP CHECK] ip-api.com response: {geo_data}")
+        # Get badge type for frontend display
+        reputation['badge_type'] = get_ip_badge_type(reputation)
+        reputation['success'] = True
 
-        # 3. Determine VPN/Proxy/Hosting status
-        is_proxy = geo_data.get('proxy', False)
-        is_hosting = geo_data.get('hosting', False)
-        is_mobile = geo_data.get('mobile', False)
-
-        # VPN detection is tricky - we can infer from hosting providers and ISP names
-        isp = geo_data.get('isp', '').lower()
-        org = geo_data.get('org', '').lower()
-
-        vpn_keywords = ['vpn', 'virtual private', 'proxy', 'anonymizer', 'hide', 'private internet access',
-                        'nordvpn', 'expressvpn', 'surfshark', 'cyberghost', 'protonvpn', 'mullvad']
-
-        is_vpn = any(keyword in isp or keyword in org for keyword in vpn_keywords)
-
-        # If it's a hosting provider, more likely to be a VPN exit node
-        if is_hosting:
-            hosting_providers = ['digitalocean', 'aws', 'amazon', 'google cloud', 'azure', 'linode',
-                                'vultr', 'ovh', 'hetzner', 'choopa', 'quadranet']
-            is_likely_vpn = any(provider in isp or provider in org for provider in hosting_providers)
-            if is_likely_vpn:
-                is_vpn = True
-
-        company = geo_data.get('org', geo_data.get('isp', 'Unknown'))
-
-        print(f"[IP CHECK] Analysis: VPN={is_vpn}, Proxy={is_proxy}, Hosting={is_hosting}, Company={company}")
-
-        # 4. Threat Assessment
-        threat_assessment = "Clean"
-
-        if hits_count >= 5:
-            threat_assessment = "Known Scanner"
-        elif hits_count >= 2:
-            threat_assessment = "Suspicious"
-        elif is_vpn or is_proxy:
-            threat_assessment = "Suspicious"
-        elif is_hosting and hits_count > 0:
-            threat_assessment = "Suspicious"
-
-        print(f"[IP CHECK] Threat Assessment: {threat_assessment}")
-
-        # 5. Build response
-        result = {
-            'success': True,
-            'ip': ip,
-            'is_vpn': is_vpn,
-            'is_proxy': is_proxy,
-            'is_hosting': is_hosting,
-            'is_mobile': is_mobile,
-            'company': company,
-            'isp': geo_data.get('isp', 'Unknown'),
-            'country': geo_data.get('country', 'Unknown'),
-            'city': geo_data.get('city', 'Unknown'),
-            'hits_on_other_baits': hits_count,
-            'unique_baits_hit': len(unique_baits),
-            'threat_assessment': threat_assessment,
-            'baits_hit': list(unique_baits)[:10]  # Limit to first 10
-        }
-
+        print(f"[IP CHECK] Threat Level: {reputation['threat_level']}")
+        print(f"[IP CHECK] Attribution Confidence: {reputation['attribution_confidence']}")
         print(f"[IP CHECK] ✓ Reputation check complete")
         print(f"{'='*60}\n")
 
         db.close()
-        return jsonify(result), 200
-
-    except requests.exceptions.RequestException as e:
-        # Handle network errors gracefully
-        print(f"[IP CHECK] ⚠️ Error contacting ip-api.com: {e}")
-
-        # Still return database results
-        result = {
-            'success': True,
-            'ip': ip,
-            'is_vpn': False,
-            'is_proxy': False,
-            'is_hosting': False,
-            'is_mobile': False,
-            'company': 'Unknown',
-            'isp': 'Unknown',
-            'country': 'Unknown',
-            'city': 'Unknown',
-            'hits_on_other_baits': hits_count if 'hits_count' in locals() else 0,
-            'unique_baits_hit': len(unique_baits) if 'unique_baits' in locals() else 0,
-            'threat_assessment': 'Unknown',
-            'baits_hit': list(unique_baits)[:10] if 'unique_baits' in locals() else [],
-            'error': 'Could not fetch IP geolocation data'
-        }
-
-        if db:
-            db.close()
-
-        return jsonify(result), 200
+        return jsonify(reputation), 200
 
     except Exception as e:
         if db:
@@ -788,7 +722,17 @@ def check_ip_reputation(ip):
         print(f"[IP CHECK] ❌ Error checking IP reputation: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+
+        # Return minimal data on error
+        return jsonify({
+            'success': False,
+            'ip': ip,
+            'error': str(e),
+            'threat_level': 'unknown',
+            'attribution_confidence': 'unknown',
+            'summary': 'IP reputation check failed',
+            'badge_type': 'datacenter'
+        }), 500
 
 # ============================================================================
 # FILE UPLOAD ENDPOINTS

@@ -759,8 +759,9 @@
 
         .timeline-event {
             position: relative;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             padding-left: 20px;
+            padding-bottom: 10px;
         }
 
         .timeline-event::before {
@@ -809,16 +810,19 @@
             background: rgba(212, 175, 55, 0.05);
             border: 1px solid rgba(212, 175, 55, 0.2);
             border-radius: 6px;
-            padding: 12px;
+            padding: 15px;
             margin-top: 8px;
+            margin-bottom: 12px;
             font-size: 0.9em;
         }
 
         .timeline-details-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 6px;
-            padding: 4px 0;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 6px 0;
+            gap: 15px;
         }
 
         .timeline-details-row:last-child {
@@ -837,11 +841,32 @@
         .expandable-details {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.5s ease-out;
         }
 
         .expandable-details.expanded {
-            max-height: 500px;
+            max-height: 3000px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        /* Custom scrollbar for expandable details */
+        .expandable-details::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .expandable-details::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .expandable-details::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.5);
+            border-radius: 3px;
+        }
+
+        .expandable-details::-webkit-scrollbar-thumb:hover {
+            background: rgba(212, 175, 55, 0.7);
         }
 
         .expand-indicator {
@@ -1043,22 +1068,30 @@
         .check-ip-btn {
             background: rgba(212, 175, 55, 0.1);
             border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 4px;
-            padding: 6px 12px;
+            border-radius: 6px;
+            padding: 8px 16px;
             color: #D4AF37;
             font-size: 0.85em;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 8px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .check-ip-btn:hover {
             background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
         }
 
         .check-ip-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         .ip-reputation-flags {
@@ -1086,6 +1119,298 @@
         .ip-flag.danger {
             background: rgba(239, 68, 68, 0.2);
             border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        /* IP Attribution Badges */
+        .ip-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        .ip-badge.high-attribution {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .ip-badge.known-threat {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .ip-badge.hidden-identity {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .ip-badge.datacenter {
+            background: rgba(107, 114, 128, 0.2);
+            border: 1px solid rgba(107, 114, 128, 0.3);
+            color: #9ca3af;
+        }
+
+        /* IP Report Modal */
+        .ip-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.2s;
+        }
+
+        .ip-modal-content {
+            background: linear-gradient(135deg, rgba(15, 15, 15, 0.98) 0%, rgba(25, 25, 25, 0.98) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            margin: 5% auto;
+            padding: 25px;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .ip-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .ip-modal-title {
+            font-size: 1.2em;
+            color: #D4AF37;
+            font-weight: 600;
+        }
+
+        .ip-modal-close {
+            color: #888;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .ip-modal-close:hover {
+            color: #D4AF37;
+        }
+
+        .ip-report-section {
+            margin-bottom: 20px;
+        }
+
+        .ip-report-section-title {
+            color: #D4AF37;
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ip-report-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .ip-report-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .ip-report-item-label {
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+
+        .ip-report-item-value {
+            color: #e0e0e0;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+
+        .threat-score-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .threat-score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .threat-score-fill.critical {
+            background: #ef4444;
+        }
+
+        .threat-score-fill.high {
+            background: #f97316;
+        }
+
+        .threat-score-fill.medium {
+            background: #fbbf24;
+        }
+
+        .threat-score-fill.low {
+            background: #10b981;
+        }
+
+        /* Fingerprint Attribution Badges */
+        .attribution-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 6px;
+            white-space: nowrap;
+        }
+
+        .attribution-badge.human {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+        }
+
+        .attribution-badge.bot {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #8b5cf6;
+        }
+
+        .attribution-badge.tool {
+            background: rgba(249, 115, 22, 0.2);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            color: #f97316;
+        }
+
+        .attribution-badge.spoofed {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .attribution-badge.unknown {
+            background: rgba(107, 114, 128, 0.2);
+            border: 1px solid rgba(107, 114, 128, 0.3);
+            color: #6b7280;
+        }
+
+        /* Evidence Strength Badges */
+        .evidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 6px;
+            white-space: nowrap;
+        }
+
+        .evidence-badge.court-ready {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .evidence-badge.moderate {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .evidence-badge.weak {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        /* Evidence Analysis Section */
+        .evidence-analysis {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+        }
+
+        .evidence-analysis-title {
+            color: #D4AF37;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .evidence-analysis-content {
+            color: #e0e0e0;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .evidence-analysis-content > div {
+            margin-bottom: 8px;
+        }
+
+        .evidence-analysis-content > div:last-child {
+            margin-bottom: 0;
+        }
+
+        .fingerprint-score {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .fingerprint-score.high {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .fingerprint-score.medium {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .fingerprint-score.low {
+            background: rgba(239, 68, 68, 0.2);
             color: #ef4444;
         }
     </style>
@@ -1297,6 +1622,9 @@
         let currentGeneratedBait = null;
         let refreshInterval = null;
 
+        // IP Reputation Cache (client-side session cache)
+        const ipReputationCache = new Map();
+
         // Demo Token Configuration
         const DEMO_TOKEN_ID = 'DEMO-TEST-TOKEN-001';
 
@@ -1331,7 +1659,20 @@
                     headers: JSON.stringify({ 'User-Agent': 'python-requests/2.28.0', 'Accept': '*/*' }),
                     request_data: JSON.stringify({ method: 'GET' }),
                     threat_level: 'HIGH',
-                    scanner_type: 'Python Script (Automated)'
+                    scanner_type: 'Python Script (Automated)',
+                    attribution_type: 'tool',
+                    evidence_strength: 'moderate',
+                    tool_name: 'Python Requests Library',
+                    fingerprint: {
+                        attribution_type: 'tool',
+                        tool_name: 'Python Requests Library',
+                        evidence_strength: 'moderate',
+                        legal_notes: 'TOOL DETECTED: Python Requests Library. Attribution depends on IP reputation. If datacenter IP, contact hosting provider. If residential IP, tool was run by end-user and ISP can identify.',
+                        is_browser: false,
+                        is_automated: true,
+                        fingerprint_score: 50,
+                        confidence: 'high'
+                    }
                 },
                 {
                     id: 'demo-access-2',
@@ -1342,7 +1683,20 @@
                     headers: JSON.stringify({ 'User-Agent': 'aws-cli/2.13.0', 'Accept': 'application/json' }),
                     request_data: JSON.stringify({ method: 'POST' }),
                     threat_level: 'CRITICAL',
-                    scanner_type: 'AWS CLI (Manual)'
+                    scanner_type: 'AWS CLI (Manual)',
+                    attribution_type: 'tool',
+                    evidence_strength: 'moderate',
+                    tool_name: 'AWS Command Line Interface',
+                    fingerprint: {
+                        attribution_type: 'tool',
+                        tool_name: 'AWS Command Line Interface',
+                        evidence_strength: 'moderate',
+                        legal_notes: 'TOOL DETECTED: AWS Command Line Interface. Attribution depends on IP reputation. If datacenter IP, contact hosting provider. If residential IP, tool was run by end-user and ISP can identify.',
+                        is_browser: false,
+                        is_automated: true,
+                        fingerprint_score: 50,
+                        confidence: 'high'
+                    }
                 },
                 {
                     id: 'demo-access-3',
@@ -1353,7 +1707,20 @@
                     headers: JSON.stringify({ 'User-Agent': 'curl/7.68.0' }),
                     request_data: JSON.stringify({ method: 'GET' }),
                     threat_level: 'MEDIUM',
-                    scanner_type: 'cURL (Manual)'
+                    scanner_type: 'cURL (Manual)',
+                    attribution_type: 'tool',
+                    evidence_strength: 'moderate',
+                    tool_name: 'cURL Command Line Tool',
+                    fingerprint: {
+                        attribution_type: 'tool',
+                        tool_name: 'cURL Command Line Tool',
+                        evidence_strength: 'moderate',
+                        legal_notes: 'TOOL DETECTED: cURL Command Line Tool. Attribution depends on IP reputation. If datacenter IP, contact hosting provider. If residential IP, tool was run by end-user and ISP can identify.',
+                        is_browser: false,
+                        is_automated: true,
+                        fingerprint_score: 50,
+                        confidence: 'high'
+                    }
                 },
                 {
                     id: 'demo-access-4',
@@ -1364,7 +1731,20 @@
                     headers: JSON.stringify({ 'User-Agent': 'python-requests/2.28.0', 'Accept': '*/*', 'X-Note': 'Repeat attacker' }),
                     request_data: JSON.stringify({ method: 'GET', note: 'Repeat attacker' }),
                     threat_level: 'HIGH',
-                    scanner_type: 'Python Script (Automated)'
+                    scanner_type: 'Python Script (Automated)',
+                    attribution_type: 'tool',
+                    evidence_strength: 'moderate',
+                    tool_name: 'Python Requests Library',
+                    fingerprint: {
+                        attribution_type: 'tool',
+                        tool_name: 'Python Requests Library',
+                        evidence_strength: 'moderate',
+                        legal_notes: 'TOOL DETECTED: Python Requests Library. Attribution depends on IP reputation. If datacenter IP, contact hosting provider. If residential IP, tool was run by end-user and ISP can identify.',
+                        is_browser: false,
+                        is_automated: true,
+                        fingerprint_score: 50,
+                        confidence: 'high'
+                    }
                 },
                 {
                     id: 'demo-access-5',
@@ -1375,7 +1755,20 @@
                     headers: JSON.stringify({ 'User-Agent': 'Boto3/1.26.0 Python/3.9.7' }),
                     request_data: JSON.stringify({ method: 'POST' }),
                     threat_level: 'HIGH',
-                    scanner_type: 'AWS SDK (Automated)'
+                    scanner_type: 'AWS SDK (Automated)',
+                    attribution_type: 'tool',
+                    evidence_strength: 'moderate',
+                    tool_name: 'Boto3 AWS SDK for Python',
+                    fingerprint: {
+                        attribution_type: 'tool',
+                        tool_name: 'Boto3 AWS SDK for Python',
+                        evidence_strength: 'moderate',
+                        legal_notes: 'TOOL DETECTED: Boto3 AWS SDK for Python. Attribution depends on IP reputation. If datacenter IP, contact hosting provider. If residential IP, tool was run by end-user and ISP can identify.',
+                        is_browser: false,
+                        is_automated: true,
+                        fingerprint_score: 50,
+                        confidence: 'high'
+                    }
                 }
             ];
 
@@ -2148,7 +2541,7 @@
         }
 
         // Render Timeline Visualization
-        function renderTimelineVisualization(timeline, identifier) {
+        async function renderTimelineVisualization(timeline, identifier) {
             console.log('\n=== TIMELINE VISUALIZATION ===');
             console.log('Timeline data received:', timeline);
             console.log('Identifier:', identifier);
@@ -2159,6 +2552,14 @@
 
             const container = document.getElementById('timelineContent');
             const isDemo = timeline.is_demo || identifier === DEMO_TOKEN_ID;
+
+            // Pre-fetch IP reputation for all IPs in timeline
+            if (timeline.accesses && timeline.accesses.length > 0) {
+                console.log('[IP REPUTATION] Pre-fetching reputation for all IPs...');
+                const uniqueIPs = [...new Set(timeline.accesses.map(a => a.source_ip))];
+                await Promise.all(uniqueIPs.map(ip => fetchIPReputation(ip)));
+                console.log('[IP REPUTATION] All IP reputations fetched');
+            }
 
             let html = `
                 <div style="color: #D4AF37; font-weight: 600; font-size: 1.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
@@ -2236,6 +2637,10 @@
                     const scanner = identifyScanner(access.user_agent);
                     const eventId = `event-${index}`;
 
+                    // Get IP reputation from cache
+                    const ipReputation = ipReputationCache.get(access.source_ip);
+                    const ipBadge = ipReputation ? getIPBadgeHTML(ipReputation) : '';
+
                     html += `
                         <div class="timeline-event triggered">
                             <div class="timeline-event-header" onclick="toggleEventDetails('${eventId}')">
@@ -2245,10 +2650,36 @@
                                 <span class="timeline-time">${formatTimestamp(access.accessed_at)}</span>
                             </div>
                             <div id="${eventId}" class="expandable-details">
+                                ${(ipReputation || access.fingerprint) ? `
+                                    <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                        <div style="color: #D4AF37; font-weight: 600; font-size: 0.9em; margin-bottom: 8px;">⚡ Quick Assessment</div>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                            ${ipReputation ? `
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    <span style="color: #888; font-size: 0.85em;">IP Threat:</span>
+                                                    ${getIPBadgeHTML(ipReputation)}
+                                                </div>
+                                            ` : ''}
+                                            ${access.attribution_type || access.fingerprint ? `
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    <span style="color: #888; font-size: 0.85em;">Attacker Type:</span>
+                                                    ${getAttributionBadgeHTML(access.attribution_type || access.fingerprint?.attribution_type || 'unknown')}
+                                                </div>
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    <span style="color: #888; font-size: 0.85em;">Evidence:</span>
+                                                    ${getEvidenceBadgeHTML(access.evidence_strength || access.fingerprint?.evidence_strength || 'weak')}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                ` : ''}
+
                                 <div class="timeline-details">
                                     <div class="timeline-details-row">
                                         <span class="timeline-label">Source IP:</span>
-                                        <span class="timeline-value">${access.source_ip}</span>
+                                        <span class="timeline-value">
+                                            ${access.source_ip}
+                                        </span>
                                     </div>
                                     ${access.geolocation && access.geolocation !== 'Unknown' ? `
                                     <div class="timeline-details-row">
@@ -2284,10 +2715,22 @@
                                     </div>
                                     ` : ''}
                                 </div>
-                                <button class="check-ip-btn" onclick="checkIPReputation('${access.source_ip}', 'event-${index}')">
-                                    Check IP Reputation
-                                </button>
-                                <div id="ip-reputation-event-${index}" style="display: none;"></div>
+
+                                <!-- Evidence Analysis Section -->
+                                ${access.fingerprint ? getEvidenceAnalysisHTML(access.fingerprint) : ''}
+
+                                <!-- Action Buttons -->
+                                <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+                                    ${ipReputation ? `
+                                        <button class="check-ip-btn" onclick="showIPReportModal('${access.source_ip}')">
+                                            🛡️ View Full IP Report
+                                        </button>
+                                    ` : `
+                                        <button class="check-ip-btn" onclick="checkAndShowIPReport('${access.source_ip}')">
+                                            🔍 Check IP Reputation
+                                        </button>
+                                    `}
+                                </div>
                             </div>
                         </div>
                     `;
@@ -2475,6 +2918,257 @@
                 toast.style.animation = 'slideInRight 0.3s ease-out reverse';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        }
+
+        // Fetch IP Reputation (with caching)
+        async function fetchIPReputation(ip) {
+            // Check cache first
+            if (ipReputationCache.has(ip)) {
+                console.log(`[IP REPUTATION] Cache hit for ${ip}`);
+                return ipReputationCache.get(ip);
+            }
+
+            console.log(`[IP REPUTATION] Fetching reputation for ${ip}...`);
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/bait/check-ip/${ip}`);
+                const data = await response.json();
+
+                if (data.success !== false) {
+                    // Cache the result
+                    ipReputationCache.set(ip, data);
+                    console.log(`[IP REPUTATION] Cached reputation for ${ip}`);
+                    return data;
+                }
+                return null;
+            } catch (error) {
+                console.error(`[IP REPUTATION] Error fetching reputation for ${ip}:`, error);
+                return null;
+            }
+        }
+
+        // Get IP Badge HTML
+        function getIPBadgeHTML(reputation) {
+            const badges = {
+                'high_attribution': { emoji: '🏠', text: 'HIGH ATTRIBUTION', class: 'high-attribution' },
+                'known_threat': { emoji: '🔴', text: 'KNOWN THREAT', class: 'known-threat' },
+                'hidden_identity': { emoji: '👤', text: 'HIDDEN IDENTITY', class: 'hidden-identity' },
+                'datacenter': { emoji: '🏢', text: 'DATACENTER', class: 'datacenter' }
+            };
+
+            const badgeType = reputation.badge_type || 'datacenter';
+            const badge = badges[badgeType] || badges['datacenter'];
+
+            return `<span class="ip-badge ${badge.class}">${badge.emoji} ${badge.text}</span>`;
+        }
+
+        // Show IP Report Modal
+        function showIPReportModal(ip) {
+            const reputation = ipReputationCache.get(ip);
+            if (!reputation) {
+                showToast('IP reputation not available', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('ipReportModal');
+            const content = document.getElementById('ipReportContent');
+
+            // Determine threat score color
+            const maxScore = Math.max(reputation.abuse_score, reputation.fraud_score);
+            let scoreClass = 'low';
+            if (maxScore > 80) scoreClass = 'critical';
+            else if (maxScore > 50) scoreClass = 'high';
+            else if (maxScore > 25) scoreClass = 'medium';
+
+            content.innerHTML = `
+                <div class="ip-report-section">
+                    <div class="ip-report-section-title">📍 IP Address: ${reputation.ip}</div>
+                    <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 4px; padding: 15px; margin-top: 10px;">
+                        <div style="color: #e0e0e0; margin-bottom: 8px;">${reputation.summary}</div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${getIPBadgeHTML(reputation)}
+                            <span class="ip-badge ${reputation.threat_level === 'critical' || reputation.threat_level === 'high' ? 'known-threat' : reputation.threat_level === 'medium' ? 'hidden-identity' : 'datacenter'}">${reputation.threat_level.toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ip-report-section">
+                    <div class="ip-report-section-title">🛡️ Threat Scores</div>
+                    <div class="ip-report-grid">
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">Abuse Score (AbuseIPDB)</div>
+                            <div class="ip-report-item-value">${reputation.abuse_score}/100</div>
+                            <div class="threat-score-bar">
+                                <div class="threat-score-fill ${scoreClass}" style="width: ${reputation.abuse_score}%"></div>
+                            </div>
+                        </div>
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">Fraud Score (IPQualityScore)</div>
+                            <div class="ip-report-item-value">${reputation.fraud_score}/100</div>
+                            <div class="threat-score-bar">
+                                <div class="threat-score-fill ${scoreClass}" style="width: ${reputation.fraud_score}%"></div>
+                            </div>
+                        </div>
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">Abuse Reports</div>
+                            <div class="ip-report-item-value">${reputation.reports_count}</div>
+                        </div>
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">Attribution Confidence</div>
+                            <div class="ip-report-item-value" style="color: ${reputation.attribution_confidence === 'high' ? '#10b981' : reputation.attribution_confidence === 'medium' ? '#fbbf24' : '#ef4444'}">${reputation.attribution_confidence.toUpperCase()}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ip-report-section">
+                    <div class="ip-report-section-title">🌍 Location & Network</div>
+                    <div class="ip-report-grid">
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">Country</div>
+                            <div class="ip-report-item-value">${reputation.country}</div>
+                        </div>
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">City</div>
+                            <div class="ip-report-item-value">${reputation.city}</div>
+                        </div>
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">ISP</div>
+                            <div class="ip-report-item-value">${reputation.isp}</div>
+                        </div>
+                        <div class="ip-report-item">
+                            <div class="ip-report-item-label">Connection Type</div>
+                            <div class="ip-report-item-value">
+                                ${reputation.is_residential ? 'Residential' : reputation.is_hosting ? 'Datacenter/Hosting' : 'Unknown'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ip-report-section">
+                    <div class="ip-report-section-title">🔍 Detection Flags</div>
+                    <div class="ip-reputation-flags">
+                        ${reputation.is_vpn ? '<div class="ip-flag warning">[VPN] VPN Detected</div>' : ''}
+                        ${reputation.is_proxy ? '<div class="ip-flag warning">[PROXY] Proxy Detected</div>' : ''}
+                        ${reputation.is_tor ? '<div class="ip-flag danger">[TOR] Tor Exit Node</div>' : ''}
+                        ${reputation.is_hosting ? '<div class="ip-flag warning">[HOSTING] Hosting Provider</div>' : ''}
+                        ${reputation.is_residential ? '<div class="ip-flag">[RESIDENTIAL] Residential IP</div>' : ''}
+                        ${reputation.hits_on_other_baits >= 5 ? '<div class="ip-flag danger">[ALERT] Known Scanner</div>' : ''}
+                        ${reputation.hits_on_other_baits >= 2 && reputation.hits_on_other_baits < 5 ? '<div class="ip-flag warning">[WARNING] Multiple Attempts</div>' : ''}
+                    </div>
+                </div>
+
+                ${reputation.baits_hit && reputation.baits_hit.length > 0 ? `
+                <div class="ip-report-section">
+                    <div class="ip-report-section-title">🎯 Honeytokens Hit by This IP</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+                        ${reputation.baits_hit.map(bait => `<div class="intelligence-chip" style="font-size: 0.8em;">${bait}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            modal.style.display = 'block';
+        }
+
+        // Close IP Modal
+        function closeIPModal() {
+            document.getElementById('ipReportModal').style.display = 'none';
+        }
+
+        // Check and Show IP Report (for IPs not yet fetched)
+        async function checkAndShowIPReport(ip) {
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '⏳ Checking...';
+
+            try {
+                const reputation = await fetchIPReputation(ip);
+                if (reputation) {
+                    showIPReportModal(ip);
+                    // Update button
+                    button.textContent = '🛡️ View Full IP Report';
+                    button.onclick = () => showIPReportModal(ip);
+                } else {
+                    showToast('Failed to fetch IP reputation', 'error');
+                }
+            } catch (error) {
+                console.error('Error checking IP:', error);
+                showToast('Error checking IP reputation', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('ipReportModal');
+            if (event.target === modal) {
+                closeIPModal();
+            }
+        }
+
+        // Get Attribution Badge HTML
+        function getAttributionBadgeHTML(attribution_type) {
+            const badges = {
+                'human': { emoji: '👤', text: 'HUMAN' },
+                'bot': { emoji: '🤖', text: 'BOT' },
+                'tool': { emoji: '🛠️', text: 'TOOL' },
+                'spoofed': { emoji: '🎭', text: 'SPOOFED' },
+                'unknown': { emoji: '❓', text: 'UNKNOWN' }
+            };
+
+            const badge = badges[attribution_type] || badges['unknown'];
+            return `<span class="attribution-badge ${attribution_type}">${badge.emoji} ${badge.text}</span>`;
+        }
+
+        // Get Evidence Badge HTML
+        function getEvidenceBadgeHTML(evidence_strength) {
+            const badges = {
+                'court_ready': { emoji: '⚖️', text: 'COURT READY' },
+                'moderate': { emoji: '📋', text: 'MODERATE' },
+                'weak': { emoji: '❌', text: 'WEAK' }
+            };
+
+            const badge = badges[evidence_strength] || badges['weak'];
+            return `<span class="evidence-badge ${evidence_strength.replace('_', '-')}">${badge.emoji} ${badge.text}</span>`;
+        }
+
+        // Get Fingerprint Score Class
+        function getFingerprintScoreClass(score) {
+            if (score >= 70) return 'high';
+            if (score >= 40) return 'medium';
+            return 'low';
+        }
+
+        // Get Evidence Analysis HTML
+        function getEvidenceAnalysisHTML(fingerprint) {
+            if (!fingerprint) return '';
+
+            const scoreClass = getFingerprintScoreClass(fingerprint.fingerprint_score || 0);
+
+            return `
+                <div class="evidence-analysis">
+                    <div class="evidence-analysis-title">
+                        ⚖️ Legal Attribution Assessment
+                        <span class="fingerprint-score ${scoreClass}">
+                            Fingerprint Score: ${fingerprint.fingerprint_score || 0}/100
+                        </span>
+                    </div>
+                    <div class="evidence-analysis-content">
+                        <div style="margin-bottom: 8px;">
+                            <strong>Tool/Client:</strong> ${fingerprint.tool_name || 'Unknown'}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Detection Confidence:</strong> ${(fingerprint.confidence || 'low').toUpperCase()}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Automated:</strong> ${fingerprint.is_automated ? 'Yes (Script/Bot)' : 'No (Human Operated)'}
+                        </div>
+                        <div style="padding: 10px; background: rgba(0, 0, 0, 0.3); border-left: 3px solid #D4AF37; border-radius: 4px;">
+                            ${fingerprint.legal_notes || 'No legal assessment available'}
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         // Check IP Reputation
@@ -3012,6 +3706,19 @@ ${cred.private_key}
             </div>
 
             <button onclick="closeTutorial()" class="deploy-btn" style="width: 100%; margin-top: 25px;">Got It!</button>
+        </div>
+    </div>
+
+    <!-- IP Report Modal -->
+    <div id="ipReportModal" class="ip-modal">
+        <div class="ip-modal-content">
+            <div class="ip-modal-header">
+                <span class="ip-modal-title">🛡️ IP Reputation Report</span>
+                <span class="ip-modal-close" onclick="closeIPModal()">&times;</span>
+            </div>
+            <div id="ipReportContent">
+                <!-- Content populated by JavaScript -->
+            </div>
         </div>
     </div>
 </body>

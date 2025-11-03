@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python -m modules.ghost.hibp_passwords:*)",
       "Bash(python:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

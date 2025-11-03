@@ -99,6 +99,13 @@ class BaitAccess(Base):
     threat_level = Column(String, default='medium')  # low, medium, high, critical
     notes = Column(Text)  # additional analysis notes
 
+    # Advanced fingerprinting fields
+    accept_language = Column(String)  # Accept-Language header for locale detection
+    referer = Column(String)  # Referer header for tracking origin
+    sec_fetch_headers = Column(Text)  # JSON: Sec-Fetch-Site, Sec-Fetch-Mode, Sec-Fetch-Dest
+    attribution_type = Column(String)  # human, bot, tool, spoofed
+    evidence_strength = Column(String)  # court_ready, moderate, weak
+
     # Relationship to bait token
     bait_token = relationship('BaitToken', back_populates='accesses')
 

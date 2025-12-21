@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attacker Simulation | OPSYCH</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            border-bottom: 1px solid rgba(143, 188, 143, 0.3);
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-title h1 {
+            font-size: 2.5em;
+            color: #8FBC8F;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .header-title p {
+            color: #8FBC8F;
+            font-size: 1em;
+            margin-top: 5px;
+        }
+
+        .back-button {
+            padding: 12px 24px;
+            background: rgba(143, 188, 143, 0.1);
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            border-radius: 6px;
+            color: #8FBC8F;
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .back-button:hover {
+            background: rgba(143, 188, 143, 0.2);
+            border-color: #8FBC8F;
+        }
+
+        .container {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-title {
+            font-size: 2em;
+            color: #8FBC8F;
+            margin-bottom: 10px;
+        }
+
+        .page-description {
+            color: #888;
+            font-size: 1.05em;
+            margin-bottom: 40px;
+        }
+
+        .coming-soon {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            border-radius: 8px;
+            padding: 60px;
+            text-align: center;
+        }
+
+        .coming-soon h2 {
+            font-size: 2em;
+            color: #8FBC8F;
+            margin-bottom: 20px;
+        }
+
+        .coming-soon p {
+            color: #888;
+            font-size: 1.1em;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="header-title">
+                <h1>OPSYCH</h1>
+                <p>Attacker Simulation</p>
+            </div>
+        </div>
+        <a href="opsych.html" class="back-button">← Back to OPSYCH Dashboard</a>
+    </div>
+
+    <div class="container">
+        <h1 class="page-title">Social Engineering Kill Chain</h1>
+        <p class="page-description">Simulate how a social engineer would weaponize discovered information to manipulate the target.</p>
+
+        <div class="coming-soon">
+            <h2>Coming Soon</h2>
+            <p>This feature will generate step-by-step attack simulations showing reconnaissance, pretexting, rapport building, exploitation vectors, and psychological manipulation techniques tailored to the target's profile.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from database import get_db, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding
+from database import get_db, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult
 from modules.ghost.osint import scan_profile_breaches
+from modules.opsych.exposure_analysis import analyze_exposure
 import os
 import json
 from datetime import datetime, timedelta
@@ -923,6 +924,376 @@ def get_dashboard_feed():
         }), 500
 
 # ============================================================================
+# MONITORING DASHBOARD ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/monitor/stats', methods=['GET'])
+def get_monitor_stats():
+    """
+    Get monitoring dashboard statistics and recent alerts
+    """
+    db = None
+    try:
+        print("\n" + "="*60)
+        print("[MONITOR] Fetching monitoring statistics...")
+
+        db = get_db()
+
+        # 1. Monitored Assets (email/domain count from uploaded_credentials)
+        monitored_assets = db.query(func.count(distinct(UploadedCredential.email))).scalar() or 0
+        print(f"[MONITOR] Monitored assets (unique emails): {monitored_assets}")
+
+        # 2. Active Threats (breaches found this month)
+        # Count GitHub + PasteBin findings from this month
+        current_month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        github_this_month = db.query(GitHubFinding).filter(
+            GitHubFinding.discovered_at >= current_month_start
+        ).count()
+
+        pastebin_this_month = db.query(PasteBinFinding).filter(
+            PasteBinFinding.discovered_at >= current_month_start
+        ).count()
+
+        active_threats = github_this_month + pastebin_this_month
+        print(f"[MONITOR] Active threats this month: {active_threats} (GitHub: {github_this_month}, PasteBin: {pastebin_this_month})")
+
+        # 3. Honeytokens Deployed (bait_tokens count)
+        honeytokens_deployed = db.query(BaitToken).count()
+        print(f"[MONITOR] Honeytokens deployed: {honeytokens_deployed}")
+
+        # 4. Recent Access Attempts (bait_accesses last 30 days)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        recent_attempts = db.query(BaitAccess).filter(
+            BaitAccess.accessed_at >= thirty_days_ago
+        ).count()
+        print(f"[MONITOR] Recent access attempts (30 days): {recent_attempts}")
+
+        # 5. Recent Alerts (last 10 findings combined from all sources)
+        recent_alerts = []
+
+        # Get GitHub findings (last 5)
+        github_findings = db.query(GitHubFinding).order_by(
+            GitHubFinding.discovered_at.desc()
+        ).limit(5).all()
+
+        for finding in github_findings:
+            recent_alerts.append({
+                'timestamp': finding.discovered_at.isoformat() if finding.discovered_at else None,
+                'alert_type': 'GitHub Exposure',
+                'source': 'GitHub Gist Scanner',
+                'description': f"{finding.credential_type} found for {finding.query_term}",
+                'severity': 'HIGH'
+            })
+
+        # Get PasteBin findings (last 5)
+        pastebin_findings = db.query(PasteBinFinding).order_by(
+            PasteBinFinding.discovered_at.desc()
+        ).limit(5).all()
+
+        for finding in pastebin_findings:
+            recent_alerts.append({
+                'timestamp': finding.discovered_at.isoformat() if finding.discovered_at else None,
+                'alert_type': 'PasteBin Exposure',
+                'source': 'PasteBin Scanner',
+                'description': f"Credential found for {finding.query_term}",
+                'severity': 'MEDIUM'
+            })
+
+        # Get Bait Access events (last 5)
+        bait_accesses = db.query(BaitAccess).order_by(
+            BaitAccess.accessed_at.desc()
+        ).limit(5).all()
+
+        for access in bait_accesses:
+            # Map threat_level to severity
+            severity_map = {
+                'critical': 'CRITICAL',
+                'high': 'HIGH',
+                'medium': 'MEDIUM',
+                'low': 'LOW'
+            }
+            severity = severity_map.get(access.threat_level, 'MEDIUM')
+
+            # Get bait token info
+            bait_info = f"Honeytoken {access.bait_token.identifier}" if access.bait_token else "Unknown honeytoken"
+
+            recent_alerts.append({
+                'timestamp': access.accessed_at.isoformat() if access.accessed_at else None,
+                'alert_type': 'Honeytoken Access',
+                'source': 'BAIT Module',
+                'description': f"{bait_info} accessed from {access.source_ip}",
+                'severity': severity
+            })
+
+        # Sort all alerts by timestamp (newest first) and limit to 10
+        recent_alerts.sort(key=lambda x: x['timestamp'] or '', reverse=True)
+        recent_alerts = recent_alerts[:10]
+
+        db.close()
+
+        print(f"[MONITOR] Recent alerts collected: {len(recent_alerts)}")
+        print(f"[MONITOR] Statistics ready")
+        print("="*60 + "\n")
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'monitored_assets': monitored_assets,
+                'active_threats': active_threats,
+                'honeytokens_deployed': honeytokens_deployed,
+                'recent_attempts': recent_attempts
+            },
+            'recent_alerts': recent_alerts
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[MONITOR] Error fetching monitoring stats: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# ATTACK SURFACE MANAGEMENT (ASM) ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/asm/scan', methods=['POST'])
+def asm_scan():
+    """
+    Attack Surface Management scan for a domain
+    Performs subdomain discovery, Shodan search, and DNS enumeration
+    """
+    try:
+        from modules.ghost.asm_scanner import scan_domain
+
+        data = request.json
+        domain = data.get('domain', '').strip()
+
+        if not domain:
+            return jsonify({'success': False, 'error': 'Domain is required'}), 400
+
+        # Validate domain format (basic)
+        import re
+        if not re.match(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', domain):
+            return jsonify({'success': False, 'error': 'Invalid domain format'}), 400
+
+        print(f"\n[ASM API] Starting scan for domain: {domain}")
+
+        # Perform scan
+        results = scan_domain(domain)
+
+        print(f"[ASM API] Scan complete for {domain}")
+        print(f"[ASM API] Risk Score: {results['risk_score']}/100")
+        print(f"[ASM API] Subdomains: {len(results['subdomains'])}")
+        print(f"[ASM API] Shodan Results: {len(results['shodan_results'])}")
+        print(f"[ASM API] Vulnerabilities: {results['vulnerabilities_found']}")
+
+        return jsonify({
+            'success': True,
+            'results': results
+        }), 200
+
+    except Exception as e:
+        print(f"[ASM API] Error scanning domain: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# AI ATTACK SIMULATION ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/asm/simulate', methods=['POST'])
+def asm_simulate_attack():
+    """
+    Generate AI-powered attack simulation using Gemini
+    """
+    try:
+        from modules.ghost.ai_attack_sim import generate_attack_plan
+
+        data = request.json
+        findings = data.get('findings', {})
+
+        if not findings:
+            return jsonify({'success': False, 'error': 'Findings are required'}), 400
+
+        print(f"\n[AI ATTACK SIM] Generating attack plan for {findings.get('domain', 'unknown')}...")
+
+        # Generate attack plan
+        result = generate_attack_plan(findings)
+
+        if result.get('success'):
+            print(f"[AI ATTACK SIM] ✓ Attack plan generated successfully")
+            return jsonify(result), 200
+        else:
+            print(f"[AI ATTACK SIM] ❌ Error: {result.get('error')}")
+            return jsonify(result), 500
+
+    except Exception as e:
+        print(f"[AI ATTACK SIM] ❌ Exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# LIGHTBOX AUTOMATED TESTING ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/lightbox/scan', methods=['POST'])
+def lightbox_scan():
+    """
+    Run automated security tests on discovered assets
+    """
+    try:
+        from modules.ghost.lightbox_scanner import run_lightbox_scan
+        from database import LightboxFinding, get_db
+        import uuid
+
+        data = request.json
+        discovered_assets = data.get('discovered_assets', {})
+
+        if not discovered_assets:
+            return jsonify({'success': False, 'error': 'Discovered assets are required'}), 400
+
+        print(f"\n[LIGHTBOX] Starting automated security testing...")
+
+        # Run Lightbox scan
+        results = run_lightbox_scan(discovered_assets)
+
+        # Store findings in database
+        db = get_db()
+        scan_id = f"lightbox_{uuid.uuid4().hex[:8]}"
+
+        all_findings = []
+        for severity in ['critical', 'high', 'medium', 'low']:
+            for finding in results.get(severity, []):
+                # Create database record
+                db_finding = LightboxFinding(
+                    scan_id=scan_id,
+                    asset=finding.get('asset'),
+                    finding_type=finding.get('type'),
+                    url=finding.get('url'),
+                    description=finding.get('description'),
+                    severity=finding.get('severity'),
+                    status_code=finding.get('status_code')
+                )
+                db.add(db_finding)
+                all_findings.append(finding)
+
+        db.commit()
+        db.close()
+
+        print(f"[LIGHTBOX] ✓ Scan complete: {len(all_findings)} findings stored")
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'scan_id': scan_id
+        }), 200
+
+    except Exception as e:
+        print(f"[LIGHTBOX] ❌ Exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# SHADOW IT DISCOVERY ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/shadow-it/discover', methods=['POST'])
+def shadow_it_discover():
+    """
+    Discover Shadow IT tools and unauthorized services
+    """
+    try:
+        from modules.ghost.shadow_it import discover_shadow_it
+
+        data = request.json
+        company_domain = data.get('company_domain', '')
+
+        if not company_domain:
+            return jsonify({'success': False, 'error': 'Company domain is required'}), 400
+
+        print(f"\n[SHADOW IT] Starting discovery for: {company_domain}...")
+
+        # Run Shadow IT discovery
+        results = discover_shadow_it(company_domain)
+
+        print(f"[SHADOW IT] ✓ Discovery complete")
+
+        return jsonify({
+            'success': True,
+            'results': results
+        }), 200
+
+    except Exception as e:
+        print(f"[SHADOW IT] ❌ Exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# AI VULNERABILITY ASSESSMENT ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/vuln-assessment/generate', methods=['POST'])
+def vuln_assessment_generate():
+    """
+    Generate AI-powered vulnerability assessment for critical/high findings
+    """
+    try:
+        from modules.ghost.ai_vuln_assessment import generate_vuln_assessment
+
+        data = request.json
+        xasm_results = data.get('xasm_results', {})
+        lightbox_results = data.get('lightbox_results', {})
+
+        if not xasm_results:
+            return jsonify({'success': False, 'error': 'XASM results are required'}), 400
+
+        print(f"\n[VULN ASSESSMENT] Generating AI-powered assessment...")
+
+        # Generate vulnerability assessment
+        results = generate_vuln_assessment(xasm_results, lightbox_results)
+
+        if results.get('success'):
+            print(f"[VULN ASSESSMENT] ✓ Generated {results.get('assessed_count', 0)} assessments")
+            return jsonify({
+                'success': True,
+                'results': results
+            }), 200
+        else:
+            print(f"[VULN ASSESSMENT] ❌ Error: {results.get('error')}")
+            return jsonify(results), 500
+
+    except Exception as e:
+        print(f"[VULN ASSESSMENT] ❌ Exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
 # FILE UPLOAD ENDPOINTS
 # ============================================================================
 
@@ -1161,6 +1532,376 @@ def search_uploaded_file():
         if db:
             db.close()
         print(f"[SEARCH UPLOAD] ❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# OPSYCH MODULE ENDPOINTS
+# ============================================================================
+
+@app.route('/api/opsych/search', methods=['POST'])
+def opsych_search():
+    """
+    OPSYCH Social Search - Search for identity using exposure analysis
+    Accepts: email, username, phone, name (comma-separated)
+
+    Uses exposure_analysis.py to run:
+    - DuckDuckGo searches
+    - Google Custom Search
+    - Ghost breach checker
+    - Hunter.io (if email)
+    """
+    db = None
+    try:
+        data = request.json
+        query_input = data.get('query', '').strip()
+
+        if not query_input:
+            return jsonify({'success': False, 'error': 'query is required'}), 400
+
+        print(f"\n[OPSYCH SEARCH] Starting search for: {query_input}")
+
+        # Detect input type and parse parameters
+        email = None
+        name = None
+        username = None
+        company = None
+        query_type = 'mixed'
+
+        # Parse query input
+        if '@' in query_input:
+            # Email input
+            email = query_input
+            query_type = 'email'
+            print(f"[OPSYCH SEARCH] Detected type: EMAIL")
+        elif query_input.replace('-', '').replace('+', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
+            # Phone input
+            query_type = 'phone'
+            print(f"[OPSYCH SEARCH] Detected type: PHONE (no handler yet)")
+            # Note: exposure_analysis doesn't handle phone yet
+            return jsonify({
+                'success': True,
+                'search_id': f"search_{int(time.time())}_{secrets.token_hex(4)}",
+                'query': query_input,
+                'profiles': [],
+                'emails': [],
+                'phones': [query_input],
+                'aliases': [],
+                'total_found': 0,
+                'message': 'Phone search not yet implemented'
+            }), 200
+        elif ',' not in query_input and ' ' in query_input:
+            # Name input (has space, no comma)
+            name = query_input
+            query_type = 'name'
+            print(f"[OPSYCH SEARCH] Detected type: NAME")
+        elif ',' not in query_input:
+            # Username input (no space, no comma)
+            username = query_input
+            query_type = 'username'
+            print(f"[OPSYCH SEARCH] Detected type: USERNAME")
+        else:
+            # Multiple queries - try to parse
+            name = query_input
+            query_type = 'name'
+            print(f"[OPSYCH SEARCH] Detected type: MIXED (treating as NAME)")
+
+        # Run exposure analysis
+        print(f"[OPSYCH SEARCH] Running exposure analysis...")
+        print(f"  Email: {email}")
+        print(f"  Name: {name}")
+        print(f"  Username: {username}")
+        print(f"  Company: {company}")
+
+        results = analyze_exposure(
+            email=email,
+            name=name,
+            username=username,
+            company=company
+        )
+
+        # Convert exposure analysis results to profile format
+        profiles = []
+        emails = set()
+        phones = set()
+        aliases = set()
+
+        # Add professional info as a profile
+        if results['professional'].get('email'):
+            emails.add(results['professional']['email'])
+
+        if results['professional'].get('company') or results['professional'].get('position'):
+            profiles.append({
+                'platform': 'Hunter.io',
+                'username': results['professional'].get('email', '').split('@')[0] if results['professional'].get('email') else '',
+                'email': results['professional'].get('email', ''),
+                'name': results['professional'].get('name', ''),
+                'title': results['professional'].get('position', ''),
+                'company': results['professional'].get('company', ''),
+                'linkedin': results['professional'].get('linkedin', ''),
+                'twitter': results['professional'].get('twitter', ''),
+                'url': results['professional'].get('linkedin', '') or results['professional'].get('twitter', ''),
+                'bio': f"{results['professional'].get('position', 'Professional')} at {results['professional'].get('company', 'Unknown')}",
+                'source': 'Hunter.io Professional Data'
+            })
+
+        # Add breach credentials as profiles
+        for cred in results['breaches'].get('credentials', [])[:5]:
+            emails.add(cred['email'])
+            profiles.append({
+                'platform': 'Ghost Breach',
+                'username': cred['email'].split('@')[0],
+                'email': cred['email'],
+                'password': cred.get('password', ''),
+                'url': '',
+                'bio': f"Found in breach: {cred.get('source', 'Unknown')}",
+                'source': cred.get('source', 'Ghost Database')
+            })
+
+        # Add GitHub leaks as profiles
+        for leak in results['breaches'].get('github_leaks', [])[:3]:
+            profiles.append({
+                'platform': 'GitHub',
+                'username': '',
+                'url': leak['url'],
+                'bio': f"{leak.get('credential_type', 'Credential')} found in GitHub gist",
+                'source': 'GitHub Leak',
+                'leak_type': leak.get('credential_type', 'Unknown')
+            })
+
+        # Add PasteBin leaks as profiles
+        for leak in results['breaches'].get('pastebin_leaks', [])[:3]:
+            profiles.append({
+                'platform': 'PasteBin',
+                'username': '',
+                'url': leak['url'],
+                'bio': f"{leak.get('title', 'Untitled paste')}",
+                'source': 'PasteBin Leak'
+            })
+
+        # Add mentions as profiles (DuckDuckGo and Google results)
+        for mention in results['mentions'][:10]:
+            profiles.append({
+                'platform': 'Web Mention',
+                'username': '',
+                'url': mention['url'],
+                'bio': mention.get('title', mention.get('snippet', 'Web mention')),
+                'source': mention.get('source', 'Web Search')
+            })
+
+        # Add social profiles
+        for social in results.get('social', []):
+            profiles.append({
+                'platform': social.get('platform', 'Social Media'),
+                'username': social.get('username', ''),
+                'url': social.get('url', ''),
+                'bio': social.get('bio', ''),
+                'source': 'Social Media Profile'
+            })
+
+        # Add username to aliases if provided
+        if username:
+            aliases.add(username)
+
+        # Generate search ID
+        search_id = f"search_{int(time.time())}_{secrets.token_hex(4)}"
+
+        # Store results in database
+        db = get_db()
+        stored_count = 0
+
+        for profile in profiles:
+            search_result = OpsychSearchResult(
+                search_id=search_id,
+                query_input=query_input,
+                query_type=query_type,
+                platform=profile.get('platform', ''),
+                username=profile.get('username', ''),
+                url=profile.get('url', ''),
+                bio=profile.get('bio', ''),
+                source=profile.get('source', '')
+            )
+            db.add(search_result)
+            stored_count += 1
+
+        db.commit()
+        db.close()
+
+        print(f"[OPSYCH SEARCH] Found {len(profiles)} profiles")
+        print(f"[OPSYCH SEARCH] Risk Score: {results['risk_score']}/100")
+        print(f"[OPSYCH SEARCH] Confidence: {results['confidence']}/100")
+        print(f"[OPSYCH SEARCH] Breaches: {results['breaches']['total_breaches']}")
+        print(f"[OPSYCH SEARCH] Stored {stored_count} results with search_id: {search_id}")
+
+        return jsonify({
+            'success': True,
+            'search_id': search_id,
+            'query': query_input,
+            'query_type': query_type,
+            'profiles': profiles,
+            'emails': list(emails),
+            'phones': list(phones),
+            'aliases': list(aliases),
+            'total_found': len(profiles),
+            'risk_score': results['risk_score'],
+            'confidence': results['confidence'],
+            'breach_count': results['breaches']['total_breaches']
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[OPSYCH SEARCH] ❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/opsych/search/<search_id>', methods=['GET'])
+def get_opsych_search(search_id):
+    """
+    Retrieve stored OPSYCH search results by search_id
+    """
+    db = None
+    try:
+        db = get_db()
+
+        # Get all results for this search
+        results = db.query(OpsychSearchResult).filter(
+            OpsychSearchResult.search_id == search_id
+        ).all()
+
+        if not results:
+            db.close()
+            return jsonify({'success': False, 'error': 'Search not found'}), 404
+
+        # Format results
+        profiles = []
+        for result in results:
+            profiles.append({
+                'platform': result.platform,
+                'username': result.username,
+                'url': result.url,
+                'bio': result.bio,
+                'source': result.source,
+                'discovered_at': result.discovered_at.isoformat() if result.discovered_at else None
+            })
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'search_id': search_id,
+            'query': results[0].query_input if results else '',
+            'profiles': profiles,
+            'total_found': len(profiles)
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[OPSYCH GET] ❌ Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/opsych/exposure', methods=['POST'])
+def opsych_exposure():
+    """
+    OPSYCH Phase 1: Intelligence Inference Engine
+    Comprehensive person intelligence with flexible input
+
+    Accepts JSON with (ALL OPTIONAL - at least ONE required):
+    - name: Full name
+    - email: Email address
+    - phone: Phone number
+    - username: Username/handle
+    - company: Company name
+    - location: City/state/location
+    - age: Age or age range
+    - context: Additional context
+
+    Returns:
+    - professional: Hunter.io enrichment data
+    - breaches: Ghost database breach data
+    - mentions: DuckDuckGo and Google search results
+    - social: Social media profiles
+    - family: Whitepages relatives/addresses data
+    - inference: Intelligence inference results with confidence scores
+    - risk_score: 0-100 risk assessment
+    - confidence: 0-100 confidence score
+    """
+    try:
+        from modules.opsych.exposure_analysis import analyze_exposure
+
+        data = request.json
+        email = data.get('email')
+        name = data.get('name')
+        username = data.get('username')
+        company = data.get('company')
+        phone = data.get('phone')
+        location = data.get('location')
+        age = data.get('age')
+        context = data.get('context')
+
+        # Validate at least one field provided
+        if not any([email, name, username, company, phone, location, age, context]):
+            return jsonify({
+                'success': False,
+                'error': 'At least ONE piece of information is required'
+            }), 400
+
+        print(f"\n[OPSYCH EXPOSURE] Starting Intelligence Inference")
+        print(f"  Email: {email}")
+        print(f"  Name: {name}")
+        print(f"  Phone: {phone}")
+        print(f"  Username: {username}")
+        print(f"  Company: {company}")
+        print(f"  Location: {location}")
+        print(f"  Age: {age}")
+        print(f"  Context: {context[:100] if context else None}...")
+
+        # Run exposure analysis with inference engine
+        results = analyze_exposure(
+            email=email,
+            name=name,
+            username=username,
+            company=company,
+            phone=phone,
+            location=location,
+            age=age,
+            context=context
+        )
+
+        print(f"[OPSYCH EXPOSURE] Analysis complete")
+        print(f"  Risk Score: {results['risk_score']}/100")
+        print(f"  Confidence: {results['confidence']}/100")
+        print(f"  Breaches: {results['breaches'].get('total_breaches', 0)}")
+        print(f"  Profiles Found: {len(results.get('inference', {}).get('profiles', []))}")
+
+        return jsonify({
+            'success': True,
+            'query': {
+                'email': email,
+                'name': name,
+                'phone': phone,
+                'username': username,
+                'company': company,
+                'location': location,
+                'age': age
+            },
+            'professional': results['professional'],
+            'breaches': results['breaches'],
+            'mentions': results['mentions'],
+            'social': results.get('social', []),
+            'family': results.get('family', []),
+            'inference': results.get('inference', {}),
+            'risk_score': results['risk_score'],
+            'confidence': results['confidence'],
+            'analyzed_at': results['analyzed_at']
+        }), 200
+
+    except Exception as e:
+        print(f"[OPSYCH EXPOSURE] ❌ Error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500

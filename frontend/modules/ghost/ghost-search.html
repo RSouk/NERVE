@@ -1428,30 +1428,40 @@
                     console.log('Processing infostealer logs');
                     items.forEach(item => {
                         console.log('Processing item:', item);
-                        // Calculate credential count for display
-                        const credCount = item.credentials ? item.credentials.length : 0;
-                        const stealerFamily = item.stealer_family || 'Unknown Stealer';
+                        // FREE API: Use total_credentials from API (not credentials.length)
+                        const totalCreds = item.total_credentials || 0;
+                        const sampleCreds = item.credentials || [];
+                        const stealerFamily = item.stealer_family || 'Infostealer';
+
+                        // Display format: "364+ credentials" for large counts
+                        const credDisplay = totalCreds > 10 ? `${totalCreds}+ credentials` : `${totalCreds} credentials`;
+
                         categorized.machines.push({
-                            source: `${stealerFamily} (${credCount} credentials)`,
+                            source: `${stealerFamily} (${credDisplay})`,
                             stealer: stealerFamily,
                             computer: item.computer_name,
                             os: item.operating_system,
                             ip: item.ip,
                             date: item.date_compromised,
-                            cred_count: credCount,
-                            credentials: item.credentials || []
+                            cred_count: totalCreds,  // Actual count from API
+                            sample_count: sampleCreds.length,  // Sample credentials available
+                            credentials: sampleCreds,
+                            is_sample: totalCreds > sampleCreds.length  // Mark if we're showing samples
                         });
 
-                        if (item.credentials) {
-                            item.credentials.forEach(cred => {
+                        // Add sample credentials to the credentials list
+                        if (sampleCreds && sampleCreds.length > 0) {
+                            sampleCreds.forEach(cred => {
                                 categorized.credentials.push({
-                                    source: `${stealerFamily} Stealer`,
+                                    source: `${stealerFamily} (Sample)`,
                                     stealer_family: stealerFamily,
                                     url: cred.url,
                                     domain: cred.domain,
                                     username: cred.username,
                                     password: cred.password,
-                                    date: item.date_compromised
+                                    date: item.date_compromised,
+                                    is_sample: true,
+                                    total_available: totalCreds
                                 });
                             });
                         }
@@ -1518,15 +1528,22 @@
             credentials.slice(0, showCount).forEach(cred => {
                 const item = document.createElement('div');
                 item.className = 'data-item';
-                
+
                 const domain = cred.domain || cred.url || 'Unknown';
                 const date = cred.date ? new Date(cred.date).toLocaleDateString() : 'Unknown';
-                
+
+                // Check if this is sample data from Hudson Rock free API
+                const isSample = cred.is_sample || cred.source?.includes('(Sample)');
+                const totalAvailable = cred.total_available || 0;
+                const sampleNote = isSample && totalAvailable > 0 ?
+                    `<div style="font-size: 0.85em; color: #D4AF37; margin-top: 5px;">Sample from ${totalAvailable}+ total credentials</div>` : '';
+
                 item.innerHTML = `
                     <div class="item-primary">${domain}</div>
                     <div class="item-details">
                         Username: <strong>${cred.username || 'N/A'}</strong><br>
                         Password: <strong class="severity-critical">${cred.password || '[Hidden]'}</strong>
+                        ${sampleNote}
                     </div>
                     <div class="item-meta">
                         <span class="source-tag">${cred.source}</span>
@@ -1546,15 +1563,22 @@
                 credentials.slice(showCount).forEach(cred => {
                     const item = document.createElement('div');
                     item.className = 'data-item';
-                    
+
                     const domain = cred.domain || cred.url || 'Unknown';
                     const date = cred.date ? new Date(cred.date).toLocaleDateString() : 'Unknown';
-                    
+
+                    // Check if this is sample data from Hudson Rock free API
+                    const isSample = cred.is_sample || cred.source?.includes('(Sample)');
+                    const totalAvailable = cred.total_available || 0;
+                    const sampleNote = isSample && totalAvailable > 0 ?
+                        `<div style="font-size: 0.85em; color: #D4AF37; margin-top: 5px;">Sample from ${totalAvailable}+ total credentials</div>` : '';
+
                     item.innerHTML = `
                         <div class="item-primary">${domain}</div>
                         <div class="item-details">
                             Username: <strong>${cred.username || 'N/A'}</strong><br>
                             Password: <strong class="severity-critical">${cred.password || '[Hidden]'}</strong>
+                            ${sampleNote}
                         </div>
                         <div class="item-meta">
                             <span class="source-tag">${cred.source}</span>
@@ -1601,16 +1625,26 @@
             machines.slice(0, showCount).forEach(machine => {
                 const item = document.createElement('div');
                 item.className = 'data-item';
-                
+
                 const date = machine.date ? new Date(machine.date).toLocaleDateString() : 'Unknown';
-                
+
+                // Display credential count properly (from free API total_credentials)
+                const credCount = machine.cred_count || 0;
+                const sampleCount = machine.sample_count || 0;
+                const credDisplay = credCount > 10 ? `${credCount}+ credentials exposed` : `${credCount} credentials exposed`;
+
+                // Add sample note if we have sample data
+                const sampleNote = machine.is_sample && sampleCount > 0 ?
+                    `<div style="font-size: 0.85em; color: #D4AF37; margin-top: 3px;">(${sampleCount} sample credentials available)</div>` : '';
+
                 item.innerHTML = `
                     <div class="item-primary">${machine.computer || 'Unknown Computer'}</div>
                     <div class="item-details">
                         Stealer: <strong>${machine.stealer || 'Unknown'}</strong><br>
                         OS: ${machine.os || 'Unknown'}<br>
                         IP: ${machine.ip || 'Unknown'}<br>
-                        <span class="severity-critical">${machine.cred_count} credentials exposed</span>
+                        <span class="severity-critical">${credDisplay}</span>
+                        ${sampleNote}
                     </div>
                     <div class="item-meta">
                         <span class="source-tag">${machine.source}</span>

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPSYCH - Social Engineering Intelligence | NERVE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            border-bottom: 1px solid rgba(143, 188, 143, 0.3);
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-left img {
+            height: 70px;
+        }
+
+        .header-title h1 {
+            font-size: 2.5em;
+            color: #8FBC8F;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .header-title p {
+            color: #8FBC8F;
+            font-size: 1em;
+            margin-top: 5px;
+        }
+
+        .beta-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(143, 188, 143, 0.15);
+            border: 1px solid #8FBC8F;
+            border-radius: 4px;
+            color: #8FBC8F;
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .refresh-button, .back-button {
+            padding: 12px 24px;
+            background: rgba(143, 188, 143, 0.1);
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            border-radius: 6px;
+            color: #8FBC8F;
+            text-decoration: none;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .refresh-button:hover, .back-button:hover {
+            background: rgba(143, 188, 143, 0.2);
+            border-color: #8FBC8F;
+            transform: translateY(-2px);
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            min-height: calc(100vh - 96px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #000000;
+            border-right: 1px solid rgba(143, 188, 143, 0.2);
+            padding: 30px 0;
+        }
+
+        .sidebar-title {
+            padding: 0 25px 15px;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #666;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(143, 188, 143, 0.2);
+            margin-bottom: 10px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 16px 25px;
+            color: #888;
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            font-size: 0.95em;
+        }
+
+        .nav-item:hover {
+            background: rgba(143, 188, 143, 0.05);
+            color: #8FBC8F;
+            border-left-color: #8FBC8F;
+        }
+
+        .sidebar-footer {
+            margin-top: 25px;
+            padding: 20px 25px 0;
+            border-top: 1px solid rgba(143, 188, 143, 0.2);
+        }
+
+        .sidebar-info-btn {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(143, 188, 143, 0.1);
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            border-radius: 6px;
+            color: #8FBC8F;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .sidebar-info-btn:hover {
+            background: rgba(143, 188, 143, 0.2);
+            border-color: #8FBC8F;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .welcome-section {
+            margin-bottom: 40px;
+        }
+
+        .welcome-section h2 {
+            font-size: 1.8em;
+            color: #8FBC8F;
+            margin-bottom: 10px;
+        }
+
+        .welcome-section p {
+            color: #888;
+            font-size: 1.05em;
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            border-radius: 8px;
+            padding: 30px;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: #8FBC8F;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(143, 188, 143, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #8FBC8F;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.95em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            background: #000000;
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            border-radius: 8px;
+            padding: 30px;
+        }
+
+        .quick-actions h3 {
+            font-size: 1.3em;
+            color: #8FBC8F;
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .action-btn {
+            padding: 16px 20px;
+            background: rgba(143, 188, 143, 0.1);
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            border-radius: 6px;
+            color: #8FBC8F;
+            text-decoration: none;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: rgba(143, 188, 143, 0.2);
+            border-color: #8FBC8F;
+            transform: translateY(-2px);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #0a0a0a;
+            border: 2px solid #8FBC8F;
+            border-radius: 8px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 25px 30px 20px;
+            border-bottom: 1px solid rgba(143, 188, 143, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            color: #8FBC8F;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.8em;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #8FBC8F;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-body h3 {
+            color: #8FBC8F;
+            font-size: 1.1em;
+            margin: 25px 0 12px 0;
+            font-weight: 600;
+        }
+
+        .modal-body h3:first-child {
+            margin-top: 0;
+        }
+
+        .modal-body p {
+            color: #aaa;
+            line-height: 1.7;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .modal-body ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 15px 0;
+        }
+
+        .modal-body ul li {
+            color: #aaa;
+            padding: 8px 0 8px 25px;
+            position: relative;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .modal-body ul li:before {
+            content: "•";
+            color: #8FBC8F;
+            font-weight: bold;
+            position: absolute;
+            left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="header-title">
+                <h1>OPSYCH</h1>
+                <p>Social Engineering Intelligence <span class="beta-badge">Beta</span></p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="../../index.html" class="back-button">← Back to NERVE Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-title">Module Features</div>
+            <a href="social-search.html" class="nav-item">
+                <span class="nav-text">Social Media Search</span>
+            </a>
+            <a href="exposure-analysis.html" class="nav-item">
+                <span class="nav-text">Exposure Analysis</span>
+            </a>
+            <a href="attacker-view.html" class="nav-item">
+                <span class="nav-text">Attacker Simulation</span>
+            </a>
+            <div class="sidebar-footer">
+                <button class="sidebar-info-btn" onclick="openInfoModal()">About OPSYCH</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="welcome-section">
+                <h2>Social Engineering Intelligence Platform</h2>
+                <p>Map psychological and behavioral vulnerabilities across digital footprints. Identify high-risk individuals and simulate social engineering attack vectors.</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Total Profiles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">High Risk Individuals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Reports Generated</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3>Quick Actions</h3>
+                <div class="action-buttons">
+                    <a href="social-search.html" class="action-btn">Search Social Media</a>
+                    <a href="exposure-analysis.html" class="action-btn">Analyze Exposure</a>
+                    <a href="attacker-view.html" class="action-btn">Simulate Attack</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal-overlay" id="infoModal" onclick="closeInfoModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="modal-title">About OPSYCH - Social Engineering Intelligence</h2>
+                <button class="modal-close" onclick="closeInfoModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>OPSYCH is a comprehensive human intelligence platform that maps psychological and behavioral vulnerabilities across digital footprints.</p>
+
+                <h3>What OPSYCH Does</h3>
+                <ul>
+                    <li>Aggregate and analyze social media presence across platforms</li>
+                    <li>Calculate human exposure scores based on public information</li>
+                    <li>Simulate social engineering attack chains (SE Kill Chain)</li>
+                    <li>Identify psychological manipulation vectors</li>
+                </ul>
+
+                <h3>Who It's For</h3>
+                <ul>
+                    <li>Executive protection teams</li>
+                    <li>Law enforcement and investigators</li>
+                    <li>Corporate security operations</li>
+                    <li>Red teams and penetration testers</li>
+                    <li>High-net-worth individuals assessing personal risk</li>
+                </ul>
+
+                <h3>Core Capabilities</h3>
+                <p><strong>Social Media Search:</strong> Deep OSINT across Facebook, LinkedIn, Twitter, Instagram, and more.</p>
+                <p><strong>Exposure Analysis:</strong> Quantify how much exploitable information a target reveals publicly.</p>
+                <p><strong>Attacker Simulation:</strong> See exactly how a social engineer would weaponize discovered information.</p>
+
+                <h3>Current Status</h3>
+                <p><strong>Beta</strong> - We're actively developing and improving based on user feedback. This module focuses on human vulnerabilities, complementing GHOST's technical credential intelligence.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal functions
+        function openInfoModal() {
+            document.getElementById('infoModal').classList.add('active');
+        }
+
+        function closeInfoModal(event) {
+            if (!event || event.target.id === 'infoModal' || event.target.className === 'modal-close') {
+                document.getElementById('infoModal').classList.remove('active');
+            }
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeInfoModal();
+            }
+        });
+    </script>
+</body>
+</html>

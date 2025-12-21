@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST - Attack Surface Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-left img {
+            height: 70px;
+        }
+
+        .header-title h1 {
+            font-size: 2.5em;
+            color: #D4AF37;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .header-title p {
+            color: #D4AF37;
+            font-size: 1em;
+            margin-top: 5px;
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            color: #D4AF37;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .back-button:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+        }
+
+        /* Search Section */
+        .search-section {
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 150px 18px 20px;
+            background: #000000;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1em;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #D4AF37;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+
+        .scan-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 12px 30px;
+            background: #D4AF37;
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .scan-button:hover {
+            background: #C4A037;
+        }
+
+        .scan-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .search-examples {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .search-examples span {
+            margin: 0 8px;
+            padding: 4px 10px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-examples span:hover {
+            background: rgba(212, 175, 55, 0.2);
+            color: #D4AF37;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid rgba(212, 175, 55, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #D4AF37;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Results Container */
+        .results-container {
+            display: none;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            padding: 12px 24px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-simulate {
+            background: linear-gradient(135deg, #D4AF37, #C4A037);
+            color: #000;
+            border: none;
+        }
+
+        .btn-simulate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-export {
+            background: rgba(212, 175, 55, 0.1);
+            color: #D4AF37;
+        }
+
+        .btn-export:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+        }
+
+        /* Risk Score Banner */
+        .risk-banner {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .risk-score {
+            font-size: 3em;
+            font-weight: bold;
+            color: #D4AF37;
+            margin-bottom: 10px;
+        }
+
+        .risk-label {
+            font-size: 1.1em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .risk-level-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        .risk-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .risk-high {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .risk-medium {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+            border: 1px solid rgba(234, 179, 8, 0.4);
+        }
+
+        .risk-low {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        .risk-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .risk-stat {
+            text-align: center;
+        }
+
+        .risk-stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #D4AF37;
+        }
+
+        .risk-stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Section */
+        .results-section {
+            background: #000000;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            background: rgba(212, 175, 55, 0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            color: #D4AF37;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-count {
+            padding: 4px 12px;
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #D4AF37;
+        }
+
+        .section-content {
+            padding: 20px 25px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .section-content.collapsed {
+            display: none;
+        }
+
+        .expand-icon {
+            transition: transform 0.3s;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        /* Asset Item */
+        .asset-item {
+            padding: 15px;
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 3px solid #D4AF37;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .asset-item:hover {
+            background: rgba(212, 175, 55, 0.1);
+            transform: translateX(5px);
+        }
+
+        .asset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .asset-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .asset-name a {
+            color: #D4AF37;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .asset-name a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .asset-details {
+            font-size: 0.9em;
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .asset-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+
+        .badge-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-high {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-medium {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+            border: 1px solid rgba(234, 179, 8, 0.4);
+        }
+
+        .badge-low {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            max-width: 1000px;
+            margin: 50px auto;
+            background: #000;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 40px;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .modal-title {
+            font-size: 2em;
+            color: #D4AF37;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            font-size: 2em;
+            color: #666;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0 10px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #D4AF37;
+        }
+
+        .modal-body {
+            color: #e0e0e0;
+            line-height: 1.8;
+            font-size: 0.95em;
+        }
+
+        .modal-body h1, .modal-body h2, .modal-body h3 {
+            color: #D4AF37;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .modal-body ul, .modal-body ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .modal-body code {
+            background: rgba(212, 175, 55, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #D4AF37;
+        }
+
+        .modal-body pre {
+            background: rgba(212, 175, 55, 0.05);
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            padding: 20px;
+            color: #f87171;
+            margin: 20px 0;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #D4AF37;
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .tab.active {
+            color: #D4AF37;
+            border-bottom-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <img src="ghost-logo.png" alt="GHOST">
+                <div class="header-title">
+                    <h1>GHOST</h1>
+                    <p>Attack Surface Management</p>
+                </div>
+            </div>
+            <a href="ghost.html" class="back-button">← Back to Dashboard</a>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="domainInput"
+                    class="search-input"
+                    placeholder="Enter domain to scan (e.g., stripe.com, tesla.com)..."
+                    autofocus
+                >
+                <button id="scanButton" class="scan-button">Scan Surface</button>
+            </div>
+
+            <div class="search-examples">
+                <strong>Examples:</strong>
+                <span onclick="exampleScan('stripe.com')">stripe.com</span>
+                <span onclick="exampleScan('tesla.com')">tesla.com</span>
+                <span onclick="exampleScan('github.com')">github.com</span>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="tabs-container">
+            <button class="tab active" onclick="switchTab('asm')">🌐 Attack Surface</button>
+            <button class="tab" onclick="switchTab('lightbox')">🔬 Lightbox Testing</button>
+            <button class="tab" onclick="switchTab('shadowit')">🔍 Shadow IT</button>
+            <button class="tab" onclick="switchTab('vulnassess')">🤖 Vulnerability Assessment</button>
+        </div>
+
+        <!-- ASM Tab Content -->
+        <div id="asmTab" class="tab-content active">
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading">
+            <div class="spinner"></div>
+            <p>Scanning attack surface...</p>
+            <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                Certificate transparency, cloud assets, Shodan, DNS enumeration...
+            </p>
+        </div>
+
+        <!-- Error Container -->
+        <div id="errorContainer"></div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="results-container">
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="action-btn btn-simulate" onclick="simulateAttack()">
+                    🤖 Simulate Attack
+                </button>
+                <button class="action-btn btn-export" onclick="exportAsTXT()">
+                    📄 Export as TXT
+                </button>
+            </div>
+
+            <!-- Risk Score Banner -->
+            <div class="risk-banner">
+                <div class="risk-score" id="riskScore">-</div>
+                <div class="risk-label">Risk Score</div>
+                <div class="risk-level-badge" id="riskLevelBadge">LOW</div>
+                <div class="risk-stats">
+                    <div class="risk-stat">
+                        <div class="risk-stat-value" id="criticalCount">0</div>
+                        <div class="risk-stat-label">Critical Findings</div>
+                    </div>
+                    <div class="risk-stat">
+                        <div class="risk-stat-value" id="vulnCount">0</div>
+                        <div class="risk-stat-label">Vulnerabilities</div>
+                    </div>
+                    <div class="risk-stat">
+                        <div class="risk-stat-value" id="assetCount">0</div>
+                        <div class="risk-stat-label">Assets Found</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Critical Findings Section -->
+            <div class="results-section">
+                <div class="section-header" onclick="toggleSection('critical')">
+                    <div class="section-title">
+                        ⚠️ Critical Findings
+                        <span class="expand-icon" id="critical-icon">▼</span>
+                    </div>
+                    <span class="section-count" id="criticalFindingsCount">0</span>
+                </div>
+                <div class="section-content" id="criticalContent"></div>
+            </div>
+
+            <!-- Subdomains Section -->
+            <div class="results-section">
+                <div class="section-header" onclick="toggleSection('subdomains')">
+                    <div class="section-title">
+                        🌐 Discovered Subdomains
+                        <span class="expand-icon" id="subdomains-icon">▼</span>
+                    </div>
+                    <span class="section-count" id="subdomainCount">0</span>
+                </div>
+                <div class="section-content" id="subdomainsContent"></div>
+            </div>
+
+            <!-- Cloud Assets Section -->
+            <div class="results-section">
+                <div class="section-header" onclick="toggleSection('cloud')">
+                    <div class="section-title">
+                        ☁️ Cloud Assets
+                        <span class="expand-icon" id="cloud-icon">▼</span>
+                    </div>
+                    <span class="section-count" id="cloudCount">0</span>
+                </div>
+                <div class="section-content" id="cloudContent"></div>
+            </div>
+
+            <!-- Open Ports/Services Section -->
+            <div class="results-section">
+                <div class="section-header" onclick="toggleSection('ports')">
+                    <div class="section-title">
+                        🔌 Open Ports & Services
+                        <span class="expand-icon" id="ports-icon">▼</span>
+                    </div>
+                    <span class="section-count" id="portsCount">0</span>
+                </div>
+                <div class="section-content" id="portsContent"></div>
+            </div>
+
+            <!-- DNS Records Section -->
+            <div class="results-section">
+                <div class="section-header" onclick="toggleSection('dns')">
+                    <div class="section-title">
+                        📋 DNS Records
+                        <span class="expand-icon" id="dns-icon">▼</span>
+                    </div>
+                    <span class="section-count" id="dnsCount">0</span>
+                </div>
+                <div class="section-content" id="dnsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attack Simulation Modal -->
+    <div id="attackModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🤖 AI Attack Simulation</div>
+                <button class="modal-close" onclick="closeAttackModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="attackPlanContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Generating attack simulation with Gemini AI...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+        <!-- End ASM Tab -->
+
+        <!-- Lightbox Testing Tab Content -->
+        <div id="lightboxTab" class="tab-content">
+            <!-- Loading Indicator -->
+            <div id="lightboxLoadingIndicator" class="loading">
+                <div class="spinner"></div>
+                <p>Running automated security tests...</p>
+                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                    Testing for sensitive files, directory listings, admin panels...
+                </p>
+            </div>
+
+            <!-- Error Container -->
+            <div id="lightboxErrorContainer"></div>
+
+            <!-- Results Container -->
+            <div id="lightboxResultsContainer" class="results-container">
+                <!-- Summary Banner -->
+                <div class="risk-banner">
+                    <div class="risk-score" id="lightboxTotalTests">0</div>
+                    <div class="risk-label">Total Tests Run</div>
+                    <div class="risk-stats">
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="lightboxCritical">0</div>
+                            <div class="risk-stat-label">Critical</div>
+                        </div>
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="lightboxHigh">0</div>
+                            <div class="risk-stat-label">High</div>
+                        </div>
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="lightboxMedium">0</div>
+                            <div class="risk-stat-label">Medium</div>
+                        </div>
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="lightboxLow">0</div>
+                            <div class="risk-stat-label">Low</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Findings Sections -->
+                <div class="results-section">
+                    <div class="section-header" onclick="toggleSection('lightboxFindings')">
+                        <div class="section-title">
+                            🔬 Lightbox Findings
+                            <span class="expand-icon" id="lightboxFindings-icon">▼</span>
+                        </div>
+                        <span class="section-count" id="lightboxFindingsCount">0</span>
+                    </div>
+                    <div class="section-content" id="lightboxFindingsContent"></div>
+                </div>
+            </div>
+        </div>
+        <!-- End Lightbox Tab -->
+
+        <!-- Shadow IT Tab Content -->
+        <div id="shadowitTab" class="tab-content">
+            <!-- Loading Indicator -->
+            <div id="shadowitLoadingIndicator" class="loading">
+                <div class="spinner"></div>
+                <p>Discovering Shadow IT...</p>
+                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                    Searching for unauthorized tools and services...
+                </p>
+            </div>
+
+            <!-- Error Container -->
+            <div id="shadowitErrorContainer"></div>
+
+            <!-- Results Container -->
+            <div id="shadowitResultsContainer" class="results-container">
+                <!-- Summary Banner -->
+                <div class="risk-banner">
+                    <div class="risk-score" id="shadowitToolsFound">0</div>
+                    <div class="risk-label">Tools Found</div>
+                    <div class="risk-level-badge" id="shadowitRiskBadge">LOW</div>
+                    <div class="risk-stats">
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="shadowitFlagged">0</div>
+                            <div class="risk-stat-label">Flagged (Unauthorized)</div>
+                        </div>
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="shadowitEmployees">0</div>
+                            <div class="risk-stat-label">Employees Exposed</div>
+                        </div>
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="shadowitExposures">0</div>
+                            <div class="risk-stat-label">Total Exposures</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tools Sections -->
+                <div class="results-section">
+                    <div class="section-header" onclick="toggleSection('shadowitTools')">
+                        <div class="section-title">
+                            🔍 Discovered Tools
+                            <span class="expand-icon" id="shadowitTools-icon">▼</span>
+                        </div>
+                        <span class="section-count" id="shadowitToolsCount">0</span>
+                    </div>
+                    <div class="section-content" id="shadowitToolsContent"></div>
+                </div>
+
+                <div class="results-section">
+                    <div class="section-header" onclick="toggleSection('shadowitFlaggedTools')">
+                        <div class="section-title">
+                            ⚠️ Flagged (Unauthorized) Tools
+                            <span class="expand-icon" id="shadowitFlaggedTools-icon">▼</span>
+                        </div>
+                        <span class="section-count" id="shadowitFlaggedCount">0</span>
+                    </div>
+                    <div class="section-content" id="shadowitFlaggedToolsContent"></div>
+                </div>
+            </div>
+        </div>
+        <!-- End Shadow IT Tab -->
+
+        <!-- Vulnerability Assessment Tab Content -->
+        <div id="vulnassessTab" class="tab-content">
+            <!-- Loading Indicator -->
+            <div id="vulnassessLoadingIndicator" class="loading">
+                <div class="spinner"></div>
+                <p>Generating AI-powered vulnerability assessments...</p>
+                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                    Analyzing critical/high findings with Gemini AI...
+                </p>
+            </div>
+
+            <!-- Error Container -->
+            <div id="vulnassessErrorContainer"></div>
+
+            <!-- Results Container -->
+            <div id="vulnassessResultsContainer" class="results-container">
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="action-btn btn-export" onclick="exportVulnAssessment()">
+                        📄 Export Assessment as TXT
+                    </button>
+                </div>
+
+                <!-- Summary Banner -->
+                <div class="risk-banner">
+                    <div class="risk-score" id="vulnassessTotalAssessed">0</div>
+                    <div class="risk-label">Vulnerabilities Assessed</div>
+                    <div class="risk-stats">
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="vulnassessCritical">0</div>
+                            <div class="risk-stat-label">Critical</div>
+                        </div>
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="vulnassessHigh">0</div>
+                            <div class="risk-stat-label">High</div>
+                        </div>
+                        <div class="risk-stat">
+                            <div class="risk-stat-value" id="vulnassessThreatActors">0</div>
+                            <div class="risk-stat-label">Threat Actors Linked</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assessments List -->
+                <div id="vulnassessmentsList"></div>
+            </div>
+        </div>
+        <!-- End Vulnerability Assessment Tab -->
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let currentResults = null;
+
+        // Event listeners
+        document.getElementById('scanButton').addEventListener('click', performScan);
+        document.getElementById('domainInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performScan();
+        });
+
+        function exampleScan(domain) {
+            document.getElementById('domainInput').value = domain;
+            performScan();
+        }
+
+        async function performScan() {
+            const domain = document.getElementById('domainInput').value.trim();
+
+            if (!domain) {
+                alert('Please enter a domain to scan');
+                return;
+            }
+
+            if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain)) {
+                alert('Please enter a valid domain (e.g., example.com)');
+                return;
+            }
+
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const errorContainer = document.getElementById('errorContainer');
+            const scanButton = document.getElementById('scanButton');
+
+            loadingIndicator.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            errorContainer.innerHTML = '';
+            scanButton.disabled = true;
+
+            try {
+                console.log(`[ASM] Starting scan for: ${domain}`);
+
+                const response = await fetch(`${API_URL}/api/ghost/asm/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain: domain })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Scan failed');
+                }
+
+                currentResults = data.results;
+                displayResults(data.results);
+
+                console.log('[ASM] Scan complete:', currentResults);
+
+            } catch (error) {
+                console.error('[ASM] Error:', error);
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <strong>Scan Error:</strong> ${error.message}
+                        <br><br>
+                        Please ensure the backend is running and try again.
+                    </div>
+                `;
+            } finally {
+                loadingIndicator.style.display = 'none';
+                scanButton.disabled = false;
+            }
+        }
+
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`${sectionId}Content`);
+            const icon = document.getElementById(`${sectionId}-icon`);
+
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('expanded');
+        }
+
+        function getRiskBadgeClass(riskLevel) {
+            const level = riskLevel ? riskLevel.toLowerCase() : 'low';
+            return `badge-${level}`;
+        }
+
+        function displayResults(results) {
+            // Update risk score banner
+            document.getElementById('riskScore').textContent = results.risk_score + '/100';
+
+            const riskBadge = document.getElementById('riskLevelBadge');
+            riskBadge.textContent = results.risk_level.toUpperCase();
+            riskBadge.className = 'risk-level-badge risk-' + results.risk_level;
+
+            const totalAssets = results.subdomains.length + results.crt_subdomains.length + results.cloud_assets.length;
+
+            document.getElementById('criticalCount').textContent = results.critical_findings.length;
+            document.getElementById('vulnCount').textContent = results.vulnerabilities_found;
+            document.getElementById('assetCount').textContent = totalAssets;
+
+            // Display each section
+            displayCriticalFindings(results.critical_findings);
+            displaySubdomains(results.subdomains, results.crt_subdomains);
+            displayCloudAssets(results.cloud_assets);
+            displayPorts(results.shodan_results);
+            displayDNS(results.dns_records);
+
+            // Show results container
+            document.getElementById('resultsContainer').style.display = 'block';
+        }
+
+        function displayCriticalFindings(findings) {
+            const container = document.getElementById('criticalContent');
+            document.getElementById('criticalFindingsCount').textContent = findings.length;
+
+            if (findings.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No critical findings detected</p></div>';
+                return;
+            }
+
+            // Sort by severity: CRITICAL > HIGH > MEDIUM > LOW
+            const severityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+            findings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+            let html = '';
+            findings.forEach(finding => {
+                const badgeClass = getRiskBadgeClass(finding.severity);
+                html += `
+                    <div class="asset-item">
+                        <div class="asset-header">
+                            <div class="asset-name">${finding.type}</div>
+                            <span class="asset-badge ${badgeClass}">${finding.severity}</span>
+                        </div>
+                        <div class="asset-details">${finding.description}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function displaySubdomains(subdomains, crtSubdomains) {
+            const container = document.getElementById('subdomainsContent');
+            const total = subdomains.length + crtSubdomains.length;
+            document.getElementById('subdomainCount').textContent = total;
+
+            if (total === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No subdomains discovered</p></div>';
+                return;
+            }
+
+            let html = '';
+
+            // DNS subdomains
+            subdomains.forEach(sub => {
+                const ips = sub.ips.map(ip => `<span class="asset-badge badge-low">${ip}</span>`).join(' ');
+                html += `
+                    <div class="asset-item">
+                        <div class="asset-header">
+                            <div class="asset-name">
+                                <a href="http://${sub.subdomain}" target="_blank">${sub.subdomain}</a>
+                            </div>
+                            <span class="asset-badge badge-medium">DNS</span>
+                        </div>
+                        <div class="asset-details">
+                            Type: ${sub.type}<br>
+                            IP Addresses: ${ips}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // crt.sh subdomains
+            crtSubdomains.slice(0, 20).forEach(sub => {
+                html += `
+                    <div class="asset-item">
+                        <div class="asset-header">
+                            <div class="asset-name">
+                                <a href="http://${sub.subdomain}" target="_blank">${sub.subdomain}</a>
+                            </div>
+                            <span class="asset-badge badge-low">crt.sh</span>
+                        </div>
+                        <div class="asset-details">Source: Certificate Transparency</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function displayCloudAssets(assets) {
+            const container = document.getElementById('cloudContent');
+            document.getElementById('cloudCount').textContent = assets.length;
+
+            if (assets.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">☁️</div><p>No cloud assets found</p></div>';
+                return;
+            }
+
+            let html = '';
+            assets.forEach(asset => {
+                const badgeClass = getRiskBadgeClass(asset.risk);
+                html += `
+                    <div class="asset-item">
+                        <div class="asset-header">
+                            <div class="asset-name">
+                                <a href="${asset.url}" target="_blank">${asset.name}</a>
+                            </div>
+                            <span class="asset-badge ${badgeClass}">${asset.risk}</span>
+                        </div>
+                        <div class="asset-details">
+                            Type: ${asset.type}<br>
+                            Status: ${asset.status}<br>
+                            URL: <a href="${asset.url}" target="_blank">${asset.url}</a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function displayPorts(shodanResults) {
+            const container = document.getElementById('portsContent');
+            document.getElementById('portsCount').textContent = shodanResults.length;
+
+            if (shodanResults.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌐</div><p>No Shodan results found</p></div>';
+                return;
+            }
+
+            let html = '';
+            shodanResults.forEach(result => {
+                const badgeClass = getRiskBadgeClass(result.risk);
+                const vulnBadges = result.vulnerabilities.map(cve =>
+                    `<span class="asset-badge badge-critical">${cve}</span>`
+                ).join(' ');
+
+                html += `
+                    <div class="asset-item">
+                        <div class="asset-header">
+                            <div class="asset-name">
+                                <a href="https://www.shodan.io/host/${result.ip}" target="_blank">${result.ip}:${result.port}</a>
+                            </div>
+                            <span class="asset-badge ${badgeClass}">${result.risk}</span>
+                        </div>
+                        <div class="asset-details">
+                            Service: <strong>${result.service} ${result.version}</strong><br>
+                            Organization: ${result.organization}<br>
+                            Location: ${result.location.city}, ${result.location.country}<br>
+                            ${result.vulnerabilities.length > 0 ? `CVEs: ${vulnBadges}<br>` : ''}
+                            ${result.banner ? `Banner: <code>${result.banner.substring(0, 100)}...</code>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function displayDNS(dnsRecords) {
+            const container = document.getElementById('dnsContent');
+
+            let totalRecords = 0;
+            for (const recordType in dnsRecords) {
+                totalRecords += dnsRecords[recordType].length;
+            }
+
+            document.getElementById('dnsCount').textContent = totalRecords;
+
+            if (totalRecords === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No DNS records found</p></div>';
+                return;
+            }
+
+            let html = '';
+
+            for (const recordType in dnsRecords) {
+                const records = dnsRecords[recordType];
+                if (records.length === 0) continue;
+
+                records.forEach(record => {
+                    let recordValue = '';
+                    if (typeof record === 'string') {
+                        recordValue = record;
+                    } else if (recordType === 'MX') {
+                        recordValue = `Priority: ${record.priority}, Server: ${record.server}`;
+                    } else if (recordType === 'SOA') {
+                        recordValue = `MNAME: ${record.mname}, RNAME: ${record.rname}`;
+                    } else {
+                        recordValue = JSON.stringify(record);
+                    }
+
+                    html += `
+                        <div class="asset-item">
+                            <div class="asset-header">
+                                <span class="asset-badge badge-low">${recordType}</span>
+                            </div>
+                            <div class="asset-details">${recordValue}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function simulateAttack() {
+            if (!currentResults) {
+                alert('Please run a scan first');
+                return;
+            }
+
+            const modal = document.getElementById('attackModal');
+            const modalBody = document.getElementById('attackPlanContent');
+
+            modal.style.display = 'block';
+            modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating attack simulation with Gemini AI...</p></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/asm/simulate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ findings: currentResults })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Convert markdown-like formatting to HTML
+                    const formattedPlan = data.attack_plan
+                        .replace(/\n/g, '<br>')
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                        .replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+                    modalBody.innerHTML = formattedPlan;
+                } else {
+                    modalBody.innerHTML = `<div class="error-message">${data.error}</div>`;
+                }
+
+            } catch (error) {
+                modalBody.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+            }
+        }
+
+        function closeAttackModal() {
+            document.getElementById('attackModal').style.display = 'none';
+        }
+
+        function exportAsTXT() {
+            if (!currentResults) {
+                alert('Please run a scan first');
+                return;
+            }
+
+            let txt = `GHOST ATTACK SURFACE MANAGEMENT REPORT\n`;
+            txt += `${'='.repeat(60)}\n\n`;
+            txt += `Domain: ${currentResults.domain}\n`;
+            txt += `Scan Time: ${currentResults.scan_time}\n`;
+            txt += `Risk Score: ${currentResults.risk_score}/100 (${currentResults.risk_level.toUpperCase()})\n`;
+            txt += `\n${'='.repeat(60)}\n\n`;
+
+            txt += `CRITICAL FINDINGS (${currentResults.critical_findings.length})\n`;
+            txt += `${'-'.repeat(60)}\n`;
+            currentResults.critical_findings.forEach((f, i) => {
+                txt += `${i + 1}. [${f.severity}] ${f.type}: ${f.description}\n`;
+            });
+
+            txt += `\n${'='.repeat(60)}\n\n`;
+            txt += `SUBDOMAINS (${currentResults.subdomains.length + currentResults.crt_subdomains.length})\n`;
+            txt += `${'-'.repeat(60)}\n`;
+            currentResults.subdomains.forEach(sub => {
+                txt += `${sub.subdomain} (${sub.ips.join(', ')})\n`;
+            });
+            currentResults.crt_subdomains.slice(0, 20).forEach(sub => {
+                txt += `${sub.subdomain} (crt.sh)\n`;
+            });
+
+            txt += `\n${'='.repeat(60)}\n\n`;
+            txt += `CLOUD ASSETS (${currentResults.cloud_assets.length})\n`;
+            txt += `${'-'.repeat(60)}\n`;
+            currentResults.cloud_assets.forEach(asset => {
+                txt += `${asset.name} - ${asset.type} (${asset.status}) [${asset.risk}]\n`;
+                txt += `  ${asset.url}\n`;
+            });
+
+            txt += `\n${'='.repeat(60)}\n\n`;
+            txt += `OPEN PORTS & SERVICES (${currentResults.shodan_results.length})\n`;
+            txt += `${'-'.repeat(60)}\n`;
+            currentResults.shodan_results.forEach(result => {
+                txt += `${result.ip}:${result.port} - ${result.service} ${result.version} [${result.risk}]\n`;
+                if (result.vulnerabilities.length > 0) {
+                    txt += `  CVEs: ${result.vulnerabilities.join(', ')}\n`;
+                }
+            });
+
+            txt += `\n${'='.repeat(60)}\n`;
+            txt += `Report generated by GHOST ASM Scanner\n`;
+
+            // Download
+            const blob = new Blob([txt], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `asm-report-${currentResults.domain}-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('attackModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+
+            // Auto-run scans when switching to Lightbox or Shadow IT tabs
+            if (tabName === 'lightbox' && currentResults) {
+                runLightboxScan();
+            } else if (tabName === 'shadowit') {
+                runShadowITDiscovery();
+            } else if (tabName === 'vulnassess') {
+                runVulnAssessment();
+            }
+        }
+
+        // Lightbox Testing
+        async function runLightboxScan() {
+            if (!currentResults) {
+                alert('Please run an ASM scan first to discover assets');
+                return;
+            }
+
+            const loadingIndicator = document.getElementById('lightboxLoadingIndicator');
+            const resultsContainer = document.getElementById('lightboxResultsContainer');
+            const errorContainer = document.getElementById('lightboxErrorContainer');
+
+            loadingIndicator.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            errorContainer.innerHTML = '';
+
+            try {
+                console.log('[LIGHTBOX] Starting automated security tests...');
+
+                const response = await fetch(`${API_URL}/api/ghost/lightbox/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ discovered_assets: currentResults })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Lightbox scan failed');
+                }
+
+                displayLightboxResults(data.results);
+                console.log('[LIGHTBOX] Scan complete:', data.results);
+
+            } catch (error) {
+                console.error('[LIGHTBOX] Error:', error);
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <strong>Lightbox Scan Error:</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function displayLightboxResults(results) {
+            document.getElementById('lightboxTotalTests').textContent = results.total_tests;
+            document.getElementById('lightboxCritical').textContent = results.critical.length;
+            document.getElementById('lightboxHigh').textContent = results.high.length;
+            document.getElementById('lightboxMedium').textContent = results.medium.length;
+            document.getElementById('lightboxLow').textContent = results.low.length;
+
+            const allFindings = [
+                ...results.critical,
+                ...results.high,
+                ...results.medium,
+                ...results.low
+            ];
+
+            document.getElementById('lightboxFindingsCount').textContent = allFindings.length;
+
+            const container = document.getElementById('lightboxFindingsContent');
+
+            if (allFindings.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No security issues found</p></div>';
+            } else {
+                let html = '';
+                allFindings.forEach(finding => {
+                    const badgeClass = getRiskBadgeClass(finding.severity);
+                    html += `
+                        <div class="asset-item">
+                            <div class="asset-header">
+                                <div class="asset-name">${finding.type}</div>
+                                <span class="asset-badge ${badgeClass}">${finding.severity}</span>
+                            </div>
+                            <div class="asset-details">
+                                Asset: <strong>${finding.asset}</strong><br>
+                                URL: <a href="${finding.url}" target="_blank">${finding.url}</a><br>
+                                ${finding.description}<br>
+                                Status Code: ${finding.status_code}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+
+            document.getElementById('lightboxResultsContainer').style.display = 'block';
+        }
+
+        // Shadow IT Discovery
+        async function runShadowITDiscovery() {
+            const domain = document.getElementById('domainInput').value.trim();
+
+            if (!domain) {
+                alert('Please enter a domain to scan');
+                return;
+            }
+
+            const loadingIndicator = document.getElementById('shadowitLoadingIndicator');
+            const resultsContainer = document.getElementById('shadowitResultsContainer');
+            const errorContainer = document.getElementById('shadowitErrorContainer');
+
+            loadingIndicator.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            errorContainer.innerHTML = '';
+
+            try {
+                console.log('[SHADOW IT] Starting discovery for:', domain);
+
+                const response = await fetch(`${API_URL}/api/ghost/shadow-it/discover`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ company_domain: domain })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Shadow IT discovery failed');
+                }
+
+                displayShadowITResults(data.results);
+                console.log('[SHADOW IT] Discovery complete:', data.results);
+
+            } catch (error) {
+                console.error('[SHADOW IT] Error:', error);
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <strong>Shadow IT Discovery Error:</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function displayShadowITResults(results) {
+            document.getElementById('shadowitToolsFound').textContent = results.tools.length;
+            document.getElementById('shadowitFlagged').textContent = results.flagged_tools.length;
+            document.getElementById('shadowitEmployees').textContent = results.employee_count;
+            document.getElementById('shadowitExposures').textContent = results.total_exposures;
+
+            const riskBadge = document.getElementById('shadowitRiskBadge');
+            riskBadge.textContent = results.risk_level;
+            riskBadge.className = 'risk-level-badge risk-' + results.risk_level.toLowerCase();
+
+            // Display all tools
+            document.getElementById('shadowitToolsCount').textContent = results.tools.length;
+            const toolsContainer = document.getElementById('shadowitToolsContent');
+
+            if (results.tools.length === 0) {
+                toolsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No tools discovered</p></div>';
+            } else {
+                let html = '';
+                results.tools.forEach(tool => {
+                    const badgeClass = getRiskBadgeClass(tool.risk);
+                    const authStatus = tool.authorized ? '✓ Authorized' : '✗ Unauthorized';
+                    const authColor = tool.authorized ? '#22c55e' : '#ef4444';
+
+                    html += `
+                        <div class="asset-item">
+                            <div class="asset-header">
+                                <div class="asset-name">${tool.name}</div>
+                                <div>
+                                    <span class="asset-badge ${badgeClass}">${tool.risk}</span>
+                                    <span style="color: ${authColor}; margin-left: 10px;">${authStatus}</span>
+                                </div>
+                            </div>
+                            <div class="asset-details">
+                                Type: <strong>${tool.type}</strong><br>
+                                Source: ${tool.source}
+                            </div>
+                        </div>
+                    `;
+                });
+                toolsContainer.innerHTML = html;
+            }
+
+            // Display flagged tools
+            document.getElementById('shadowitFlaggedCount').textContent = results.flagged_tools.length;
+            const flaggedContainer = document.getElementById('shadowitFlaggedToolsContent');
+
+            if (results.flagged_tools.length === 0) {
+                flaggedContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No unauthorized tools flagged</p></div>';
+            } else {
+                let html = '';
+                results.flagged_tools.forEach(tool => {
+                    const badgeClass = getRiskBadgeClass(tool.risk);
+
+                    html += `
+                        <div class="asset-item">
+                            <div class="asset-header">
+                                <div class="asset-name">${tool.name}</div>
+                                <span class="asset-badge ${badgeClass}">${tool.risk}</span>
+                            </div>
+                            <div class="asset-details">
+                                Type: <strong>${tool.type}</strong><br>
+                                Source: ${tool.source}
+                            </div>
+                        </div>
+                    `;
+                });
+                flaggedContainer.innerHTML = html;
+            }
+
+            document.getElementById('shadowitResultsContainer').style.display = 'block';
+        }
+
+        // Vulnerability Assessment
+        let currentAssessments = null;
+        let currentLightboxResults = null;
+
+        async function runVulnAssessment() {
+            if (!currentResults) {
+                alert('Please run an ASM scan first to discover vulnerabilities');
+                return;
+            }
+
+            const loadingIndicator = document.getElementById('vulnassessLoadingIndicator');
+            const resultsContainer = document.getElementById('vulnassessResultsContainer');
+            const errorContainer = document.getElementById('vulnassessErrorContainer');
+
+            loadingIndicator.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            errorContainer.innerHTML = '';
+
+            try {
+                console.log('[VULN ASSESS] Starting AI-powered assessment...');
+
+                // Get Lightbox results if available
+                const lightboxResults = currentLightboxResults || { critical: [], high: [], medium: [], low: [] };
+
+                const response = await fetch(`${API_URL}/api/ghost/vuln-assessment/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        xasm_results: currentResults,
+                        lightbox_results: lightboxResults
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Vulnerability assessment failed');
+                }
+
+                currentAssessments = data.results;
+                displayVulnAssessments(data.results);
+                console.log('[VULN ASSESS] Assessment complete:', data.results);
+
+            } catch (error) {
+                console.error('[VULN ASSESS] Error:', error);
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <strong>Vulnerability Assessment Error:</strong> ${error.message}
+                        <br><br>
+                        Please ensure Gemini API is configured and try again.
+                    </div>
+                `;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function displayVulnAssessments(results) {
+            const assessments = results.assessments || [];
+
+            // Update stats
+            document.getElementById('vulnassessTotalAssessed').textContent = assessments.length;
+
+            const criticalCount = assessments.filter(a => a.severity === 'CRITICAL').length;
+            const highCount = assessments.filter(a => a.severity === 'HIGH').length;
+            const totalThreatActors = assessments.reduce((sum, a) => sum + (a.threat_actors?.length || 0), 0);
+
+            document.getElementById('vulnassessCritical').textContent = criticalCount;
+            document.getElementById('vulnassessHigh').textContent = highCount;
+            document.getElementById('vulnassessThreatActors').textContent = totalThreatActors;
+
+            // Display assessments
+            const container = document.getElementById('vulnassessmentsList');
+
+            if (assessments.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No critical or high vulnerabilities found</p></div>';
+                document.getElementById('vulnassessResultsContainer').style.display = 'block';
+                return;
+            }
+
+            let html = '';
+
+            assessments.forEach(assessment => {
+                const badgeClass = getRiskBadgeClass(assessment.severity);
+
+                html += `
+                    <div class="results-section">
+                        <div class="section-header" onclick="toggleSection('vuln-${assessment.finding_id}')">
+                            <div class="section-title">
+                                ${assessment.finding_id}: ${assessment.type}
+                                <span class="asset-badge ${badgeClass}" style="margin-left: 10px;">${assessment.severity}</span>
+                                <span class="expand-icon" id="vuln-${assessment.finding_id}-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="section-content" id="vuln-${assessment.finding_id}Content">
+                            <div class="asset-item" style="background: rgba(212, 175, 55, 0.03); border-left: none;">
+                                <div class="asset-header">
+                                    <div class="asset-name">Asset: ${assessment.asset}</div>
+                                    ${assessment.cve ? `<span class="asset-badge badge-critical">${assessment.cve}</span>` : ''}
+                                </div>
+                                <div class="asset-details">
+                                    <strong>Description:</strong> ${assessment.description}<br>
+                                    <strong>Source:</strong> ${assessment.source}
+                                </div>
+                            </div>
+
+                            <div style="padding: 20px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-top: 15px;">
+                                <h3 style="color: #D4AF37; margin-bottom: 15px;">🤖 AI-Powered Analysis</h3>
+                                <div style="white-space: pre-wrap; line-height: 1.8; color: #e0e0e0;">
+                                    ${formatAIAnalysis(assessment.ai_analysis)}
+                                </div>
+                            </div>
+
+                            ${assessment.threat_actors && assessment.threat_actors.length > 0 ? `
+                                <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; margin-top: 15px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                    <h3 style="color: #ef4444; margin-bottom: 15px;">⚠️ Associated Threat Actors</h3>
+                                    ${assessment.threat_actors.map(actor => `
+                                        <div style="margin-bottom: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 4px;">
+                                            <strong style="color: #D4AF37;">${actor.name}</strong> (${actor.country})<br>
+                                            <span style="color: #aaa;">Motivation: ${actor.motivation}</span><br>
+                                            ${actor.targets && actor.targets.length > 0 ? `<span style="color: #aaa;">Targets: ${actor.targets.slice(0, 3).join(', ')}</span>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('vulnassessResultsContainer').style.display = 'block';
+        }
+
+        function formatAIAnalysis(text) {
+            // Convert markdown-like formatting to HTML
+            return text
+                .replace(/### (\d+\. [A-Z\s]+)/g, '<h4 style="color: #D4AF37; margin-top: 20px; margin-bottom: 10px;">$1</h4>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong style="color: #fff;">$1</strong>')
+                .replace(/^- (.+)$/gm, '<div style="margin-left: 20px; margin-bottom: 5px;">• $1</div>')
+                .replace(/\n\n/g, '<br><br>');
+        }
+
+        function exportVulnAssessment() {
+            if (!currentAssessments || !currentAssessments.assessments || currentAssessments.assessments.length === 0) {
+                alert('Please run a vulnerability assessment first');
+                return;
+            }
+
+            let txt = `AI-POWERED VULNERABILITY ASSESSMENT REPORT\n`;
+            txt += `${'='.repeat(80)}\n\n`;
+            txt += `Generated: ${new Date().toISOString()}\n`;
+            txt += `Total Vulnerabilities Assessed: ${currentAssessments.assessments.length}\n`;
+            txt += `${'='.repeat(80)}\n\n`;
+
+            currentAssessments.assessments.forEach(assessment => {
+                txt += `\n${'='.repeat(80)}\n`;
+                txt += `${assessment.finding_id}: ${assessment.type}\n`;
+                txt += `${'='.repeat(80)}\n\n`;
+
+                txt += `Severity: ${assessment.severity}\n`;
+                txt += `Asset: ${assessment.asset}\n`;
+                txt += `Description: ${assessment.description}\n`;
+
+                if (assessment.cve) {
+                    txt += `CVE: ${assessment.cve}\n`;
+                }
+
+                txt += `\n${'-'.repeat(80)}\n`;
+                txt += `AI ANALYSIS\n`;
+                txt += `${'-'.repeat(80)}\n\n`;
+
+                txt += assessment.ai_analysis;
+                txt += `\n\n`;
+
+                if (assessment.threat_actors && assessment.threat_actors.length > 0) {
+                    txt += `${'-'.repeat(80)}\n`;
+                    txt += `ASSOCIATED THREAT ACTORS\n`;
+                    txt += `${'-'.repeat(80)}\n\n`;
+
+                    assessment.threat_actors.forEach(actor => {
+                        txt += `- ${actor.name} (${actor.country})\n`;
+                        txt += `  Motivation: ${actor.motivation}\n`;
+                        if (actor.targets && actor.targets.length > 0) {
+                            txt += `  Targets: ${actor.targets.slice(0, 3).join(', ')}\n`;
+                        }
+                        txt += `\n`;
+                    });
+                }
+            });
+
+            txt += `${'='.repeat(80)}\n`;
+            txt += `END OF VULNERABILITY ASSESSMENT REPORT\n`;
+            txt += `${'='.repeat(80)}\n`;
+
+            // Download
+            const blob = new Blob([txt], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `vuln-assessment-${currentResults?.domain || 'report'}-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Store Lightbox results when scan completes
+        const originalDisplayLightboxResults = displayLightboxResults;
+        displayLightboxResults = function(results) {
+            currentLightboxResults = results;
+            originalDisplayLightboxResults(results);
+        };
+    </script>
+</body>
+</html>

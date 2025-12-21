@@ -6,7 +6,15 @@
       "Bash(del:*)",
       "Bash(curl:*)",
       "Bash(pip install:*)",
-      "Bash(timeout 5 bash:*)"
+      "Bash(timeout 5 bash:*)",
+      "Bash(sherlock --version:*)",
+      "Bash(holehe --help:*)",
+      "Bash(theHarvester --help:*)",
+      "Bash(pip uninstall:*)",
+      "WebFetch(domain:documentation.profileapi.com)",
+      "WebSearch",
+      "Bash(git clone:*)",
+      "Bash(timeout 3 bash:*)"
     ],
     "deny": [],
     "ask": []

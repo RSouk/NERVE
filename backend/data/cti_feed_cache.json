@@ -1,705 +1,705 @@
 {
-  "timestamp": 1762206831.8130534,
+  "timestamp": 1766351329.0507932,
   "articles": [
     {
-      "title": "Hacker steals over $120 million from Balancer DeFi crypto protocol",
-      "source": "Bleeping Computer",
-      "date": "2025-11-03T21:53:35",
-      "link": "https://www.bleepingcomputer.com/news/cryptocurrency/hacker-steals-over-120-million-from-balancer-defi-crypto-protocol/",
-      "summary": "The Balancer Protocol announced that hackers had targeted its v2 pools, with losses reportedly estimated to be more than $128 million. [...]"
-    },
-    {
-      "title": "Fake Solidity VSCode extension on Open VSX backdoors developers",
-      "source": "Bleeping Computer",
-      "date": "2025-11-03T20:50:10",
-      "link": "https://www.bleepingcomputer.com/news/security/fake-solidity-vscode-extension-on-open-vsx-backdoors-developers/",
-      "summary": "A remote access trojan\u00a0dubbed SleepyDuck, and disguised as the well-known Solidity extension in the Open VSX open-source registry, uses an Ethereum smart contract to\u00a0establish a communication channel with the attacker. [...]"
-    },
-    {
-      "title": "Microsoft: SesameOp malware abuses OpenAI Assistants API in attacks",
-      "source": "Bleeping Computer",
-      "date": "2025-11-03T18:35:15",
-      "link": "https://www.bleepingcomputer.com/news/security/microsoft-sesameop-malware-abuses-openai-assistants-api-in-attacks/",
-      "summary": "Microsoft security researchers have discovered a new backdoor malware that uses the OpenAI Assistants API as a covert command-and-control channel. [...]"
-    },
-    {
-      "title": "Malicious VSX Extension \"SleepyDuck\" Uses Ethereum to Keep Its Command Server Alive",
+      "title": "Iranian Infy APT Resurfaces with New Malware Activity After Years of Silence",
       "source": "The Hacker News",
-      "date": "2025-11-03T18:08:00",
-      "link": "https://thehackernews.com/2025/11/malicious-vsx-extension-sleepyduck-uses.html",
-      "summary": "Cybersecurity researchers have flagged a new malicious extension in the Open VSX registry that harbors a remote access trojan called SleepyDuck.\nAccording to Secure Annex's John Tuckner, the extension in question, juan-bianco.solidity-vlang (version 0.0.7), was first published on October 31, 2025, a"
+      "date": "2025-12-21T04:22:00",
+      "link": "https://thehackernews.com/2025/12/iranian-infy-apt-resurfaces-with-new.html",
+      "summary": "Threat hunters have discerned new activity associated with an Iranian threat actor known as Infy (aka Prince of Persia), nearly five years after the hacking group was observed targeting victims in Sweden, the Netherlands, and Turkey.\n\"The scale of Prince of Persia's activity is more significant than"
     },
     {
-      "title": "US cybersecurity experts indicted for BlackCat ransomware attacks",
+      "title": "RansomHouse upgrades encryption with multi-layered data processing",
       "source": "Bleeping Computer",
-      "date": "2025-11-03T17:15:39",
-      "link": "https://www.bleepingcomputer.com/news/security/us-cybersecurity-experts-indicted-for-blackcat-ransomware-attacks/",
-      "summary": "Three former employees of cybersecurity incident response companies DigitalMint and Sygnia have been indicted for allegedly hacking the networks of five U.S. companies in BlackCat (ALPHV) ransomware attacks between May 2023 and November 2023. [...]"
+      "date": "2025-12-20T15:23:34",
+      "link": "https://www.bleepingcomputer.com/news/security/ransomhouse-upgrades-encryption-with-multi-layered-data-processing/",
+      "summary": "The RansomHouse ransomware-as-a-service (RaaS) has recently upgraded its encryptor, switching\u00a0from a relatively simple single-phase linear technique to a more complex, multi-layered method. [...]"
     },
     {
-      "title": "Hackers use RMM tools to breach freighters and steal cargo shipments",
-      "source": "Bleeping Computer",
-      "date": "2025-11-03T16:46:40",
-      "link": "https://www.bleepingcomputer.com/news/security/hackers-use-rmm-tools-to-breach-freighters-and-steal-cargo-shipments/",
-      "summary": "Threat actors are targeting freight brokers and trucking carriers with malicious links and\u00a0emails to deploy remote monitoring and management tools (RMMs) that enable them to hijack cargo\u00a0and steal physical goods. [...]"
-    },
-    {
-      "title": "Microsoft: Patch for WSUS flaw disabled Windows Server hotpatching",
-      "source": "Bleeping Computer",
-      "date": "2025-11-03T15:22:12",
-      "link": "https://www.bleepingcomputer.com/news/microsoft/microsoft-patch-for-wsus-flaw-disabled-windows-server-hotpatching/",
-      "summary": "An out-of-band (OOB) security update that patches an actively exploited Windows Server Update Service (WSUS) vulnerability has broken hotpatching on some Windows Server 2025 devices. [...]"
-    },
-    {
-      "title": "OAuth Device Code Phishing: Azure vs. Google Compared",
-      "source": "Bleeping Computer",
-      "date": "2025-11-03T15:11:21",
-      "link": "https://www.bleepingcomputer.com/news/security/oauth-device-code-phishing-azure-vs-google-compared/",
-      "summary": "Device code phishing abuses the OAuth device flow, and Google and Azure produce strikingly different attack surfaces. Register for Huntress Labs' Live Hack to learn about attack techniques, defensive tactics, and get an Identity Security Assessment. [...]"
-    },
-    {
-      "title": "Cybercriminals Exploit Remote Monitoring Tools to Infiltrate Logistics and Freight Networks",
+      "title": "U.S. DOJ Charges 54 in ATM Jackpotting Scheme Using Ploutus Malware",
       "source": "The Hacker News",
-      "date": "2025-11-03T13:18:00",
-      "link": "https://thehackernews.com/2025/11/cybercriminals-exploit-remote.html",
-      "summary": "Bad actors are increasingly training their sights on trucking and logistics companies with an aim to infect them with remote monitoring and management (RMM) software for financial gain and ultimately steal cargo freight.\nThe threat cluster, believed to be active since at least June 2025 according to"
+      "date": "2025-12-20T13:48:00",
+      "link": "https://thehackernews.com/2025/12/us-doj-charges-54-in-atm-jackpotting.html",
+      "summary": "The U.S. Department of Justice (DoJ) this week announced the indictment of 54 individuals in connection with a multi-million dollar ATM jackpotting scheme.\nThe large-scale conspiracy involved deploying malware named Ploutus to hack into automated teller machines (ATMs) across the U.S. and force them"
     },
     {
-      "title": "\u26a1 Weekly Recap: Lazarus Hits Web3, Intel/AMD TEEs Cracked, Dark Web Leak Tool & More",
-      "source": "The Hacker News",
-      "date": "2025-11-03T12:56:00",
-      "link": "https://thehackernews.com/2025/11/weekly-recap-lazarus-hits-web3-intelamd.html",
-      "summary": "Cyberattacks are getting smarter and harder to stop. This week, hackers used sneaky tools, tricked trusted systems, and quickly took advantage of new security problems\u2014some just hours after being found. No system was fully safe.\nFrom spying and fake job scams to strong ransomware and tricky phishing"
-    },
-    {
-      "title": "The Evolution of SOC Operations: How Continuous Exposure Management Transforms Security Operations",
-      "source": "The Hacker News",
-      "date": "2025-11-03T11:56:00",
-      "link": "https://thehackernews.com/2025/11/the-evolution-of-soc-operations-how.html",
-      "summary": "Security Operations Centers (SOC) today are overwhelmed. Analysts handle thousands of alerts every day, spending much time chasing false positives and adjusting detection rules reactively. SOCs often lack the environmental context and relevant threat intelligence needed to quickly verify which alert"
-    },
-    {
-      "title": "Researchers Uncover BankBot-YNRK and DeliveryRAT Android Trojans Stealing Financial Data",
-      "source": "The Hacker News",
-      "date": "2025-11-03T11:14:00",
-      "link": "https://thehackernews.com/2025/11/researchers-uncover-bankbot-ynrk-and.html",
-      "summary": "Cybersecurity researchers have shed light on two different Android trojans called BankBot-YNRK and DeliveryRAT that are capable of harvesting sensitive data from compromised devices.\nAccording to CYFIRMA, which analyzed three different samples of BankBot-YNRK, the malware incorporates features to si"
-    },
-    {
-      "title": "New HttpTroy Backdoor Poses as VPN Invoice in Targeted Cyberattack on South Korea",
-      "source": "The Hacker News",
-      "date": "2025-11-03T10:42:00",
-      "link": "https://thehackernews.com/2025/11/new-httptroy-backdoor-poses-as-vpn.html",
-      "summary": "The North Korea-linked threat actor known as Kimsuky has distributed a previously undocumented backdoor codenamed HttpTroy as part of a likely spear-phishing attack targeting a single victim in South Korea.\nGen Digital, which disclosed details of the activity, did not reveal any details on when the "
-    },
-    {
-      "title": "Microsoft: Windows Task Manager won\u2019t quit after KB5067036 update",
+      "title": "Microsoft confirms Teams is down and messages are delayed",
       "source": "Bleeping Computer",
-      "date": "2025-11-03T10:12:47",
-      "link": "https://www.bleepingcomputer.com/news/microsoft/microsoft-windows-task-manager-wont-quit-after-kb5067036-update/",
-      "summary": "Microsoft has confirmed a known issue that is preventing users from quitting the Windows 11 Task Manager after installing the October 2025 optional update. [...]"
+      "date": "2025-12-19T20:04:28",
+      "link": "https://www.bleepingcomputer.com/news/microsoft/microsoft-confirms-teams-is-down-and-messages-are-delayed/",
+      "summary": "Microsoft Teams is experiencing issues, with thousands reporting problems sending messages, including delays. [...]"
     },
     {
-      "title": "Penn hacker claims to have stolen 1.2 million donor records in data breach",
+      "title": "Nigeria arrests dev of Microsoft 365 'Raccoon0365' phishing platform",
       "source": "Bleeping Computer",
-      "date": "2025-11-02T22:07:14",
-      "link": "https://www.bleepingcomputer.com/news/security/university-of-pennsylvania-hacker-claims-1.2-million-donor-data-breach/",
-      "summary": "A hacker has taken responsibility for last week's University of Pennsylvania \"We got hacked\" email incident, saying it was a far more extensive breach that exposed data on 1.2 million donors and internal documents. [...]"
+      "date": "2025-12-19T19:05:32",
+      "link": "https://www.bleepingcomputer.com/news/security/nigeria-arrests-dev-of-microsoft-365-raccoon0365-phishing-platform/",
+      "summary": "The Nigerian police have arrested three individuals linked to targeted Microsoft 365 cyberattacks via Raccoon0365 phishing-as-a-service. [...]"
     },
     {
-      "title": "Alleged Jabber Zeus Coder \u2018MrICQ\u2019 in U.S. Custody",
+      "title": "Russia-Linked Hackers Use Microsoft 365 Device Code Phishing for Account Takeovers",
+      "source": "The Hacker News",
+      "date": "2025-12-19T17:54:00",
+      "link": "https://thehackernews.com/2025/12/russia-linked-hackers-use-microsoft-365.html",
+      "summary": "A suspected Russia-aligned group has been attributed to a phishing campaign that employs device code authentication workflows to steal victims' Microsoft 365 credentials and conduct account takeover attacks.\nThe activity, ongoing since September 2025, is being tracked by Proofpoint under the moniker"
+    },
+    {
+      "title": "Microsoft 365 accounts targeted in wave of OAuth phishing attacks",
+      "source": "Bleeping Computer",
+      "date": "2025-12-19T17:19:04",
+      "link": "https://www.bleepingcomputer.com/news/security/microsoft-365-accounts-targeted-in-wave-of-oauth-phishing-attacks/",
+      "summary": "Multiple threat actors are compromising Microsoft 365 accounts in phishing attacks that leverage the\u00a0OAuth device code authorization mechanism. [...]"
+    },
+    {
+      "title": "New UEFI flaw enables pre-boot attacks on motherboards from Gigabyte, MSI, ASUS, ASRock",
+      "source": "Bleeping Computer",
+      "date": "2025-12-19T15:54:48",
+      "link": "https://www.bleepingcomputer.com/news/security/new-uefi-flaw-enables-pre-boot-attacks-on-motherboards-from-gigabyte-msi-asus-asrock/",
+      "summary": "The\u00a0UEFI firmware implementation in some motherboards from ASUS, Gigabyte, MSI, and ASRock is vulnerable to direct memory access (DMA) attacks that can bypass early-boot memory protections. [...]"
+    },
+    {
+      "title": "Cracked Software and YouTube Videos Spread CountLoader and GachiLoader Malware",
+      "source": "The Hacker News",
+      "date": "2025-12-19T15:34:00",
+      "link": "https://thehackernews.com/2025/12/cracked-software-and-youtube-videos.html",
+      "summary": "Cybersecurity researchers have disclosed details of a new campaign that has used cracked software distribution sites as a distribution vector for a new version of a modular and stealthy loader known as CountLoader.\nThe campaign \"uses CountLoader as the initial tool in a multistage attack for access,"
+    },
+    {
+      "title": "Dismantling Defenses: Trump 2.0 Cyber Year in Review",
       "source": "Krebs on Security",
-      "date": "2025-11-02T20:37:24",
-      "link": "https://krebsonsecurity.com/2025/11/alleged-jabber-zeus-coder-mricq-in-u-s-custody/",
-      "summary": "A Ukrainian man indicted in 2012 for conspiring with a prolific hacking group to steal tens of millions of dollars from U.S. businesses was arrested in Italy and is now in custody in the United States, KrebsOnSecurity has learned.\n\nSources close to the investigation say Yuriy Igorevich Rybtsov, a 41"
+      "date": "2025-12-19T15:14:55",
+      "link": "https://krebsonsecurity.com/2025/12/dismantling-defenses-trump-2-0-cyber-year-in-review/",
+      "summary": "The Trump administration has pursued a staggering range of policy pivots this past year that threaten to weaken the nation\u2019s ability and willingness to address a broad spectrum of technology challenges, from cybersecurity and privacy to countering disinformation, fraud and corruption. These shifts, "
     },
     {
-      "title": "Open VSX rotates access tokens used in supply-chain malware attack",
+      "title": "Over 25,000 FortiCloud SSO devices exposed to remote attacks",
       "source": "Bleeping Computer",
-      "date": "2025-11-02T15:09:19",
-      "link": "https://www.bleepingcomputer.com/news/security/open-vsx-rotates-tokens-used-in-supply-chain-malware-attack/",
-      "summary": "The Open VSX registry rotated access tokens after they were accidentally leaked by developers in public repositories and allowed threat actors to publish malicious extensions in an attempted supply-chain attack. [...]"
+      "date": "2025-12-19T15:00:45",
+      "link": "https://www.bleepingcomputer.com/news/security/over-25-000-forticloud-sso-devices-exposed-to-remote-attacks/",
+      "summary": "Internet security watchdog Shadowserver has found over 25,000 Fortinet devices exposed online with FortiCloud SSO enabled, amid ongoing attacks targeting a critical authentication bypass vulnerability. [...]"
     },
     {
-      "title": "OpenAI is going Meta route, as it considers memory-based ads on ChatGPT",
+      "title": "Criminal IP and Palo Alto Networks Cortex XSOAR integrate to bring AI-driven exposure intelligence to automated incident response",
       "source": "Bleeping Computer",
-      "date": "2025-11-01T20:00:00",
-      "link": "https://www.bleepingcomputer.com/news/artificial-intelligence/openai-is-going-meta-route-as-it-considers-memory-based-ads-on-chatgpt/",
-      "summary": "OpenAI is planning to introduce ads on ChatGPT, as it continues to struggle with revenue from paid users. [...]"
+      "date": "2025-12-19T14:30:00",
+      "link": "https://www.bleepingcomputer.com/news/security/criminal-ip-and-palo-alto-networks-cortex-xsoar-integrate-to-bring-ai-driven-exposure-intelligence-to-automated-incident-response/",
+      "summary": "Criminal IP (criminalip.io), the AI-powered threat intelligence and attack surface monitoring platform developed by AI SPERA, is now officially integrated into Palo Alto Networks' Cortex XSOAR. [...]"
     },
     {
-      "title": "Google confirms AI search will have ads, but they may look different",
+      "title": "Denmark blames Russia for destructive cyberattack on water utility",
       "source": "Bleeping Computer",
-      "date": "2025-11-01T16:56:00",
-      "link": "https://www.bleepingcomputer.com/news/google/google-confirms-ai-search-will-have-ads-but-they-may-look-different/",
-      "summary": "Google Ads are not going anywhere. Eventually,\u00a0AI Search results on Google and likely other properties will have ads. [...]"
-    },
-    {
-      "title": "Windows 11 Build 26220.7051 released with \u201cAsk Copilot\u201d feature",
-      "source": "Bleeping Computer",
-      "date": "2025-11-01T16:17:22",
-      "link": "https://www.bleepingcomputer.com/news/microsoft/windows-11-build-262207051-released-with-ask-copilot-feature/",
-      "summary": "Windows 11 Build\u00a026220.7051 is now rolling out to testers in the Windows Insider Program, and there are at least three new features, including Ask Copilot in the taskbar. [...]"
-    },
-    {
-      "title": "ASD Warns of Ongoing BADCANDY Attacks Exploiting Cisco IOS XE Vulnerability",
-      "source": "The Hacker News",
-      "date": "2025-11-01T13:43:00",
-      "link": "https://thehackernews.com/2025/11/asd-warns-of-ongoing-badcandy-attacks.html",
-      "summary": "The Australian Signals Directorate (ASD) has issued a bulletin about ongoing cyber attacks targeting unpatched Cisco IOS XE devices in the country with a previously undocumented implant known as BADCANDY.\nThe activity, per the intelligence agency, involves the exploitation of CVE-2023-20198 (CVSS sc"
-    },
-    {
-      "title": "OpenAI Unveils Aardvark: GPT-5 Agent That Finds and Fixes Code Flaws Automatically",
-      "source": "The Hacker News",
-      "date": "2025-10-31T17:19:00",
-      "link": "https://thehackernews.com/2025/10/openai-unveils-aardvark-gpt-5-agent.html",
-      "summary": "OpenAI has announced the launch of an \"agentic security researcher\" that's powered by its GPT-5 large language model (LLM) and is programmed to emulate a human expert capable of scanning, understanding, and patching code.\nCalled Aardvark, the artificial intelligence (AI) company said the autonomous "
-    },
-    {
-      "title": "Nation-State Hackers Deploy New Airstalk Malware in Suspected Supply Chain Attack",
-      "source": "The Hacker News",
-      "date": "2025-10-31T16:08:00",
-      "link": "https://thehackernews.com/2025/10/nation-state-hackers-deploy-new.html",
-      "summary": "A suspected nation-state threat actor has been linked to the distribution of a new malware called Airstalk as part of a likely supply chain attack.\nPalo Alto Networks Unit 42 said it's tracking the cluster under the moniker CL-STA-1009, where \"CL\" stands for cluster and \"STA\" refers to state-backed "
-    },
-    {
-      "title": "China-Linked Hackers Exploit Windows Shortcut Flaw to Target European Diplomats",
-      "source": "The Hacker News",
-      "date": "2025-10-31T13:57:00",
-      "link": "https://thehackernews.com/2025/10/china-linked-hackers-exploit-windows.html",
-      "summary": "A China-affiliated threat actor known as UNC6384 has been linked to a fresh set of attacks exploiting an unpatched Windows shortcut vulnerability to target European diplomatic and government entities between September and October 2025.\nThe activity targeted diplomatic organizations in Hungary, Belgi"
-    },
-    {
-      "title": "China-Linked Tick Group Exploits Lanscope Zero-Day to Hijack Corporate Systems",
-      "source": "The Hacker News",
-      "date": "2025-10-31T13:26:00",
-      "link": "https://thehackernews.com/2025/10/china-linked-tick-group-exploits.html",
-      "summary": "The exploitation of a recently disclosed critical security flaw in Motex Lanscope Endpoint Manager has been attributed to a cyber espionage group known as Tick.\nThe vulnerability, tracked as CVE-2025-61932 (CVSS score: 9.3), allows remote attackers to execute arbitrary commands with SYSTEM privilege"
-    },
-    {
-      "title": "The MSP Cybersecurity Readiness Guide: Turning Security into Growth",
-      "source": "The Hacker News",
-      "date": "2025-10-31T11:30:00",
-      "link": "https://thehackernews.com/2025/10/the-msp-cybersecurity-readiness-guide.html",
-      "summary": "MSPs are facing rising client expectations for strong cybersecurity and compliance outcomes, while threats grow more complex and regulatory demands evolve. Meanwhile, clients are increasingly seeking comprehensive protection without taking on the burden of managing security themselves.\nThis shift re"
-    },
-    {
-      "title": "CISA and NSA Issue Urgent Guidance to Secure WSUS and Microsoft Exchange Servers",
-      "source": "The Hacker News",
-      "date": "2025-10-31T08:46:00",
-      "link": "https://thehackernews.com/2025/10/cisa-and-nsa-issue-urgent-guidance-to.html",
-      "summary": "The U.S. Cybersecurity and Infrastructure Security Agency (CISA) and National Security Agency (NSA), along with international partners from Australia and Canada, have released guidance to harden on-premise Microsoft Exchange Server instances from potential exploitation.\n\"By restricting administrativ"
-    },
-    {
-      "title": "Eclipse Foundation Revokes Leaked Open VSX Tokens Following Wiz Discovery",
-      "source": "The Hacker News",
-      "date": "2025-10-31T08:02:00",
-      "link": "https://thehackernews.com/2025/10/eclipse-foundation-revokes-leaked-open.html",
-      "summary": "Eclipse Foundation, which maintains the open-source Open VSX project, said it has taken steps to revoke a small number of tokens that were leaked within Visual Studio Code (VS Code) extensions published in the marketplace.\nThe action comes following a report from cloud security company Wiz earlier t"
-    },
-    {
-      "title": "CISA Flags VMware Zero-Day Exploited by China-Linked Hackers in Active Attacks",
-      "source": "The Hacker News",
-      "date": "2025-10-31T07:09:00",
-      "link": "https://thehackernews.com/2025/10/cisa-flags-vmware-zero-day-exploited-by.html",
-      "summary": "The U.S. Cybersecurity and Infrastructure Security Agency (CISA) on Thursday added a high-severity security flaw impacting Broadcom VMware Tools and VMware Aria Operations to its Known Exploited Vulnerabilities (KEV) catalog, following reports of active exploitation in the wild.\nThe vulnerability in"
-    },
-    {
-      "title": "A New Security Layer for macOS Takes Aim at Admin Errors Before Hackers Do",
-      "source": "The Hacker News",
-      "date": "2025-10-31T03:37:00",
-      "link": "https://thehackernews.com/2025/10/a-new-security-layer-for-macos-takes.html",
-      "summary": "A design firm is editing a new campaign video on a MacBook Pro. The creative director opens a collaboration app that quietly requests microphone and camera permissions. MacOS is supposed to flag that, but in this case, the checks are loose. The app gets access anyway.\nOn another Mac in the same offi"
-    },
-    {
-      "title": "Google's Built-In AI Defenses on Android Now Block 10 Billion Scam Messages a Month",
-      "source": "The Hacker News",
-      "date": "2025-10-30T17:00:00",
-      "link": "https://thehackernews.com/2025/10/googles-built-in-ai-defenses-on-android.html",
-      "summary": "Google on Thursday revealed that the scam defenses built into Android safeguard users around the world from more than 10 billion suspected malicious calls and messages every month.\nThe tech giant also said it has blocked over 100 million suspicious numbers from using Rich Communication Services (RCS"
-    },
-    {
-      "title": "Russian Ransomware Gangs Weaponize Open-Source AdaptixC2 for Advanced Attacks",
-      "source": "The Hacker News",
-      "date": "2025-10-30T16:40:00",
-      "link": "https://thehackernews.com/2025/10/russian-ransomware-gangs-weaponize-open.html",
-      "summary": "The open-source command-and-control (C2) framework known as AdaptixC2 is being used by a growing number of threat actors, some of whom are related to Russian ransomware gangs.\nAdaptixC2 is an emerging extensible post-exploitation and adversarial emulation framework designed for penetration testing. "
-    },
-    {
-      "title": "New \"Brash\" Exploit Crashes Chromium Browsers Instantly with a Single Malicious URL",
-      "source": "The Hacker News",
-      "date": "2025-10-30T14:45:00",
-      "link": "https://thehackernews.com/2025/10/new-brash-exploit-crashes-chromium.html",
-      "summary": "A severe vulnerability disclosed in Chromium's Blink rendering engine can be exploited to crash many Chromium-based browsers within a few seconds.\nSecurity researcher Jose Pino, who disclosed details of the flaw, has codenamed it Brash.\n\"It allows any Chromium browser to collapse in 15-60 seconds by"
-    },
-    {
-      "title": "International Standards Organization ISO 15118-2",
-      "source": "CISA Advisories",
-      "date": "2025-10-30T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-303-01",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 7.2</strong></li>\n<li><strong>ATTENTION:</strong> Low Attack Complexity</li>\n<li><strong>Standard:</strong> ISO 15118-2 Netw"
-    },
-    {
-      "title": "CISA Adds Two Known Exploited Vulnerabilities to Catalog",
-      "source": "CISA Advisories",
-      "date": "2025-10-30T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/30/cisa-adds-two-known-exploited-vulnerabilities-catalog",
-      "summary": "<p>CISA has added two new vulnerabilities to its\u202f<a class=\"Hyperlink SCXW249232855 BCX8\" href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" rel=\"noreferrer noopener\" target=\"_blank\" title=\"Known Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalo"
-    },
-    {
-      "title": "CISA Releases Two Industrial Control Systems Advisories",
-      "source": "CISA Advisories",
-      "date": "2025-10-30T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/30/cisa-releases-two-industrial-control-systems-advisories",
-      "summary": "<div class=\"OutlineElement Ltr SCXW44884797 BCX8\">\n<p>CISA released two Industrial Control Systems (ICS). These advisories provide timely information about current security issues, vulnerabilities, and exploits surrounding ICS.&nbsp;</p>\n</div>\n<div class=\"ListContainerWrapper SCXW44884797 BCX8\">\n<u"
-    },
-    {
-      "title": "New Guidance Released on Microsoft Exchange Server Security Best Practices",
-      "source": "CISA Advisories",
-      "date": "2025-10-30T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/30/new-guidance-released-microsoft-exchange-server-security-best-practices",
-      "summary": "<p>Today, CISA, in partnership with the National Security Agency and international cybersecurity partners, released <a href=\"https://www.cisa.gov/resources-tools/resources/microsoft-exchange-server-security-best-practices\" title=\"Microsoft Exchange Server Security Best Practices\">Microsoft Exchange "
-    },
-    {
-      "title": "Hitachi Energy TropOS",
-      "source": "CISA Advisories",
-      "date": "2025-10-30T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-303-02",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.7</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
-    },
-    {
-      "title": "The Death of the Security Checkbox: BAS Is the Power Behind Real Defense",
-      "source": "The Hacker News",
-      "date": "2025-10-30T11:55:00",
-      "link": "https://thehackernews.com/2025/10/the-death-of-security-checkbox-bas-is.html",
-      "summary": "Security doesn\u2019t fail at the point of breach. It fails at the point of impact.&nbsp;\nThat line set the tone for this year\u2019s Picus Breach and Simulation (BAS) Summit, where researchers, practitioners, and CISOs all echoed the same theme: cyber defense is no longer about prediction. It's about proof.\n"
-    },
-    {
-      "title": "ThreatsDay Bulletin: DNS Poisoning Flaw, Supply-Chain Heist, Rust Malware Trick and New RATs Rising",
-      "source": "The Hacker News",
-      "date": "2025-10-30T10:54:00",
-      "link": "https://thehackernews.com/2025/10/threatsday-bulletin-dns-poisoning-flaw.html",
-      "summary": "The comfort zone in cybersecurity is gone. Attackers are scaling down, focusing tighter, and squeezing more value from fewer, high-impact targets. At the same time, defenders face growing blind spots &mdash; from spoofed messages to large-scale social engineering.\nThis week&rsquo;s findings show how"
-    },
-    {
-      "title": "PhantomRaven Malware Found in 126 npm Packages Stealing GitHub Tokens From Devs",
-      "source": "The Hacker News",
-      "date": "2025-10-30T10:16:00",
-      "link": "https://thehackernews.com/2025/10/phantomraven-malware-found-in-126-npm.html",
-      "summary": "Cybersecurity researchers have uncovered yet another active software supply chain attack campaign targeting the npm registry with over 100 malicious packages that can steal authentication tokens, CI/CD secrets, and GitHub credentials from developers' machines.\nThe campaign has been codenamed Phantom"
-    },
-    {
-      "title": "Experts Reports Sharp Increase in Automated Botnet Attacks Targeting PHP Servers and IoT Devices",
-      "source": "The Hacker News",
-      "date": "2025-10-29T15:38:00",
-      "link": "https://thehackernews.com/2025/10/experts-reports-sharp-increase-in.html",
-      "summary": "Cybersecurity researchers are calling attention to a spike in automated attacks targeting PHP servers, IoT devices, and cloud gateways by various botnets such as Mirai, Gafgyt, and Mozi.\n\"These automated campaigns exploit known CVE vulnerabilities and cloud misconfigurations to gain control over exp"
-    },
-    {
-      "title": "New AI-Targeted Cloaking Attack Tricks AI Crawlers Into Citing Fake Info as Verified Facts",
-      "source": "The Hacker News",
-      "date": "2025-10-29T14:57:00",
-      "link": "https://thehackernews.com/2025/10/new-ai-targeted-cloaking-attack-tricks.html",
-      "summary": "Cybersecurity researchers have flagged a new security issue in agentic web browsers like OpenAI ChatGPT Atlas that exposes underlying artificial intelligence (AI) models to context poisoning attacks.\nIn the attack devised by AI security company SPLX, a bad actor can set up websites that serve differ"
-    },
-    {
-      "title": "Discover Practical AI Tactics for GRC \u2014 Join the Free Expert Webinar",
-      "source": "The Hacker News",
-      "date": "2025-10-29T11:58:00",
-      "link": "https://thehackernews.com/2025/10/discover-practical-ai-tactics-for-grc.html",
-      "summary": "Artificial Intelligence (AI) is rapidly transforming Governance, Risk, and Compliance (GRC). It's no longer a future concept\u2014it's here, and it's already reshaping how teams operate.\nAI's capabilities are profound: it's speeding up audits, flagging critical risks faster, and drastically cutting down "
-    },
-    {
-      "title": "Preparing for the Digital Battlefield of 2026: Ghost Identities, Poisoned Accounts, & AI Agent Havoc",
-      "source": "The Hacker News",
-      "date": "2025-10-29T11:55:00",
-      "link": "https://thehackernews.com/2025/10/preparing-for-digital-battlefield-of.html",
-      "summary": "BeyondTrust\u2019s annual cybersecurity predictions point to a year where old defenses will fail quietly, and new attack vectors will surge.\nIntroduction\nThe next major breach won\u2019t be a phished password. It will be the result of a massive, unmanaged identity debt. This debt takes many forms: it\u2019s the \u201cg"
-    },
-    {
-      "title": "Russian Hackers Target Ukrainian Organizations Using Stealthy Living-Off-the-Land Tactics",
-      "source": "The Hacker News",
-      "date": "2025-10-29T11:51:00",
-      "link": "https://thehackernews.com/2025/10/russian-hackers-target-ukrainian.html",
-      "summary": "Organizations in Ukraine have been targeted by threat actors of Russian origin with an aim to siphon sensitive data and maintain persistent access to compromised networks.\nThe activity, according to a new report from the Symantec and Carbon Black Threat Hunter Team, targeted a large business service"
-    },
-    {
-      "title": "10 npm Packages Caught Stealing Developer Credentials on Windows, macOS, and Linux",
-      "source": "The Hacker News",
-      "date": "2025-10-29T08:34:00",
-      "link": "https://thehackernews.com/2025/10/10-npm-packages-caught-stealing.html",
-      "summary": "Cybersecurity researchers have discovered a set of 10 malicious npm packages that are designed to deliver an information stealer targeting Windows, Linux, and macOS systems.\n\"The malware uses four layers of obfuscation to hide its payload, displays a fake CAPTCHA to appear legitimate, fingerprints v"
-    },
-    {
-      "title": "Active Exploits Hit Dassault and XWiki \u2014 CISA Confirms Critical Flaws Under Attack",
-      "source": "The Hacker News",
-      "date": "2025-10-29T07:44:00",
-      "link": "https://thehackernews.com/2025/10/active-exploits-hit-dassault-and-xwiki.html",
-      "summary": "Threat actors are actively exploiting multiple security flaws impacting Dassault Syst\u00e8mes DELMIA Apriso and XWiki, according to alerts issued by the U.S. Cybersecurity and Infrastructure Security Agency (CISA) and VulnCheck.\nThe vulnerabilities are listed below -\n\nCVE-2025-6204 (CVSS score: 8.0) - A"
-    },
-    {
-      "title": "Aisuru Botnet Shifts from DDoS to Residential Proxies",
-      "source": "Krebs on Security",
-      "date": "2025-10-29T00:51:05",
-      "link": "https://krebsonsecurity.com/2025/10/aisuru-botnet-shifts-from-ddos-to-residential-proxies/",
-      "summary": "Aisuru, the botnet responsible for a series of record-smashing distributed denial-of-service (DDoS) attacks this year, recently was overhauled to support a more low-key, lucrative and sustainable business: Renting hundreds of thousands of infected Internet of Things (IoT) devices to proxy services t"
-    },
-    {
-      "title": "New TEE.Fail Side-Channel Attack Extracts Secrets from Intel and AMD DDR5 Secure Enclaves",
-      "source": "The Hacker News",
-      "date": "2025-10-28T19:16:00",
-      "link": "https://thehackernews.com/2025/10/new-teefail-side-channel-attack.html",
-      "summary": "A group of academic researchers from Georgia Tech, Purdue University, and Synkhronix have developed a side-channel attack called TEE.Fail that allows for the extraction of secrets from the trusted execution environment (TEE) in a computer's main processor, including Intel's Software Guard eXtensions"
-    },
-    {
-      "title": "New Android Trojan 'Herodotus' Outsmarts Anti-Fraud Systems by Typing Like a Human",
-      "source": "The Hacker News",
-      "date": "2025-10-28T16:33:00",
-      "link": "https://thehackernews.com/2025/10/new-android-trojan-herodotus-outsmarts.html",
-      "summary": "Cybersecurity researchers have disclosed details of a new Android banking trojan called Herodotus that has been observed in active campaigns targeting Italy and Brazil to conduct device takeover (DTO) attacks.\n\"Herodotus is designed to perform device takeover while making first attempts to mimic hum"
-    },
-    {
-      "title": "Researchers Expose GhostCall and GhostHire: BlueNoroff's New Malware Chains",
-      "source": "The Hacker News",
-      "date": "2025-10-28T16:12:00",
-      "link": "https://thehackernews.com/2025/10/researchers-expose-ghostcall-and.html",
-      "summary": "Threat actors tied to North Korea have been observed targeting the Web3 and blockchain sectors as part of twin campaigns tracked as GhostCall and GhostHire.\nAccording to Kaspersky, the campaigns are part of a broader operation called SnatchCrypto that has been underway since at least 2017. The activ"
-    },
-    {
-      "title": "CISA Releases Three Industrial Control Systems Advisories",
-      "source": "CISA Advisories",
-      "date": "2025-10-28T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/28/cisa-releases-three-industrial-control-systems-advisories",
-      "summary": "<div class=\"OutlineElement Ltr SCXW46910409 BCX8\">\n<p>CISA released three Industrial Control Systems (ICS) Advisories. These advisories provide timely information about current security issues, vulnerabilities, and exploits surrounding ICS.&nbsp;</p>\n<ul>\n<li>ICSA-25-301-01 <a href=\"https://www.cisa"
-    },
-    {
-      "title": "Vertikal Systems Hospital Manager Backend Services",
-      "source": "CISA Advisories",
-      "date": "2025-10-28T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-25-301-01",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.7</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
-    },
-    {
-      "title": "CISA Adds Two Known Exploited Vulnerabilities to Catalog",
-      "source": "CISA Advisories",
-      "date": "2025-10-28T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/28/cisa-adds-two-known-exploited-vulnerabilities-catalog",
-      "summary": "<p>CISA has added two new vulnerabilities to its\u202f<a class=\"Hyperlink SCXW116902087 BCX8\" href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" rel=\"noreferrer noopener\" target=\"_blank\" title=\"Known Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalo"
-    },
-    {
-      "title": "Schneider Electric EcoStruxure",
-      "source": "CISA Advisories",
-      "date": "2025-10-28T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-301-01",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.2</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
-    },
-    {
-      "title": "Why Early Threat Detection Is a Must for Long-Term Business Growth",
-      "source": "The Hacker News",
-      "date": "2025-10-28T11:55:00",
-      "link": "https://thehackernews.com/2025/10/why-early-threat-detection-is-must-for.html",
-      "summary": "In cybersecurity, speed isn\u2019t just a win \u2014 it\u2019s a multiplier. The faster you learn about emerging threats, the faster you adapt your defenses, the less damage you suffer, and the more confidently your business keeps scaling. Early threat detection isn\u2019t about preventing a breach someday: it\u2019s about "
-    },
-    {
-      "title": "Is Your Google Workspace as Secure as You Think it is?",
-      "source": "The Hacker News",
-      "date": "2025-10-28T10:30:00",
-      "link": "https://thehackernews.com/2025/10/is-your-google-workspace-as-secure-as.html",
-      "summary": "The New Reality for Lean Security Teams\nIf you\u2019re the first security or IT hire at a fast-growing startup, you\u2019ve likely inherited a mandate that\u2019s both simple and maddeningly complex: secure the business without slowing it down.\nMost organizations using Google Workspace start with an environment bu"
-    },
-    {
-      "title": "Chrome Zero-Day Exploited to Deliver Italian Memento Labs' LeetAgent Spyware",
-      "source": "The Hacker News",
-      "date": "2025-10-28T08:22:00",
-      "link": "https://thehackernews.com/2025/10/chrome-zero-day-exploited-to-deliver.html",
-      "summary": "The zero-day exploitation of a now-patched security flaw in Google Chrome led to the distribution of an espionage-related tool from Italian information technology and services provider Memento Labs, according to new findings from Kaspersky.\nThe vulnerability in question is CVE-2025-2783 (CVSS score:"
-    },
-    {
-      "title": "SideWinder Adopts New ClickOnce-Based Attack Chain Targeting South Asian Diplomats",
-      "source": "The Hacker News",
-      "date": "2025-10-28T04:01:00",
-      "link": "https://thehackernews.com/2025/10/sidewinder-adopts-new-clickonce-based.html",
-      "summary": "A European embassy located in the Indian capital of New Delhi, as well as multiple organizations in Sri Lanka, Pakistan, and Bangladesh, have emerged as the target of a new campaign orchestrated by a threat actor known as SideWinder in September 2025.\nThe activity \"reveals a notable evolution in Sid"
-    },
-    {
-      "title": "X Warns Users With Security Keys to Re-Enroll Before November 10 to Avoid Lockouts",
-      "source": "The Hacker News",
-      "date": "2025-10-27T16:12:00",
-      "link": "https://thehackernews.com/2025/10/x-warns-users-with-security-keys-to-re.html",
-      "summary": "Social media platform X is urging users who have enrolled for two-factor authentication (2FA) using passkeys and hardware security keys like Yubikeys to re-enroll their key to ensure continued access to the service.\nTo that end, users are being asked to complete the re-enrollment, either using their"
-    },
-    {
-      "title": "New ChatGPT Atlas Browser Exploit Lets Attackers Plant Persistent Hidden Commands",
-      "source": "The Hacker News",
-      "date": "2025-10-27T14:31:00",
-      "link": "https://thehackernews.com/2025/10/new-chatgpt-atlas-browser-exploit-lets.html",
-      "summary": "Cybersecurity researchers have discovered a new vulnerability in OpenAI's ChatGPT Atlas web browser that could allow malicious actors to inject nefarious instructions into the artificial intelligence (AI)-powered assistant's memory and run arbitrary code.\n\"This exploit can allow attackers to infect "
-    },
-    {
-      "title": "\u26a1 Weekly Recap: WSUS Exploited, LockBit 5.0 Returns, Telegram Backdoor, F5 Breach Widens",
-      "source": "The Hacker News",
-      "date": "2025-10-27T12:51:00",
-      "link": "https://thehackernews.com/2025/10/weekly-recap-wsus-exploited-lockbit-50.html",
-      "summary": "Security, trust, and stability \u2014 once the pillars of our digital world \u2014 are now the tools attackers turn against us. From stolen accounts to fake job offers, cybercriminals keep finding new ways to exploit both system flaws and human behavior.\nEach new breach proves a harsh truth: in cybersecurity,"
-    },
-    {
-      "title": "Qilin Ransomware Combines Linux Payload With BYOVD Exploit in Hybrid Attack",
-      "source": "The Hacker News",
-      "date": "2025-10-27T08:55:00",
-      "link": "https://thehackernews.com/2025/10/qilin-ransomware-combines-linux-payload.html",
-      "summary": "The ransomware group known as Qilin (aka Agenda, Gold Feather, and Water Galura) has claimed more than 40 victims every month since the start of 2025, barring January, with the number of postings on its data leak site touching a high of 100 cases in June.\nThe development comes as the ransomware-as-a"
-    },
-    {
-      "title": "ChatGPT Atlas Browser Can Be Tricked by Fake URLs into Executing Hidden Commands",
-      "source": "The Hacker News",
-      "date": "2025-10-27T07:29:00",
-      "link": "https://thehackernews.com/2025/10/chatgpt-atlas-browser-can-be-tricked-by.html",
-      "summary": "The newly released OpenAI ChatGPT Atlas web browser has been found to be susceptible to a prompt injection attack where its omnibox can be jailbroken by disguising a malicious prompt as a seemingly harmless URL to visit.\n\"The omnibox (combined address/search bar) interprets input either as a URL to "
-    },
-    {
-      "title": "Smishing Triad Linked to 194,000 Malicious Domains in Global Phishing Operation",
-      "source": "The Hacker News",
-      "date": "2025-10-24T18:35:00",
-      "link": "https://thehackernews.com/2025/10/smishing-triad-linked-to-194000.html",
-      "summary": "The threat actors behind a large-scale, ongoing smishing campaign have been attributed to more than 194,000 malicious domains since January 1, 2024, targeting a broad range of services across the world, according to new findings from Palo Alto Networks Unit 42.\n\"Although these domains are registered"
-    },
-    {
-      "title": "Newly Patched Critical Microsoft WSUS Flaw Comes Under Active Exploitation",
-      "source": "The Hacker News",
-      "date": "2025-10-24T16:30:00",
-      "link": "https://thehackernews.com/2025/10/microsoft-issues-emergency-patch-for.html",
-      "summary": "Microsoft on Thursday released out-of-band security updates to patch a&nbsp;critical-severity Windows Server Update Services (WSUS) vulnerability with a proof-of-concept (Poc) exploit publicly available and has come under active exploitation in the wild.\nThe vulnerability in question is CVE-2025-592"
-    },
-    {
-      "title": "APT36 Targets Indian Government with Golang-Based DeskRAT Malware Campaign",
-      "source": "The Hacker News",
-      "date": "2025-10-24T14:00:00",
-      "link": "https://thehackernews.com/2025/10/apt36-targets-indian-government-with.html",
-      "summary": "A Pakistan-nexus threat actor has been observed targeting Indian government entities as part of spear-phishing attacks designed to deliver a Golang-based malware known as DeskRAT.\nThe activity, observed in August and September 2025 by Sekoia, has been attributed to Transparent Tribe (aka APT36), a s"
-    },
-    {
-      "title": "Microsoft Releases Out-of-Band Security Update to Mitigate Windows Server Update Service Vulnerability, CVE-2025-59287",
-      "source": "CISA Advisories",
-      "date": "2025-10-24T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/24/microsoft-releases-out-band-security-update-mitigate-windows-server-update-service-vulnerability-cve",
-      "summary": "<p><em><strong>Updated October 29, 2025</strong>: CISA has updated this Alert to include revised information on vulnerable product identification, potential threat activity detections, and additional resources.</em></p>\n<p>Microsoft released an update to address a critical remote code execution vuln"
-    },
-    {
-      "title": "CISA Adds Two Known Exploited Vulnerabilities to Catalog",
-      "source": "CISA Advisories",
-      "date": "2025-10-24T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/24/cisa-adds-two-known-exploited-vulnerabilities-catalog",
-      "summary": "<p>CISA has added two new vulnerabilities to its\u202f<a class=\"Hyperlink SCXW183082615 BCX8\" href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" rel=\"noreferrer noopener\" target=\"_blank\" title=\"Known Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalo"
-    },
-    {
-      "title": "The Cybersecurity Perception Gap: Why Executives and Practitioners See Risk Differently",
-      "source": "The Hacker News",
-      "date": "2025-10-24T11:00:00",
-      "link": "https://thehackernews.com/2025/10/the-cybersecurity-perception-gap-why.html",
-      "summary": "Does your organization suffer from a cybersecurity perception gap? Findings from the&nbsp;Bitdefender 2025 Cybersecurity Assessment suggest the answer is probably \u201cyes\u201d \u2014 and many leaders may not even realize it.\nThis disconnect matters. Small differences in perception today can evolve into major bl"
-    },
-    {
-      "title": "3,000 YouTube Videos Exposed as Malware Traps in Massive Ghost Network Operation",
-      "source": "The Hacker News",
-      "date": "2025-10-24T10:00:00",
-      "link": "https://thehackernews.com/2025/10/3000-youtube-videos-exposed-as-malware.html",
-      "summary": "A malicious network of YouTube accounts has been observed publishing and promoting videos that lead to malware downloads, essentially abusing the popularity and trust associated with the video hosting platform for propagating malicious payloads.\nActive since 2021, the network has published more than"
-    },
-    {
-      "title": "Self-Spreading 'GlassWorm' Infects VS Code Extensions in Widespread Supply Chain Attack",
-      "source": "The Hacker News",
-      "date": "2025-10-24T07:00:00",
-      "link": "https://thehackernews.com/2025/10/self-spreading-glassworm-infects-vs.html",
-      "summary": "Cybersecurity researchers have discovered a self-propagating worm that spreads via Visual Studio Code (VS Code) extensions on the Open VSX Registry and the Microsoft Extension Marketplace, underscoring how developers have become a prime target for attacks.\nThe sophisticated threat, codenamed GlassWo"
-    },
-    {
-      "title": "North Korean Hackers Lure Defense Engineers With Fake Jobs to Steal Drone Secrets",
-      "source": "The Hacker News",
-      "date": "2025-10-23T15:29:00",
-      "link": "https://thehackernews.com/2025/10/north-korean-hackers-lure-defense.html",
-      "summary": "Threat actors with ties to North Korea have been attributed to a new wave of attacks targeting European companies active in the defense industry as part of a long-running campaign known as Operation Dream Job.\n\"Some of these [companies] are heavily involved in the unmanned aerial vehicle (UAV) secto"
-    },
-    {
-      "title": "AutomationDirect Productivity Suite",
-      "source": "CISA Advisories",
-      "date": "2025-10-23T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-296-01",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 9.3</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
-    },
-    {
-      "title": "ASKI Energy ALS-Mini-S8 and ALS-Mini-S4",
-      "source": "CISA Advisories",
-      "date": "2025-10-23T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-296-02",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 9.9</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
-    },
-    {
-      "title": "NIHON KOHDEN Central Monitor CNS-6201",
-      "source": "CISA Advisories",
-      "date": "2025-10-23T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-25-296-01",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.7</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
-    },
-    {
-      "title": "Delta Electronics ASDA-Soft",
-      "source": "CISA Advisories",
-      "date": "2025-10-23T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-296-04",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.4</strong></li>\n<li><strong>ATTENTION</strong>: Low attack complexity</li>\n<li><strong>Vendor</strong>: Delta Electronics<"
-    },
-    {
-      "title": "Veeder-Root TLS4B Automatic Tank Gauge System",
-      "source": "CISA Advisories",
-      "date": "2025-10-23T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-296-03",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 9.4</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
-    },
-    {
-      "title": "CISA Releases Eight Industrial Control Systems Advisories",
-      "source": "CISA Advisories",
-      "date": "2025-10-23T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/23/cisa-releases-eight-industrial-control-systems-advisories",
-      "summary": "<div class=\"OutlineElement Ltr SCXW174230504 BCX8\">\n<p>CISA released eight Industrial Control Systems (ICS) Advisories. These advisories provide timely information about current security issues, vulnerabilities, and exploits surrounding ICS.&nbsp;</p>\n</div>\n<div class=\"ListContainerWrapper SCXW1742"
-    },
-    {
-      "title": "Secure AI at Scale and Speed \u2014 Learn the Framework in this Free Webinar",
-      "source": "The Hacker News",
-      "date": "2025-10-23T11:55:00",
-      "link": "https://thehackernews.com/2025/10/secure-ai-at-scale-and-speed-learn.html",
-      "summary": "AI is everywhere\u2014and your company wants in. Faster products, smarter systems, fewer bottlenecks. But if you're in security, that excitement often comes with a sinking feeling.\nBecause while everyone else is racing ahead, you're left trying to manage a growing web of AI agents you didn\u2019t create, can\u2019"
-    },
-    {
-      "title": "ThreatsDay Bulletin: $176M Crypto Fine, Hacking Formula 1, Chromium Vulns, AI Hijack & More",
-      "source": "The Hacker News",
-      "date": "2025-10-23T11:30:00",
-      "link": "https://thehackernews.com/2025/10/threatsday-bulletin-176m-crypto-fine.html",
-      "summary": "Criminals don&rsquo;t need to be clever all the time; they just follow the easiest path in: trick users, exploit stale components, or abuse trusted systems like OAuth and package registries. If your stack or habits make any of those easy, you&rsquo;re already a target.\nThis week&rsquo;s ThreatsDay h"
-    },
-    {
-      "title": "Canada Fines Cybercrime Friendly Cryptomus $176M",
-      "source": "Krebs on Security",
-      "date": "2025-10-22T17:21:36",
-      "link": "https://krebsonsecurity.com/2025/10/canada-fines-cybercrime-friendly-cryptomus-176m/",
-      "summary": "Financial regulators in Canada this week levied $176 million in fines against Cryptomus, a digital payments platform that supports dozens of Russian cryptocurrency exchanges and websites hawking cybercrime services. The penalties for violating Canada's anti money-laundering laws come ten months afte"
+      "date": "2025-12-19T12:28:48",
+      "link": "https://www.bleepingcomputer.com/news/security/denmark-blames-russia-for-destructive-cyberattack-on-water-utility/",
+      "summary": "Danish intelligence officials blamed Russia for orchestrating cyberattacks against Denmark's critical infrastructure, as part of Moscow's hybrid attacks against Western nations. [...]"
     },
     {
       "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
       "source": "CISA Advisories",
-      "date": "2025-10-22T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/22/cisa-adds-one-known-exploited-vulnerability-catalog",
-      "summary": "<p>CISA has added one new vulnerability to its&nbsp;<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"Known Exploited Vulnerabilities (KEV) Catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https://"
+      "date": "2025-12-19T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/19/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "summary": "<p>CISA has added one new vulnerability to its\u202f<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"\u202fKnown Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalog</u></a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https"
     },
     {
-      "title": "Raisecomm RAX701-GC Series",
+      "title": "CISA  and Partners Release Update to Malware Analysis Report BRICKSTORM Backdoor",
       "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-294-06",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 9.3</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
+      "date": "2025-12-19T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/19/cisa-and-partners-release-update-malware-analysis-report-brickstorm-backdoor",
+      "summary": "<p>Today, the Cybersecurity and Infrastructure Security Agency (CISA), National Security Agency, and Canadian Centre for Cyber Security released an update to the <a href=\"https://www.cisa.gov/news-events/analysis-reports/ar25-338a\" title=\" BRICKSTORM Backdoor \">Malware Analysis Report BRICKSTORM Bac"
     },
     {
-      "title": "CISA Releases 10 Industrial Control Systems Advisories",
-      "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/21/cisa-releases-10-industrial-control-systems-advisories",
-      "summary": "<p>CISA released 10 Industrial Control Systems (ICS) advisories. These advisories provide timely information about current security issues, vulnerabilities, and exploits surrounding ICS.</p>\n<div class=\"ListContainerWrapper SCXW48415451 BCX8\">\n<ul>\n<li>ICSA-25-294-01 <a href=\"https://www.cisa.gov/ne"
+      "title": "WatchGuard Warns of Active Exploitation of Critical Fireware OS VPN Vulnerability",
+      "source": "The Hacker News",
+      "date": "2025-12-19T11:23:00",
+      "link": "https://thehackernews.com/2025/12/watchguard-warns-of-active-exploitation.html",
+      "summary": "WatchGuard has released fixes to address a critical security flaw in Fireware OS that it said has been exploited in real-world attacks.\nTracked as CVE-2025-14733 (CVSS score: 9.3), the vulnerability has been described as a case of out-of-bounds write affecting the iked process that could allow a rem"
     },
     {
-      "title": "Oxford Nanopore Technologies MinKNOW",
-      "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-25-294-01",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.3</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
+      "title": "Nigeria Arrests RaccoonO365 Phishing Developer Linked to Microsoft 365 Attacks",
+      "source": "The Hacker News",
+      "date": "2025-12-19T10:26:00",
+      "link": "https://thehackernews.com/2025/12/nigeria-arrests-raccoono365-phishing.html",
+      "summary": "Authorities in Nigeria have announced the arrest of three \"high-profile internet fraud suspects\" who are alleged to have been involved in phishing attacks targeting major corporations, including the main developer behind the RaccoonO365 phishing-as-a-service (PhaaS) scheme.\nThe Nigeria Police Force "
     },
     {
-      "title": "CloudEdge Online Cameras and App",
+      "title": "New critical WatchGuard Firebox firewall flaw exploited in attacks",
+      "source": "Bleeping Computer",
+      "date": "2025-12-19T10:25:06",
+      "link": "https://www.bleepingcomputer.com/news/security/watchguard-warns-of-new-rce-flaw-in-firebox-firewalls-exploited-in-attacks/",
+      "summary": "WatchGuard has warned customers to patch a critical, actively exploited remote code execution (RCE) vulnerability in its Firebox firewalls. [...]"
+    },
+    {
+      "title": "FTC: Instacart to refund $60M over deceptive subscription tactics",
+      "source": "Bleeping Computer",
+      "date": "2025-12-19T09:19:40",
+      "link": "https://www.bleepingcomputer.com/news/legal/instacart-to-refund-60m-over-deceptive-subscription-tactics/",
+      "summary": "Grocery delivery service Instacart will refund $60 million to settle FTC claims that it misled customers with false advertising and unlawfully enrolled them in paid subscriptions. [...]"
+    },
+    {
+      "title": "New UEFI Flaw Enables Early-Boot DMA Attacks on ASRock, ASUS, GIGABYTE, MSI Motherboards",
+      "source": "The Hacker News",
+      "date": "2025-12-19T08:25:00",
+      "link": "https://thehackernews.com/2025/12/new-uefi-flaw-enables-early-boot-dma.html",
+      "summary": "Certain motherboard models from vendors like ASRock, ASUSTeK Computer, GIGABYTE, and MSI are affected by a security vulnerability that leaves them susceptible to early-boot direct memory access (DMA) attacks across architectures that implement a Unified Extensible Firmware Interface (UEFI) and input"
+    },
+    {
+      "title": "Windows 10 OOB update released to fix Message Queuing (MSMQ) issues",
+      "source": "Bleeping Computer",
+      "date": "2025-12-19T01:15:19",
+      "link": "https://www.bleepingcomputer.com/news/microsoft/windows-10-oob-update-released-to-fix-message-queuing-msmq-issues/",
+      "summary": "This month's extended security update for Windows 11 broke Message Queuing (MSMQ), which is typically used by enterprises to manage background tasks. [...]"
+    },
+    {
+      "title": "University of Sydney suffers data breach exposing student and staff info",
+      "source": "Bleeping Computer",
+      "date": "2025-12-18T20:22:58",
+      "link": "https://www.bleepingcomputer.com/news/security/university-of-sydney-suffers-data-breach-exposing-student-and-staff-info/",
+      "summary": "Hackers gained access to an online coding repository belonging to the University of Sydney and stole files with personal information of staff and students. [...]"
+    },
+    {
+      "title": "Clop ransomware targets Gladinet CentreStack in data theft attacks",
+      "source": "Bleeping Computer",
+      "date": "2025-12-18T20:16:55",
+      "link": "https://www.bleepingcomputer.com/news/security/clop-ransomware-targets-gladinet-centrestack-servers-for-extortion/",
+      "summary": "The Clop ransomware gang is targeting Internet-exposed Gladinet CentreStack file servers in a new data theft extortion campaign. [...]"
+    },
+    {
+      "title": "China-Aligned Threat Group Uses Windows Group Policy to Deploy Espionage Malware",
+      "source": "The Hacker News",
+      "date": "2025-12-18T17:34:00",
+      "link": "https://thehackernews.com/2025/12/china-aligned-threat-group-uses-windows.html",
+      "summary": "A previously undocumented China-aligned threat cluster dubbed LongNosedGoblin has been attributed to a series of cyber attacks targeting governmental entities in Southeast Asia and Japan.\nThe end goal of these attacks is cyber espionage, Slovak cybersecurity company ESET said in a report published t"
+    },
+    {
+      "title": "HPE OneView Flaw Rated CVSS 10.0 Allows Unauthenticated Remote Code Execution",
+      "source": "The Hacker News",
+      "date": "2025-12-18T14:39:00",
+      "link": "https://thehackernews.com/2025/12/hpe-oneview-flaw-rated-cvss-100-allows.html",
+      "summary": "Hewlett Packard Enterprise (HPE) has resolved a maximum-severity security flaw in OneView Software that, if successfully exploited, could result in remote code execution.\nThe critical vulnerability, assigned the CVE identifier CVE-2025-37164, carries a CVSS score of 10.0. HPE OneView is an IT infras"
+    },
+    {
+      "title": "ThreatsDay Bulletin: WhatsApp Hijacks, MCP Leaks, AI Recon, React2Shell Exploit and 15 More Stories",
+      "source": "The Hacker News",
+      "date": "2025-12-18T13:10:00",
+      "link": "https://thehackernews.com/2025/12/threatsday-bulletin-whatsapp-hijacks.html",
+      "summary": "This week\u2019s ThreatsDay Bulletin tracks how attackers keep reshaping old tools and finding new angles in familiar systems. Small changes in tactics are stacking up fast, and each one hints at where the next big breach could come from.\nFrom shifting infrastructures to clever social hooks, the week\u2019s a"
+    },
+    {
+      "title": "North Korea-Linked Hackers Steal $2.02 Billion in 2025, Leading Global Crypto Theft",
+      "source": "The Hacker News",
+      "date": "2025-12-18T13:00:00",
+      "link": "https://thehackernews.com/2025/12/north-korea-linked-hackers-steal-202.html",
+      "summary": "Threat actors with ties to the Democratic People's Republic of Korea (DPRK or North Korea) have been instrumental in driving a surge in global cryptocurrency theft in 2025, accounting for at least $2.02 billion out of more than $3.4 billion stolen from January through early December.\nThe figure repr"
+    },
+    {
+      "title": "Advantech WebAccess/SCADA",
       "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-294-05",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-06",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-06.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could allow an authenticated attacker to read or modify a remote database.</strong></"
+    },
+    {
+      "title": "Inductive Automation Ignition",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-01",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-01.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to be granted direct SYSTEM-level code execution on the host ope"
+    },
+    {
+      "title": "National Instruments LabView",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-03",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-03.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could allow an attacker to disclose information and execute arbitrary code.</strong><"
+    },
+    {
+      "title": "Siemens Interniche IP-Stack",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-05",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-05.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Multiple Industrial products are affected by a vulnerability in the Interniche IP-Stack. The affected products do not properly enforce"
+    },
+    {
+      "title": "Schneider Electric EcoStruxure Foxboro DCS Advisor",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-02",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-02.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Schneider Electric is aware of a vulnerability disclosed by Microsoft in the Microsoft Windows Server Update Services (WSUS) used in t"
+    },
+    {
+      "title": "Rockwell Automation Micro820, Micro850, Micro870",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-07",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-07.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could result in a denial-of-service condition.</strong></p>\n<p>The following versions"
+    },
+    {
+      "title": "Mitsubishi Electric Iconics Digital Solutions and Mitsubishi Electrics Products",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-04",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-04.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could result in denial-of-service (DoS), information tampering, and information disclosu"
+    },
+    {
+      "title": "Axis Communications Camera Station Pro, Camera Station, and Device Manager",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-352-08",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-352-08.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could result in an attacker executing arbitrary code, executing a man-in-middle style"
+    },
+    {
+      "title": "CISA Releases Nine Industrial Control Systems Advisories",
+      "source": "CISA Advisories",
+      "date": "2025-12-18T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/18/cisa-releases-nine-industrial-control-systems-advisories",
+      "summary": "<div class=\"OutlineElement Ltr SCXW237618995 BCX8\">\n<p>CISA released nine Industrial Control Systems (ICS) Advisories. These advisories provide timely information about current security issues, vulnerabilities, and exploits surrounding ICS.&nbsp;</p>\n</div>\n<div class=\"ListContainerWrapper SCXW23761"
+    },
+    {
+      "title": "The Case for Dynamic AI-SaaS Security as Copilots Scale",
+      "source": "The Hacker News",
+      "date": "2025-12-18T11:30:00",
+      "link": "https://thehackernews.com/2025/12/the-case-for-dynamic-ai-saas-security.html",
+      "summary": "Within the past year, artificial intelligence copilots and agents have quietly permeated the SaaS applications businesses use every day. Tools like Zoom, Slack, Microsoft 365, Salesforce, and ServiceNow now come with built-in AI assistants or agent-like features. Virtually every major SaaS vendor ha"
+    },
+    {
+      "title": "Kimsuky Spreads DocSwap Android Malware via QR Phishing Posing as Delivery App",
+      "source": "The Hacker News",
+      "date": "2025-12-18T07:43:00",
+      "link": "https://thehackernews.com/2025/12/kimsuky-spreads-docswap-android-malware.html",
+      "summary": "The North Korean threat actor known as Kimsuky has been linked to a new campaign that distributes a new variant of Android malware called DocSwap via QR codes hosted on phishing sites mimicking Seoul-based logistics firm CJ Logistics (formerly CJ Korea Express).\n\"The threat actor leveraged QR codes "
+    },
+    {
+      "title": "CISA Flags Critical ASUS Live Update Flaw After Evidence of Active Exploitation",
+      "source": "The Hacker News",
+      "date": "2025-12-18T05:01:00",
+      "link": "https://thehackernews.com/2025/12/cisa-flags-critical-asus-live-update.html",
+      "summary": "The U.S. Cybersecurity and Infrastructure Security Agency (CISA) on Wednesday added a critical flaw impacting ASUS Live Update to its Known Exploited Vulnerabilities (KEV) catalog, citing evidence of active exploitation.\nThe vulnerability, tracked as CVE-2025-59374 (CVSS score: 9.3), has been descri"
+    },
+    {
+      "title": "Cisco Warns of Active Attacks Exploiting Unpatched 0-Day in AsyncOS Email Security Appliances",
+      "source": "The Hacker News",
+      "date": "2025-12-18T04:10:00",
+      "link": "https://thehackernews.com/2025/12/cisco-warns-of-active-attacks.html",
+      "summary": "Cisco has alerted users to a maximum-severity zero-day flaw in Cisco AsyncOS software that has been actively exploited by a China-nexus advanced persistent threat (APT) actor codenamed UAT-9686 in attacks targeting Cisco Secure Email Gateway and Cisco Secure Email and Web Manager.\nThe networking equ"
+    },
+    {
+      "title": "SonicWall Fixes Actively Exploited CVE-2025-40602 in SMA 100 Appliances",
+      "source": "The Hacker News",
+      "date": "2025-12-17T18:17:00",
+      "link": "https://thehackernews.com/2025/12/sonicwall-fixes-actively-exploited-cve.html",
+      "summary": "SonicWall has rolled out fixes to address a security flaw in Secure Mobile Access (SMA) 100 series appliances that it said has been actively exploited in the wild.\nThe vulnerability, tracked as CVE-2025-40602 (CVSS score: 6.6), concerns a case of local privilege escalation that arises as a result of"
+    },
+    {
+      "title": "Kimwolf Botnet Hijacks 1.8 Million Android TVs, Launches Large-Scale DDoS Attacks",
+      "source": "The Hacker News",
+      "date": "2025-12-17T18:09:00",
+      "link": "https://thehackernews.com/2025/12/kimwolf-botnet-hijacks-18-million.html",
+      "summary": "A new distributed denial-of-service (DDoS) botnet known as Kimwolf has enlisted a massive army of no less than 1.8 million infected devices comprising Android-based TVs, set-top boxes, and tablets, and may be associated with another botnet known as AISURU, according to findings from QiAnXin XLab.\n\"K"
+    },
+    {
+      "title": "APT28 Targets Ukrainian UKR-net Users in Long-Running Credential Phishing Campaign",
+      "source": "The Hacker News",
+      "date": "2025-12-17T15:30:00",
+      "link": "https://thehackernews.com/2025/12/apt28-targets-ukrainian-ukr-net-users.html",
+      "summary": "The Russian state-sponsored threat actor known as APT28 has been attributed to what has been described as a \"sustained\" credential-harvesting campaign targeting users of UKR[.]net, a webmail and news service popular in Ukraine.\nThe activity, observed by Recorded Future's Insikt Group between June 20"
+    },
+    {
+      "title": "New ForumTroll Phishing Attacks Target Russian Scholars Using Fake eLibrary Emails",
+      "source": "The Hacker News",
+      "date": "2025-12-17T14:54:00",
+      "link": "https://thehackernews.com/2025/12/new-forumtroll-phishing-attacks-target.html",
+      "summary": "The threat actor linked to Operation ForumTroll has been attributed to a fresh set of phishing attacks targeting individuals within Russia, according to Kaspersky.\nThe Russian cybersecurity vendor said it detected the new activity in October 2025. The origins of the threat actor are presently unknow"
+    },
+    {
+      "title": "CISA Adds Three Known Exploited Vulnerabilities to Catalog",
+      "source": "CISA Advisories",
+      "date": "2025-12-17T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/17/cisa-adds-three-known-exploited-vulnerabilities-catalog",
+      "summary": "<p>CISA has added three new vulnerabilities to its\u202f<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"Known Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalog</u></a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"ht"
+    },
+    {
+      "title": "Fix SOC Blind Spots: See Threats to Your Industry & Country in Real Time",
+      "source": "The Hacker News",
+      "date": "2025-12-17T11:30:00",
+      "link": "https://thehackernews.com/2025/12/fix-soc-blind-spots-see-threats-to-your.html",
+      "summary": "Modern security teams often feel like they\u2019re driving through fog with failing headlights. Threats accelerate, alerts multiply, and SOCs struggle to understand which dangers matter right now for their business. Breaking out of reactive defense is no longer optional. It\u2019s the difference between preve"
+    },
+    {
+      "title": "China-Linked Ink Dragon Hacks Governments Using ShadowPad and FINALDRAFT Malware",
+      "source": "The Hacker News",
+      "date": "2025-12-17T11:12:00",
+      "link": "https://thehackernews.com/2025/12/china-linked-ink-dragon-hacks.html",
+      "summary": "The threat actor known as Jewelbug has been increasingly focusing on government targets in Europe since July 2025, even as it continues to attack entities located in Southeast Asia and South America.\nCheck Point Research is tracking the cluster under the name Ink Dragon. It's also referenced by the "
+    },
+    {
+      "title": "GhostPoster Malware Found in 17 Firefox Add-ons with 50,000+ Downloads",
+      "source": "The Hacker News",
+      "date": "2025-12-17T08:14:00",
+      "link": "https://thehackernews.com/2025/12/ghostposter-malware-found-in-17-firefox.html",
+      "summary": "A new campaign named GhostPoster has leveraged logo files associated with 17 Mozilla Firefox browser add-ons to embed malicious JavaScript code designed to hijack affiliate links, inject tracking code, and commit click and ad fraud.\nThe extensions have been collectively downloaded over 50,000 times,"
+    },
+    {
+      "title": "Compromised IAM Credentials Power a Large AWS Crypto Mining Campaign",
+      "source": "The Hacker News",
+      "date": "2025-12-16T16:35:00",
+      "link": "https://thehackernews.com/2025/12/compromised-iam-credentials-power-large.html",
+      "summary": "An ongoing campaign has been observed targeting Amazon Web Services (AWS) customers using compromised Identity and Access Management (IAM) credentials to enable cryptocurrency mining.\nThe activity, first detected by Amazon's GuardDuty managed threat detection service and its automated security monit"
+    },
+    {
+      "title": "Rogue NuGet Package Poses as Tracer.Fody, Steals Cryptocurrency Wallet Data",
+      "source": "The Hacker News",
+      "date": "2025-12-16T15:39:00",
+      "link": "https://thehackernews.com/2025/12/rogue-nuget-package-poses-as-tracerfody.html",
+      "summary": "Cybersecurity researchers have discovered a new malicious NuGet package that typosquats and impersonates the popular .NET tracing library and its author to sneak in a cryptocurrency wallet stealer.\nThe malicious package, named \"Tracer.Fody.NLog,\" remained on the repository for nearly six years. It w"
+    },
+    {
+      "title": "Most Parked Domains Now Serving Malicious Content",
+      "source": "Krebs on Security",
+      "date": "2025-12-16T14:14:48",
+      "link": "https://krebsonsecurity.com/2025/12/most-parked-domains-now-serving-malicious-content/",
+      "summary": "Direct navigation -- the act of visiting a website by manually typing a domain name in a web browser -- has never been riskier: A new study finds the vast majority of \"parked\" domains -- mostly expired or dormant domain names, or common misspellings of popular websites -- are now configured to redir"
+    },
+    {
+      "title": "Amazon Exposes Years-Long GRU Cyber Campaign Targeting Energy and Cloud Infrastructure",
+      "source": "The Hacker News",
+      "date": "2025-12-16T12:27:00",
+      "link": "https://thehackernews.com/2025/12/amazon-exposes-years-long-gru-cyber.html",
+      "summary": "Amazon's threat intelligence team has disclosed details of a \"years-long\" Russian state-sponsored campaign that targeted Western critical infrastructure between 2021 and 2025.\nTargets of the campaign included energy sector organizations across Western nations, critical infrastructure providers in No"
+    },
+    {
+      "title": "Hitachi Energy AFS, AFR and AFF Series",
+      "source": "CISA Advisories",
+      "date": "2025-12-16T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-350-03",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-350-03.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could compromise the integrity of the product data and disrupt its availability.</strong"
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "source": "CISA Advisories",
+      "date": "2025-12-16T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/16/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "summary": "<p>CISA has added one new vulnerability to its\u202f<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"\u202fKnown Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalog</u></a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https"
+    },
+    {
+      "title": "Mitsubishi Electric GT Designer3",
+      "source": "CISA Advisories",
+      "date": "2025-12-16T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-350-04",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-350-04.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker obtain plaintext credentials from the project file for GT Design"
+    },
+    {
+      "title": "CISA Releases Six Industrial Control Systems Advisories",
+      "source": "CISA Advisories",
+      "date": "2025-12-16T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/16/cisa-releases-seven-industrial-control-systems-advisories",
+      "summary": "<div class=\"OutlineElement Ltr SCXW237618995 BCX8\">\n<p>CISA released six Industrial Control Systems (ICS) Advisories. These advisories provide timely information about current security issues, vulnerabilities, and exploits surrounding ICS.&nbsp;</p>\n</div>\n<div class=\"ListContainerWrapper SCXW237618"
+    },
+    {
+      "title": "Johnson Controls PowerG, IQPanel and IQHub",
+      "source": "CISA Advisories",
+      "date": "2025-12-16T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-350-02",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-350-02.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could allow an attacker to read or write encrypted traffic or perform a replay attack"
+    },
+    {
+      "title": "G\u00fcralp Systems Fortimus Series, Minimus Series, and Certimus Series",
+      "source": "CISA Advisories",
+      "date": "2025-12-16T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-350-01",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2025/icsa-25-350-01.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to cause a denial-of-service condition.</strong></p>\n<p>The foll"
+    },
+    {
+      "title": "Why Data Security and Privacy Need to Start in Code",
+      "source": "The Hacker News",
+      "date": "2025-12-16T11:30:00",
+      "link": "https://thehackernews.com/2025/12/why-data-security-and-privacy-need-to.html",
+      "summary": "AI-assisted coding and AI app generation platforms have created an unprecedented surge in software development. Companies are now facing rapid growth in both the number of applications and the pace of change within those applications. Security and privacy teams are under significant pressure as the "
+    },
+    {
+      "title": "Fortinet FortiGate Under Active Attack Through SAML SSO Authentication Bypass",
+      "source": "The Hacker News",
+      "date": "2025-12-16T10:58:00",
+      "link": "https://thehackernews.com/2025/12/fortinet-fortigate-under-active-attack.html",
+      "summary": "Threat actors have begun to exploit two newly disclosed security flaws in Fortinet FortiGate devices, less than a week after public disclosure.\nCybersecurity company Arctic Wolf said it observed active intrusions involving malicious single sign-on (SSO) logins on FortiGate appliances on December 12,"
+    },
+    {
+      "title": "React2Shell Vulnerability Actively Exploited to Deploy Linux Backdoors",
+      "source": "The Hacker News",
+      "date": "2025-12-16T08:21:00",
+      "link": "https://thehackernews.com/2025/12/react2shell-vulnerability-actively.html",
+      "summary": "The security vulnerability known as React2Shell is being exploited by threat actors to deliver malware families like KSwapDoor and ZnDoor, according to findings from Palo Alto Networks Unit 42 and NTT Security.\n\"KSwapDoor is a professionally engineered remote access tool designed with stealth in min"
+    },
+    {
+      "title": "Google to Shut Down Dark Web Monitoring Tool in February 2026",
+      "source": "The Hacker News",
+      "date": "2025-12-16T06:02:00",
+      "link": "https://thehackernews.com/2025/12/google-to-shut-down-dark-web-monitoring.html",
+      "summary": "Google has announced that it's discontinuing its dark web report tool in February 2026, less than two years after it was launched as a way for users to monitor if their personal information is found on the dark web.\nTo that end, scans for new dark web breaches will be stopped on January 15, 2026, an"
+    },
+    {
+      "title": "Featured Chrome Browser Extension Caught Intercepting Millions of Users' AI Chats",
+      "source": "The Hacker News",
+      "date": "2025-12-15T17:46:00",
+      "link": "https://thehackernews.com/2025/12/featured-chrome-browser-extension.html",
+      "summary": "A Google Chrome extension with a \"Featured\" badge and six million users has been observed silently gathering every prompt entered by users into artificial intelligence (AI)-powered chatbots like OpenAI ChatGPT, Anthropic Claude, Microsoft Copilot, DeepSeek, Google Gemini, xAI Grok, Meta AI, and Perp"
+    },
+    {
+      "title": "FreePBX Patches Critical SQLi, File-Upload, and AUTHTYPE Bypass Flaws Enabling RCE",
+      "source": "The Hacker News",
+      "date": "2025-12-15T14:32:00",
+      "link": "https://thehackernews.com/2025/12/freepbx-authentication-bypass-exposed.html",
+      "summary": "Multiple security vulnerabilities have been disclosed in the open-source private branch exchange (PBX) platform FreePBX, including a critical flaw that could result in an authentication bypass under certain configurations.\nThe shortcomings, discovered by Horizon3.ai and reported to the project maint"
+    },
+    {
+      "title": "\u26a1 Weekly Recap: Apple 0-Days, WinRAR Exploit, LastPass Fines, .NET RCE, OAuth Scams & More",
+      "source": "The Hacker News",
+      "date": "2025-12-15T12:24:00",
+      "link": "https://thehackernews.com/2025/12/weekly-recap-apple-0-days-winrar.html",
+      "summary": "If you use a smartphone, browse the web, or unzip files on your computer, you are in the crosshairs this week. Hackers are currently exploiting critical flaws in the daily software we all rely on\u2014and in some cases, they started attacking before a fix was even ready.\nBelow, we list the urgent updates"
+    },
+    {
+      "title": "CISA Adds Two Known Exploited Vulnerabilities to Catalog",
+      "source": "CISA Advisories",
+      "date": "2025-12-15T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/15/cisa-adds-two-known-exploited-vulnerabilities-catalog",
+      "summary": "<p>CISA has added two new vulnerabilities to its\u202f<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"Known Exploited Vulnerabilities (KEV) Catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https://www"
+    },
+    {
+      "title": "A Browser Extension Risk Guide After the ShadyPanda Campaign",
+      "source": "The Hacker News",
+      "date": "2025-12-15T11:55:00",
+      "link": "https://thehackernews.com/2025/12/a-browser-extension-risk-guide-after.html",
+      "summary": "In early December 2025, security researchers exposed a cybercrime campaign that had quietly hijacked popular Chrome and Edge browser extensions on a massive scale.\nA threat group dubbed ShadyPanda spent seven years playing the long game, publishing or acquiring harmless extensions, letting them run "
+    },
+    {
+      "title": "Phantom Stealer Spread by ISO Phishing Emails Hitting Russian Finance Sector",
+      "source": "The Hacker News",
+      "date": "2025-12-15T09:24:00",
+      "link": "https://thehackernews.com/2025/12/phantom-stealer-spread-by-iso-phishing.html",
+      "summary": "Cybersecurity researchers have disclosed details of an active phishing campaign that's targeting a wide range of sectors in Russia with phishing emails that deliver Phantom Stealer via malicious ISO optical disc images.\nThe activity, codenamed Operation MoneyMount-ISO by Seqrite Labs, has primarily "
+    },
+    {
+      "title": "VolkLocker Ransomware Exposed by Hard-Coded Master Key Allowing Free Decryption",
+      "source": "The Hacker News",
+      "date": "2025-12-15T05:33:00",
+      "link": "https://thehackernews.com/2025/12/volklocker-ransomware-exposed-by-hard.html",
+      "summary": "The pro-Russian hacktivist group known as CyberVolk (aka GLORIAMIST) has resurfaced with a new ransomware-as-a-service (RaaS) offering called VolkLocker that suffers from implementation lapses in test artifacts, allowing users to decrypt files without paying an extortion fee.\nAccording to SentinelOn"
+    },
+    {
+      "title": "CISA Adds Actively Exploited Sierra Wireless Router Flaw Enabling RCE Attacks",
+      "source": "The Hacker News",
+      "date": "2025-12-13T12:33:00",
+      "link": "https://thehackernews.com/2025/12/cisa-adds-actively-exploited-sierra.html",
+      "summary": "The U.S. Cybersecurity and Infrastructure Security Agency (CISA) on Friday added a high-severity flaw impacting Sierra Wireless AirLink ALEOS routers to its Known Exploited Vulnerabilities (KEV) catalog, following reports of active exploitation in the wild.\nCVE-2018-4063 (CVSS score: 8.8/9.9) refers"
+    },
+    {
+      "title": "Apple Issues Security Updates After Two WebKit Flaws Found Exploited in the Wild",
+      "source": "The Hacker News",
+      "date": "2025-12-13T05:32:00",
+      "link": "https://thehackernews.com/2025/12/apple-issues-security-updates-after-two.html",
+      "summary": "Apple on Friday released security updates for iOS, iPadOS, macOS, tvOS, watchOS, visionOS, and its Safari web browser to address two security flaws that it said have been exploited in the wild, one of which is the same flaw that was patched by Google in Chrome earlier this week.\nThe vulnerabilities "
+    },
+    {
+      "title": "Fake OSINT and GPT Utility GitHub Repos Spread PyStoreRAT Malware Payloads",
+      "source": "The Hacker News",
+      "date": "2025-12-12T18:50:00",
+      "link": "https://thehackernews.com/2025/12/fake-osint-and-gpt-utility-github-repos.html",
+      "summary": "Cybersecurity researchers are calling attention to a new campaign that's leveraging GitHub-hosted Python repositories to distribute a previously undocumented JavaScript-based Remote Access Trojan (RAT) dubbed PyStoreRAT.\n\"These repositories, often themed as development utilities or OSINT tools, cont"
+    },
+    {
+      "title": "New Advanced Phishing Kits Use AI and MFA Bypass Tactics to Steal Credentials at Scale",
+      "source": "The Hacker News",
+      "date": "2025-12-12T14:04:00",
+      "link": "https://thehackernews.com/2025/12/new-advanced-phishing-kits-use-ai-and.html",
+      "summary": "Cybersecurity researchers have documented four new phishing kits named BlackForce, GhostFrame, InboxPrime AI, and Spiderman that are capable of facilitating credential theft at scale.\nBlackForce, first detected in August 2025, is designed to steal credentials and perform Man-in-the-Browser (MitB) at"
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "source": "CISA Advisories",
+      "date": "2025-12-12T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/12/cisa-adds-one-known-exploited-vulnerability-catalog-0",
+      "summary": "<p>CISA has added one new vulnerability to its\u202f<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"\u202fKnown Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalog</u></a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https"
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "source": "CISA Advisories",
+      "date": "2025-12-12T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/12/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "summary": "<p>CISA has added one new vulnerability to its\u202f<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"\u202fKnown Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalog</u></a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https"
+    },
+    {
+      "title": "Securing GenAI in the Browser: Policy, Isolation, and Data Controls That Actually Work",
+      "source": "The Hacker News",
+      "date": "2025-12-12T10:18:00",
+      "link": "https://thehackernews.com/2025/12/securing-genai-in-browser-policy.html",
+      "summary": "The browser has become the main interface to GenAI for most enterprises: from web-based LLMs and copilots, to GenAI\u2011powered extensions and agentic browsers like ChatGPT Atlas. Employees are leveraging the power of GenAI to draft emails, summarize documents, work on code, and analyze data, often by c"
+    },
+    {
+      "title": "New React RSC Vulnerabilities Enable DoS and Source Code Exposure",
+      "source": "The Hacker News",
+      "date": "2025-12-12T08:55:00",
+      "link": "https://thehackernews.com/2025/12/new-react-rsc-vulnerabilities-enable.html",
+      "summary": "The React team has released fixes for two new types of flaws in React Server Components (RSC) that, if successfully exploited, could result in denial-of-service (DoS) or source code exposure.\nThe team said the issues were found by the security community while attempting to exploit the patches releas"
+    },
+    {
+      "title": "React2Shell Exploitation Escalates into Large-Scale Global Attacks, Forcing Emergency Mitigation",
+      "source": "The Hacker News",
+      "date": "2025-12-12T08:41:00",
+      "link": "https://thehackernews.com/2025/12/react2shell-exploitation-escalates-into.html",
+      "summary": "The U.S. Cybersecurity and Infrastructure Security Agency (CISA) has urged federal agencies to patch the recent React2Shell vulnerability by December 12, 2025, amid reports of widespread exploitation.\nThe critical vulnerability, tracked as CVE-2025-55182 (CVSS score: 10.0), affects the React Server "
+    },
+    {
+      "title": "CISA Flags Actively Exploited GeoServer XXE Flaw in Updated KEV Catalog",
+      "source": "The Hacker News",
+      "date": "2025-12-12T05:01:00",
+      "link": "https://thehackernews.com/2025/12/cisa-flags-actively-exploited-geoserver.html",
+      "summary": "The U.S. Cybersecurity and Infrastructure Security Agency (CISA) on Thursday added a high-severity security flaw impacting OSGeo GeoServer to its Known Exploited Vulnerabilities (KEV) catalog, based on evidence of active exploitation in the wild.\nThe vulnerability in question is CVE-2025-58360 (CVSS"
+    },
+    {
+      "title": "ThreatsDay Bulletin: Spyware Alerts, Mirai Strikes, Docker Leaks, ValleyRAT Rootkit \u2014 and 20 More Stories",
+      "source": "The Hacker News",
+      "date": "2025-12-11T13:40:00",
+      "link": "https://thehackernews.com/2025/12/threatsday-bulletin-spyware-alerts.html",
+      "summary": "This week\u2019s cyber stories show how fast the online world can turn risky. Hackers are sneaking malware into movie downloads, browser add-ons, and even software updates people trust. Tech giants and governments are racing to plug new holes while arguing over privacy and control. And researchers keep u"
+    },
+    {
+      "title": "NANOREMOTE Malware Uses Google Drive API for Hidden Control on Windows Systems",
+      "source": "The Hacker News",
+      "date": "2025-12-11T13:16:00",
+      "link": "https://thehackernews.com/2025/12/nanoremote-malware-uses-google-drive.html",
+      "summary": "Cybersecurity researchers have disclosed details of a new fully-featured Windows backdoor called NANOREMOTE that uses the Google Drive API for command-and-control (C2) purposes.\nAccording to a report from Elastic Security Labs, the malware shares code similarities with another implant codenamed FINA"
+    },
+    {
+      "title": "Siemens Building X - Security Manager Edge Controller",
+      "source": "CISA Advisories",
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-345-07",
+      "summary": "<p>As of January 10, 2023, CISA will no longer be updating ICS security advisories for Siemens product vulnerabilities beyond the initial advisory.&nbsp;For the most up-to-date information on vulnerabilities in this advisory, please see&nbsp;<a class=\"ext\" href=\"https://new.siemens.com/global/en/pro"
+    },
+    {
+      "title": "Siemens Gridscale X Prepay",
+      "source": "CISA Advisories",
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-345-09",
+      "summary": "<p>As of January 10, 2023, CISA will no longer be updating ICS security advisories for Siemens product vulnerabilities beyond the initial advisory.&nbsp;For the most up-to-date information on vulnerabilities in this advisory, please see&nbsp;<a class=\"ext\" href=\"https://new.siemens.com/global/en/pro"
+    },
+    {
+      "title": "Siemens Advanced Licensing (SALT) Toolkit",
+      "source": "CISA Advisories",
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-345-05",
+      "summary": "<p>As of January 10, 2023, CISA will no longer be updating ICS security advisories for Siemens product vulnerabilities beyond the initial advisory.&nbsp;For the most up-to-date information on vulnerabilities in this advisory, please see&nbsp;<a class=\"ext\" href=\"https://new.siemens.com/global/en/pro"
+    },
+    {
+      "title": "Cybersecurity Performance Goals 2.0 for Critical Infrastructure",
+      "source": "CISA Advisories",
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/11/cybersecurity-performance-goals-20-critical-infrastructure",
+      "summary": "<p>Today, CISA released updated <a href=\"https://www.cisa.gov/cybersecurity-performance-goals-2-0-cpg-2-0\" title=\"Cross-Sector Cybersecurity Performance Goals (CPG 2.0)\">Cross-Sector Cybersecurity Performance Goals (CPG 2.0)</a> with measurable actions for critical infrastructure owners and operator"
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "source": "CISA Advisories",
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/alerts/2025/12/11/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "summary": "<p>CISA has added one new vulnerability to its\u202f<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"\u202fKnown Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catalog</u></a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a class=\"Hype"
+    },
+    {
+      "title": "Johnson Controls iSTAR Ultra",
+      "source": "CISA Advisories",
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-345-02",
       "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.7</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
     },
     {
-      "title": "Rockwell Automation 1783-NATR",
+      "title": "Siemens IAM Client",
       "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-294-01",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 9.9</strong></li>\n<li><strong>ATTENTION:</strong> Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor:</stron"
-    },
-    {
-      "title": "Siemens RUGGEDCOM ROS Devices",
-      "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-294-04",
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-345-04",
       "summary": "<p>As of January 10, 2023, CISA will no longer be updating ICS security advisories for Siemens product vulnerabilities beyond the initial advisory.&nbsp;For the most up-to-date information on vulnerabilities in this advisory, please see&nbsp;<a class=\"ext\" href=\"https://new.siemens.com/global/en/pro"
     },
     {
-      "title": "Rockwell Automation Compact GuardLogix 5370",
+      "title": "AzeoTech DAQFactory",
       "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-294-02",
-      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.7</strong></li>\n<li><strong>ATTENTION:</strong> Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor:</stron"
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-345-03",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.4</strong></li>\n<li><strong>ATTENTION</strong>: Low attack complexity</li>\n<li><strong>Vendor</strong>: AzeoTech</li>\n<li>"
     },
     {
-      "title": "Siemens SIMATIC S7-1200 CPU V1/V2 Devices",
+      "title": "Johnson Controls iSTAR",
       "source": "CISA Advisories",
-      "date": "2025-10-21T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-294-03",
-      "summary": "<p>As of January 10, 2023, CISA will no longer be updating ICS security advisories for Siemens product vulnerabilities beyond the initial advisory.&nbsp;For the most up-to-date information on vulnerabilities in this advisory, please see&nbsp;<a class=\"ext\" href=\"https://new.siemens.com/global/en/pro"
+      "date": "2025-12-11T12:00:00",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-345-01",
+      "summary": "<p><a href=\"https://github.com/cisagov/CSAF\" target=\"_blank\"><strong>View CSAF</strong></a></p>\n<h2 id=\"1-executive-summary\">1. EXECUTIVE SUMMARY</h2>\n<ul>\n<li><strong>CVSS v4 8.7</strong></li>\n<li><strong>ATTENTION</strong>: Exploitable remotely/low attack complexity</li>\n<li><strong>Vendor</strong"
     },
     {
-      "title": "CISA Adds Five Known Exploited Vulnerabilities to Catalog",
-      "source": "CISA Advisories",
-      "date": "2025-10-20T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/20/cisa-adds-five-known-exploited-vulnerabilities-catalog",
-      "summary": "<p>CISA has added five new vulnerabilities to its\u202f<a class=\"Hyperlink SCXW224554940 BCX8\" href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" rel=\"noreferrer noopener\" target=\"_blank\" title=\"Known Exploited Vulnerabilities (KEV) Catalog\"><u>Known Exploited Vulnerabilities (KEV) Catal"
+      "title": "The Impact of Robotic Process Automation (RPA) on Identity and Access Management",
+      "source": "The Hacker News",
+      "date": "2025-12-11T11:30:00",
+      "link": "https://thehackernews.com/2025/12/the-impact-of-robotic-process.html",
+      "summary": "As enterprises refine their strategies for handling Non-Human Identities (NHIs), Robotic Process Automation (RPA) has become a powerful tool for streamlining operations and enhancing security. However, since RPA bots have varying levels of access to sensitive information, enterprises must be prepare"
     },
     {
-      "title": "Email Bombs Exploit Lax Authentication in Zendesk",
+      "title": "WIRTE Leverages AshenLoader Sideloading to Install the AshTag Espionage Backdoor",
+      "source": "The Hacker News",
+      "date": "2025-12-11T11:00:00",
+      "link": "https://thehackernews.com/2025/12/wirte-leverages-ashenloader-sideloading.html",
+      "summary": "An advanced persistent threat (APT) known as WIRTE has been attributed to attacks targeting government and diplomatic entities across the Middle East with a previously undocumented malware suite dubbed AshTag since 2020.\nPalo Alto Networks Unit 42 is tracking the activity cluster under the name Ashe"
+    },
+    {
+      "title": "Unpatched Gogs Zero-Day Exploited Across 700+ Instances Amid Active Attacks",
+      "source": "The Hacker News",
+      "date": "2025-12-11T10:30:00",
+      "link": "https://thehackernews.com/2025/12/unpatched-gogs-zero-day-exploited.html",
+      "summary": "A high-severity unpatched security vulnerability in Gogs has come under active exploitation, with more than 700 compromised instances accessible over the internet, according to new findings from Wiz.\nThe flaw, tracked as CVE-2025-8110 (CVSS score: 8.7), is a case of file overwrite in the file update"
+    },
+    {
+      "title": "Chrome Targeted by Active In-the-Wild Exploit Tied to Undisclosed High-Severity Flaw",
+      "source": "The Hacker News",
+      "date": "2025-12-11T07:09:00",
+      "link": "https://thehackernews.com/2025/12/chrome-targeted-by-active-in-wild.html",
+      "summary": "Google on Wednesday shipped security updates for its Chrome browser to address three security flaws, including one it said has come under active exploitation in the wild.\nThe vulnerability, rated high in severity, is being tracked under the Chromium issue tracker ID \"466192044.\" Unlike other disclos"
+    },
+    {
+      "title": "Active Attacks Exploit Gladinet's Hard-Coded Keys for Unauthorized Access and Code Execution",
+      "source": "The Hacker News",
+      "date": "2025-12-11T05:56:00",
+      "link": "https://thehackernews.com/2025/12/hard-coded-gladinet-keys-let-attackers.html",
+      "summary": "Huntress is warning of a new actively exploited vulnerability in Gladinet's CentreStack and Triofox products stemming from the use of hard-coded cryptographic keys that have affected nine organizations so far.\n\"Threat actors can potentially abuse this as a way to access the web.config file, opening "
+    },
+    {
+      "title": "Microsoft Patch Tuesday, December 2025 Edition",
       "source": "Krebs on Security",
-      "date": "2025-10-17T11:26:27",
-      "link": "https://krebsonsecurity.com/2025/10/email-bombs-exploit-lax-authentication-in-zendesk/",
-      "summary": "Cybercriminals are abusing a widespread lack of authentication in the customer service platform Zendesk to flood targeted email inboxes with menacing messages that come from hundreds of Zendesk corporate customers simultaneously."
+      "date": "2025-12-09T23:18:29",
+      "link": "https://krebsonsecurity.com/2025/12/microsoft-patch-tuesday-december-2025-edition/",
+      "summary": "Microsoft today pushed updates to fix at least 56 security flaws in its Windows operating systems and supported software. This final Patch Tuesday of 2025 tackles one zero-day bug that is already being exploited, as well as two publicly disclosed vulnerabilities."
     },
     {
-      "title": "Siemens TeleControl Server Basic",
-      "source": "CISA Advisories",
-      "date": "2025-10-16T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-289-09",
-      "summary": "<p>As of January 10, 2023, CISA will no longer be updating ICS security advisories for Siemens product vulnerabilities beyond the initial advisory.&nbsp;For the most up-to-date information on vulnerabilities in this advisory, please see&nbsp;<a class=\"ext\" href=\"https://new.siemens.com/global/en/pro"
-    },
-    {
-      "title": "CISA Releases Thirteen Industrial Control Systems Advisories",
-      "source": "CISA Advisories",
-      "date": "2025-10-16T12:00:00",
-      "link": "https://www.cisa.gov/news-events/alerts/2025/10/16/cisa-releases-thirteen-industrial-control-systems-advisories",
-      "summary": "<p>CISA released thirteen Industrial Control Systems (ICS) advisories on October 16, 2025. These advisories provide timely information about current security issues, vulnerabilities, and exploits surrounding ICS.</p>\n<ul>\n<li>ICSA-25-289-01 <a href=\"https://www.cisa.gov/news-events/ics-advisories/ic"
-    },
-    {
-      "title": "Siemens HyperLynx and Industrial Edge App Publisher",
-      "source": "CISA Advisories",
-      "date": "2025-10-16T12:00:00",
-      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-25-289-10",
-      "summary": "<p>As of January 10, 2023, CISA will no longer be updating ICS security advisories for Siemens product vulnerabilities beyond the initial advisory.&nbsp;For the most up-to-date information on vulnerabilities in this advisory, please see&nbsp;<a class=\"ext\" href=\"https://new.siemens.com/global/en/pro"
-    },
-    {
-      "title": "Patch Tuesday, October 2025 \u2018End of 10\u2019 Edition",
+      "title": "Drones to Diplomas: How Russia\u2019s Largest Private University is Linked to a $25M Essay Mill",
       "source": "Krebs on Security",
-      "date": "2025-10-14T22:57:38",
-      "link": "https://krebsonsecurity.com/2025/10/patch-tuesday-october-2025-end-of-10-edition/",
-      "summary": "Microsoft today released software updates to plug a whopping 172 security holes in its Windows operating systems, including at least three vulnerabilities that are already being actively exploited. October's Patch Tuesday also marks the final month that Microsoft will ship security updates for Windo"
+      "date": "2025-12-06T14:45:03",
+      "link": "https://krebsonsecurity.com/2025/12/drones-to-diplomas-how-russias-largest-private-university-is-linked-to-a-25m-essay-mill/",
+      "summary": "A sprawling academic cheating network turbocharged by Google Ads that has generated nearly $25 million in revenue has curious connections to a Kremlin-connected oligarch whose Russian university builds drones for Russia's war against Ukraine."
     },
     {
-      "title": "DDoS Botnet Aisuru Blankets US ISPs in Record DDoS",
+      "title": "SMS Phishers Pivot to Points, Taxes, Fake Retailers",
       "source": "Krebs on Security",
-      "date": "2025-10-10T16:10:43",
-      "link": "https://krebsonsecurity.com/2025/10/ddos-botnet-aisuru-blankets-us-isps-in-record-ddos/",
-      "summary": "The world's largest and most disruptive botnet is now drawing a majority of its firepower from compromised Internet-of-Things (IoT) devices hosted on U.S. Internet providers like AT&#038;T, Comcast and Verizon, new evidence suggests. Experts say the heavy concentration of infected devices at U.S. pr"
+      "date": "2025-12-04T23:02:34",
+      "link": "https://krebsonsecurity.com/2025/12/sms-phishers-pivot-to-points-taxes-fake-retailers/",
+      "summary": "China-based phishing groups blamed for non-stop scam SMS messages about a supposed wayward package or unpaid toll fee are promoting a new offering, just in time for the holiday shopping season: Phishing kits for mass-creating fake but convincing e-commerce websites that convert customer payment card"
     },
     {
-      "title": "ShinyHunters Wage Broad Corporate Extortion Spree",
+      "title": "Meet Rey, the Admin of \u2018Scattered Lapsus$ Hunters\u2019",
       "source": "Krebs on Security",
-      "date": "2025-10-07T22:45:35",
-      "link": "https://krebsonsecurity.com/2025/10/shinyhunters-wage-broad-corporate-extortion-spree/",
-      "summary": "A cybercriminal group that used voice phishing attacks to siphon more than a billion records from Salesforce customers earlier this year has launched a website that threatens to publish data stolen from dozens of Fortune 500 firms if they refuse to pay a ransom. The group also claimed responsibility"
+      "date": "2025-11-26T17:22:36",
+      "link": "https://krebsonsecurity.com/2025/11/meet-rey-the-admin-of-scattered-lapsus-hunters/",
+      "summary": "A prolific cybercriminal group that calls itself \"Scattered LAPSUS$ Hunters\" made headlines regularly this year by stealing data from and publicly mass extorting dozens of major corporations. But the tables seem to have turned somewhat for \"Rey,\" the moniker chosen by the technical operator and publ"
+    },
+    {
+      "title": "Is Your Android TV Streaming Box Part of a Botnet?",
+      "source": "Krebs on Security",
+      "date": "2025-11-24T18:44:52",
+      "link": "https://krebsonsecurity.com/2025/11/is-your-android-tv-streaming-box-part-of-a-botnet/",
+      "summary": "On the surface, the Superbox media streaming devices for sale at retailers like BestBuy and Walmart may seem like a steal: They offer unlimited access to more than 2,200 pay-per-view and streaming services like Netflix, ESPN and Hulu, all for a one-time fee of around $400. But security experts warn "
     }
   ]
 }

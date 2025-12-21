@@ -1,0 +1,25 @@
+{
+  "xasm_results": {
+    "domain": "purebeautyfarms.com",
+    "critical_findings": [
+      {
+        "severity": "CRITICAL",
+        "type": "Sensitive Subdomain",
+        "description": "Exposed admin subdomain: admin.purebeautyfarms.com",
+        "asset": "admin.purebeautyfarms.com"
+      }
+    ],
+    "shodan_results": [],
+    "subdomains": [
+      {
+        "ips": ["132.148.42.243"],
+        "subdomain": "admin.purebeautyfarms.com",
+        "type": "A"
+      }
+    ]
+  },
+  "lightbox_results": {
+    "critical": [],
+    "high": []
+  }
+}

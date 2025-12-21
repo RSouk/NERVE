@@ -265,50 +265,76 @@ class UnifiedSearch:
     def _structure_hudson_rock_data(self, raw_data):
         """
         Properly structure Hudson Rock data to extract passwords
-        Hudson Rock returns: {"data": [...], "nextCursor": "..."}
-        Each item has: credentials array with url, domain, username, password
+        FREE Cavalier API returns: {"stealers": [...], "message": "...", "total_corporate_services": X}
+
+        FREE API provides:
+        - total_user_services (total credential count)
+        - top_passwords (sample of 5 passwords)
+        - top_logins (sample of 5 logins/emails)
+        - NO full credentials array
         """
         if not raw_data:
             return []
-        
+
         # Handle both list and dict responses
         if isinstance(raw_data, dict):
-            items = raw_data.get('data', [])
+            # Cavalier API uses 'stealers' instead of 'data'
+            items = raw_data.get('stealers', raw_data.get('data', []))
         elif isinstance(raw_data, list):
             items = raw_data
         else:
             return []
-        
+
         structured = []
-        
+
         for item in items:
-            # Extract credentials properly
+            # FREE API: Use top_passwords and top_logins as sample credentials
             credentials = []
-            raw_creds = item.get('credentials', [])
-            
-            for cred in raw_creds:
+            top_passwords = item.get('top_passwords', [])
+            top_logins = item.get('top_logins', [])
+
+            # Combine top logins and passwords into sample credentials
+            max_samples = max(len(top_passwords), len(top_logins))
+            for i in range(max_samples):
                 credentials.append({
-                    'url': cred.get('url', ''),
-                    'domain': cred.get('domain', ''),
-                    'username': cred.get('username', ''),
-                    'password': cred.get('password', '[Encrypted]'),  # This is the actual password
-                    'type': cred.get('type', 'login')
+                    'url': 'Multiple sites',
+                    'domain': 'Sample data',
+                    'username': top_logins[i] if i < len(top_logins) else '[Hidden]',
+                    'password': top_passwords[i] if i < len(top_passwords) else '[Hidden]',
+                    'type': 'sample'
                 })
-            
+
+            # Extract stealer name from malware_path
+            malware_path = item.get('malware_path', '')
+            if malware_path and malware_path != 'Not Found':
+                # Extract filename from path
+                if '\\' in malware_path:
+                    filename = malware_path.split('\\')[-1].replace('.exe', '')
+                else:
+                    filename = malware_path.replace('.exe', '')
+                stealer_family = filename if filename.lower() != 'explorer' else 'Infostealer'
+            else:
+                stealer_family = 'Infostealer'
+
+            # FREE API: Use total_user_services as credential count
+            total_creds = item.get('total_user_services', len(credentials))
+
             structured.append({
-                'stealer_family': item.get('malware_path', 'Unknown Stealer'),
+                'stealer_family': stealer_family,
                 'computer_name': item.get('computer_name', 'Unknown'),
                 'operating_system': item.get('operating_system', 'Unknown'),
                 'ip': item.get('ip', 'Unknown'),
                 'date_compromised': item.get('date_compromised', 'Unknown'),
-                'credentials': credentials,  # Now properly structured with passwords
+                'credentials': credentials,  # Sample credentials from top_passwords/top_logins
+                'total_credentials': total_creds,  # Actual count from API
                 'antiviruses': item.get('antiviruses', []),
                 'top_logins': item.get('top_logins', []),
+                'top_passwords': item.get('top_passwords', []),
                 'top_sites': item.get('top_sites', []),
                 'employee_of': item.get('employee_of', []),
                 'client_of': item.get('client_of', [])
             })
-        
+
         return structured
     
     def _leakcheck_search(self, email: str):

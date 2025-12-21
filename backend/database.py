@@ -166,6 +166,33 @@ class PasteBinFinding(Base):
     context = Column(Text)  # surrounding 500 chars
     discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
 
+class LightboxFinding(Base):
+    __tablename__ = 'lightbox_findings'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    asset = Column(String, nullable=False, index=True)  # subdomain tested
+    finding_type = Column(String, nullable=False, index=True)  # Sensitive File Exposed, Directory Listing, etc.
+    url = Column(String, nullable=False)  # the URL that was tested
+    description = Column(Text)  # description of the finding
+    severity = Column(String, index=True)  # CRITICAL, HIGH, MEDIUM, LOW
+    status_code = Column(Integer)  # HTTP status code
+    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+    scan_id = Column(String, index=True)  # to group findings from the same scan
+
+class OpsychSearchResult(Base):
+    __tablename__ = 'opsych_search_results'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    search_id = Column(String, nullable=False, index=True)  # format: "search_timestamp_randomstring"
+    query_input = Column(String, nullable=False, index=True)  # original search query
+    query_type = Column(String)  # email, username, phone, name
+    platform = Column(String, index=True)  # Social media platform name
+    username = Column(String, index=True)  # Username found on platform
+    url = Column(String)  # Profile URL
+    bio = Column(Text)  # Profile bio/description
+    source = Column(String)  # Sherlock, Holehe, Mastodon API, GitHub API
+    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+
 def init_db():
     """Initialize the database and create all tables"""
     Base.metadata.create_all(engine)

@@ -5,7 +5,15 @@ Links to threat actors and provides remediation guidance
 """
 
 import os
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:
+    print("=" * 60)
+    print("ERROR: google-generativeai not installed")
+    print("=" * 60)
+    print("Run: pip install google-generativeai")
+    print("=" * 60)
+    raise
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -33,11 +41,34 @@ def generate_vuln_assessment(xasm_results, lightbox_results):
     print(f"[VULN ASSESSMENT] Generating AI-powered analysis...")
     print(f"{'='*60}\n")
 
+    # Check if API key is configured
     if not GEMINI_API_KEY or GEMINI_API_KEY == 'your_gemini_api_key_here':
-        print(f"[VULN ASSESSMENT] ⚠️  Gemini API key not configured")
+        print(f"[VULN ASSESSMENT] ❌ Gemini API key not configured")
+        print(f"[VULN ASSESSMENT] Get your free API key from: https://aistudio.google.com/app/apikey")
+        print(f"[VULN ASSESSMENT] Add GEMINI_API_KEY to your .env file")
         return {
             'success': False,
             'error': 'Gemini API key not configured',
+            'assessments': []
+        }
+
+    # Test API connection
+    print(f"[VULN ASSESSMENT] Testing Gemini API connection...")
+    try:
+        test_model = genai.GenerativeModel('models/gemini-2.5-flash')
+        test_response = test_model.generate_content("Test")
+        print(f"[VULN ASSESSMENT] ✓ API connection successful")
+    except Exception as e:
+        error_msg = str(e)
+        print(f"[VULN ASSESSMENT] ❌ API connection failed: {error_msg}")
+        if '401' in error_msg or 'API_KEY_INVALID' in error_msg:
+            print(f"[VULN ASSESSMENT] Your API key is INVALID")
+            print(f"[VULN ASSESSMENT] Get a new key from: https://aistudio.google.com/app/apikey")
+        elif '429' in error_msg or 'quota' in error_msg.lower():
+            print(f"[VULN ASSESSMENT] Rate limit exceeded or quota exhausted")
+        return {
+            'success': False,
+            'error': f'API connection failed: {error_msg}',
             'assessments': []
         }
 
@@ -97,23 +128,16 @@ def generate_vuln_assessment(xasm_results, lightbox_results):
 
         print(f"[VULN ASSESSMENT] Found {len(findings_to_assess)} critical/high findings to assess")
 
-        # Generate assessment for each finding
-        assessments = []
+        # OPTIMIZED: BATCH ALL FINDINGS INTO 1 API CALL (instead of 126 individual calls)
+        print(f"[VULN ASSESSMENT] 🚀 BATCH MODE: Analyzing all {len(findings_to_assess)} findings in 1 API call...")
 
-        for idx, finding in enumerate(findings_to_assess, 1):
-            print(f"[VULN ASSESSMENT] Analyzing finding {idx}/{len(findings_to_assess)}: {finding['type']}...")
-
-            assessment = generate_single_assessment(
-                finding=finding,
-                domain=xasm_results.get('domain', 'Unknown'),
-                index=idx
-            )
-
-            if assessment:
-                assessments.append(assessment)
+        assessments = generate_batch_assessment(
+            findings=findings_to_assess,
+            domain=xasm_results.get('domain', 'Unknown')
+        )
 
         print(f"\n{'='*60}")
-        print(f"[VULN ASSESSMENT] ✓ Generated {len(assessments)} assessments")
+        print(f"[VULN ASSESSMENT] ✓ Batch analysis complete: {len(assessments)} assessments generated")
         print(f"{'='*60}\n")
 
         return {
@@ -185,6 +209,156 @@ def generate_single_assessment(finding, domain, index):
     except Exception as e:
         print(f"[VULN ASSESSMENT] ❌ Error assessing {finding['type']}: {e}")
         return None
+
+
+def generate_batch_assessment(findings, domain):
+    """
+    Generate assessments for ALL findings in a single API call (OPTIMIZED)
+
+    Args:
+        findings (list): List of all vulnerability findings
+        domain (str): Target domain
+
+    Returns:
+        list: List of assessments (one per finding)
+    """
+    if not findings:
+        return []
+
+    try:
+        # Build batch prompt with all findings
+        prompt = build_batch_assessment_prompt(findings, domain)
+
+        print(f"[VULN ASSESSMENT] Calling Gemini API for batch analysis...")
+
+        # Single API call for ALL findings
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        response = model.generate_content(prompt)
+
+        ai_analysis = response.text
+
+        print(f"[VULN ASSESSMENT] ✓ Received batch analysis ({len(ai_analysis)} chars)")
+
+        # Create assessment objects
+        assessments = []
+        for idx, finding in enumerate(findings, 1):
+            # Query threat actors (if CVE present)
+            threat_actors = []
+            if finding.get('cve'):
+                threat_actors = query_threat_actors_for_cve(finding['cve'])
+
+            assessment = {
+                'finding_id': f"VULN-{idx:03d}",
+                'severity': finding['severity'],
+                'type': finding['type'],
+                'asset': finding['asset'],
+                'description': finding['description'],
+                'source': finding['source'],
+                'ai_analysis': ai_analysis,  # Same batch analysis for all (executive summary)
+                'threat_actors': threat_actors,
+                'cve': finding.get('cve', None),
+                'assessed_at': datetime.utcnow().isoformat(),
+                'raw_finding': finding.get('details', {})
+            }
+
+            assessments.append(assessment)
+
+        return assessments
+
+    except Exception as e:
+        print(f"[VULN ASSESSMENT] ❌ Error in batch assessment: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
+def build_batch_assessment_prompt(findings, domain):
+    """
+    Build batch prompt for analyzing ALL findings at once
+
+    Args:
+        findings (list): All vulnerability findings
+        domain (str): Target domain
+
+    Returns:
+        str: Formatted batch prompt
+    """
+    prompt = f"""You are a cybersecurity expert performing a vulnerability assessment for {domain}.
+
+## TASK
+Analyze these {len(findings)} critical/high severity vulnerabilities found during security scanning.
+
+## FINDINGS TO ANALYZE
+
+"""
+
+    # Add all findings to the prompt
+    for idx, finding in enumerate(findings, 1):
+        prompt += f"""
+### FINDING #{idx}: {finding['type']}
+- **Severity:** {finding['severity']}
+- **Asset:** {finding['asset']}
+- **Source:** {finding['source']}
+- **Description:** {finding['description']}
+"""
+
+        if finding.get('cve'):
+            prompt += f"- **CVE:** {finding['cve']}\n"
+
+        if finding.get('url'):
+            prompt += f"- **URL:** {finding['url']}\n"
+
+        if finding.get('details', {}).get('service'):
+            details = finding['details']
+            prompt += f"- **Service:** {details.get('service')} {details.get('version', '')} (Port: {details.get('port')})\n"
+
+        prompt += "\n"
+
+    # Add instructions for the AI
+    prompt += f"""
+---
+
+## REQUIRED OUTPUT
+
+Provide a comprehensive security assessment with:
+
+### 1. EXECUTIVE SUMMARY
+- Overall security posture (2-3 sentences)
+- Total risk level: Critical / High / Medium / Low
+- Immediate actions required (top 3 priorities)
+
+### 2. FINDINGS ANALYSIS
+For each of the {len(findings)} findings above, provide a numbered analysis:
+
+**FINDING #1: [Type]**
+- **What it is:** Brief explanation (1-2 sentences)
+- **Why it's critical:** Business impact and risk
+- **Quick fix:** Specific remediation step (1 sentence)
+- **Fix time:** Estimated hours/days
+- **Exploit difficulty:** Trivial / Easy / Moderate / Difficult
+
+**FINDING #2: [Type]**
+... (repeat for all findings)
+
+### 3. REMEDIATION ROADMAP
+**P0 (Critical - Fix within 24 hours):**
+- [List finding numbers that are P0]
+
+**P1 (High - Fix within 1 week):**
+- [List finding numbers that are P1]
+
+**P2 (Medium - Fix within 1 month):**
+- [List finding numbers that are P2]
+
+### 4. THREAT LANDSCAPE
+- Which threat actors commonly exploit these vulnerabilities?
+- Recent attacks using similar vulnerabilities
+- Overall likelihood of exploitation: Very Low / Low / Medium / High / Very High
+
+Be specific, technical, and actionable. Focus on REAL risks and PRACTICAL remediation.
+"""
+
+    return prompt
 
 
 def build_assessment_prompt(finding, domain):

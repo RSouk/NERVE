@@ -4,7 +4,15 @@ Generates realistic attack scenarios based on discovered assets
 """
 
 import os
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:
+    print("=" * 60)
+    print("ERROR: google-generativeai not installed")
+    print("=" * 60)
+    print("Run: pip install google-generativeai")
+    print("=" * 60)
+    raise
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -30,11 +38,34 @@ def generate_attack_plan(findings):
     print(f"[AI ATTACK SIM] Generating attack plan with Gemini...")
     print(f"{'='*60}\n")
 
+    # Check if API key is configured
     if not GEMINI_API_KEY or GEMINI_API_KEY == 'your_gemini_api_key_here':
-        print(f"[AI ATTACK SIM] ⚠️  Gemini API key not configured")
+        print(f"[AI ATTACK SIM] ❌ Gemini API key not configured")
+        print(f"[AI ATTACK SIM] Get your free API key from: https://aistudio.google.com/app/apikey")
+        print(f"[AI ATTACK SIM] Add GEMINI_API_KEY to your .env file")
         return {
             'success': False,
             'error': 'Gemini API key not configured',
+            'attack_plan': None
+        }
+
+    # Test API connection
+    print(f"[AI ATTACK SIM] Testing Gemini API connection...")
+    try:
+        test_model = genai.GenerativeModel('models/gemini-2.5-flash')
+        test_response = test_model.generate_content("Test")
+        print(f"[AI ATTACK SIM] ✓ API connection successful")
+    except Exception as e:
+        error_msg = str(e)
+        print(f"[AI ATTACK SIM] ❌ API connection failed: {error_msg}")
+        if '401' in error_msg or 'API_KEY_INVALID' in error_msg:
+            print(f"[AI ATTACK SIM] Your API key is INVALID")
+            print(f"[AI ATTACK SIM] Get a new key from: https://aistudio.google.com/app/apikey")
+        elif '429' in error_msg or 'quota' in error_msg.lower():
+            print(f"[AI ATTACK SIM] Rate limit exceeded or quota exhausted")
+        return {
+            'success': False,
+            'error': f'API connection failed: {error_msg}',
             'attack_plan': None
         }
 

@@ -1,7 +1,7 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 # Create database in the data folder
@@ -22,8 +22,8 @@ class Profile(Base):
     phone = Column(String)
     notes = Column(Text)
     risk_score = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # OSINT data fields
     breach_count = Column(Integer, default=0)
@@ -41,7 +41,7 @@ class SocialMedia(Base):
     url = Column(String)
     followers = Column(Integer)
     posts_count = Column(Integer)
-    discovered_at = Column(DateTime, default=datetime.utcnow)
+    discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Breach(Base):
     __tablename__ = 'breaches'
@@ -51,7 +51,7 @@ class Breach(Base):
     breach_name = Column(String)
     breach_date = Column(String)
     data_classes = Column(Text)  # What data was leaked
-    discovered_at = Column(DateTime, default=datetime.utcnow)
+    discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Device(Base):
     __tablename__ = 'devices'
@@ -64,7 +64,7 @@ class Device(Base):
     ports_open = Column(Text)
     vulnerabilities = Column(Text)
     location = Column(String)
-    discovered_at = Column(DateTime, default=datetime.utcnow)
+    discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class BaitToken(Base):
     __tablename__ = 'bait_tokens'
@@ -73,7 +73,7 @@ class BaitToken(Base):
     identifier = Column(String, unique=True, nullable=False)  # format: "bait_abc123"
     bait_type = Column(String)  # aws_key, stripe_token, database, ssh_key, github_token, slack_token
     token_value = Column(Text)  # JSON serialized fake credential
-    seeded_at = Column(DateTime, default=datetime.utcnow)
+    seeded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     seeded_location = Column(String)  # URL where posted (e.g., Pastebin URL)
     first_access = Column(DateTime, nullable=True)
     access_count = Column(Integer, default=0)
@@ -88,7 +88,7 @@ class BaitAccess(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     bait_id = Column(Integer, ForeignKey('bait_tokens.id'), nullable=False)
-    accessed_at = Column(DateTime, default=datetime.utcnow)
+    accessed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     source_ip = Column(String)
     user_agent = Column(String)
     request_type = Column(String)  # http, api, ssh, database
@@ -116,7 +116,7 @@ class UploadedFile(Base):
     upload_id = Column(String, unique=True, nullable=False, index=True)  # format: "upload_timestamp_randomstring"
     filename = Column(String, nullable=False)
     file_path = Column(String, nullable=False)  # path to stored file
-    upload_time = Column(DateTime, default=datetime.utcnow)
+    upload_time = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     line_count = Column(Integer, default=0)
     parsed_credential_count = Column(Integer, default=0)
     file_size_bytes = Column(Integer, default=0)
@@ -150,7 +150,7 @@ class GitHubFinding(Base):
     credential_type = Column(String)  # aws_key, stripe_token, password, github_token, etc
     credential_value = Column(Text)  # the actual credential/password
     context = Column(Text)  # surrounding 500 chars
-    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+    discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
 
 class PasteBinFinding(Base):
     __tablename__ = 'pastebin_findings'
@@ -164,7 +164,7 @@ class PasteBinFinding(Base):
     query_type = Column(String, index=True)  # email, domain, username, password
     credential_password = Column(String)  # password if found
     context = Column(Text)  # surrounding 500 chars
-    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+    discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
 
 class LightboxFinding(Base):
     __tablename__ = 'lightbox_findings'
@@ -176,7 +176,7 @@ class LightboxFinding(Base):
     description = Column(Text)  # description of the finding
     severity = Column(String, index=True)  # CRITICAL, HIGH, MEDIUM, LOW
     status_code = Column(Integer)  # HTTP status code
-    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+    discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
     scan_id = Column(String, index=True)  # to group findings from the same scan
 
 class OpsychSearchResult(Base):
@@ -191,7 +191,52 @@ class OpsychSearchResult(Base):
     url = Column(String)  # Profile URL
     bio = Column(Text)  # Profile bio/description
     source = Column(String)  # Sherlock, Holehe, Mastodon API, GitHub API
-    discovered_at = Column(DateTime, default=datetime.utcnow)  # when we found it
+    discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
+
+class ASMScan(Base):
+    __tablename__ = 'asm_scans'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    domain = Column(String, nullable=False, index=True, unique=True)  # scanned domain
+    scan_results = Column(Text, nullable=False)  # JSON-serialized scan results
+    scanned_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)  # when scan was performed
+    risk_score = Column(Integer)  # cached risk score
+    risk_level = Column(String)  # cached risk level
+    vulnerabilities_found = Column(Integer)  # cached vuln count
+
+class LightboxScan(Base):
+    """Store Lightbox scan results"""
+    __tablename__ = 'lightbox_scans'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    domain = Column(String, nullable=False, index=True)
+    scanned_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    # Summary stats
+    total_findings = Column(Integer, default=0)
+    critical_count = Column(Integer, default=0)
+    high_count = Column(Integer, default=0)
+    medium_count = Column(Integer, default=0)
+    low_count = Column(Integer, default=0)
+
+    # Full results (JSON)
+    findings = Column(Text)  # JSON-serialized findings
+    scan_metadata = Column(Text)  # JSON-serialized metadata: assets tested, checks run, etc.
+
+    def to_dict(self):
+        import json
+        return {
+            'id': self.id,
+            'domain': self.domain,
+            'scanned_at': self.scanned_at.isoformat(),
+            'total_findings': self.total_findings,
+            'critical_count': self.critical_count,
+            'high_count': self.high_count,
+            'medium_count': self.medium_count,
+            'low_count': self.low_count,
+            'findings': json.loads(self.findings) if self.findings else [],
+            'scan_metadata': json.loads(self.scan_metadata) if self.scan_metadata else {}
+        }
 
 def init_db():
     """Initialize the database and create all tables"""

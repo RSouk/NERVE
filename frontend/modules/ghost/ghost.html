@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHOST - CTI Intelligence Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -589,6 +590,44 @@
             border-color: #D4AF37;
             transform: translateY(-2px);
         }
+
+        /* Maintenance Checklist Styles */
+        .maintenance-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+
+        .maintenance-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .maintenance-item input[type="checkbox"] {
+            margin-right: 16px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .maintenance-item label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .maintenance-item label strong {
+            color: #ffd700;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .maintenance-item label span {
+            color: #aaa;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -633,34 +672,122 @@
 
             <!-- Main Content -->
             <div class="content">
-                <!-- Compact Stats Bar -->
-                <div class="stats-bar">
-                    <div class="stat-card-compact">
-                        <div class="stat-compact-value" id="credentialsMonitored">-</div>
-                        <div class="stat-compact-label">Credentials Monitored</div>
-                    </div>
-                    <div class="stat-card-compact">
-                        <div class="stat-compact-value" id="activeHoneytokens">-</div>
-                        <div class="stat-compact-label">Active Honeytokens</div>
-                    </div>
-                    <div class="stat-card-compact">
-                        <div class="stat-compact-value" id="highRiskIPs">-</div>
-                        <div class="stat-compact-label">High Risk IPs</div>
-                    </div>
-                    <div class="stat-card-compact">
-                        <div class="stat-compact-value" id="recentBreaches">-</div>
-                        <div class="stat-compact-label">Recent Breaches</div>
+                <!-- Your Security Score Over Time -->
+                <div class="dashboard-section" style="margin-bottom: 32px;">
+                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Your Security Score Over Time</h2>
+
+                    <div style="background: rgba(0,0,0,0.3); padding: 32px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
+                        <!-- Canvas for Chart.js graph -->
+                        <canvas id="security-score-chart" height="80"></canvas>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px;">
+                            <div style="text-align: center; padding: 16px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #ffd700;" id="current-score">--</div>
+                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Current Score</div>
+                            </div>
+
+                            <div style="text-align: center; padding: 16px; background: rgba(34,197,94,0.1); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #22c55e;" id="score-change">--</div>
+                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Change (30 days)</div>
+                            </div>
+
+                            <div style="text-align: center; padding: 16px; background: rgba(220,53,69,0.1); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #dc3545;" id="critical-count">--</div>
+                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Critical Issues</div>
+                            </div>
+
+                            <div style="text-align: center; padding: 16px; background: rgba(59,130,246,0.1); border-radius: 8px;">
+                                <div style="font-size: 32px; font-weight: 700; color: #3b82f6;" id="total-findings">--</div>
+                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Total Findings</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+                            <button onclick="exportSecurityReport()" style="
+                                background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+                                border: none;
+                                padding: 12px 24px;
+                                border-radius: 8px;
+                                color: #000;
+                                font-weight: 600;
+                                cursor: pointer;
+                            ">Export Report</button>
+
+                            <button onclick="scheduleNextScan()" style="
+                                background: rgba(255,215,0,0.2);
+                                border: 2px solid #ffd700;
+                                padding: 12px 24px;
+                                border-radius: 8px;
+                                color: #ffd700;
+                                font-weight: 600;
+                                cursor: pointer;
+                            ">Schedule Next Scan</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- News Feed Section -->
-                <div class="news-feed-section">
-                    <div class="news-feed-header">
-                        <div class="news-feed-title">📰 Cybersecurity News Feed</div>
-                        <div class="last-updated" id="lastUpdated">Loading...</div>
+                <!-- Scan History & Comparison Section -->
+                <div class="dashboard-section" style="margin-bottom: 32px;">
+                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Scan History & Comparison</h2>
+
+                    <div id="scan-history-container" style="background: rgba(0,0,0,0.3); padding: 24px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
+                        <p style="color: #888; text-align: center;">Loading scan history...</p>
                     </div>
-                    <div id="newsFeedContent">
-                        <div class="loading">Loading latest cybersecurity news...</div>
+                </div>
+
+                <!-- Stay Sharp - Weekly Maintenance Section -->
+                <div class="dashboard-section" style="margin-bottom: 32px;">
+                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Stay Sharp - Weekly Maintenance</h2>
+
+                    <div style="background: rgba(0,0,0,0.3); padding: 24px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
+                        <div id="maintenance-checklist">
+                            <div class="maintenance-item">
+                                <input type="checkbox" id="rescan" />
+                                <label for="rescan">
+                                    <strong>Re-scan your domain</strong>
+                                    <span>Recommended weekly to track changes</span>
+                                </label>
+                            </div>
+
+                            <div class="maintenance-item">
+                                <input type="checkbox" id="breach-check" />
+                                <label for="breach-check">
+                                    <strong>Check for new breaches</strong>
+                                    <span>Run Global Search for your domain</span>
+                                </label>
+                            </div>
+
+                            <div class="maintenance-item">
+                                <input type="checkbox" id="adversary-review" />
+                                <label for="adversary-review">
+                                    <strong>Review threat landscape</strong>
+                                    <span>Check Adversary Matcher for new threats</span>
+                                </label>
+                            </div>
+
+                            <div class="maintenance-item">
+                                <input type="checkbox" id="lightbox-test" />
+                                <label for="lightbox-test">
+                                    <strong>Test one fix with Lightbox</strong>
+                                    <span>Verify remediation worked</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px; padding: 16px; background: rgba(255,215,0,0.1); border-radius: 8px; text-align: center;">
+                            <div style="color: #ffd700; font-weight: 600;">Next Recommended Scan</div>
+                            <div id="next-scan-date" style="color: #fff; font-size: 18px; margin-top: 8px;">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Curated Cybersecurity News Section -->
+                <div class="dashboard-section">
+                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Curated Cybersecurity News</h2>
+                    <p style="color: #aaa; margin-bottom: 20px;">Latest security news from trusted sources</p>
+
+                    <div id="curated-news-feed" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                        <p style="color: #888; grid-column: 1/-1; text-align: center;">Loading latest security news...</p>
                     </div>
                 </div>
             </div>
@@ -706,191 +833,408 @@
 
     <script>
         const API_URL = 'http://localhost:5000';
-        let autoRefreshInterval = null;
-        let allArticles = [];
-        let showingAllArticles = false;
+        let securityScoreChart = null;
 
-        // Format date to relative time
-        function formatRelativeTime(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
-
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffHours < 24) return `${diffHours}h ago`;
-            return `${diffDays}d ago`;
-        }
-
-        // Get source badge class
-        function getSourceBadgeClass(source) {
-            if (source.includes('Krebs')) return 'source-krebs';
-            if (source.includes('Bleeping')) return 'source-bleeping';
-            if (source.includes('Hacker')) return 'source-hackernews';
-            if (source.includes('CISA')) return 'source-cisa';
-            return 'source-krebs';
-        }
-
-        // Load dashboard data
-        async function loadDashboard(forceRefresh = false) {
-            console.log('[CTI DASHBOARD] Loading dashboard data...');
-
+        async function loadSecurityScoreHistory() {
             try {
-                const url = forceRefresh
-                    ? `${API_URL}/api/ghost/dashboard/feed?force_refresh=true`
-                    : `${API_URL}/api/ghost/dashboard/feed`;
+                // Fetch scan history from backend
+                const response = await fetch(`${API_URL}/api/ghost/scan-history`);
+                const history = await response.json();
 
-                const response = await fetch(url);
+                if (!history || history.length === 0) {
+                    // No scan history yet - show placeholder
+                    document.getElementById('current-score').textContent = 'N/A';
+                    document.getElementById('score-change').textContent = '+0';
+                    document.getElementById('critical-count').textContent = '0';
+                    document.getElementById('total-findings').textContent = '0';
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    // Show empty state message
+                    const canvas = document.getElementById('security-score-chart');
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#888';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No scan history yet. Run your first XASM scan!', canvas.width/2, canvas.height/2);
+                    return;
                 }
 
-                const data = await response.json();
-                console.log('[CTI DASHBOARD] Data loaded successfully');
+                // Sort by date
+                history.sort((a, b) => new Date(a.scan_date) - new Date(b.scan_date));
 
-                // Update stats
-                document.getElementById('credentialsMonitored').textContent =
-                    data.stats.credentials_monitored.toLocaleString();
-                document.getElementById('activeHoneytokens').textContent =
-                    data.stats.active_honeytokens.toLocaleString();
-                document.getElementById('highRiskIPs').textContent =
-                    data.stats.high_risk_ips.toLocaleString();
-                document.getElementById('recentBreaches').textContent =
-                    data.stats.recent_breaches_count.toLocaleString();
+                // Extract data for chart
+                const dates = history.map(scan => {
+                    const date = new Date(scan.scan_date);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                });
+                const scores = history.map(scan => scan.risk_score || 0);
+                const criticalCounts = history.map(scan => scan.critical_count || 0);
 
-                // Update last updated time
-                const lastUpdated = data.news.feed_stats.last_updated
-                    ? new Date(data.news.feed_stats.last_updated).toLocaleString()
-                    : 'Just now';
-                document.getElementById('lastUpdated').textContent = `Updated: ${lastUpdated}`;
+                // Update current stats
+                const latestScan = history[history.length - 1];
+                document.getElementById('current-score').textContent = `${latestScan.risk_score}/100`;
+                document.getElementById('critical-count').textContent = latestScan.critical_count || 0;
+                document.getElementById('total-findings').textContent = latestScan.total_findings || 0;
 
-                // Render news articles
-                renderNewsArticles(data.news.articles);
+                // Calculate score change (last 30 days)
+                if (history.length > 1) {
+                    const oldScore = history[0].risk_score || 0;
+                    const newScore = latestScan.risk_score || 0;
+                    const change = newScore - oldScore;
+                    document.getElementById('score-change').textContent = (change >= 0 ? '+' : '') + change;
+                    document.getElementById('score-change').style.color = change >= 0 ? '#22c55e' : '#dc3545';
+                }
+
+                // Create chart
+                const ctx = document.getElementById('security-score-chart').getContext('2d');
+
+                if (securityScoreChart) {
+                    securityScoreChart.destroy();
+                }
+
+                securityScoreChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Security Score',
+                            data: scores,
+                            borderColor: '#ffd700',
+                            backgroundColor: 'rgba(255,215,0,0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#ffd700',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    color: '#aaa'
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#aaa'
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
 
             } catch (error) {
-                console.error('[CTI DASHBOARD] Error loading dashboard:', error);
-                displayError(`Failed to load dashboard: ${error.message}`);
+                console.error('[GHOST] Error loading security score history:', error);
             }
         }
 
-        // Render news articles
-        function renderNewsArticles(articles) {
-            const container = document.getElementById('newsFeedContent');
+        function exportSecurityReport() {
+            alert('Export functionality coming soon!');
+        }
 
-            if (!articles || articles.length === 0) {
-                container.innerHTML = '<div class="loading">No recent articles found.</div>';
-                return;
+        function scheduleNextScan() {
+            alert('Scan scheduling coming soon!');
+        }
+
+        function refreshDashboard() {
+            loadSecurityScoreHistory();
+            loadScanHistory();
+            loadCuratedNews();
+        }
+
+        // ========================================================================
+        // Scan History Functions
+        // ========================================================================
+
+        async function loadScanHistory() {
+            const container = document.getElementById('scan-history-container');
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/scan-history`);
+                const history = await response.json();
+
+                if (!history || history.length === 0) {
+                    container.innerHTML = `
+                        <p style="color: #888; text-align: center; padding: 40px;">
+                            No scan history yet. Run your first XASM scan to start tracking your security progress!
+                        </p>
+                    `;
+                    return;
+                }
+
+                // Sort by most recent first
+                history.sort((a, b) => new Date(b.scan_date) - new Date(a.scan_date));
+
+                // Calculate trend
+                let trendIcon = '➡️';
+                let trendText = 'Stable';
+                let trendColor = '#888';
+
+                if (history.length >= 2) {
+                    const latest = history[0];
+                    const previous = history[1];
+                    const scoreDiff = (latest.risk_score || 0) - (previous.risk_score || 0);
+
+                    if (scoreDiff > 5) {
+                        trendIcon = '✅';
+                        trendText = 'Improving';
+                        trendColor = '#22c55e';
+                    } else if (scoreDiff < -5) {
+                        trendIcon = '⚠️';
+                        trendText = 'Declining';
+                        trendColor = '#dc3545';
+                    }
+                }
+
+                container.innerHTML = `
+                    ${history.slice(0, 5).map((scan, index) => {
+                        const date = new Date(scan.scan_date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+
+                        return `
+                            <div style="
+                                padding: 16px;
+                                background: ${index === 0 ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.05)'};
+                                border-left: 4px solid ${index === 0 ? '#ffd700' : 'rgba(255,255,255,0.2)'};
+                                border-radius: 8px;
+                                margin-bottom: 12px;
+                                display: grid;
+                                grid-template-columns: 2fr 1fr 1fr 1fr auto;
+                                gap: 16px;
+                                align-items: center;
+                            ">
+                                <div>
+                                    <div style="color: #ffd700; font-weight: 600;">${date}: ${scan.domain}</div>
+                                    <div style="color: #888; font-size: 13px; margin-top: 4px;">${index === 0 ? 'Latest Scan' : `${index + 1} scans ago`}</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 20px; font-weight: 700; color: #ffd700;">${scan.risk_score}/100</div>
+                                    <div style="color: #888; font-size: 12px;">Score</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 20px; font-weight: 700; color: #dc3545;">${scan.critical_count || 0}</div>
+                                    <div style="color: #888; font-size: 12px;">Critical</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 20px; font-weight: 700; color: #3b82f6;">${scan.total_findings || 0}</div>
+                                    <div style="color: #888; font-size: 12px;">Total</div>
+                                </div>
+                                <button onclick="viewScanDetails('${scan.scan_id}')" style="
+                                    background: rgba(255,215,0,0.2);
+                                    border: 1px solid #ffd700;
+                                    color: #ffd700;
+                                    padding: 8px 16px;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 13px;
+                                ">View</button>
+                            </div>
+                        `;
+                    }).join('')}
+
+                    <div style="margin-top: 20px; padding: 16px; background: rgba(${trendColor === '#22c55e' ? '34,197,94' : trendColor === '#dc3545' ? '220,53,69' : '136,136,136'},0.1); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; margin-bottom: 8px;">${trendIcon}</div>
+                        <div style="color: ${trendColor}; font-weight: 600; font-size: 16px;">${trendText}</div>
+                        <div style="color: #aaa; font-size: 13px; margin-top: 4px;">
+                            ${history.length >= 2 ? `Fixed ${Math.abs((history[0].critical_count || 0) - (history[1].critical_count || 0))} critical issues in last scan` : 'Run more scans to track progress'}
+                        </div>
+                    </div>
+
+                    ${history.length > 5 ? `
+                        <div style="margin-top: 16px; text-align: center;">
+                            <button onclick="viewFullHistory()" style="
+                                background: none;
+                                border: 1px solid rgba(255,215,0,0.5);
+                                color: #ffd700;
+                                padding: 10px 20px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">View Full History (${history.length} scans)</button>
+                        </div>
+                    ` : ''}
+                `;
+
+            } catch (error) {
+                console.error('[GHOST] Error loading scan history:', error);
+                container.innerHTML = '<p style="color: #dc3545; text-align: center;">Error loading scan history</p>';
             }
+        }
 
-            // Store all articles globally
-            allArticles = articles;
+        function viewScanDetails(scanId) {
+            // Navigate to scan details
+            window.location.href = `ghost-asm.html?scan_id=${scanId}`;
+        }
 
-            // Determine how many articles to show
-            const articlesToShow = showingAllArticles ? articles.length : 7;
-            const displayArticles = articles.slice(0, articlesToShow);
+        function viewFullHistory() {
+            alert('Full history view coming soon!');
+        }
 
-            let html = '<div class="news-articles">';
+        // ========================================================================
+        // Next Scan Date Calculation
+        // ========================================================================
 
-            displayArticles.forEach(article => {
-                const badgeClass = getSourceBadgeClass(article.source);
-                const relativeTime = formatRelativeTime(article.date);
+        async function calculateNextScanDate() {
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/scan-history`);
+                const history = await response.json();
 
-                html += `
-                    <div class="news-article">
-                        <div class="article-header">
-                            <span class="source-badge ${badgeClass}">${article.source}</span>
-                            <div class="article-title">
-                                <a href="${article.link}" target="_blank" rel="noopener noreferrer">
-                                    ${article.title}
-                                </a>
+                if (history && history.length > 0) {
+                    const lastScan = new Date(history[0].scan_date);
+                    const nextScan = new Date(lastScan);
+                    nextScan.setDate(nextScan.getDate() + 7);
+
+                    const today = new Date();
+                    const daysUntil = Math.ceil((nextScan - today) / (1000 * 60 * 60 * 24));
+
+                    if (daysUntil <= 0) {
+                        document.getElementById('next-scan-date').textContent = 'Overdue - Scan Now!';
+                        document.getElementById('next-scan-date').style.color = '#dc3545';
+                    } else {
+                        document.getElementById('next-scan-date').textContent = nextScan.toLocaleDateString('en-US', {
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric'
+                        }) + ` (in ${daysUntil} days)`;
+                    }
+                } else {
+                    document.getElementById('next-scan-date').textContent = 'Run your first scan!';
+                }
+            } catch (error) {
+                console.error('[GHOST] Error calculating next scan date:', error);
+            }
+        }
+
+        // ========================================================================
+        // Curated News Feed
+        // ========================================================================
+
+        // Curated RSS feeds (controlled by platform, not users)
+        const CURATED_FEEDS = [
+            'https://krebsonsecurity.com/feed/',
+            'https://www.bleepingcomputer.com/feed/',
+            'https://www.darkreading.com/rss.xml',
+            'https://threatpost.com/feed/',
+            'https://www.cisa.gov/cybersecurity-advisories/all.xml'
+        ];
+
+        async function loadCuratedNews() {
+            const container = document.getElementById('curated-news-feed');
+
+            try {
+                const response = await fetch(`${API_URL}/api/rss/fetch`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({feeds: CURATED_FEEDS})
+                });
+
+                const data = await response.json();
+
+                if (data.articles && data.articles.length > 0) {
+                    container.innerHTML = data.articles.slice(0, 12).map(article => `
+                        <div style="
+                            background: rgba(0,0,0,0.3);
+                            border: 1px solid rgba(255,215,0,0.2);
+                            border-radius: 12px;
+                            padding: 20px;
+                            transition: all 0.3s;
+                            cursor: pointer;
+                        " onmouseover="this.style.borderColor='#ffd700'" onmouseout="this.style.borderColor='rgba(255,215,0,0.2)'">
+                            <h4 style="color: #ffd700; margin: 0 0 12px 0; font-size: 16px; line-height: 1.4;">
+                                ${article.title}
+                            </h4>
+                            <p style="color: #aaa; font-size: 13px; margin: 0 0 12px 0; line-height: 1.6;">
+                                ${article.description || 'No description available'}
+                            </p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                                <span style="color: #888;">${article.source}</span>
+                                <a href="${article.link}" target="_blank" style="color: #ffd700; text-decoration: none;">Read More →</a>
                             </div>
                         </div>
-                        <div class="article-meta">
-                            <span class="article-date">${relativeTime}</span>
-                        </div>
-                        ${article.summary ? `<div class="article-summary">${article.summary}</div>` : ''}
-                    </div>
-                `;
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">No news articles available</p>';
+                }
+            } catch (error) {
+                console.error('[GHOST] Error loading curated news:', error);
+                container.innerHTML = '<p style="color: #dc3545; grid-column: 1/-1; text-align: center;">Error loading news feed</p>';
+            }
+        }
+
+        // ========================================================================
+        // Maintenance Checklist Persistence
+        // ========================================================================
+
+        // Load checkbox states from localStorage
+        function loadMaintenanceState() {
+            const checkboxes = ['rescan', 'breach-check', 'adversary-review', 'lightbox-test'];
+
+            checkboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    const saved = localStorage.getItem(`maintenance_${id}`);
+                    if (saved === 'true') {
+                        checkbox.checked = true;
+                    }
+
+                    // Add change listener to save state
+                    checkbox.addEventListener('change', () => {
+                        localStorage.setItem(`maintenance_${id}`, checkbox.checked);
+                        console.log(`[GHOST] Maintenance task '${id}' ${checkbox.checked ? 'checked' : 'unchecked'}`);
+                    });
+                }
             });
+        }
 
-            html += '</div>';
+        // Reset checkboxes weekly (every Monday)
+        function checkWeeklyReset() {
+            const lastReset = localStorage.getItem('maintenance_last_reset');
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday
 
-            // Add "Show More" button if there are more than 7 articles
-            if (articles.length > 7) {
-                const buttonText = showingAllArticles ? '▲ Show Less' : '▼ Show More';
-                const remainingCount = showingAllArticles ? '' : ` (${articles.length - 7} more)`;
+            if (dayOfWeek === 1) { // Monday
+                const todayStr = today.toDateString();
 
-                html += `
-                    <div class="show-more-container">
-                        <button class="show-more-btn" onclick="toggleShowMore()">
-                            ${buttonText}${remainingCount}
-                        </button>
-                    </div>
-                `;
+                if (lastReset !== todayStr) {
+                    // Reset all checkboxes
+                    ['rescan', 'breach-check', 'adversary-review', 'lightbox-test'].forEach(id => {
+                        localStorage.removeItem(`maintenance_${id}`);
+                        const checkbox = document.getElementById(id);
+                        if (checkbox) checkbox.checked = false;
+                    });
+
+                    localStorage.setItem('maintenance_last_reset', todayStr);
+                    console.log('[GHOST] Weekly maintenance checklist reset (Monday)');
+                }
             }
-
-            container.innerHTML = html;
-
-            console.log(`[CTI DASHBOARD] Rendered ${displayArticles.length} of ${articles.length} articles`);
         }
 
-        // Toggle show more/less articles
-        function toggleShowMore() {
-            showingAllArticles = !showingAllArticles;
-            renderNewsArticles(allArticles);
-        }
-
-        // Display error message
-        function displayError(message) {
-            const container = document.getElementById('newsFeedContent');
-            container.innerHTML = `
-                <div class="error-message">
-                    <strong>Error:</strong> ${message}
-                    <br><br>
-                    <button class="refresh-button" onclick="refreshDashboard()">Try Again</button>
-                </div>
-            `;
-        }
-
-        // Refresh dashboard with force refresh
-        async function refreshDashboard() {
-            console.log('[CTI DASHBOARD] Manual refresh triggered');
-            showingAllArticles = false; // Reset to collapsed state
-            document.getElementById('newsFeedContent').innerHTML = '<div class="loading">Refreshing feed...</div>';
-            await loadDashboard(true);
-        }
-
-        // Start auto-refresh (every 60 minutes)
-        function startAutoRefresh() {
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-            }
-
-            // Refresh every 60 minutes (3600000 ms)
-            autoRefreshInterval = setInterval(() => {
-                console.log('[CTI DASHBOARD] Auto-refresh triggered');
-                showingAllArticles = false; // Reset to collapsed state
-                loadDashboard(false);
-            }, 3600000);
-
-            console.log('[CTI DASHBOARD] Auto-refresh enabled (60 minutes)');
-        }
-
-        // Initialize dashboard on page load
-        window.addEventListener('load', function() {
-            console.log('[CTI DASHBOARD] Initializing...');
-            loadDashboard(false);
-            startAutoRefresh();
-        });
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', function() {
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-            }
+        // Load chart on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSecurityScoreHistory();
+            loadScanHistory();
+            calculateNextScanDate();
+            loadCuratedNews();
+            checkWeeklyReset();
+            loadMaintenanceState();
         });
 
         // Modal functions

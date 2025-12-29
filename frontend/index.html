@@ -139,239 +139,35 @@
             font-size: 1.1em;
         }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            padding: 25px;
-            transition: all 0.3s;
-        }
-
-        .stat-card:hover {
-            border-color: #D4AF37;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
-            transform: translateY(-3px);
-        }
-
-        .stat-label {
-            color: #888;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .stat-value {
-            font-size: 2.8em;
-            font-weight: bold;
-            color: #D4AF37;
-            margin-bottom: 5px;
-        }
-
-        .stat-change {
-            font-size: 0.85em;
-            margin-top: 8px;
-        }
-
-        .stat-change.positive {
-            color: #10b981;
-        }
-
-        .stat-change.negative {
-            color: #ef4444;
-        }
-
-        /* Two Column Layout */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        /* Threat Map */
-        .threat-map {
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            padding: 30px;
-            height: 500px;
-        }
-
-        .threat-map h3 {
-            color: #D4AF37;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-        }
-
-        #map-container {
-            width: 100%;
-            height: 400px;
-            background: #0a0a0a;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .map-pulse {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #ef4444;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(3);
-                opacity: 0;
-            }
-        }
-
-        .map-legend {
-            margin-top: 15px;
-            display: flex;
-            gap: 20px;
-            font-size: 0.85em;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .legend-critical { background: #ef4444; }
-        .legend-high { background: #f59e0b; }
-        .legend-medium { background: #10b981; }
-
-        /* Threat Feed */
-        .threat-feed {
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            padding: 30px;
-            height: 500px;
-            overflow-y: auto;
-        }
-
-        .threat-feed h3 {
-            color: #D4AF37;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-        }
-
-        .feed-item {
-            padding: 15px;
-            background: rgba(212, 175, 55, 0.05);
-            border-left: 3px solid #D4AF37;
-            border-radius: 5px;
-            margin-bottom: 12px;
-            transition: all 0.2s;
-        }
-
-        .feed-item:hover {
-            background: rgba(212, 175, 55, 0.1);
-        }
-
-        .feed-title {
+        /* Quick Action Buttons */
+        .quick-action-btn {
+            background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,140,0,0.1) 100%);
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
             color: #fff;
-            margin-bottom: 6px;
-            font-weight: 600;
         }
 
-        .feed-meta {
-            color: #666;
-            font-size: 0.85em;
+        .quick-action-btn:hover {
+            background: linear-gradient(135deg, rgba(255,215,0,0.2) 0%, rgba(255,140,0,0.2) 100%);
+            border-color: #ffd700;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(255,215,0,0.3);
         }
 
-        .feed-source {
-            display: inline-block;
-            padding: 2px 8px;
-            background: rgba(212, 175, 55, 0.2);
-            border-radius: 4px;
-            font-size: 0.75em;
-            margin-right: 8px;
-            color: #D4AF37;
+        .quick-action-btn h3 {
+            color: #ffd700;
+            margin: 12px 0 8px 0;
+            font-size: 18px;
         }
 
-        /* Threat of the Day */
-        .threat-of-day {
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
-            border: 1px solid #D4AF37;
-            border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 30px;
-        }
-
-        .threat-of-day h3 {
-            color: #D4AF37;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
-
-        .threat-highlight {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #ef4444;
-        }
-
-        .threat-title {
-            font-size: 1.3em;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-
-        .threat-description {
+        .quick-action-btn p {
             color: #aaa;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .threat-stats {
-            display: flex;
-            gap: 30px;
-            margin-top: 15px;
-        }
-
-        .threat-stat {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .threat-stat-value {
-            font-size: 1.8em;
-            color: #ef4444;
-            font-weight: bold;
-        }
-
-        .threat-stat-label {
-            font-size: 0.85em;
-            color: #888;
+            margin: 0;
+            font-size: 14px;
         }
 
         /* Scrollbar Styling */
@@ -390,6 +186,46 @@
 
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(212, 175, 55, 0.5);
+        }
+
+        /* Knowledge Base Cards */
+        .kb-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .kb-card:hover {
+            border-color: #ffd700;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(255,215,0,0.2);
+        }
+
+        .kb-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .kb-card h3 {
+            color: #ffd700;
+            margin: 0 0 12px 0;
+            font-size: 18px;
+        }
+
+        .kb-card p {
+            color: #aaa;
+            margin: 0 0 16px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .kb-time {
+            color: #888;
+            font-size: 12px;
+            font-style: italic;
         }
     </style>
 </head>
@@ -452,192 +288,284 @@
             <p>Real-time threat monitoring across all active modules</p>
         </div>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Total Searches</div>
-                <div class="stat-value" id="totalSearches">0</div>
-                <div class="stat-change positive">↑ 12% this week</div>
-            </div>
+        <!-- Quick Actions Section -->
+        <div class="dashboard-section" style="margin-bottom: 32px;">
+            <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Quick Actions</h2>
 
-            <div class="stat-card">
-                <div class="stat-label">Credentials Found</div>
-                <div class="stat-value" id="credentialsFound">0</div>
-                <div class="stat-change positive">↑ 847 new today</div>
-            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <!-- GHOST Module Actions -->
+                <button onclick="navigateToModule('ghost-asm')" class="quick-action-btn">
+                    <span style="font-size: 32px;">🌐</span>
+                    <h3>Scan Company</h3>
+                    <p>Run XASM scan</p>
+                </button>
 
-            <div class="stat-card">
-                <div class="stat-label">High Risk Targets</div>
-                <div class="stat-value" id="highRiskTargets">0</div>
-                <div class="stat-change negative">↓ 3 resolved</div>
-            </div>
+                <button onclick="navigateToModule('ghost-search')" class="quick-action-btn">
+                    <span style="font-size: 32px;">🔍</span>
+                    <h3>Search Breaches</h3>
+                    <p>Check exposure</p>
+                </button>
 
-            <div class="stat-card">
-                <div class="stat-label">Active Stealers</div>
-                <div class="stat-value" id="activeStealer">0</div>
-                <div class="stat-change positive">↑ Lumma trending</div>
+                <button onclick="navigateToModule('ghost-adversary')" class="quick-action-btn">
+                    <span style="font-size: 32px;">🎯</span>
+                    <h3>Check Adversaries</h3>
+                    <p>Threat matching</p>
+                </button>
+
+                <button onclick="navigateToModule('ghost-bait')" class="quick-action-btn">
+                    <span style="font-size: 32px;">🎣</span>
+                    <h3>Run AI Simulation</h3>
+                    <p>Test defenses</p>
+                </button>
             </div>
         </div>
 
-        <!-- Threat of the Day -->
-        <div class="threat-of-day">
-            <h3>⚡ Threat of the Day</h3>
-            <div class="threat-highlight">
-                <div class="threat-title">Lumma Stealer Campaign Surge Detected</div>
-                <div class="threat-description">
-                    Major spike in Lumma stealer infections observed across financial sector targets. 
-                    Campaign leveraging fake software updates and phishing emails. Over 12,000 new 
-                    infections detected in last 48 hours with focus on cryptocurrency wallets and 
-                    banking credentials.
-                </div>
-                <div class="threat-stats">
-                    <div class="threat-stat">
-                        <div class="threat-stat-value">12,847</div>
-                        <div class="threat-stat-label">New Infections</div>
-                    </div>
-                    <div class="threat-stat">
-                        <div class="threat-stat-value">94%</div>
-                        <div class="threat-stat-label">Success Rate</div>
-                    </div>
-                    <div class="threat-stat">
-                        <div class="threat-stat-value">$2.4M</div>
-                        <div class="threat-stat-label">Est. Value</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Your Custom Feed Section -->
+        <div class="dashboard-section" style="margin-bottom: 32px;">
+            <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Your Custom Feed</h2>
+            <p style="color: #aaa; margin-bottom: 20px;">Configure up to 10 RSS feeds to stay informed</p>
 
-        <!-- Two Column Layout -->
-        <div class="content-grid">
-            <!-- Threat Map -->
-            <div class="threat-map">
-                <h3>Global Threat Activity Map</h3>
-                <div id="map-container">
-                    <div style="text-align: center; color: #666;">
-                        <p style="font-size: 3em; margin-bottom: 10px;">🗺️</p>
-                        <p>Interactive threat map coming soon</p>
-                        <p style="font-size: 0.85em; margin-top: 10px;">Real-time breach locations and attack patterns</p>
-                    </div>
+            <!-- Feed Management -->
+            <div id="feed-management" style="background: rgba(0,0,0,0.3); padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+                <h3 style="color: #ffd700; margin-bottom: 16px;">Manage Feeds</h3>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <input
+                        type="text"
+                        id="feed-url-input"
+                        placeholder="Enter RSS feed URL (e.g., https://krebsonsecurity.com/feed/)"
+                        style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #fff;"
+                    />
+                    <button onclick="addFeed()" style="
+                        background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 8px;
+                        color: #000;
+                        font-weight: 600;
+                        cursor: pointer;
+                    ">Add Feed</button>
                 </div>
-                <div class="map-legend">
-                    <div class="legend-item">
-                        <div class="legend-dot legend-critical"></div>
-                        <span>Critical Breaches</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot legend-high"></div>
-                        <span>High Activity</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot legend-medium"></div>
-                        <span>Moderate</span>
-                    </div>
+
+                <div id="configured-feeds">
+                    <p style="color: #888; font-style: italic;">No feeds configured yet. Add your first feed above!</p>
                 </div>
             </div>
 
-            <!-- Threat Feed -->
-            <div class="threat-feed">
-                <h3>Live Threat Intelligence Feed</h3>
-                <div class="feed-item">
-                    <div class="feed-title">New Raccoon Stealer variant detected targeting crypto wallets</div>
-                    <div class="feed-meta">
-                        <span class="feed-source">Hudson Rock</span>
-                        <span>2 hours ago</span>
-                    </div>
-                </div>
-                <div class="feed-item">
-                    <div class="feed-title">LinkedIn data breach: 700M records leaked on dark web forums</div>
-                    <div class="feed-meta">
-                        <span class="feed-source">BreachForums</span>
-                        <span>4 hours ago</span>
-                    </div>
-                </div>
-                <div class="feed-item">
-                    <div class="feed-title">Vidar stealer campaign using fake Google Ads to distribute malware</div>
-                    <div class="feed-meta">
-                        <span class="feed-source">Telegram</span>
-                        <span>6 hours ago</span>
-                    </div>
-                </div>
-                <div class="feed-item">
-                    <div class="feed-title">RedLine stealer logs from major ISP breach surface</div>
-                    <div class="feed-meta">
-                        <span class="feed-source">LeakCheck</span>
-                        <span>8 hours ago</span>
-                    </div>
-                </div>
-                <div class="feed-item">
-                    <div class="feed-title">New zero-day vulnerability in Chrome exploited in the wild</div>
-                    <div class="feed-meta">
-                        <span class="feed-source">CVE Database</span>
-                        <span>12 hours ago</span>
-                    </div>
-                </div>
-                <div class="feed-item">
-                    <div class="feed-title">Lumma stealer operators shut down infrastructure, rebranding expected</div>
-                    <div class="feed-meta">
-                        <span class="feed-source">Dark Web Monitoring</span>
-                        <span>14 hours ago</span>
-                    </div>
-                </div>
-                <div style="text-align: center; padding: 20px; color: #666;">
-                    <p>Live RSS feed integration coming soon</p>
-                </div>
+            <!-- Feed Articles -->
+            <div id="feed-articles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                <!-- Articles will be loaded here dynamically -->
             </div>
         </div>
+
+        <!-- Security Knowledge Base Section -->
+        <div class="dashboard-section">
+            <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Security Knowledge Base</h2>
+            <p style="color: #aaa; margin-bottom: 20px;">Learn and improve your security posture</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                <!-- Knowledge Base Articles (hardcoded for now, can make dynamic later) -->
+                <div class="kb-card">
+                    <div class="kb-icon">📚</div>
+                    <h3>How to Respond to a Data Breach</h3>
+                    <p>Step-by-step guide for handling security incidents</p>
+                    <span class="kb-time">5 min read</span>
+                </div>
+
+                <div class="kb-card">
+                    <div class="kb-icon">🎯</div>
+                    <h3>Understanding CVE Severity Scores</h3>
+                    <p>Learn how CVSS scoring works and what it means</p>
+                    <span class="kb-time">8 min read</span>
+                </div>
+
+                <div class="kb-card">
+                    <div class="kb-icon">✅</div>
+                    <h3>SOC 2 Compliance Checklist</h3>
+                    <p>Everything you need to prepare for SOC 2 audit</p>
+                    <span class="kb-time">Download PDF</span>
+                </div>
+
+                <div class="kb-card">
+                    <div class="kb-icon">🔐</div>
+                    <h3>Securing Your Attack Surface</h3>
+                    <p>Best practices for reducing external exposure</p>
+                    <span class="kb-time">10 min read</span>
+                </div>
+
+                <div class="kb-card">
+                    <div class="kb-icon">🛡️</div>
+                    <h3>Implementing Zero Trust Architecture</h3>
+                    <p>Modern security framework for your organization</p>
+                    <span class="kb-time">15 min read</span>
+                </div>
+
+                <div class="kb-card">
+                    <div class="kb-icon">🌑</div>
+                    <h3>Dark Web Monitoring Guide</h3>
+                    <p>How to monitor for credential leaks and breaches</p>
+                    <span class="kb-time">12 min read</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 24px; text-align: center;">
+                <input
+                    type="text"
+                    placeholder="Search knowledge base..."
+                    style="
+                        width: 100%;
+                        max-width: 600px;
+                        padding: 14px 20px;
+                        background: rgba(255,255,255,0.05);
+                        border: 2px solid rgba(255,215,0,0.3);
+                        border-radius: 24px;
+                        color: #fff;
+                        font-size: 16px;
+                    "
+                />
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // Animate stats on load
-        window.addEventListener('load', () => {
-            animateValue('totalSearches', 0, 1247, 1000);
-            animateValue('credentialsFound', 0, 18473, 1200);
-            animateValue('highRiskTargets', 0, 234, 800);
-            animateValue('activeStealer', 0, 47, 1100);
-        });
-
-        function animateValue(id, start, end, duration) {
-            const element = document.getElementById(id);
-            const range = end - start;
-            const increment = range / (duration / 16);
-            let current = start;
-            
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= end) {
-                    element.textContent = end.toLocaleString();
-                    clearInterval(timer);
-                } else {
-                    element.textContent = Math.floor(current).toLocaleString();
-                }
-            }, 16);
+        // Navigation function for Quick Actions
+        function navigateToModule(moduleId) {
+            // Navigate to the module based on your routing system
+            if (moduleId === 'ghost-asm') {
+                window.location.href = 'modules/ghost/ghost-asm.html';
+            } else if (moduleId === 'ghost-search') {
+                window.location.href = 'modules/ghost/ghost-search.html';
+            } else if (moduleId === 'ghost-adversary') {
+                window.location.href = 'modules/ghost/ghost-adversary.html';
+            } else if (moduleId === 'ghost-bait') {
+                window.location.href = 'modules/ghost/ghost-bait.html';
+            }
         }
 
-        // Rotate threat of the day every 10 seconds (demo)
-        const threats = [
-            {
-                title: "Lumma Stealer Campaign Surge Detected",
-                description: "Major spike in Lumma stealer infections observed across financial sector targets. Campaign leveraging fake software updates and phishing emails.",
-                stats: { infections: 12847, rate: 94, value: "$2.4M" }
-            },
-            {
-                title: "RedLine Botnet Expands to Corporate Networks",
-                description: "New RedLine variant targeting enterprise VPN credentials and cloud service tokens. Over 8,000 corporate machines compromised.",
-                stats: { infections: 8234, rate: 87, value: "$1.8M" }
-            },
-            {
-                title: "Vidar Stealer Targets Financial Services",
-                description: "Coordinated Vidar campaign specifically targeting banking and cryptocurrency platforms. Advanced obfuscation techniques detected.",
-                stats: { infections: 15621, rate: 91, value: "$3.2M" }
-            }
-        ];
+        // ============================================================================
+        // RSS FEED MANAGEMENT
+        // ============================================================================
 
-        let currentThreat = 0;
-        // Uncomment to enable rotation
-        // setInterval(() => {
-        //     currentThreat = (currentThreat + 1) % threats.length;
-        //     updateThreatOfDay(threats[currentThreat]);
-        // }, 10000);
+        // Load user's configured feeds from localStorage
+        let userFeeds = JSON.parse(localStorage.getItem('nerve_rss_feeds') || '[]');
+
+        function addFeed() {
+            const feedUrl = document.getElementById('feed-url-input').value.trim();
+
+            if (!feedUrl) {
+                alert('Please enter a feed URL');
+                return;
+            }
+
+            if (userFeeds.length >= 10) {
+                alert('Maximum 10 feeds allowed');
+                return;
+            }
+
+            if (userFeeds.includes(feedUrl)) {
+                alert('This feed is already added');
+                return;
+            }
+
+            userFeeds.push(feedUrl);
+            localStorage.setItem('nerve_rss_feeds', JSON.stringify(userFeeds));
+
+            document.getElementById('feed-url-input').value = '';
+            displayConfiguredFeeds();
+            loadFeedArticles();
+        }
+
+        function removeFeed(feedUrl) {
+            userFeeds = userFeeds.filter(f => f !== feedUrl);
+            localStorage.setItem('nerve_rss_feeds', JSON.stringify(userFeeds));
+            displayConfiguredFeeds();
+            loadFeedArticles();
+        }
+
+        function displayConfiguredFeeds() {
+            const container = document.getElementById('configured-feeds');
+
+            if (userFeeds.length === 0) {
+                container.innerHTML = '<p style="color: #888; font-style: italic;">No feeds configured yet. Add your first feed above!</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <p style="color: #aaa; margin-bottom: 12px;">Active Feeds (${userFeeds.length}/10):</p>
+                ${userFeeds.map(feed => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; margin-bottom: 8px;">
+                        <span style="color: #ffd700; font-size: 14px; word-break: break-all;">${feed}</span>
+                        <button onclick="removeFeed('${feed.replace(/'/g, "\\'")}')" style="
+                            background: rgba(220,53,69,0.2);
+                            border: 1px solid #dc3545;
+                            color: #dc3545;
+                            padding: 4px 12px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 12px;
+                        ">Remove</button>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        async function loadFeedArticles() {
+            const articlesContainer = document.getElementById('feed-articles');
+
+            if (userFeeds.length === 0) {
+                articlesContainer.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center; padding: 40px;">Add RSS feeds above to see articles here</p>';
+                return;
+            }
+
+            articlesContainer.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">Loading articles...</p>';
+
+            try {
+                // Call backend to fetch and parse RSS feeds
+                const response = await fetch('http://localhost:5000/api/rss/fetch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({feeds: userFeeds})
+                });
+
+                const data = await response.json();
+
+                if (data.articles && data.articles.length > 0) {
+                    articlesContainer.innerHTML = data.articles.map(article => `
+                        <div style="
+                            background: rgba(0,0,0,0.3);
+                            border: 1px solid rgba(255,215,0,0.2);
+                            border-radius: 12px;
+                            padding: 20px;
+                            transition: all 0.3s;
+                            cursor: pointer;
+                        " onmouseover="this.style.borderColor='#ffd700'" onmouseout="this.style.borderColor='rgba(255,215,0,0.2)'" onclick="window.open('${article.link}', '_blank')">
+                            <h4 style="color: #ffd700; margin: 0 0 12px 0; font-size: 16px; line-height: 1.4;">
+                                ${article.title}
+                            </h4>
+                            <p style="color: #aaa; font-size: 13px; margin: 0 0 12px 0; line-height: 1.6;">
+                                ${article.description || 'No description available'}
+                            </p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                                <span style="color: #888;">${article.source}</span>
+                                <span style="color: #ffd700;">Read More →</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    articlesContainer.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">No articles found</p>';
+                }
+            } catch (error) {
+                console.error('Error loading feeds:', error);
+                articlesContainer.innerHTML = '<p style="color: #dc3545; grid-column: 1/-1; text-align: center;">Error loading feeds. Please check the backend is running.</p>';
+            }
+        }
+
+        // Load feeds on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            displayConfiguredFeeds();
+            loadFeedArticles();
+        });
     </script>
 </body>
 </html>

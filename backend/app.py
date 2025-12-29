@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from database import get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan, CachedASMScan, LightboxScan
+import feedparser
 from modules.ghost.osint import scan_profile_breaches
 from modules.opsych.exposure_analysis import analyze_exposure
 import os
@@ -1277,6 +1278,45 @@ def asm_scan_progress():
         }), 500
 
 # ============================================================================
+# SCAN HISTORY ENDPOINT
+# ============================================================================
+
+@app.route('/api/ghost/scan-history', methods=['GET'])
+def get_scan_history():
+    """Get all XASM scan history for current user (for now, return all scans)"""
+    try:
+        # TODO: Filter by user_id when authentication is implemented
+        session = SessionLocal()
+        scans = session.query(CachedASMScan).order_by(CachedASMScan.scan_date.desc()).all()
+
+        history = []
+        for scan in scans:
+            # Count critical findings
+            critical_count = 0
+            total_findings = 0
+
+            if scan.scan_results:
+                port_scan_results = scan.scan_results.get('port_scan_results', [])
+                total_findings = len(port_scan_results)
+                critical_count = len([p for p in port_scan_results if p.get('risk') == 'CRITICAL'])
+
+            history.append({
+                'scan_id': scan.id,
+                'domain': scan.domain,
+                'scan_date': scan.scan_date.isoformat() if scan.scan_date else None,
+                'risk_score': scan.risk_score,
+                'critical_count': critical_count,
+                'total_findings': total_findings
+            })
+
+        session.close()
+        return jsonify(history)
+
+    except Exception as e:
+        logger.error(f"[GHOST] Error fetching scan history: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================================
 # LIGHTBOX AUTOMATED TESTING ENDPOINT
 # ============================================================================
 
@@ -2164,6 +2204,56 @@ def opsych_exposure():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# RSS FEED ENDPOINTS
+# ============================================================================
+
+@app.route('/api/rss/fetch', methods=['POST'])
+def fetch_rss_feeds():
+    """Fetch and parse multiple RSS feeds"""
+    try:
+        data = request.json
+        feed_urls = data.get('feeds', [])
+
+        if not feed_urls:
+            return jsonify({'articles': []})
+
+        all_articles = []
+
+        for feed_url in feed_urls[:10]:  # Max 10 feeds
+            try:
+                print(f"[RSS] Fetching feed: {feed_url}")
+                # Parse RSS feed
+                feed = feedparser.parse(feed_url)
+
+                # Extract source name from feed
+                source_name = feed.feed.get('title', feed_url)
+
+                # Get first 5 articles from each feed
+                for entry in feed.entries[:5]:
+                    all_articles.append({
+                        'title': entry.get('title', 'No title'),
+                        'link': entry.get('link', ''),
+                        'description': entry.get('summary', '')[:200] + '...' if len(entry.get('summary', '')) > 200 else entry.get('summary', ''),
+                        'source': source_name,
+                        'published': entry.get('published', '')
+                    })
+                print(f"[RSS] ✓ Fetched {len(feed.entries[:5])} articles from {source_name}")
+            except Exception as e:
+                print(f"[RSS] ❌ Error fetching {feed_url}: {e}")
+                continue
+
+        # Sort by most recent (if published date available)
+        all_articles.sort(key=lambda x: x.get('published', ''), reverse=True)
+
+        print(f"[RSS] Total articles fetched: {len(all_articles)}")
+
+        return jsonify({'articles': all_articles[:20]})  # Return max 20 articles
+
+    except Exception as e:
+        print(f"[RSS] ❌ Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Ghost backend starting...")

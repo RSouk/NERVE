@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from database import get_db, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan
+from database import get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan, CachedASMScan, LightboxScan
 from modules.ghost.osint import scan_profile_breaches
 from modules.opsych.exposure_analysis import analyze_exposure
 import os
@@ -19,9 +19,13 @@ import re
 import secrets
 import time
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables
 load_dotenv()
+
+# Setup logging
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]}})
@@ -1076,7 +1080,7 @@ def asm_scan():
 
     Returns cached results if scan < 24 hours old, unless force_rescan=true
     """
-    db = None
+    session = SessionLocal()
     try:
         from modules.ghost.asm_scanner import scan_domain
 
@@ -1092,33 +1096,36 @@ def asm_scan():
         if not re.match(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', domain):
             return jsonify({'success': False, 'error': 'Invalid domain format'}), 400
 
-        print(f"\n[ASM API] Starting scan for domain: {domain} (force_rescan={force_rescan})")
+        logger.info(f"[ASM API] Scan request for {domain} (force={force_rescan})")
 
-        # Check cache first (unless force_rescan)
-        db = get_db()
+        # Check for cached scan (unless force rescan)
         if not force_rescan:
-            cached_scan = db.query(ASMScan).filter(ASMScan.domain == domain).first()
-            if cached_scan:
-                # Check if scan is less than 24 hours old
-                # Handle naive datetimes from old database records
-                scanned_at = cached_scan.scanned_at
+            cached = session.query(CachedASMScan).filter_by(domain=domain).order_by(
+                CachedASMScan.scanned_at.desc()
+            ).first()
+
+            if cached:
+                # Return cached if less than 24 hours old
+                scanned_at = cached.scanned_at
                 if scanned_at.tzinfo is None:
                     scanned_at = scanned_at.replace(tzinfo=timezone.utc)
 
-                scan_age = datetime.now(timezone.utc) - scanned_at
-                if scan_age.total_seconds() < 86400:  # 24 hours in seconds
-                    print(f"[ASM API] Returning cached results (age: {scan_age.total_seconds() / 3600:.1f} hours)")
-                    results = json.loads(cached_scan.scan_results)
-                    results['cached'] = True
-                    results['scanned_at'] = cached_scan.scanned_at.isoformat()
-                    results['cache_age_hours'] = scan_age.total_seconds() / 3600
-                    db.close()
+                age_hours = (datetime.now(timezone.utc) - scanned_at).total_seconds() / 3600
+                if age_hours < 24:
+                    logger.info(f"[ASM API] Returning cached scan (age: {age_hours:.1f}h)")
                     return jsonify({
-                        'success': True,
-                        'results': results
+                        'id': cached.id,
+                        'domain': cached.domain,
+                        'risk_score': cached.risk_score,
+                        'total_cves': cached.total_cves,
+                        'critical_cves': cached.critical_cves,
+                        'scanned_at': cached.scanned_at.isoformat(),
+                        'cached': True,
+                        'cache_age_hours': age_hours,
+                        **cached.scan_results
                     }), 200
                 else:
-                    print(f"[ASM API] Cache expired (age: {scan_age.total_seconds() / 3600:.1f} hours), rescanning...")
+                    logger.info(f"[ASM API] Cache expired (age: {age_hours:.1f}h), rescanning...")
 
         # Initialize progress tracking
         with scan_progress_lock:
@@ -1140,40 +1147,30 @@ def asm_scan():
                         'total': total,
                         'message': message
                     })
-            print(f"[ASM PROGRESS] {step} ({progress}/{total}) - {message}")
+            logger.info(f"[ASM PROGRESS] {step} ({progress}/{total}) - {message}")
 
-        # Perform scan with progress updates (passing callback)
-        results = scan_domain(domain, progress_callback=update_progress)
+        # Perform scan with progress updates
+        logger.info(f"[ASM API] Running new scan for {domain}")
+        scan_results = scan_domain(domain, progress_callback=update_progress)
 
-        # Store results in cache
-        try:
-            # Check if scan already exists
-            existing_scan = db.query(ASMScan).filter(ASMScan.domain == domain).first()
-            if existing_scan:
-                # Update existing scan
-                existing_scan.scan_results = json.dumps(results)
-                existing_scan.scanned_at = datetime.now(timezone.utc)
-                existing_scan.risk_score = results.get('risk_score')
-                existing_scan.risk_level = results.get('risk_level')
-                existing_scan.vulnerabilities_found = results.get('vulnerabilities_found')
-                print(f"[ASM API] Updated cached scan for {domain}")
-            else:
-                # Create new scan
-                new_scan = ASMScan(
-                    domain=domain,
-                    scan_results=json.dumps(results),
-                    scanned_at=datetime.now(timezone.utc),
-                    risk_score=results.get('risk_score'),
-                    risk_level=results.get('risk_level'),
-                    vulnerabilities_found=results.get('vulnerabilities_found')
-                )
-                db.add(new_scan)
-                print(f"[ASM API] Cached new scan for {domain}")
+        # Save to database
+        cve_stats = scan_results.get('cve_statistics', {})
+        new_scan = CachedASMScan(
+            domain=domain,
+            risk_score=scan_results.get('risk_score', 0),
+            risk_level=scan_results.get('risk_level', 'low'),
+            total_cves=cve_stats.get('total_cves', 0),
+            critical_cves=cve_stats.get('critical_cves', 0),
+            vulnerabilities_found=scan_results.get('vulnerabilities_found', 0),
+            open_ports_count=len(scan_results.get('port_scan_results', [])),
+            scan_results=scan_results
+        )
 
-            db.commit()
-        except Exception as cache_error:
-            print(f"[ASM API] Warning: Failed to cache results: {cache_error}")
-            # Continue anyway - caching is not critical
+        session.add(new_scan)
+        session.commit()
+        session.refresh(new_scan)  # Get the auto-generated ID
+
+        logger.info(f"[ASM API] Scan saved with ID: {new_scan.id}")
 
         update_progress('Complete', 100, 100, 'Scan complete!')
 
@@ -1182,21 +1179,25 @@ def asm_scan():
             if domain in scan_progress:
                 scan_progress[domain]['status'] = 'complete'
 
-        db.close()
+        logger.info(f"[ASM API] Scan complete for {domain}")
+        logger.info(f"[ASM API] Risk Score: {scan_results.get('risk_score', 0)}/100")
+        logger.info(f"[ASM API] Total CVEs: {cve_stats.get('total_cves', 0)}")
 
-        print(f"[ASM API] Scan complete for {domain}")
-        print(f"[ASM API] Risk Score: {results['risk_score']}/100")
-        print(f"[ASM API] Subdomains: {len(results['subdomains'])}")
-        print(f"[ASM API] Shodan Results: {len(results['shodan_results'])}")
-        print(f"[ASM API] Vulnerabilities: {results['vulnerabilities_found']}")
-
-        results['cached'] = False
+        # Return with ID included - THIS IS CRITICAL
         return jsonify({
-            'success': True,
-            'results': results
+            'id': new_scan.id,
+            'domain': domain,
+            'risk_score': scan_results.get('risk_score', 0),
+            'total_cves': cve_stats.get('total_cves', 0),
+            'critical_cves': cve_stats.get('critical_cves', 0),
+            'scanned_at': new_scan.scanned_at.isoformat(),
+            'cached': False,
+            **scan_results
         }), 200
 
     except Exception as e:
+        session.rollback()
+
         # Mark scan as failed
         with scan_progress_lock:
             if domain in scan_progress:
@@ -1205,16 +1206,15 @@ def asm_scan():
                     'message': str(e)
                 })
 
-        if db:
-            db.close()
-
-        print(f"[ASM API] Error scanning domain: {e}")
+        logger.error(f"[ASM API] Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+    finally:
+        session.close()
 
 @app.route('/api/ghost/asm/scan-progress', methods=['POST'])
 def asm_scan_progress():
@@ -1282,186 +1282,232 @@ def asm_scan_progress():
 
 @app.route('/api/ghost/lightbox/scan', methods=['POST'])
 def lightbox_scan():
-    """
-    Run automated security tests on discovered assets
-    Requires recent XASM scan (< 24 hours)
-    """
+    """Run Lightbox security scan and save results to database"""
+    session = SessionLocal()
     try:
-        from modules.ghost.lightbox_scanner import run_lightbox_scan
-        from database import LightboxFinding, LightboxScan, ASMScan, get_db
-        from datetime import datetime, timedelta, timezone
-        import uuid
-        import json
-
         data = request.json
         domain = data.get('domain')
-        discovered_assets = data.get('discovered_assets', {})
+        scan_id = data.get('scan_id')
 
-        # DEPENDENCY CHECK: Ensure XASM scan exists and is recent
-        if not discovered_assets and domain:
-            # Try to load from recent XASM scan
-            db = get_db()
-            asm_scan = db.query(ASMScan).filter(ASMScan.domain == domain).first()
-            db.close()
+        logger.info(f"[LIGHTBOX API] Starting scan for {domain} (XASM scan ID: {scan_id})")
 
-            if not asm_scan:
-                return jsonify({
-                    'success': False,
-                    'error': 'No XASM scan found. Please run XASM scan first.',
-                    'requires_xasm': True
-                }), 400
+        if not domain or not scan_id:
+            return jsonify({'error': 'Missing domain or scan_id parameter'}), 400
 
-            # Check if scan is recent (< 24 hours)
-            # Handle naive datetimes from old database records
-            scanned_at = asm_scan.scanned_at
-            if scanned_at.tzinfo is None:
-                scanned_at = scanned_at.replace(tzinfo=timezone.utc)
+        # Get XASM scan results from database
+        asm_scan = session.query(CachedASMScan).filter_by(id=scan_id).first()
 
-            scan_age = datetime.now(timezone.utc) - scanned_at
-            if scan_age > timedelta(hours=24):
-                return jsonify({
-                    'success': False,
-                    'error': f'XASM scan is {int(scan_age.total_seconds() / 3600)} hours old. Please run a fresh XASM scan first.',
-                    'requires_xasm': True,
-                    'last_scan_age_hours': int(scan_age.total_seconds() / 3600)
-                }), 400
+        if not asm_scan:
+            logger.error(f"[LIGHTBOX API] XASM scan {scan_id} not found")
+            return jsonify({'error': 'XASM scan not found. Please run an XASM scan first.'}), 404
 
-            # Load discovered assets from XASM scan
-            discovered_assets = json.loads(asm_scan.scan_results)
-            print(f"[LIGHTBOX] ✓ Using assets from XASM scan ({int(scan_age.total_seconds() / 60)} minutes old)")
+        # Import and run Lightbox scanner
+        from modules.ghost.lightbox_scanner import run_lightbox_scan
 
-        if not discovered_assets:
-            return jsonify({
-                'success': False,
-                'error': 'Discovered assets are required. Run XASM scan first.',
-                'requires_xasm': True
-            }), 400
+        # Generate scan key for progress tracking
+        scan_key = f"{domain}_{int(time.time())}"
 
-        print(f"\n[LIGHTBOX] Starting automated security testing...")
+        # Define progress callback function
+        def update_progress(progress_data):
+            """Update global progress dictionary with scan status"""
+            with scan_progress_lock:
+                scan_progress[scan_key] = progress_data
+            logger.info(f"[LIGHTBOX PROGRESS] {progress_data.get('current_step')} - {progress_data.get('progress')}%")
 
-        # Run Lightbox scan
-        results = run_lightbox_scan(discovered_assets)
+        logger.info(f"[LIGHTBOX API] Running Lightbox scan with progress tracking (key: {scan_key})...")
+        scan_results = run_lightbox_scan(asm_scan.scan_results, domain, update_progress)
 
-        # Store findings in database
-        db = get_db()
-        scan_id = f"lightbox_{uuid.uuid4().hex[:8]}"
+        # DEBUG: Check what scan_results looks like
+        logger.info(f"[LIGHTBOX API DEBUG] Type of scan_results: {type(scan_results)}")
+        logger.info(f"[LIGHTBOX API DEBUG] Keys in scan_results: {scan_results.keys() if isinstance(scan_results, dict) else 'Not a dict'}")
 
-        all_findings = []
-        severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0}
+        # FIX: Extract findings from the dictionary structure
+        # run_lightbox_scan returns: {'critical': [], 'high': [], 'medium': [], 'low': [], 'info': [], ...}
+        if isinstance(scan_results, dict):
+            # Extract severity counts from the dict structure
+            critical_findings = scan_results.get('critical', [])
+            high_findings = scan_results.get('high', [])
+            medium_findings = scan_results.get('medium', [])
+            low_findings = scan_results.get('low', [])
+            info_findings = scan_results.get('info', [])
 
-        for severity in ['critical', 'high', 'medium', 'low']:
-            for finding in results.get(severity, []):
-                # Create database record for individual finding
-                db_finding = LightboxFinding(
-                    scan_id=scan_id,
-                    asset=finding.get('asset'),
-                    finding_type=finding.get('type'),
-                    url=finding.get('url'),
-                    description=finding.get('description'),
-                    severity=finding.get('severity'),
-                    status_code=finding.get('status_code')
-                )
-                db.add(db_finding)
-                all_findings.append(finding)
-                severity_counts[severity] += 1
+            critical = len(critical_findings)
+            high = len(high_findings)
+            medium = len(medium_findings)
+            low = len(low_findings)
 
-        # Create LightboxScan record to store scan summary
-        lightbox_scan = LightboxScan(
+            # Flatten all findings into a single list for storage
+            all_findings = critical_findings + high_findings + medium_findings + low_findings + info_findings
+            total_findings = len(all_findings)
+
+            logger.info(f"[LIGHTBOX API] Scan complete - {total_findings} findings (C:{critical}, H:{high}, M:{medium}, L:{low})")
+        else:
+            logger.error(f"[LIGHTBOX API] ERROR: Expected dict but got {type(scan_results)}")
+            # Fallback: treat as empty results
+            all_findings = []
+            total_findings = 0
+            critical = high = medium = low = 0
+
+        # Save to database - Convert to JSON strings for SQLite compatibility
+        lightbox_record = LightboxScan(
             domain=domain,
-            total_findings=len(all_findings),
-            critical_count=severity_counts['critical'],
-            high_count=severity_counts['high'],
-            medium_count=severity_counts['medium'],
-            low_count=severity_counts['low'],
-            findings=json.dumps(all_findings),
-            scan_metadata=json.dumps({
-                'scan_id': scan_id,
-                'assets_tested': len(discovered_assets.get('subdomains', [])),
-                'scan_timestamp': datetime.now(timezone.utc).isoformat()
+            total_findings=total_findings,
+            critical_count=critical,
+            high_count=high,
+            medium_count=medium,
+            low_count=low,
+            findings=json.dumps(all_findings),  # Convert list to JSON string
+            scan_metadata=json.dumps({  # Convert dict to JSON string
+                'asm_scan_id': scan_id,
+                'assets_tested': len(asm_scan.scan_results.get('subdomains', [])),
+                'checks_run': scan_results.get('total_tests', 915) if isinstance(scan_results, dict) else 915,
+                'templates_used': scan_results.get('templates_used', 1) if isinstance(scan_results, dict) else 1
             })
         )
-        db.add(lightbox_scan)
-        db.commit()
 
-        lightbox_scan_id = lightbox_scan.id
-        db.close()
+        session.add(lightbox_record)
+        session.commit()
+        session.refresh(lightbox_record)  # Get the ID
 
-        print(f"[LIGHTBOX] ✓ Scan complete: {len(all_findings)} findings stored (Scan ID: {lightbox_scan_id})")
+        logger.info(f"[LIGHTBOX API] Saved to database with ID {lightbox_record.id}")
+
+        # Clean up progress tracking
+        with scan_progress_lock:
+            if scan_key in scan_progress:
+                del scan_progress[scan_key]
+                logger.info(f"[LIGHTBOX API] Cleaned up progress tracking for {scan_key}")
 
         return jsonify({
             'success': True,
-            'results': results,
-            'scan_id': scan_id,
-            'lightbox_scan_id': lightbox_scan_id
+            'scan_id': lightbox_record.id,
+            'scan_key': scan_key,  # Return for frontend progress tracking
+            'findings': all_findings,  # Return as list to frontend
+            'scan_metadata': json.loads(lightbox_record.scan_metadata),  # Parse JSON string for response
+            'summary': {
+                'total': total_findings,
+                'critical': critical,
+                'high': high,
+                'medium': medium,
+                'low': low
+            }
         }), 200
 
     except Exception as e:
-        print(f"[LIGHTBOX] ❌ Exception: {e}")
+        session.rollback()
+        logger.error(f"[LIGHTBOX API] Error: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+@app.route('/api/ghost/lightbox/progress', methods=['POST'])
+def get_lightbox_progress():
+    """Get current Lightbox scan progress"""
+    try:
+        data = request.json
+        scan_key = data.get('scan_key')  # Format: domain_timestamp
+
+        if not scan_key:
+            return jsonify({'error': 'Missing scan_key parameter'}), 400
+
+        # Get progress from global dictionary
+        with scan_progress_lock:
+            progress = scan_progress.get(scan_key, {
+                'status': 'idle',
+                'progress': 0,
+                'current_step': 'Waiting to start',
+                'total_steps': 100
+            })
+
+        return jsonify(progress), 200
+
+    except Exception as e:
+        logger.error(f"[LIGHTBOX PROGRESS] Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/ghost/lightbox/history/<domain>', methods=['GET'])
 def get_lightbox_history(domain):
-    """Get all Lightbox scans for a domain"""
+    """Get Lightbox scan history and cleanup old scans (30+ days)"""
+    session = SessionLocal()
     try:
-        from database import LightboxScan, get_db
+        from datetime import timedelta
 
-        db = get_db()
-        scans = db.query(LightboxScan).filter(LightboxScan.domain == domain).order_by(
-            LightboxScan.scanned_at.desc()
+        # Auto-cleanup: Delete scans older than 30 days
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+        old_scans = session.query(LightboxScan).filter(
+            LightboxScan.scanned_at < cutoff_date
         ).all()
 
-        scan_list = [scan.to_dict() for scan in scans]
-        db.close()
+        if old_scans:
+            logger.info(f"[LIGHTBOX CLEANUP] Deleting {len(old_scans)} scans older than 30 days")
+            for scan in old_scans:
+                session.delete(scan)
+            session.commit()
+
+        # Get recent scans (last 30 days)
+        scans = session.query(LightboxScan).filter_by(domain=domain).filter(
+            LightboxScan.scanned_at >= cutoff_date
+        ).order_by(LightboxScan.scanned_at.desc()).all()
 
         return jsonify({
-            'success': True,
-            'scans': scan_list,
-            'count': len(scan_list)
+            'domain': domain,
+            'scan_count': len(scans),
+            'scans': [scan.to_dict() for scan in scans]
         }), 200
 
     except Exception as e:
-        print(f"[LIGHTBOX HISTORY] ❌ Exception: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        logger.error(f"[LIGHTBOX API] History error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
 @app.route('/api/ghost/lightbox/scan/<int:scan_id>', methods=['GET'])
 def get_lightbox_scan(scan_id):
-    """Get specific Lightbox scan results"""
+    """Get specific Lightbox scan by ID"""
+    session = SessionLocal()
     try:
-        from database import LightboxScan, get_db
-
-        db = get_db()
-        scan = db.query(LightboxScan).filter(LightboxScan.id == scan_id).first()
-        db.close()
+        scan = session.query(LightboxScan).get(scan_id)
 
         if not scan:
-            return jsonify({
-                'success': False,
-                'error': 'Scan not found'
-            }), 404
+            return jsonify({'error': 'Scan not found'}), 404
+
+        return jsonify(scan.to_dict()), 200
+
+    except Exception as e:
+        logger.error(f"[LIGHTBOX API] Fetch error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+@app.route('/api/ghost/lightbox/scan/<int:scan_id>', methods=['DELETE'])
+def delete_lightbox_scan(scan_id):
+    """Manually delete a specific Lightbox scan"""
+    session = SessionLocal()
+    try:
+        scan = session.query(LightboxScan).get(scan_id)
+
+        if not scan:
+            return jsonify({'error': 'Scan not found'}), 404
+
+        domain = scan.domain
+        session.delete(scan)
+        session.commit()
+
+        logger.info(f"[LIGHTBOX] Manually deleted scan {scan_id} for {domain}")
 
         return jsonify({
             'success': True,
-            'scan': scan.to_dict()
+            'message': 'Scan deleted successfully'
         }), 200
 
     except Exception as e:
-        print(f"[LIGHTBOX SCAN] ❌ Exception: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        session.rollback()
+        logger.error(f"[LIGHTBOX API] Delete error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
 # ============================================================================
 # AI VULNERABILITY ASSESSMENT ENDPOINT

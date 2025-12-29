@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime, timezone
 import os
+import json
 
 # Create database in the data folder
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'ghost.db')
@@ -204,6 +205,20 @@ class ASMScan(Base):
     risk_level = Column(String)  # cached risk level
     vulnerabilities_found = Column(Integer)  # cached vuln count
 
+class CachedASMScan(Base):
+    __tablename__ = 'cached_asm_scans'
+
+    id = Column(Integer, primary_key=True)
+    domain = Column(String(255), nullable=False, index=True)
+    scanned_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    risk_score = Column(Integer, default=0)
+    risk_level = Column(String(20))  # 'low', 'medium', 'high', 'critical'
+    total_cves = Column(Integer, default=0)
+    critical_cves = Column(Integer, default=0)
+    vulnerabilities_found = Column(Integer, default=0)  # Total vulnerability count
+    open_ports_count = Column(Integer, default=0)  # Number of open ports
+    scan_results = Column(JSON)
+
 class LightboxScan(Base):
     """Store Lightbox scan results"""
     __tablename__ = 'lightbox_scans'
@@ -224,7 +239,6 @@ class LightboxScan(Base):
     scan_metadata = Column(Text)  # JSON-serialized metadata: assets tested, checks run, etc.
 
     def to_dict(self):
-        import json
         return {
             'id': self.id,
             'domain': self.domain,

@@ -273,6 +273,10 @@ def scan_domain(domain, progress_callback=None):
 
                         # Count statistics
                         total_cves_found += 1
+
+                        # ADD DEBUG LOG
+                        print(f"[CVE DEBUG] Found CVE, counter now at: {total_cves_found}")
+
                         if enriched_cve.get('cvss_score', 0) >= 9.0:
                             total_critical_cves += 1
                         if enriched_cve.get('kev', {}).get('in_kev', False):
@@ -314,6 +318,8 @@ def scan_domain(domain, progress_callback=None):
                 'kev_cves': total_kev_cves,
                 'exploits_available': total_exploits
             }
+
+            print(f"[CVE DEBUG] Final statistics: {results['cve_statistics']}")
 
             update_progress('CVE Mapping', 91, 100, f'Found {total_cves_found} CVEs ({total_critical_cves} critical)')
             print(f"\n[ASM] ✓ CVE Mapping Complete:")
@@ -690,26 +696,25 @@ def enumerate_dns(domain):
 
 def calculate_risk_score(results):
     """
-    Calculate risk score based on scan results with adjusted caps for differentiation
+    Calculate risk score based on scan results with balanced 100-point scale
 
-    ADJUSTED SCORING FORMULA (ALLOWS 0-100 RANGE):
-    - Base: 20 points
-    - Critical CVEs (CVSS 9.0+): count × 3 (cap 25)
-    - High CVEs (CVSS 7.0-8.9): count × 1 (cap 15)
-    - Public exploits: count × 1 (cap 10)
-    - CISA KEV: +15 (flat if any)
-    - Open ports: graduated (>20: +10, >10: +5)
-    - Databases exposed: +10 (flat if any)
-    - SSH/Telnet: count × 2 (cap 8)
-    - RDP: +10 (flat if any)
-    - Subdomains >50: +5 (flat)
-    - Malicious IPs: count × 1 (cap 7)
-    - Max: 100
+    BALANCED SCORING FORMULA (PREVENTS SCORE INFLATION):
+    1. Open Ports: Max 20 points
+       - Measures exposure surface
+    2. Service Exposure: Max 20 points
+       - Critical services (DB, SSH, RDP, Admin panels)
+    3. Attack Surface Size: Max 20 points
+       - Subdomains, cloud assets, endpoints
+    4. Configuration Issues: Max 20 points
+       - Misconfigurations, weak settings, exposed services
+    5. CVE Severity: Max 20 points
+       - Critical/High CVEs, KEV, public exploits
 
-    Expected scores:
-    - 2 CVEs, no exploit: ~45/100
-    - 10 CVEs, DB exposed: ~70/100
-    - 52 CVEs, 14 exploits, DB exposed: 100/100
+    Risk Levels:
+    - 0-25 = LOW risk
+    - 26-50 = MEDIUM risk
+    - 51-75 = HIGH risk
+    - 76-100 = CRITICAL risk
 
     Args:
         results (dict): Scan results
@@ -717,16 +722,97 @@ def calculate_risk_score(results):
     Returns:
         int: Risk score (0-100)
     """
-    # ============ ADJUSTED RISK SCORING (ALLOWS DIFFERENTIATION) ============
+    score = 0
 
-    # Start with base score
-    score = 20  # Base exposure score
-
-    # Count all risk factors first
-    subdomain_count = len(results['subdomains'])
+    # ============ CATEGORY 1: OPEN PORTS (MAX 20 POINTS) ============
     open_port_count = len(results.get('port_scan_results', []))
+    if open_port_count >= 20:
+        port_points = 20
+    elif open_port_count >= 15:
+        port_points = 16
+    elif open_port_count >= 10:
+        port_points = 12
+    elif open_port_count >= 5:
+        port_points = 8
+    elif open_port_count >= 1:
+        port_points = 4
+    else:
+        port_points = 0
+    score += port_points
 
-    # CVE counts
+    # ============ CATEGORY 2: SERVICE EXPOSURE (MAX 20 POINTS) ============
+    database_ports = [3306, 5432, 1433, 27017, 6379, 9200]
+    database_count = 0
+    ssh_telnet_count = 0
+    rdp_count = 0
+    admin_panel_count = 0
+
+    for port_result in results.get('port_scan_results', []):
+        port = port_result.get('port', 0)
+        service = port_result.get('service', '').lower()
+
+        if port in database_ports:
+            database_count += 1
+        elif port in [22, 23]:
+            ssh_telnet_count += 1
+        elif port == 3389:
+            rdp_count += 1
+        elif 'admin' in service or port in [8080, 8443, 9090]:
+            admin_panel_count += 1
+
+    service_points = 0
+    service_points += min(database_count * 8, 12)  # Max 12 for databases
+    service_points += min(ssh_telnet_count * 3, 4)  # Max 4 for SSH/Telnet
+    service_points += min(rdp_count * 6, 6)  # Max 6 for RDP
+    service_points += min(admin_panel_count * 2, 4)  # Max 4 for admin panels
+    service_points = min(service_points, 20)  # Cap at 20
+    score += service_points
+
+    # ============ CATEGORY 3: ATTACK SURFACE SIZE (MAX 20 POINTS) ============
+    subdomain_count = len(results.get('subdomains', []))
+    cloud_count = len(results.get('cloud_assets', []))
+
+    surface_points = 0
+    # Subdomain scoring
+    if subdomain_count >= 100:
+        surface_points += 12
+    elif subdomain_count >= 50:
+        surface_points += 10
+    elif subdomain_count >= 20:
+        surface_points += 6
+    elif subdomain_count >= 10:
+        surface_points += 3
+
+    # Cloud asset scoring
+    surface_points += min(cloud_count * 2, 8)  # Max 8 for cloud
+    surface_points = min(surface_points, 20)  # Cap at 20
+    score += surface_points
+
+    # ============ CATEGORY 4: CONFIGURATION ISSUES (MAX 20 POINTS) ============
+    config_points = 0
+
+    # Malicious IPs indicate compromised or malicious infrastructure
+    malicious_ip_count = sum(1 for t in results.get('threat_intelligence', []) if t.get('malicious', False))
+    config_points += min(malicious_ip_count * 5, 10)  # Max 10
+
+    # Check for common misconfigurations
+    # (This can be expanded with more specific checks)
+    for port_result in results.get('port_scan_results', []):
+        service = port_result.get('service', '').lower()
+        version = port_result.get('version', '').lower()
+
+        # Default credentials indicators
+        if 'default' in version or 'admin' in service:
+            config_points += 2
+
+        # Unencrypted protocols
+        if port_result.get('port') in [21, 23, 80, 110, 143]:  # FTP, Telnet, HTTP, POP3, IMAP
+            config_points += 1
+
+    config_points = min(config_points, 20)  # Cap at 20
+    score += config_points
+
+    # ============ CATEGORY 5: CVE SEVERITY (MAX 20 POINTS) ============
     cve_critical_count = 0  # CVSS 9.0+
     cve_high_count = 0      # CVSS 7.0-8.9
     cisa_kev_count = 0      # In CISA KEV
@@ -735,96 +821,34 @@ def calculate_risk_score(results):
     # Analyze CVEs from port scan results
     for port_result in results.get('port_scan_results', []):
         cves = port_result.get('cves', [])
-
         for cve in cves:
             cvss_score = cve.get('cvss_score', 0.0)
 
-            # Critical CVEs (CVSS 9.0+)
             if cvss_score >= 9.0:
                 cve_critical_count += 1
-            # High CVEs (CVSS 7.0-8.9)
             elif cvss_score >= 7.0:
                 cve_high_count += 1
 
-            # Check if in CISA KEV
             kev_data = cve.get('kev', {})
             if kev_data.get('in_kev', False):
                 cisa_kev_count += 1
 
-            # Check if public exploit exists
             exploit_data = cve.get('exploit', {})
             if exploit_data.get('exploit_exists', False):
                 exploit_available_count += 1
 
-    # Count exposed services
-    database_ports = [3306, 5432, 1433, 27017, 6379, 9200]
-    database_count = 0
-    ssh_telnet_count = 0
-    rdp_count = 0
+    cve_points = 0
+    cve_points += min(cve_critical_count * 4, 10)  # Max 10 for critical CVEs
+    cve_points += min(cve_high_count * 1, 4)       # Max 4 for high CVEs
+    cve_points += min(cisa_kev_count * 5, 8)       # Max 8 for KEV
+    cve_points += min(exploit_available_count * 2, 6)  # Max 6 for exploits
+    cve_points = min(cve_points, 20)  # Cap at 20
+    score += cve_points
 
-    for port_result in results.get('port_scan_results', []):
-        port = port_result.get('port', 0)
-        if port in database_ports:
-            database_count += 1
-        elif port == 22 or port == 23:
-            ssh_telnet_count += 1
-        elif port == 3389:
-            rdp_count += 1
-
-    # Count malicious IPs
-    malicious_ip_count = sum(1 for t in results.get('threat_intelligence', []) if t.get('malicious', False))
-
-    # ============ APPLY ADJUSTED SCORING (ALLOWS DIFFERENTIATION) ============
-
-    # Critical CVEs (cap at 25 points)
-    critical_points = min(cve_critical_count * 3, 25)
-    score += critical_points
-
-    # High CVEs (cap at 15 points)
-    high_points = min(cve_high_count * 1, 15)
-    score += high_points
-
-    # Public exploits (cap at 10 points)
-    exploit_points = min(exploit_available_count * 1, 10)
-    score += exploit_points
-
-    # CISA KEV (flat 15 if any)
-    kev_points = 15 if cisa_kev_count > 0 else 0
-    score += kev_points
-
-    # Open ports (graduated scoring)
-    if open_port_count > 20:
-        port_points = 10
-    elif open_port_count > 10:
-        port_points = 5
-    else:
-        port_points = 0
-    score += port_points
-
-    # Exposed databases (flat 10 if any)
-    database_points = 10 if database_count > 0 else 0
-    score += database_points
-
-    # SSH/Telnet exposed (cap at 8)
-    ssh_points = min(ssh_telnet_count * 2, 8)
-    score += ssh_points
-
-    # RDP exposed (flat 10 if any)
-    rdp_points = 10 if rdp_count > 0 else 0
-    score += rdp_points
-
-    # Subdomains (cap at 5)
-    subdomain_points = 5 if subdomain_count > 50 else 0
-    score += subdomain_points
-
-    # Malicious IPs (cap at 7)
-    malicious_points = min(malicious_ip_count * 1, 7)
-    score += malicious_points
-
-    # Cap final score at 100
+    # ============ CAP FINAL SCORE AT 100 ============
     score = min(score, 100)
 
-    # Calculate breakdown components
+    # Calculate breakdown components for display
     database_exposed = sum(1 for p in results.get('port_scan_results', []) if p.get('port') in database_ports)
     ssh_exposed = sum(1 for p in results.get('port_scan_results', []) if p.get('port') in [22, 23])
     rdp_exposed = sum(1 for p in results.get('port_scan_results', []) if p.get('port') == 3389)
@@ -832,8 +856,12 @@ def calculate_risk_score(results):
 
     # Store breakdown for display
     results['risk_breakdown'] = {
-        'base_score': 20 if results['subdomains'] else 0,
-        'subdomain_count': len(results['subdomains']),
+        'open_ports': port_points,
+        'service_exposure': service_points,
+        'attack_surface': surface_points,
+        'config_issues': config_points,
+        'cve_severity': cve_points,
+        'subdomain_count': subdomain_count,
         'cve_critical': cve_critical_count,
         'cve_high': cve_high_count,
         'cisa_kev': cisa_kev_count,
@@ -846,20 +874,26 @@ def calculate_risk_score(results):
     }
 
     # Print detailed risk calculation breakdown
-    print(f"\n[RISK SCORING] ==================== RISK CALCULATION BREAKDOWN ====================")
-    print(f"[RISK SCORING] Base Score: +20 points")
-    print(f"[RISK SCORING] Critical CVEs (CVSS 9.0+): {cve_critical_count} × 3 = +{critical_points} points (cap 25)")
-    print(f"[RISK SCORING] High CVEs (CVSS 7.0-8.9): {cve_high_count} × 1 = +{high_points} points (cap 15)")
-    print(f"[RISK SCORING] Public Exploits: {exploit_available_count} × 1 = +{exploit_points} points (cap 10)")
-    print(f"[RISK SCORING] CISA KEV (actively exploited): {cisa_kev_count} → +{kev_points} points (flat 15 if any)")
-    print(f"[RISK SCORING] Open Ports: {open_port_count} → +{port_points} points (>20: +10, >10: +5)")
-    print(f"[RISK SCORING] Databases Exposed: {database_count} → +{database_points} points (flat 10 if any)")
-    print(f"[RISK SCORING] SSH/Telnet Exposed: {ssh_telnet_count} × 2 = +{ssh_points} points (cap 8)")
-    print(f"[RISK SCORING] RDP Exposed: {rdp_count} → +{rdp_points} points (flat 10 if any)")
-    print(f"[RISK SCORING] Subdomains: {subdomain_count} → +{subdomain_points} points (flat 5 if >50)")
-    print(f"[RISK SCORING] Malicious IPs: {malicious_ip_count} × 1 = +{malicious_points} points (cap 7)")
+    print(f"\n[RISK SCORING] ==================== BALANCED RISK CALCULATION ====================")
+    print(f"[RISK SCORING] Category 1 - Open Ports: {open_port_count} ports → +{port_points}/20")
+    print(f"[RISK SCORING] Category 2 - Service Exposure: DB={database_count}, SSH={ssh_telnet_count}, RDP={rdp_count} → +{service_points}/20")
+    print(f"[RISK SCORING] Category 3 - Attack Surface: Subdomains={subdomain_count}, Cloud={cloud_count} → +{surface_points}/20")
+    print(f"[RISK SCORING] Category 4 - Config Issues: Malicious IPs={malicious_ip_count} → +{config_points}/20")
+    print(f"[RISK SCORING] Category 5 - CVE Severity: Critical={cve_critical_count}, High={cve_high_count}, KEV={cisa_kev_count}, Exploits={exploit_available_count} → +{cve_points}/20")
     print(f"[RISK SCORING] ──────────────────────────────────────────────────────────────────────")
     print(f"[RISK SCORING] FINAL SCORE: {score}/100")
+
+    # Determine risk level
+    if score >= 76:
+        risk_level = "CRITICAL"
+    elif score >= 51:
+        risk_level = "HIGH"
+    elif score >= 26:
+        risk_level = "MEDIUM"
+    else:
+        risk_level = "LOW"
+
+    print(f"[RISK SCORING] RISK LEVEL: {risk_level}")
     print(f"[RISK SCORING] ========================================================================\n")
 
     return score
@@ -875,9 +909,19 @@ def count_vulnerabilities(results):
     Returns:
         int: Total vulnerability count
     """
+    # First check if we have CVE statistics (most accurate)
+    if 'cve_statistics' in results:
+        return results['cve_statistics'].get('total_cves', 0)
+
+    # Otherwise count from port scan results
     count = 0
-    for shodan_result in results['shodan_results']:
+    for port_result in results.get('port_scan_results', []):
+        count += len(port_result.get('cves', []))
+
+    # Also check shodan results for additional vulnerabilities
+    for shodan_result in results.get('shodan_results', []):
         count += len(shodan_result.get('vulnerabilities', []))
+
     return count
 
 

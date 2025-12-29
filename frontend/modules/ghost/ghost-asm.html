@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHOST - Attack Surface Management</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -836,6 +837,266 @@
         .severity-category-content.expanded {
             display: block;
         }
+
+        /* Dashboard Card Styles */
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            border-color: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+            background: rgba(255, 215, 0, 0.03);
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffd700;
+            letter-spacing: 0.5px;
+        }
+
+        .card-header .badge {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .card-content {
+            padding: 24px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .card-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .card-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        /* Risk Category Styles */
+        .risk-category {
+            margin-bottom: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .risk-category-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .risk-category-header:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .risk-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .risk-label {
+            flex: 1;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .risk-count {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .expand-btn.expanded {
+            transform: rotate(180deg);
+        }
+
+        .risk-assets-list {
+            padding: 12px 16px 12px 40px;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .risk-asset-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .risk-asset-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Lightbox Test Category Cards */
+        .test-category-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .findings-clickable:hover {
+            opacity: 0.8;
+        }
+
+        .findings-clickable:hover span:last-child {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        .test-category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .test-category-card:hover {
+            border-color: rgba(255, 215, 0, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .test-category-card:hover::before {
+            opacity: 1;
+        }
+
+        .test-card-icon {
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+
+        .test-card-title {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffd700;
+        }
+
+        .test-card-description {
+            margin: 0 0 20px 0;
+            font-size: 13px;
+            color: #888;
+            line-height: 1.5;
+        }
+
+        .test-card-stats {
+            display: flex;
+            gap: 20px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,215,0,0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Lightbox Display Control Classes */
+        #lightbox-findings-display {
+            display: none; /* Hidden by default */
+        }
+
+        #lightbox-findings-display.show {
+            display: block !important; /* Force show when needed */
+        }
+
+        #lightbox-results-view {
+            display: none;
+        }
+
+        #lightbox-results-view.active {
+            display: block;
+        }
+
+        #lightbox-dashboard {
+            display: block;
+        }
+
+        #lightbox-dashboard.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -913,52 +1174,94 @@
             </div>
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <button class="action-btn btn-simulate" onclick="simulateAttack()">
-                    🤖 Simulate Attack
-                </button>
                 <button class="action-btn btn-export" onclick="exportAsTXT()">
                     📄 Export as TXT
                 </button>
             </div>
 
-            <!-- Risk Score Gauge -->
-            <div class="risk-gauge-container">
-                <div class="risk-gauge">
-                    <div class="gauge-circle" id="gaugeCircle"></div>
-                    <div class="gauge-inner">
-                        <div class="gauge-value" id="gaugeValue">0</div>
-                        <div class="gauge-label">/ 100</div>
+            <!-- Enhanced 3D Risk Score Display -->
+            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,215,0,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin-bottom: 25px;">
+                <h2 style="text-align: center; margin-bottom: 30px; font-size: 28px; letter-spacing: 1px;">Attack Surface Risk Score</h2>
+
+                <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 30px;">
+                    <!-- 3D Risk Score Circle -->
+                    <div style="position: relative; width: 280px; height: 280px;">
+                        <svg width="280" height="280" style="transform: rotate(-90deg);">
+                            <!-- Background circle -->
+                            <circle cx="140" cy="140" r="120" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="24"/>
+
+                            <!-- Risk score arc (will be updated dynamically) -->
+                            <circle id="risk-score-arc" cx="140" cy="140" r="120" fill="none"
+                                    stroke="url(#riskGradient)" stroke-width="24"
+                                    stroke-dasharray="754" stroke-dashoffset="754"
+                                    stroke-linecap="round"
+                                    style="filter: drop-shadow(0 0 12px rgba(255,215,0,0.6)); transition: stroke-dashoffset 2s ease;">
+                            </circle>
+
+                            <!-- Gradient definition -->
+                            <defs>
+                                <linearGradient id="riskGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+                                    <stop offset="50%" style="stop-color:#fbbf24;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+
+                        <!-- Center content -->
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                            <div id="risk-score-number" style="font-size: 72px; font-weight: 700; line-height: 1; background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                                --
+                            </div>
+                            <div style="font-size: 16px; color: #888; margin-top: 8px;">/ 100</div>
+                        </div>
+                    </div>
+
+                    <!-- Stats beside circle -->
+                    <div style="margin-left: 60px;">
+                        <div id="risk-level-badge" style="background: #dc3545; color: white; padding: 8px 24px; border-radius: 24px; font-weight: 600; font-size: 18px; margin-bottom: 30px; text-align: center; box-shadow: 0 4px 12px rgba(220,53,69,0.4);">
+                            CRITICAL
+                        </div>
+
+                        <div style="display: flex; gap: 40px;">
+                            <div style="text-align: center;">
+                                <div id="subdomain-count" style="font-size: 42px; font-weight: 700; color: #4ade80;">0</div>
+                                <div style="font-size: 14px; color: #888; margin-top: 4px;">Subdomains</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div id="services-count" style="font-size: 42px; font-weight: 700; color: #fbbf24;">0</div>
+                                <div style="font-size: 14px; color: #888; margin-top: 4px;">Services</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div id="critical-services-count" style="font-size: 42px; font-weight: 700; color: #dc3545;">0</div>
+                                <div style="font-size: 14px; color: #888; margin-top: 4px;">Critical Services</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="gauge-description">
-                    <h2>Attack Surface Risk Score</h2>
-                    <div class="risk-level-badge" id="riskLevelBadge">LOW</div>
-                    <div class="risk-stats" style="display: flex; gap: 30px; margin-top: 20px; justify-content: center;">
-                        <div class="risk-stat">
-                            <div class="risk-stat-value" id="criticalCount">0</div>
-                            <div class="risk-stat-label">Critical</div>
-                        </div>
-                        <div class="risk-stat">
-                            <div class="risk-stat-value" id="vulnCount">0</div>
-                            <div class="risk-stat-label">Vulnerabilities</div>
-                        </div>
-                        <div class="risk-stat">
-                            <div class="risk-stat-value" id="assetCount">0</div>
-                            <div class="risk-stat-label">Assets</div>
-                        </div>
-                    </div>
+
+                <!-- Risk Score Explanation -->
+                <div style="background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.2); border-radius: 8px; padding: 16px; margin-top: 20px;">
+                    <p style="margin: 0; font-size: 13px; color: #aaa; line-height: 1.6;">
+                        <strong style="color: #ffd700;">Risk Score Factors:</strong>
+                        Critical CVEs (×3), High CVEs (×1), Public Exploits (×1), CISA KEV (+15), Open Ports, Database Exposure (+10), SSH/RDP Access, and Subdomain Count.
+                        <a href="#" style="color: #ffd700; text-decoration: none; margin-left: 8px;">Learn more →</a>
+                    </p>
                 </div>
             </div>
 
             <!-- Visualization Charts -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin-bottom: 25px;">
-                <!-- Risk Score Doughnut Chart -->
-                <div class="results-section">
-                    <div class="section-header">
-                        <div class="section-title">📊 Risk Score Distribution</div>
-                    </div>
-                    <div class="section-content" style="display: block; padding: 30px;">
-                        <canvas id="riskScoreChart" style="max-height: 250px;"></canvas>
+                <!-- Asset Network Map -->
+                <div style="background: rgba(255,255,255,0.02); border-radius: 12px; padding: 24px; border: 1px solid rgba(255,215,0,0.15);">
+                    <h3 style="margin: 0 0 20px 0; font-size: 20px; color: #ffd700;">
+                        <span style="margin-right: 8px;">📡</span> Asset Network Map
+                    </h3>
+                    <div id="network-diagram" style="width: 100%; height: 400px; background: rgba(0,0,0,0.2); border-radius: 8px; position: relative;">
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #888;">
+                            <p>Network visualization will appear here</p>
+                            <p style="font-size: 12px; margin-top: 8px;">Showing relationships between discovered assets</p>
+                        </div>
                     </div>
                 </div>
 
@@ -966,86 +1269,113 @@
                 <div class="results-section">
                     <div class="section-header">
                         <div class="section-title">🎯 Vulnerability Severity</div>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #888; font-weight: 400;">
+                            CVE severity distribution (CVSS-based)
+                        </p>
                     </div>
                     <div class="section-content" style="display: block; padding: 30px;">
-                        <canvas id="severityChart" style="max-height: 250px;"></canvas>
+                        <div id="vulnerability-severity-chart" style="width: 100%; height: 450px; display: flex; align-items: center; justify-content: center;">
+                            <!-- Chart will be rendered here -->
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Vulnerability Heat Map -->
-            <div class="results-section">
-                <div class="section-header" onclick="toggleSection('heatmap')">
-                    <div class="section-title">
-                        🔥 Vulnerability Heat Map
-                        <span class="expand-icon" id="heatmap-icon">▼</span>
-                    </div>
-                    <span class="section-count" id="heatmapCount">0</span>
-                </div>
-                <div class="section-content" id="heatmapContent"></div>
-            </div>
+            <!-- Card Grid Container -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 30px;">
 
-            <!-- Severity-Based Asset Categorization -->
-            <div id="severityCategoriesContainer"></div>
-
-            <!-- Critical Findings Section -->
-            <div class="results-section">
-                <div class="section-header" onclick="toggleSection('critical')">
-                    <div class="section-title">
-                        ⚠️ Critical Findings
-                        <span class="expand-icon" id="critical-icon">▼</span>
+                <!-- Row 1: Critical Services + Risk Assets -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Critical Services</h3>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #888; font-weight: 400;">
+                                Services with critical/high vulnerabilities
+                            </p>
+                        </div>
+                        <span id="heatmapCount" class="badge">0</span>
                     </div>
-                    <span class="section-count" id="criticalFindingsCount">0</span>
-                </div>
-                <div class="section-content" id="criticalContent"></div>
-            </div>
-
-            <!-- Subdomains Section -->
-            <div class="results-section">
-                <div class="section-header" onclick="toggleSection('subdomains')">
-                    <div class="section-title">
-                        🌐 Discovered Subdomains
-                        <span class="expand-icon" id="subdomains-icon">▼</span>
+                    <div id="heatmapContent" class="card-content">
+                        <!-- Heat map content -->
                     </div>
-                    <span class="section-count" id="subdomainCount">0</span>
                 </div>
-                <div class="section-content" id="subdomainsContent"></div>
-            </div>
 
-            <!-- Cloud Assets Section -->
-            <div class="results-section">
-                <div class="section-header" onclick="toggleSection('cloud')">
-                    <div class="section-title">
-                        ☁️ Cloud Assets
-                        <span class="expand-icon" id="cloud-icon">▼</span>
+                <!-- Row 2: Critical Findings + Discovered Subdomains -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Critical Findings</h3>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #888; font-weight: 400;">
+                                Top critical issues requiring immediate action
+                            </p>
+                        </div>
+                        <span id="criticalFindingsCount" class="badge">0</span>
                     </div>
-                    <span class="section-count" id="cloudCount">0</span>
+                    <div id="criticalContent" class="card-content">
+                        <!-- Critical findings list -->
+                    </div>
                 </div>
-                <div class="section-content" id="cloudContent"></div>
-            </div>
 
-            <!-- Open Ports/Services Section -->
-            <div class="results-section">
-                <div class="section-header" onclick="toggleSection('ports')">
-                    <div class="section-title">
-                        🔌 Open Ports & Services
-                        <span class="expand-icon" id="ports-icon">▼</span>
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Discovered Subdomains</h3>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #888; font-weight: 400;">
+                                DNS hostnames discovered during enumeration
+                            </p>
+                        </div>
+                        <span id="subdomainCount" class="badge">0</span>
                     </div>
-                    <span class="section-count" id="portsCount">0</span>
+                    <div id="subdomainsContent" class="card-content">
+                        <!-- Subdomains list -->
+                    </div>
                 </div>
-                <div class="section-content" id="portsContent"></div>
-            </div>
 
-            <!-- DNS Records Section -->
-            <div class="results-section">
-                <div class="section-header" onclick="toggleSection('dns')">
-                    <div class="section-title">
-                        📋 DNS Records
-                        <span class="expand-icon" id="dns-icon">▼</span>
+                <!-- Row 3: Cloud Assets + Open Ports -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Cloud Assets</h3>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #888; font-weight: 400;">
+                                S3 buckets, Azure blobs, GCP storage discovered
+                            </p>
+                        </div>
+                        <span id="cloudCount" class="badge">0</span>
                     </div>
-                    <span class="section-count" id="dnsCount">0</span>
+                    <div id="cloudContent" class="card-content">
+                        <div style="text-align: center; padding: 40px 20px; color: #888;">
+                            <p>No cloud assets detected</p>
+                            <p style="font-size: 12px; margin-top: 8px;">AWS, Azure, GCP resources will appear here</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="section-content" id="dnsContent"></div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Open Ports</h3>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #888; font-weight: 400;">
+                                Network services exposed to internet
+                            </p>
+                        </div>
+                        <span id="portsCount" class="badge">0</span>
+                    </div>
+                    <div id="portsContent" class="card-content">
+                        <!-- Open ports list -->
+                    </div>
+                </div>
+
+                <!-- Row 4: DNS Records (full width) -->
+                <div class="dashboard-card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <h3>DNS Records</h3>
+                        <span id="dnsCount" class="badge">0</span>
+                    </div>
+                    <div id="dnsContent" class="card-content">
+                        <!-- DNS records table -->
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1071,27 +1401,190 @@
         <!-- Lightbox Testing Tab Content -->
         <div id="lightboxTab" class="tab-content">
             <!-- Lightbox Dashboard -->
-            <div id="lightbox-dashboard" style="display: block;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <h2>🔦 Lightbox Security Testing</h2>
-                    <button id="run-lightbox-scan" class="scan-button" style="padding: 12px 24px;">
-                        ▶ Run Lightbox Scan
+            <div id="lightbox-dashboard">
+                <!-- Header Section -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 20px; background: rgba(255,215,0,0.05); border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div>
+                            <h2 style="margin: 0 0 8px 0; font-size: 24px; color: #ffd700;">Lightbox Security Testing</h2>
+                            <p style="margin: 0; font-size: 14px; color: #aaa;">Deep vulnerability scanning with active testing</p>
+                        </div>
+                        <button id="lightbox-info-btn" style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; height: fit-content;" onmouseover="this.style.background='rgba(255,215,0,0.3)'" onmouseout="this.style.background='rgba(255,215,0,0.2)'">
+                            ℹ️ What is Lightbox?
+                        </button>
+                    </div>
+                    <button id="run-lightbox-scan" class="btn-primary" style="padding: 14px 28px; font-size: 16px; font-weight: 600; background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); border: none; border-radius: 8px; color: #000; cursor: pointer; box-shadow: 0 4px 15px rgba(255,215,0,0.3); transition: all 0.3s;">
+                        ▶ Run Lightbox Test
                     </button>
                 </div>
 
-                <div id="lightbox-scan-history" style="margin-top: 20px;">
-                    <!-- Scan history cards will be inserted here -->
+                <!-- Progress Bar Container (hidden by default) -->
+                <div id="lightbox-progress-container" style="display: none; margin-bottom: 30px; padding: 24px; background: rgba(255,215,0,0.05); border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h4 style="margin: 0; color: #ffd700; font-size: 18px; font-weight: 600;">🔍 Scanning in Progress</h4>
+                        <span id="lightbox-progress-percentage" style="font-size: 24px; font-weight: 700; color: #ffd700;">0%</span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div style="background: rgba(0,0,0,0.4); border-radius: 12px; height: 32px; overflow: hidden; margin-bottom: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
+                        <div id="lightbox-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ffd700, #ff8c00); transition: width 0.5s ease; display: flex; align-items: center; padding-left: 12px;">
+                            <span id="lightbox-progress-step" style="color: #000; font-size: 13px; font-weight: 700; white-space: nowrap;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Status Text -->
+                    <p id="lightbox-progress-status" style="margin: 0 0 8px 0; font-size: 14px; color: #ccc; font-weight: 500;">Initializing security tests...</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">⏱️ Estimated time: 15-20 minutes</p>
+                </div>
+
+                <!-- Test Category Cards Grid -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+
+                    <!-- HTTP Security Testing Card -->
+                    <div class="test-category-card">
+                        <div class="test-card-icon" style="font-size: 32px;">🔒</div>
+                        <h3 class="test-card-title">HTTP Security</h3>
+                        <p class="test-card-description">Security headers, SSL/TLS, cookies</p>
+                        <div class="test-card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Tests Run</span>
+                                <span id="http-tests-count" class="stat-value">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Findings</span>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="http">
+                                    <span id="http-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                    <span style="font-size: 18px; opacity: 0.6; transition: all 0.2s; line-height: 1;">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Authentication Testing Card -->
+                    <div class="test-category-card">
+                        <div class="test-card-icon" style="font-size: 32px;">🔑</div>
+                        <h3 class="test-card-title">Authentication</h3>
+                        <p class="test-card-description">Default credentials, login security</p>
+                        <div class="test-card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Panels Tested</span>
+                                <span id="auth-tests-count" class="stat-value">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Findings</span>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="auth">
+                                    <span id="auth-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                    <span style="font-size: 18px; opacity: 0.6; transition: all 0.2s; line-height: 1;">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Injection Testing Card -->
+                    <div class="test-category-card">
+                        <div class="test-card-icon" style="font-size: 32px;">💉</div>
+                        <h3 class="test-card-title">Injection Attacks</h3>
+                        <p class="test-card-description">XXE, SSRF, file upload</p>
+                        <div class="test-card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Tests Run</span>
+                                <span id="injection-tests-count" class="stat-value">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Findings</span>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="injection">
+                                    <span id="injection-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                    <span style="font-size: 18px; opacity: 0.6; transition: all 0.2s; line-height: 1;">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sensitive Data Card -->
+                    <div class="test-category-card">
+                        <div class="test-card-icon" style="font-size: 32px;">📄</div>
+                        <h3 class="test-card-title">Data Exposure</h3>
+                        <p class="test-card-description">Config files, backups, info disclosure</p>
+                        <div class="test-card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Files Checked</span>
+                                <span id="data-tests-count" class="stat-value">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Findings</span>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="data">
+                                    <span id="data-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                    <span style="font-size: 18px; opacity: 0.6; transition: all 0.2s; line-height: 1;">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Services Card -->
+                    <div class="test-category-card">
+                        <div class="test-card-icon" style="font-size: 32px;">🌐</div>
+                        <h3 class="test-card-title">Network Services</h3>
+                        <p class="test-card-description">SSH, databases, open ports</p>
+                        <div class="test-card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Services</span>
+                                <span id="network-tests-count" class="stat-value">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Findings</span>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="network">
+                                    <span id="network-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                    <span style="font-size: 18px; opacity: 0.6; transition: all 0.2s; line-height: 1;">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nuclei Scans Card -->
+                    <div class="test-category-card">
+                        <div class="test-card-icon" style="font-size: 32px;">⚡</div>
+                        <h3 class="test-card-title">Advanced Scans</h3>
+                        <p class="test-card-description">Nuclei template scanning</p>
+                        <div class="test-card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Templates</span>
+                                <span id="nuclei-tests-count" class="stat-value">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Findings</span>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="nuclei">
+                                    <span id="nuclei-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                    <span style="font-size: 18px; opacity: 0.6; transition: all 0.2s; line-height: 1;">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Recent Scan History Section -->
+                <div style="margin-top: 40px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; font-size: 18px; color: #ffd700;">Recent Scans</h3>
+                        <p style="margin: 0; font-size: 12px; color: #888;">
+                            ℹ️ Scans auto-delete after 30 days
+                        </p>
+                    </div>
+                    <div id="lightbox-scan-history">
+                        <div style="text-align: center; padding: 60px 20px; color: #888; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,215,0,0.1);">
+                            <p style="font-size: 16px; margin-bottom: 8px;">No scans run yet</p>
+                            <p style="font-size: 13px; opacity: 0.7;">Click "Run Lightbox Test" to start your first security test</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Scan Results View (hidden by default) -->
-            <div id="lightbox-results" style="display: none;">
-                <button id="back-to-lightbox-dashboard" class="scan-button" style="margin-bottom: 20px;">
+            <!-- Results View (hidden by default) -->
+            <div id="lightbox-results-view">
+                <button id="back-to-lightbox-dashboard" style="margin-bottom: 20px; padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.3); color: #ffd700; border-radius: 6px; cursor: pointer;">
                     ← Back to Dashboard
                 </button>
-                <div id="lightbox-findings-container">
-                    <!-- Results will be displayed here -->
-                </div>
+                <div id="lightbox-findings-display"></div>
             </div>
         </div>
         <!-- End Lightbox Tab -->
@@ -1171,9 +1664,20 @@
     </div>
 
     <script>
+        // Debugging
+        console.log('Lightbox module loaded');
+        console.log('Button exists:', document.getElementById('run-lightbox-scan'));
+
         const API_URL = 'http://localhost:5000';
         let currentResults = null;
         let progressPollInterval = null;
+        let currentProgressInterval = null; // Lightbox progress interval
+        let currentScanKey = null; // Global scan key for progress tracking
+        let latestLightboxFindings = []; // Store latest findings for card filtering
+
+        // Store current scan info globally for Lightbox to use
+        let currentScanDomain = null;
+        let currentASMScanId = null;
 
         // Event listeners
         document.getElementById('scanButton').addEventListener('click', () => performScan(false));
@@ -1315,6 +1819,14 @@
                 return;
             }
 
+            // DOMAIN CHANGE DETECTION: Clear Lightbox state when domain changes
+            const previousDomain = window.lastScannedDomain || '';
+            if (domain !== previousDomain && previousDomain !== '') {
+                console.log('[LIGHTBOX] Domain changed from', previousDomain, 'to', domain, '- clearing Lightbox results');
+                clearLightboxState();
+            }
+            window.lastScannedDomain = domain;
+
             const loadingIndicator = document.getElementById('loadingIndicator');
             const resultsContainer = document.getElementById('resultsContainer');
             const errorContainer = document.getElementById('errorContainer');
@@ -1346,19 +1858,43 @@
                 });
 
                 const data = await response.json();
+                console.log('[ASM] Scan response:', data);
 
-                if (!data.success) {
+                // Check for error response
+                if (data.success === false || data.error) {
                     throw new Error(data.error || 'Scan failed');
                 }
 
-                currentResults = data.results;
-                displayResults(data.results);
+                // Store results (data is at top level, not nested in 'results')
+                currentResults = data;
+                displayResults(data);
+
+                // CRITICAL: Store BOTH domain and scan ID for Lightbox
+                currentScanDomain = data.domain || domain;
+                currentASMScanId = data.id;  // THIS MUST BE SET
+
+                // Also store in window for global access
+                window.currentDomain = currentScanDomain;
+                window.currentASMScanId = currentASMScanId;
+
+                // SAVE TO LOCALSTORAGE for persistence across page refresh
+                localStorage.setItem('nerve_current_domain', currentScanDomain);
+                localStorage.setItem('nerve_current_scan_id', currentASMScanId);
+                localStorage.setItem('nerve_last_tab', 'asm');
+
+                console.log('[ASM] Stored - Domain:', currentScanDomain, 'Scan ID:', currentASMScanId);
+                console.log('[ASM] Saved to localStorage for persistence');
+
+                if (!currentASMScanId) {
+                    console.error('[ASM] WARNING: Scan ID is null! Backend did not return scan ID.');
+                    console.error('[ASM] Response data:', data);
+                }
 
                 // Show cache info if cached
                 const cacheInfo = document.getElementById('cacheInfo');
                 const cacheInfoText = document.getElementById('cacheInfoText');
-                if (data.results.cached) {
-                    const cacheAgeHours = data.results.cache_age_hours || 0;
+                if (data.cached) {
+                    const cacheAgeHours = data.cache_age_hours || 0;
                     cacheInfoText.textContent = `Last scanned: ${formatTimeAgo(cacheAgeHours)}`;
                     cacheInfo.style.display = 'block';
                 } else {
@@ -1445,24 +1981,24 @@
             // Update risk score gauge
             updateRiskGauge(risk, riskLevel);
 
-            const totalAssets = subdomains.length + crtSubdomains.length + cloudAssets.length;
-
-            document.getElementById('criticalCount').textContent = criticalFindings.length;
-            document.getElementById('vulnCount').textContent = vulnCount;
-            document.getElementById('assetCount').textContent = totalAssets;
-
-            // Build heat map and severity categories with safe data
+            // Build safe data object for all display functions
+            const domain = document.getElementById('domainInput').value.trim();
             const safeResults = {
+                domain: domain,
                 subdomains: subdomains,
                 crt_subdomains: crtSubdomains,
                 cloud_assets: cloudAssets,
                 shodan_results: shodanResults,
+                port_scan_results: shodanResults,  // Alias for banner function
                 critical_findings: criticalFindings,
                 dns_records: dnsRecords,
                 risk_score: risk,
                 risk_level: riskLevel,
                 vulnerabilities_found: vulnCount
             };
+
+            // Update top banner statistics
+            updateTopBanner(safeResults);
 
             buildHeatMap(safeResults);
             buildSeverityCategories(safeResults);
@@ -1476,7 +2012,8 @@
 
             // Create visualization charts
             createRiskScoreChart(risk, riskLevel);
-            createSeverityChart(safeResults);
+            createVulnerabilitySeverityChart(safeResults);
+            createNetworkDiagram(safeResults);
 
             // Show results container
             document.getElementById('resultsContainer').style.display = 'block';
@@ -1484,7 +2021,6 @@
 
         // Chart.js instances (store globally to destroy on re-render)
         let riskScoreChartInstance = null;
-        let severityChartInstance = null;
 
         function createRiskScoreChart(score, level) {
             const ctx = document.getElementById('riskScoreChart');
@@ -1540,14 +2076,12 @@
             });
         }
 
-        function createSeverityChart(results) {
-            const ctx = document.getElementById('severityChart');
-            if (!ctx) return;
+        function createVulnerabilitySeverityChart(results) {
+            const container = document.getElementById('vulnerability-severity-chart');
 
-            // Destroy existing chart
-            if (severityChartInstance) {
-                severityChartInstance.destroy();
-            }
+            if (!container) return;
+
+            container.innerHTML = ''; // Clear
 
             // Count findings by severity
             let criticalCount = 0;
@@ -1575,118 +2109,498 @@
                 else if (risk === 'LOW') lowCount++;
             });
 
-            severityChartInstance = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Critical', 'High', 'Medium', 'Low'],
-                    datasets: [{
-                        data: [criticalCount, highCount, mediumCount, lowCount],
-                        backgroundColor: [
-                            'rgba(239, 68, 68, 0.8)',   // critical - red
-                            'rgba(245, 158, 11, 0.8)',  // high - orange
-                            'rgba(234, 179, 8, 0.8)',   // medium - yellow
-                            'rgba(34, 197, 94, 0.8)'    // low - green
-                        ],
-                        borderColor: 'rgba(0, 0, 0, 0.8)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                            labels: {
-                                color: '#e0e0e0',
-                                font: { size: 12 }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
-                                    return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
-                                }
-                            }
-                        }
-                    }
-                }
+            const severityCounts = {
+                critical: criticalCount,
+                high: highCount,
+                medium: mediumCount,
+                low: lowCount
+            };
+
+            const total = Object.values(severityCounts).reduce((a, b) => a + b, 0);
+
+            if (total === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #888;">
+                        <p style="font-size: 16px;">No vulnerabilities detected</p>
+                        <p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">Run a scan to analyze vulnerability severity</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const width = 500;  // INCREASED from ~300
+            const height = 400; // INCREASED from ~250
+            const radius = Math.min(width, height) / 2 - 40;
+
+            const svg = d3.select('#vulnerability-severity-chart')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${width/2}, ${height/2})`);
+
+            const color = d3.scaleOrdinal()
+                .domain(['critical', 'high', 'medium', 'low'])
+                .range(['#dc3545', '#fd7e14', '#ffc107', '#28a745']);
+
+            const pie = d3.pie()
+                .value(d => d.value)
+                .sort(null);
+
+            const arc = d3.arc()
+                .innerRadius(radius * 0.5)  // Donut chart
+                .outerRadius(radius);
+
+            const pieData = pie(
+                Object.entries(severityCounts).map(([key, value]) => ({
+                    label: key,
+                    value: value
+                }))
+            );
+
+            // Draw slices
+            const slices = svg.selectAll('path')
+                .data(pieData)
+                .enter()
+                .append('path')
+                .attr('d', arc)
+                .attr('fill', d => color(d.data.label))
+                .attr('stroke', '#000')
+                .attr('stroke-width', 3)
+                .style('filter', 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))')
+                .style('cursor', 'pointer')
+                .on('mouseenter', function() {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr('d', d3.arc()
+                            .innerRadius(radius * 0.5)
+                            .outerRadius(radius + 10)
+                        );
+                })
+                .on('mouseleave', function() {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr('d', arc);
+                });
+
+            // Add labels
+            const labelArc = d3.arc()
+                .innerRadius(radius * 0.7)
+                .outerRadius(radius * 0.7);
+
+            svg.selectAll('text')
+                .data(pieData)
+                .enter()
+                .append('text')
+                .attr('transform', d => `translate(${labelArc.centroid(d)})`)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '18px')  // INCREASED from 14px
+                .style('font-weight', '700')
+                .style('fill', '#fff')
+                .style('text-shadow', '0 0 4px #000, 0 0 8px #000')
+                .text(d => d.data.value > 0 ? d.data.value : '');
+
+            // Add legend below chart (moved further down to avoid overlap)
+            const legend = svg.append('g')
+                .attr('transform', `translate(-${width/2 - 40}, ${height/2 - 30})`);  // CHANGED: -30 instead of -60
+
+            const legendData = [
+                { label: 'Critical', color: '#dc3545', value: severityCounts.critical },
+                { label: 'High', color: '#fd7e14', value: severityCounts.high },
+                { label: 'Medium', color: '#ffc107', value: severityCounts.medium },
+                { label: 'Low', color: '#28a745', value: severityCounts.low }
+            ];
+
+            legendData.forEach((item, i) => {
+                const legendRow = legend.append('g')
+                    .attr('transform', `translate(${i * 120}, 0)`);  // CHANGED: 120 instead of 110 for more spacing
+
+                legendRow.append('rect')
+                    .attr('width', 18)  // CHANGED: Slightly larger
+                    .attr('height', 18)
+                    .attr('fill', item.color)
+                    .attr('rx', 3);
+
+                legendRow.append('text')
+                    .attr('x', 24)
+                    .attr('y', 14)
+                    .style('font-size', '15px')
+                    .style('font-weight', '600')  // ADD: Bold text
+                    .style('fill', '#fff')  // CHANGED: Brighter white
+                    .text(item.label);
             });
         }
 
-        function updateRiskGauge(score, level) {
-            console.log("updateRiskGauge received:", { score, level });
+        function createNetworkDiagram(scanData) {
+            console.log('[NETWORK MAP] Building diagram with data:', scanData);
+
+            const container = document.getElementById('network-diagram');
+
+            if (!container) {
+                console.error('[NETWORK MAP] Canvas element not found!');
+                return;
+            }
+
+            console.log('[NETWORK MAP] Canvas found:', container);
+
+            container.innerHTML = ''; // Clear any existing content
+
+            // Check if we have data
+            if (!scanData || (!scanData.subdomains && !scanData.shodan_results && !scanData.port_scan_results)) {
+                console.log('[NETWORK MAP] No data available for visualization');
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #888;">
+                        <div style="text-align: center;">
+                            <p style="font-size: 16px; margin-bottom: 8px;">No network data available</p>
+                            <p style="font-size: 13px; opacity: 0.7;">Run a scan to visualize asset relationships</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build proper 3-level hierarchy network structure
+            const nodes = [];
+            const links = [];
+            const addedNodes = new Set();
+
+            console.log('[NETWORK MAP] Building 3-level hierarchy: Root → Subdomains → Services');
+
+            // STEP 1: Add ROOT domain (the scanned domain) - ONLY ONCE
+            const rootDomain = scanData.domain;
+
+            if (!addedNodes.has(rootDomain)) {
+                nodes.push({
+                    id: rootDomain,
+                    label: rootDomain,
+                    type: 'root',
+                    risk: 'high'
+                });
+                addedNodes.add(rootDomain);
+            }
+
+            // STEP 2: Add subdomains (filtered to exclude root)
+            const actualSubdomains = scanData.subdomains?.filter(sub => sub.subdomain !== scanData.domain) || [];
+
+            console.log('[NETWORK MAP] Root:', scanData.domain);
+            console.log('[NETWORK MAP] Filtered subdomains:', actualSubdomains.map(s => s.subdomain));
+
+            actualSubdomains.forEach(sub => {
+                const subName = sub.subdomain;
+
+                if (addedNodes.has(subName)) return;
+
+                nodes.push({
+                    id: subName,
+                    label: subName,
+                    type: 'subdomain',
+                    risk: 'medium'
+                });
+                addedNodes.add(subName);
+
+                links.push({
+                    source: scanData.domain,
+                    target: subName
+                });
+            });
+
+            // STEP 3: Add SERVICES (connect each to its subdomain by IP)
+            const addedServices = new Set();
+
+            if (scanData.port_scan_results) {
+                scanData.port_scan_results.forEach(port => {
+                    if (port.risk !== 'CRITICAL' && port.risk !== 'HIGH') return;
+
+                    const serviceId = `${port.ip}:${port.port}`;
+                    if (addedServices.has(serviceId)) return;
+
+                    nodes.push({
+                        id: serviceId,
+                        label: `${port.service}\n${port.port}`,
+                        type: 'service',
+                        risk: port.risk.toLowerCase()
+                    });
+                    addedServices.add(serviceId);
+
+                    // Find which subdomain this IP belongs to
+                    let connected = false;
+                    if (scanData.subdomains) {
+                        for (const sub of scanData.subdomains) {
+                            if (sub.ips && sub.ips.includes(port.ip)) {
+                                links.push({
+                                    source: sub.subdomain,
+                                    target: serviceId
+                                });
+                                connected = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Fallback: connect to root if no subdomain match
+                    if (!connected) {
+                        links.push({
+                            source: rootDomain,
+                            target: serviceId
+                        });
+                    }
+                });
+            }
+
+            console.log('[NETWORK MAP] Structure:', {
+                root: rootDomain,
+                nodes: nodes.length,
+                links: links.length
+            });
+
+            console.log(`[NETWORK MAP] Rendering ${nodes.length} nodes and ${links.length} links`);
+
+            // Create responsive SVG that fits within card
+            const width = 800;
+            const height = 400;
+
+            console.log('[NETWORK MAP] SVG dimensions:', width, 'x', height);
+            console.log('[NETWORK MAP] Nodes:', nodes.length);
+            console.log('[NETWORK MAP] Links:', links.length);
+
+            const svg = d3.select('#network-diagram')
+                .append('svg')
+                .attr('width', '100%')
+                .attr('height', '100%')
+                .attr('viewBox', `0 0 ${width} ${height}`)
+                .attr('preserveAspectRatio', 'xMidYMid meet')
+                .style('max-width', '100%')
+                .style('max-height', '400px')
+                .style('background', 'rgba(0,0,0,0.2)')
+                .style('border-radius', '8px');
+
+            // Create force simulation
+            const simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links)
+                    .id(d => d.id)
+                    .distance(d => {
+                        // Longer links from root to subdomains
+                        if (d.source.type === 'root' || d.target.type === 'root') return 150;
+                        // Shorter links from subdomains to services
+                        return 80;
+                    })
+                )
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("collision", d3.forceCollide().radius(d => d.radius || 15))
+                .force("center", d3.forceCenter(width / 2, height / 2));
+
+            // PIN the root node to the center (CRITICAL FIX)
+            nodes.forEach(node => {
+                if (node.type === 'root') {
+                    node.fx = width / 2;  // Fixed X position (center)
+                    node.fy = height / 2;  // Fixed Y position (center)
+                }
+            });
+
+            // Draw links
+            const link = svg.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter()
+                .append('line')
+                .attr('stroke', 'rgba(255,215,0,0.4)')
+                .attr('stroke-width', 2);
+
+            // Draw nodes
+            const node = svg.append('g')
+                .selectAll('circle')
+                .data(nodes)
+                .enter()
+                .append('circle')
+                .attr('r', d => {
+                    if (d.type === 'root') return 24;
+                    if (d.type === 'subdomain') return 14;
+                    if (d.type === 'service') return 12;
+                    return 10;
+                })
+                .attr('fill', d => {
+                    if (d.type === 'root') return '#ffd700';
+                    if (d.type === 'subdomain') return '#4ade80';
+                    if (d.type === 'service') {
+                        // Color based on risk level
+                        if (d.risk === 'critical') return '#dc3545';
+                        if (d.risk === 'high') return '#fd7e14';
+                        return '#ffc107';
+                    }
+                    return '#3b82f6';
+                })
+                .attr('stroke', '#000')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            // Add labels
+            const label = svg.append('g')
+                .selectAll('text')
+                .data(nodes)
+                .enter()
+                .append('text')
+                .text(d => {
+                    // Use custom label if available
+                    const text = d.label || d.id;
+                    if (text.length > 25) return text.substring(0, 22) + '...';
+                    return text;
+                })
+                .attr('font-size', d => d.type === 'root' ? 12 : 10)
+                .attr('fill', '#fff')
+                .attr('text-anchor', 'middle')
+                .attr('dy', -20)
+                .style('pointer-events', 'none')
+                .style('text-shadow', '0 0 4px #000');
+
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => Math.max(30, Math.min(width - 30, d.x)))
+                    .attr('cy', d => Math.max(30, Math.min(height - 30, d.y)));
+
+                label
+                    .attr('x', d => Math.max(30, Math.min(width - 30, d.x)))
+                    .attr('y', d => Math.max(30, Math.min(height - 30, d.y)));
+            });
+
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+        }
+
+        function updateRiskScore(score) {
+            console.log("updateRiskScore received:", score);
 
             // Safety checks
             if (score === null || score === undefined) {
-                console.error("updateRiskGauge: No score provided");
+                console.error("updateRiskScore: No score provided");
                 score = 0;
-            }
-
-            if (!level) {
-                console.error("updateRiskGauge: No level provided");
-                level = 'low';
             }
 
             // Ensure score is a number and within valid range
             score = parseInt(score) || 0;
             score = Math.max(0, Math.min(100, score));
 
-            // Ensure level is a string
-            level = String(level).toLowerCase();
+            console.log("Updating risk score display:", score);
 
-            console.log("Updating risk gauge:", { score, level });
+            const scoreElement = document.getElementById('risk-score-number');
+            const arcElement = document.getElementById('risk-score-arc');
+            const badgeElement = document.getElementById('risk-level-badge');
 
-            // Update gauge value
-            document.getElementById('gaugeValue').textContent = score;
+            // Animate number
+            scoreElement.textContent = score;
 
-            // Update risk level badge
-            const riskBadge = document.getElementById('riskLevelBadge');
-            riskBadge.textContent = level.toUpperCase();
-            riskBadge.className = 'risk-level-badge risk-' + level;
+            // Animate arc (754 = circumference of r=120 circle)
+            const circumference = 754;
+            const offset = circumference - (score / 100) * circumference;
+            arcElement.style.strokeDashoffset = offset;
 
-            // Animate gauge circle to show score position
-            const gaugeCircle = document.getElementById('gaugeCircle');
-            const rotation = (score / 100) * 360;
-
-            // Create gradient that fills based on score
-            let gradientColor;
-            if (score <= 30) {
-                gradientColor = `conic-gradient(
-                    from 0deg,
-                    #22c55e 0deg,
-                    #22c55e ${rotation}deg,
-                    rgba(255,255,255,0.1) ${rotation}deg,
-                    rgba(255,255,255,0.1) 360deg
-                )`;
-            } else if (score <= 60) {
-                gradientColor = `conic-gradient(
-                    from 0deg,
-                    #22c55e 0deg,
-                    #22c55e 108deg,
-                    #eab308 108deg,
-                    #eab308 ${rotation}deg,
-                    rgba(255,255,255,0.1) ${rotation}deg,
-                    rgba(255,255,255,0.1) 360deg
-                )`;
+            // Update badge color and text
+            if (score >= 80) {
+                badgeElement.style.background = '#dc3545';
+                badgeElement.textContent = 'CRITICAL';
+                badgeElement.style.boxShadow = '0 4px 12px rgba(220,53,69,0.4)';
+            } else if (score >= 60) {
+                badgeElement.style.background = '#fd7e14';
+                badgeElement.textContent = 'HIGH';
+                badgeElement.style.boxShadow = '0 4px 12px rgba(253,126,20,0.4)';
+            } else if (score >= 40) {
+                badgeElement.style.background = '#ffc107';
+                badgeElement.textContent = 'MEDIUM';
+                badgeElement.style.boxShadow = '0 4px 12px rgba(255,193,7,0.4)';
             } else {
-                gradientColor = `conic-gradient(
-                    from 0deg,
-                    #22c55e 0deg,
-                    #22c55e 108deg,
-                    #eab308 108deg,
-                    #eab308 216deg,
-                    #ef4444 216deg,
-                    #ef4444 ${rotation}deg,
-                    rgba(255,255,255,0.1) ${rotation}deg,
-                    rgba(255,255,255,0.1) 360deg
-                )`;
+                badgeElement.style.background = '#28a745';
+                badgeElement.textContent = 'LOW';
+                badgeElement.style.boxShadow = '0 4px 12px rgba(40,167,69,0.4)';
+            }
+        }
+
+        // Legacy function for backward compatibility
+        function updateRiskGauge(score, level) {
+            updateRiskScore(score);
+        }
+
+        // Update top banner statistics with scan data
+        function updateTopBanner(scanData) {
+            const riskScore = scanData.risk_score || 0;
+            const subdomainCount = scanData.subdomains ? scanData.subdomains.length : 0;
+            const crtSubdomainCount = scanData.crt_subdomains ? scanData.crt_subdomains.length : 0;
+            const serviceCount = scanData.port_scan_results ? scanData.port_scan_results.length : 0;
+
+            // Count critical services (not just CVEs)
+            console.log('[BANNER DEBUG] ==================');
+            console.log('[BANNER DEBUG] scanData.port_scan_results:', scanData.port_scan_results);
+
+            let criticalServices = 0;
+
+            if (scanData.port_scan_results && scanData.port_scan_results.length > 0) {
+                console.log('[BANNER DEBUG] Total ports:', scanData.port_scan_results.length);
+
+                // Show first 3 ports as sample
+                console.log('[BANNER DEBUG] Sample ports:', scanData.port_scan_results.slice(0, 3).map(p => ({
+                    port: p.port,
+                    service: p.service,
+                    risk_level: p.risk_level,
+                    risk: p.risk,
+                    severity: p.severity,
+                    all_keys: Object.keys(p)
+                })));
+
+                // Try different field names
+                const byCriticalRiskLevel = scanData.port_scan_results.filter(p => p.risk_level === 'CRITICAL').length;
+                const byRisk = scanData.port_scan_results.filter(p => p.risk === 'CRITICAL').length;
+                const bySeverity = scanData.port_scan_results.filter(p => p.severity === 'CRITICAL').length;
+
+                console.log('[BANNER DEBUG] Count CRITICAL only by risk_level:', byCriticalRiskLevel);
+                console.log('[BANNER DEBUG] Count CRITICAL only by risk:', byRisk);
+                console.log('[BANNER DEBUG] Count CRITICAL only by severity:', bySeverity);
+
+                // Count ONLY CRITICAL services (not HIGH) - p.risk contains the correct severity
+                criticalServices = scanData.port_scan_results.filter(p => {
+                    return p.risk === 'CRITICAL';
+                }).length;
+
+                console.log('[BANNER DEBUG] Final critical services count:', criticalServices);
             }
 
-            gaugeCircle.style.background = gradientColor;
+            console.log('[BANNER DEBUG] ==================');
+
+            // Update banner statistics with null safety
+            const criticalOnly = scanData.port_scan_results?.filter(p => p.risk === 'CRITICAL').length || 0;
+
+            document.getElementById('subdomain-count').textContent = subdomainCount + crtSubdomainCount;
+            document.getElementById('services-count').textContent = serviceCount;
+
+            const criticalElement = document.getElementById('critical-services-count');
+            if (criticalElement) {
+                criticalElement.textContent = criticalOnly;
+            }
+
+            console.log('Banner updated:', { riskScore, subdomains: subdomainCount + crtSubdomainCount, services: serviceCount, critical: criticalServices });
         }
 
         function buildHeatMap(scanResults) {
@@ -1700,137 +2614,195 @@
 
             const container = document.getElementById('heatmapContent');
 
-            const subdomains = scanResults.subdomains || [];
+            if (!container) return;
+
+            // Collect and filter CRITICAL and HIGH services from port scan results
             const portResults = scanResults.shodan_results || scanResults.port_scan_results || [];
-            const cloudAssets = scanResults.cloud_assets || [];
-            const criticalFindings = scanResults.critical_findings || [];
+            const filteredServices = [];
 
-            console.log("Heat map data:", {
-                subdomains: subdomains.length,
-                ports: portResults.length,
-                cloud: cloudAssets.length
+            if (Array.isArray(portResults)) {
+                portResults.forEach(result => {
+                    if (!result) return;
+
+                    // Include services where risk === 'CRITICAL' OR 'HIGH'
+                    if (result.risk !== 'CRITICAL' && result.risk !== 'HIGH') return;
+
+                    filteredServices.push(result);
+                });
+            }
+
+            // Sort: CRITICAL first, then HIGH
+            const sortedServices = filteredServices.sort((a, b) => {
+                if (a.risk === 'CRITICAL' && b.risk === 'HIGH') return -1;
+                if (a.risk === 'HIGH' && b.risk === 'CRITICAL') return 1;
+                return 0;
             });
 
-            // Make sure we have arrays before calling forEach
-            if (!Array.isArray(subdomains)) {
-                console.error("subdomains is not an array:", subdomains);
-                return;
-            }
-            if (!Array.isArray(portResults)) {
-                console.error("portResults is not an array:", portResults);
-                return;
-            }
-            if (!Array.isArray(cloudAssets)) {
-                console.error("cloudAssets is not an array:", cloudAssets);
-                return;
-            }
+            // Build service objects with vulnerabilities
+            const criticalAndHighServices = [];
 
-            // Collect all assets
-            const allAssets = [];
+            sortedServices.forEach(result => {
+                const cves = result.cves || result.vulnerabilities || [];
+                const vulns = [];
 
-            // Add subdomains
-            subdomains.forEach(sub => {
-                if (!sub) return;
+                // Add CVEs
+                if (Array.isArray(cves)) {
+                    cves.forEach(cve => {
+                        const cvss = cve.cvss || 0;
+                        const severity = cvss >= 9.0 ? 'CRITICAL' :
+                                       cvss >= 7.0 ? 'HIGH' :
+                                       cvss >= 4.0 ? 'MEDIUM' : 'LOW';
 
-                const subIps = sub.ips || [];
-                const firstIp = subIps[0];
-                const vulnCount = portResults.filter(s => s && s.ip === firstIp).length;
-                const hasCritical = criticalFindings.some(f => f && f.description?.includes(sub.subdomain));
+                        vulns.push({
+                            type: cve.id || cve.cve_id || 'Unknown CVE',
+                            severity: severity,
+                            cvss: cvss,
+                            description: cve.description || cve.summary || 'No description available',
+                            exploitAvailable: cve.exploit_available || cve.exploitable || false
+                        });
+                    });
+                }
 
-                allAssets.push({
-                    name: sub.subdomain || 'Unknown',
-                    type: 'Subdomain',
-                    severity: hasCritical ? 'CRITICAL' : (vulnCount > 0 ? 'HIGH' : 'LOW'),
-                    vulnerabilities: vulnCount,
-                    status: hasCritical ? 'Exposed' : 'Monitored',
-                    ips: subIps
+                // Add exposure vulnerabilities based on port
+                if (result.port === 3306 || result.port === 5432 || result.port === 27017 || result.port === 6379) {
+                    const dbNames = {
+                        3306: 'MySQL/MariaDB',
+                        5432: 'PostgreSQL',
+                        27017: 'MongoDB',
+                        6379: 'Redis'
+                    };
+                    vulns.push({
+                        type: 'Database Exposed',
+                        severity: 'CRITICAL',
+                        description: `${dbNames[result.port] || 'Database'} accessible from internet on port ${result.port}`
+                    });
+                }
+
+                if (result.port === 23) {
+                    vulns.push({
+                        type: 'Telnet Exposed',
+                        severity: 'CRITICAL',
+                        description: 'Telnet service exposes unencrypted credentials'
+                    });
+                }
+
+                // If no specific vulnerabilities, add generic risk service entry
+                if (vulns.length === 0) {
+                    vulns.push({
+                        type: `${result.risk} Risk Service`,
+                        severity: result.risk,
+                        description: `${result.service || 'Service'} on port ${result.port} identified as ${result.risk} risk`
+                    });
+                }
+
+                criticalAndHighServices.push({
+                    name: `${result.ip}:${result.port}`,
+                    type: result.service || 'Unknown',
+                    severity: result.risk,
+                    vulnerabilities: vulns
                 });
             });
 
-            // Add cloud assets
-            cloudAssets.forEach(asset => {
-                if (!asset) return;
+            // Count CRITICAL and HIGH services
+            const cardBadgeCount = criticalAndHighServices.length;
+            document.getElementById('heatmapCount').textContent = cardBadgeCount;
 
-                allAssets.push({
-                    name: asset.name || 'Unknown',
-                    type: asset.type || 'Cloud Asset',
-                    severity: asset.risk || 'LOW',
-                    vulnerabilities: asset.accessible ? 1 : 0,
-                    status: asset.accessible ? 'Exposed' : 'Protected',
-                    url: asset.url || ''
-                });
-            });
-
-            // Add Shodan/Port scan results
-            portResults.forEach(shodan => {
-                if (!shodan) return;
-
-                const vulns = shodan.vulnerabilities || [];
-                allAssets.push({
-                    name: `${shodan.ip || 'Unknown'}:${shodan.port || '?'}`,
-                    type: shodan.service || 'Unknown Service',
-                    severity: shodan.risk || 'LOW',
-                    vulnerabilities: vulns.length,
-                    status: vulns.length > 0 ? 'Exposed' : 'Monitored',
-                    cves: vulns
-                });
-            });
-
-            document.getElementById('heatmapCount').textContent = allAssets.length;
-
-            if (allAssets.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No assets to display</p></div>';
-                return;
-            }
-
-            // Build table
-            let html = `
-                <table class="heat-map-table">
-                    <thead>
-                        <tr>
-                            <th onclick="sortHeatMap('name')">Asset Name <span class="sort-icon">↕</span></th>
-                            <th onclick="sortHeatMap('type')">Type <span class="sort-icon">↕</span></th>
-                            <th onclick="sortHeatMap('severity')">Severity <span class="sort-icon">↕</span></th>
-                            <th onclick="sortHeatMap('vulnerabilities')">Vulnerabilities <span class="sort-icon">↕</span></th>
-                            <th onclick="sortHeatMap('status')">Status <span class="sort-icon">↕</span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="heatmapTableBody">
-            `;
-
-            // Sort by severity first
-            const severityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
-            allAssets.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
-
-            allAssets.forEach((asset, idx) => {
-                const badgeClass = getRiskBadgeClass(asset.severity);
-                const statusClass = asset.status === 'Exposed' ? 'status-exposed' :
-                                   asset.status === 'Protected' ? 'status-protected' : 'status-monitored';
-
-                html += `
-                    <tr onclick="toggleAssetDetails(${idx})" data-asset-index="${idx}">
-                        <td class="asset-cell">${asset.name}</td>
-                        <td>${asset.type}</td>
-                        <td class="severity-cell">
-                            <span class="asset-badge ${badgeClass}">${asset.severity}</span>
-                        </td>
-                        <td class="vuln-count">${asset.vulnerabilities}</td>
-                        <td class="status-cell">
-                            <span class="status-badge ${statusClass}">${asset.status}</span>
-                        </td>
-                    </tr>
+            if (criticalAndHighServices.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #4ade80;">
+                        <p style="font-size: 16px;">✓ No Critical or High Risk Services Detected</p>
+                    </div>
                 `;
-            });
+                return;
+            }
 
-            html += `
-                    </tbody>
-                </table>
+            // Create table with CRITICAL and HIGH services
+            container.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid rgba(255,215,0,0.3);">
+                                <th style="padding: 12px; text-align: left; color: #ffd700; font-weight: 600; font-size: 13px;">ASSET NAME</th>
+                                <th style="padding: 12px; text-align: left; color: #ffd700; font-weight: 600; font-size: 13px;">TYPE</th>
+                                <th style="padding: 12px; text-align: center; color: #ffd700; font-weight: 600; font-size: 13px;">SEVERITY</th>
+                                <th style="padding: 12px; text-align: center; color: #ffd700; font-weight: 600; font-size: 13px;">VULNERABILITIES</th>
+                                <th style="padding: 12px; text-align: center; color: #ffd700; font-weight: 600; font-size: 13px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${criticalAndHighServices.map((asset, index) => `
+                                <tr class="heat-map-row" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 14px; color: #ffd700; font-size: 13px;">${asset.name}</td>
+                                    <td style="padding: 14px; color: #ccc; font-size: 13px;">${asset.type}</td>
+                                    <td style="padding: 14px; text-align: center;">
+                                        <span style="background: ${getSeverityBadgeColor(asset.severity)}; color: ${asset.severity === 'MEDIUM' ? '#000' : '#fff'}; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+                                            ${asset.severity}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 14px; text-align: center; color: #fff; font-weight: 600; font-size: 14px;">
+                                        ${asset.vulnerabilities.length}
+                                    </td>
+                                    <td style="padding: 14px; text-align: center;">
+                                        <button class="expand-vulns-btn" data-index="${index}" style="background: rgba(255,215,0,0.2); border: 1px solid rgba(255,215,0,0.4); color: #ffd700; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+                                            View Details ▼
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr id="vuln-details-${index}" class="vuln-details-row" style="display: none;">
+                                    <td colspan="5" style="padding: 0; background: rgba(0,0,0,0.3);">
+                                        <div style="padding: 20px; border-left: 4px solid ${getSeverityBadgeColor(asset.severity)};">
+                                            <h4 style="margin: 0 0 12px 0; color: #ffd700; font-size: 14px;">Vulnerabilities for ${asset.name}:</h4>
+                                            ${asset.vulnerabilities.map(vuln => `
+                                                <div style="padding: 12px; margin-bottom: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; border-left: 3px solid ${getSeverityBadgeColor(vuln.severity)};">
+                                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
+                                                        <div style="font-weight: 600; color: #fff; font-size: 13px;">
+                                                            ${vuln.type}
+                                                            ${vuln.exploitAvailable ? ' <span style="color: #dc3545; font-size: 11px;">🎯 Exploit Available</span>' : ''}
+                                                        </div>
+                                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                                            ${vuln.cvss ? `<span style="background: ${getSeverityBadgeColor(vuln.severity)}; color: ${vuln.severity === 'MEDIUM' ? '#000' : '#fff'}; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700;">CVSS ${vuln.cvss}</span>` : ''}
+                                                            <span style="background: ${getSeverityBadgeColor(vuln.severity)}; color: ${vuln.severity === 'MEDIUM' ? '#000' : '#fff'}; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700;">${vuln.severity}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div style="font-size: 12px; color: #ccc; line-height: 1.5;">
+                                                        ${vuln.description}
+                                                    </div>
+                                                    ${vuln.type.startsWith('CVE-') ? `
+                                                        <div style="margin-top: 8px;">
+                                                            <a href="https://nvd.nist.gov/vuln/detail/${vuln.type}" target="_blank" style="color: #4ade80; text-decoration: none; font-size: 11px;">
+                                                                View in NVD Database →
+                                                            </a>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             `;
 
-            container.innerHTML = html;
+            // Add click handlers for expand buttons
+            document.querySelectorAll('.expand-vulns-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = this.getAttribute('data-index');
+                    const detailsRow = document.getElementById(`vuln-details-${index}`);
 
-            // Store assets for sorting
-            window.currentAssets = allAssets;
+                    if (detailsRow.style.display === 'none') {
+                        detailsRow.style.display = 'table-row';
+                        this.textContent = 'Hide Details ▲';
+                    } else {
+                        detailsRow.style.display = 'none';
+                        this.textContent = 'View Details ▼';
+                    }
+                });
+            });
+
+            // Store critical and high services for reference
+            window.currentAssets = criticalAndHighServices;
         }
 
         function buildSeverityCategories(results) {
@@ -1842,131 +2814,85 @@
                 return;
             }
 
-            const container = document.getElementById('severityCategoriesContainer');
+            // DISABLED - Service Risk Distribution card removed
+            // displayAssetRiskDistribution(results);
+        }
 
-            const criticalFindings = results.critical_findings || [];
-            const shodanResults = results.shodan_results || [];
-            const cloudAssets = results.cloud_assets || [];
+        function displayAssetRiskDistribution(scanData) {
+            console.log('[DISABLED] displayAssetRiskDistribution - card removed');
+            return;
+        }
 
-            console.log("Severity categories data:", {
-                critical: criticalFindings.length,
-                shodan: shodanResults.length,
-                cloud: cloudAssets.length
-            });
+        function populateEnhancedAssetList(elementId, assets) {
+            const container = document.getElementById(elementId);
 
-            // Validate arrays
-            if (!Array.isArray(criticalFindings)) {
-                console.error("critical_findings is not an array");
-                return;
-            }
-            if (!Array.isArray(shodanResults)) {
-                console.error("shodan_results is not an array");
-                return;
-            }
-            if (!Array.isArray(cloudAssets)) {
-                console.error("cloud_assets is not an array");
+            if (!container) return;
+
+            if (assets.length === 0) {
+                container.innerHTML = '<div style="padding: 12px; color: #888; font-size: 13px;">No assets in this category</div>';
                 return;
             }
 
-            // Categorize all findings by severity
-            const categories = {
-                critical: [],
-                high: [],
-                medium: [],
-                low: []
-            };
-
-            // Critical findings
-            criticalFindings.forEach(f => {
-                if (!f) return;
-
-                categories.critical.push({
-                    type: 'Finding',
-                    name: f.type || 'Unknown',
-                    description: f.description || 'No description',
-                    severity: f.severity || 'CRITICAL'
-                });
-            });
-
-            // Shodan results
-            shodanResults.forEach(s => {
-                if (!s || !s.risk) return;
-
-                const category = s.risk.toLowerCase();
-                if (categories[category]) {
-                    const vulns = s.vulnerabilities || [];
-                    categories[category].push({
-                        type: 'Service',
-                        name: `${s.ip || 'Unknown'}:${s.port || '?'} - ${s.service || 'Unknown'}`,
-                        description: `${s.version || 'N/A'} | ${s.organization || 'N/A'}`,
-                        severity: s.risk,
-                        cves: vulns
-                    });
-                }
-            });
-
-            // Cloud assets
-            cloudAssets.forEach(c => {
-                if (!c || !c.risk) return;
-
-                const category = c.risk.toLowerCase();
-                if (categories[category] && c.accessible) {
-                    categories[category].push({
-                        type: 'Cloud Asset',
-                        name: c.name || 'Unknown',
-                        description: `${c.type || 'N/A'} - ${c.status || 'N/A'}`,
-                        severity: c.risk
-                    });
-                }
-            });
-
-            let html = '';
-
-            // Build each category section
-            ['critical', 'high', 'medium', 'low'].forEach(severity => {
-                const items = categories[severity];
-                if (items.length === 0) return;
-
-                const icons = {
-                    critical: '🔴',
-                    high: '🟠',
-                    medium: '🟡',
-                    low: '🟢'
-                };
-
-                html += `
-                    <div class="severity-category ${severity}">
-                        <div class="severity-category-header" onclick="toggleSeverityCategory('${severity}')">
-                            <div class="severity-category-title">
-                                ${icons[severity]} ${severity.toUpperCase()} Risk Assets
+            container.innerHTML = assets.map(asset => `
+                <div style="padding: 14px; margin-bottom: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; border-left: 3px solid ${getSeverityColor(asset.highestCVSS)};">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <div>
+                            <div style="font-weight: 600; color: #ffd700; font-size: 14px; margin-bottom: 4px;">
+                                ${asset.ip}
                             </div>
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <span class="section-count">${items.length}</span>
-                                <span class="expand-icon" id="${severity}-category-icon">▼</span>
+                            <div style="font-size: 12px; color: #aaa;">
+                                ${asset.service} (Port ${asset.port})
                             </div>
                         </div>
-                        <div class="severity-category-content" id="${severity}CategoryContent">
-                            ${items.map(item => {
-                                const badgeClass = getRiskBadgeClass(item.severity);
-                                return `
-                                    <div class="asset-item">
-                                        <div class="asset-header">
-                                            <div class="asset-name">${item.name}</div>
-                                            <span class="asset-badge ${badgeClass}">${item.type}</span>
-                                        </div>
-                                        <div class="asset-details">
-                                            ${item.description}
-                                            ${item.cves && item.cves.length > 0 ? `<br>CVEs: ${item.cves.map(c => `<span class="asset-badge badge-critical">${c}</span>`).join(' ')}` : ''}
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
+                        ${asset.highestCVSS > 0 ? `
+                            <div style="background: ${getSeverityColor(asset.highestCVSS)}; color: #000; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+                                CVSS ${asset.highestCVSS.toFixed(1)}
+                            </div>
+                        ` : ''}
                     </div>
-                `;
-            });
 
-            container.innerHTML = html;
+                    <div style="font-size: 12px; color: #ccc; margin-bottom: 6px;">
+                        <strong>Risk Factor:</strong> ${asset.reason}
+                    </div>
+
+                    ${asset.cveCount > 0 ? `
+                        <div style="display: flex; gap: 8px; align-items: center; font-size: 11px; color: #888;">
+                            <span>📊 ${asset.cveCount} CVE(s)</span>
+                            ${asset.criticalCVEs.length > 0 ? `<span style="color: #dc3545;">⚠️ ${asset.criticalCVEs.length} Critical</span>` : ''}
+                            ${asset.highCVEs.length > 0 ? `<span style="color: #fd7e14;">⚠️ ${asset.highCVEs.length} High</span>` : ''}
+                        </div>
+                    ` : ''}
+
+                    ${asset.criticalCVEs.length > 0 ? `
+                        <div style="margin-top: 8px; padding: 8px; background: rgba(220,53,69,0.1); border-radius: 4px;">
+                            <div style="font-size: 11px; font-weight: 600; color: #dc3545; margin-bottom: 4px;">
+                                Top Critical CVE:
+                            </div>
+                            <div style="font-size: 11px; color: #ccc;">
+                                ${asset.criticalCVEs[0].id} (CVSS ${asset.criticalCVEs[0].cvss})
+                                ${asset.criticalCVEs[0].description ? `<br><span style="color: #999;">${asset.criticalCVEs[0].description.substring(0, 80)}...</span>` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function getSeverityColor(cvss) {
+            if (cvss >= 9.0) return '#dc3545';
+            if (cvss >= 7.0) return '#fd7e14';
+            if (cvss >= 4.0) return '#ffc107';
+            return '#28a745';
+        }
+
+        function getSeverityBadgeColor(severity) {
+            switch(severity) {
+                case 'CRITICAL': return '#dc3545';
+                case 'HIGH': return '#fd7e14';
+                case 'MEDIUM': return '#ffc107';
+                case 'LOW': return '#28a745';
+                default: return '#6c757d';
+            }
         }
 
         function toggleSeverityCategory(severity) {
@@ -2059,34 +2985,41 @@
             }
 
             const container = document.getElementById('criticalContent');
-            document.getElementById('criticalFindingsCount').textContent = findings.length;
 
-            if (findings.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No critical findings detected</p></div>';
+            // Filter to ONLY show CRITICAL severity findings
+            const criticalOnly = findings.filter(finding => {
+                if (!finding) return false;
+                const severity = (finding.severity || '').toUpperCase();
+                return severity === 'CRITICAL';
+            });
+
+            // Limit to top 10 critical findings
+            const topFindings = criticalOnly.slice(0, 10);
+
+            document.getElementById('criticalFindingsCount').textContent = topFindings.length;
+
+            if (topFindings.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #4ade80;">
+                        <p style="font-size: 16px; font-weight: 600;">✓ No Critical Issues Detected</p>
+                        <p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">Great job! No immediate critical vulnerabilities found.</p>
+                    </div>
+                `;
                 return;
             }
 
-            console.log("Displaying", findings.length, "critical findings");
-
-            // Sort by severity: CRITICAL > HIGH > MEDIUM > LOW
-            const severityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
-            findings.sort((a, b) => {
-                const aSev = a?.severity || 'LOW';
-                const bSev = b?.severity || 'LOW';
-                return (severityOrder[aSev] || 3) - (severityOrder[bSev] || 3);
-            });
+            console.log("Displaying", topFindings.length, "CRITICAL findings (filtered from", findings.length, "total)");
 
             let html = '';
-            findings.forEach(finding => {
+            topFindings.forEach(finding => {
                 if (!finding) return;
 
-                const severity = finding.severity || 'MEDIUM';
-                const badgeClass = getRiskBadgeClass(severity);
+                const badgeClass = getRiskBadgeClass('CRITICAL');
                 html += `
                     <div class="asset-item">
                         <div class="asset-header">
                             <div class="asset-name">${finding.type || 'Unknown Finding'}</div>
-                            <span class="asset-badge ${badgeClass}">${severity}</span>
+                            <span class="asset-badge ${badgeClass}">CRITICAL</span>
                         </div>
                         <div class="asset-details">${finding.description || 'No description available'}</div>
                     </div>
@@ -2197,7 +3130,12 @@
             console.log("Displaying", assets.length, "cloud assets");
 
             if (assets.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">☁️</div><p>No cloud assets found</p></div>';
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #888;">
+                        <p style="font-size: 16px; margin-bottom: 8px;">No cloud assets discovered</p>
+                        <p style="font-size: 13px; opacity: 0.7;">S3 buckets, Azure blobs, and GCP storage checked</p>
+                    </div>
+                `;
                 return;
             }
 
@@ -2256,8 +3194,36 @@
                 return;
             }
 
+            // DEBUG: Show first port structure
+            console.log('[PORTS DEBUG] First port structure:', shodanResults[0]);
+            console.log('[PORTS DEBUG] All keys in first port:', Object.keys(shodanResults[0]));
+            console.log('[PORTS DEBUG] risk_level values:', shodanResults.slice(0, 10).map(p => p.risk_level));
+            console.log('[PORTS DEBUG] risk values:', shodanResults.slice(0, 10).map(p => p.risk));
+            console.log('[PORTS DEBUG] severity values:', shodanResults.slice(0, 10).map(p => p.severity));
+
+            // SORT by risk level: CRITICAL → HIGH → MEDIUM → LOW
+            console.log('[PORTS] Before sort:', shodanResults.map(p => `${p.port}:${p.risk || 'UNKNOWN'}`));
+
+            const severityOrder = {
+                'CRITICAL': 0,
+                'HIGH': 1,
+                'MEDIUM': 2,
+                'LOW': 3,
+                'INFO': 4
+            };
+
+            const sortedPorts = [...shodanResults].sort((a, b) => {
+                const severityA = severityOrder[a.risk] ?? 5;
+                const severityB = severityOrder[b.risk] ?? 5;
+                console.log(`[PORTS] Comparing port ${a.port} (${a.risk}=${severityA}) vs port ${b.port} (${b.risk}=${severityB})`);
+                return severityA - severityB;
+            });
+
+            console.log('[PORTS] After sort:', sortedPorts.map(p => `${p.port}:${p.risk || 'UNKNOWN'}`));
+            console.log(`[PORTS] Sorted ${sortedPorts.length} ports by severity`);
+
             let html = '';
-            shodanResults.forEach(result => {
+            sortedPorts.forEach(result => {
                 if (!result) return;
 
                 const resultIp = result.ip || 'Unknown';
@@ -2376,53 +3342,6 @@
             container.innerHTML = html;
         }
 
-        async function simulateAttack() {
-            if (!currentResults) {
-                alert('Please run a scan first');
-                return;
-            }
-
-            const modal = document.getElementById('attackModal');
-            const modalBody = document.getElementById('attackPlanContent');
-
-            modal.style.display = 'block';
-            modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating attack simulation with Gemini AI...</p></div>';
-
-            try {
-                const response = await fetch(`${API_URL}/api/ghost/asm/simulate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ findings: currentResults })
-                });
-
-                const data = await response.json();
-
-                // DEBUG: Log received attack plan
-                console.log("Received attack plan:", data.attack_plan);
-                console.log("Modal element:", document.getElementById('attackModal'));
-
-                if (data.success) {
-                    // Convert markdown-like formatting to HTML
-                    const formattedPlan = data.attack_plan
-                        .replace(/\n/g, '<br>')
-                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                        .replace(/^# (.+)$/gm, '<h1>$1</h1>');
-
-                    modalBody.innerHTML = formattedPlan;
-                } else {
-                    modalBody.innerHTML = `<div class="error-message">${data.error}</div>`;
-                }
-
-            } catch (error) {
-                modalBody.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
-            }
-        }
-
-        function closeAttackModal() {
-            document.getElementById('attackModal').style.display = 'none';
-        }
-
         function exportAsTXT() {
             if (!currentResults) {
                 alert('Please run a scan first');
@@ -2495,6 +3414,10 @@
 
         // Tab switching
         function switchTab(tabName) {
+            // Save current tab to localStorage
+            localStorage.setItem('nerve_last_tab', tabName);
+            console.log(`[TAB] Switched to ${tabName}, saved to localStorage`);
+
             // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -2513,54 +3436,114 @@
 
             // Auto-run Vuln Assessment tab, load Lightbox history
             if (tabName === 'lightbox' && currentScanDomain) {
-                loadLightboxHistory(currentScanDomain);
+                loadMostRecentLightboxScan(currentScanDomain);
             } else if (tabName === 'vulnassess') {
                 runVulnAssessment();
             }
         }
 
-        // Lightbox Dashboard - Load scan history
-        async function loadLightboxHistory(domain) {
+        // Load most recent Lightbox scan and populate cards
+        async function loadMostRecentLightboxScan(domain) {
+            console.log(`[LIGHTBOX] Loading most recent scan for ${domain}`);
+
             try {
                 const response = await fetch(`${API_URL}/api/ghost/lightbox/history/${domain}`);
+
+                if (!response.ok) {
+                    console.log('[LIGHTBOX] No history found');
+                    await loadLightboxHistory(domain);
+                    return;
+                }
+
                 const data = await response.json();
 
-                const historyContainer = document.getElementById('lightbox-scan-history');
+                if (data.scans && data.scans.length > 0) {
+                    // Get most recent scan (first in array since they're sorted desc)
+                    const mostRecent = data.scans[0];
 
-                if (!data.scans || data.scans.length === 0) {
+                    console.log('[LIGHTBOX] Found most recent scan:', mostRecent);
+                    console.log('[LIGHTBOX] Scan age:', mostRecent.scanned_at);
+
+                    // Update cards with this scan data
+                    updateTestCategoryCards({
+                        findings: mostRecent.findings,
+                        scan_metadata: mostRecent.scan_metadata,
+                        summary: {
+                            critical: mostRecent.critical_count,
+                            high: mostRecent.high_count,
+                            medium: mostRecent.medium_count,
+                            low: mostRecent.low_count
+                        }
+                    });
+
+                    // Show a subtle indicator that this is cached data
+                    const scanAge = new Date(mostRecent.scanned_at);
+                    const now = new Date();
+                    const hoursAgo = Math.round((now - scanAge) / (1000 * 60 * 60));
+
+                    showNotification(`📊 Showing results from ${hoursAgo} hours ago`, 'info');
+
+                    console.log('[LIGHTBOX] Cards populated with cached data');
+                } else {
+                    console.log('[LIGHTBOX] No previous scans found');
+                }
+
+                // Always load history list
+                await loadLightboxHistory(domain);
+
+            } catch (error) {
+                console.error('[LIGHTBOX] Failed to load recent scan:', error);
+                // Fail silently - user can still run new scan
+                await loadLightboxHistory(domain);
+            }
+        }
+
+        // Lightbox Dashboard - Load scan history
+        async function loadLightboxHistory(domain) {
+            const historyContainer = document.getElementById('lightbox-scan-history');
+
+            try {
+                const response = await fetch(`/api/ghost/lightbox/history/${domain}`);
+                const data = await response.json();
+
+                if (data.scans.length === 0) {
                     historyContainer.innerHTML = `
-                        <div style="text-align: center; padding: 60px; color: #888;">
-                            <p>No Lightbox scans yet. Click "Run Lightbox Scan" to start your first deep security test.</p>
+                        <div style="text-align: center; padding: 60px 20px; color: #888; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,215,0,0.1);">
+                            <p style="font-size: 16px; margin-bottom: 8px;">No scans yet</p>
+                            <p style="font-size: 13px; opacity: 0.7;">Click "Run Lightbox Test" to start your first security test</p>
                         </div>
                     `;
                     return;
                 }
 
                 historyContainer.innerHTML = data.scans.map(scan => `
-                    <div class="scan-card" onclick="viewLightboxScan(${scan.id})" style="cursor: pointer; margin-bottom: 20px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,215,0,0.3); transition: all 0.3s ease;">
+                    <div class="scan-card" style="margin-bottom: 20px; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,215,0,0.2); transition: all 0.3s;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h3 style="margin: 0 0 10px 0;">Scan from ${new Date(scan.scanned_at).toLocaleString()}</h3>
-                                <p style="margin: 0; color: #888;">
-                                    ${scan.total_findings} findings • ${scan.scan_metadata?.assets_tested || 0} assets tested
+                            <div style="flex: 1;">
+                                <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #ffd700;">Scan from ${new Date(scan.scanned_at).toLocaleString()}</h3>
+                                <p style="margin: 0; color: #888; font-size: 13px;">
+                                    ${scan.total_findings} findings • ${scan.scan_metadata.assets_tested} assets tested
                                 </p>
                             </div>
-                            <div style="display: flex; gap: 15px;">
-                                ${scan.critical_count > 0 ? `<span class="severity-critical" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">${scan.critical_count} Critical</span>` : ''}
-                                ${scan.high_count > 0 ? `<span class="severity-high" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">${scan.high_count} High</span>` : ''}
-                                ${scan.medium_count > 0 ? `<span class="severity-medium" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">${scan.medium_count} Medium</span>` : ''}
-                                ${scan.low_count > 0 ? `<span class="severity-low" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">${scan.low_count} Low</span>` : ''}
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                ${scan.critical_count > 0 ? `<span style="background: #dc3545; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">${scan.critical_count} Critical</span>` : ''}
+                                ${scan.high_count > 0 ? `<span style="background: #fd7e14; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">${scan.high_count} High</span>` : ''}
+                                ${scan.medium_count > 0 ? `<span style="background: #ffc107; color: #000; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">${scan.medium_count} Medium</span>` : ''}
+                                ${scan.low_count > 0 ? `<span style="background: #28a745; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">${scan.low_count} Low</span>` : ''}
+
+                                <button onclick="event.stopPropagation(); deleteLightboxScan(${scan.id}, '${domain}')"
+                                        style="background: rgba(220,53,69,0.2); border: 1px solid #dc3545; color: #dc3545; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;"
+                                        onmouseover="this.style.background='#dc3545'; this.style.color='#fff';"
+                                        onmouseout="this.style.background='rgba(220,53,69,0.2)'; this.style.color='#dc3545';">
+                                    🗑️ Delete
+                                </button>
                             </div>
                         </div>
                     </div>
                 `).join('');
+
             } catch (error) {
-                console.error('[LIGHTBOX] Error loading history:', error);
-                document.getElementById('lightbox-scan-history').innerHTML = `
-                    <div style="text-align: center; padding: 60px; color: #888;">
-                        <p>Error loading scan history. Please try again.</p>
-                    </div>
-                `;
+                console.error('[LIGHTBOX] Failed to load history:', error);
             }
         }
 
@@ -2571,7 +3554,7 @@
                 const data = await response.json();
 
                 document.getElementById('lightbox-dashboard').style.display = 'none';
-                document.getElementById('lightbox-results').style.display = 'block';
+                document.getElementById('lightbox-results-view').style.display = 'block';
 
                 displayLightboxFindings(data.findings);
             } catch (error) {
@@ -2580,9 +3563,37 @@
             }
         }
 
+        // Delete a Lightbox scan
+        async function deleteLightboxScan(scanId, domain) {
+            if (!confirm('Are you sure you want to delete this scan? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                console.log(`[LIGHTBOX] Deleting scan ${scanId}`);
+
+                const response = await fetch(`${API_URL}/api/ghost/lightbox/scan/${scanId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Delete failed');
+                }
+
+                showNotification('✓ Scan deleted', 'success');
+
+                // Reload history
+                await loadLightboxHistory(domain);
+
+            } catch (error) {
+                console.error('[LIGHTBOX] Delete failed:', error);
+                showNotification('✗ Failed to delete scan', 'error');
+            }
+        }
+
         // Display Lightbox findings in results view
         function displayLightboxFindings(findings) {
-            const container = document.getElementById('lightbox-findings-container');
+            const container = document.getElementById('lightbox-findings-display');
 
             if (!findings || findings.length === 0) {
                 container.innerHTML = `
@@ -2658,7 +3669,19 @@
                                 </div>
                             ` : ''}
                             ${finding.cves && finding.cves.length > 0 ? `
-                                <p style="margin-top: 10px;"><strong>Related CVEs:</strong> ${finding.cves.join(', ')}</p>
+                                <div style="margin-top: 12px; padding: 12px; background: rgba(255,0,0,0.1); border-left: 3px solid #dc3545; border-radius: 4px;">
+                                    <strong style="color: #dc3545;">Related CVEs:</strong><br>
+                                    <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                        ${finding.cves.map(cve => `
+                                            <a href="https://nvd.nist.gov/vuln/detail/${cve}" target="_blank"
+                                               style="color: #ffd700; text-decoration: none; padding: 4px 8px; background: rgba(255,215,0,0.1); border-radius: 4px; font-size: 13px; transition: all 0.2s;"
+                                               onmouseover="this.style.background='rgba(255,215,0,0.2)'"
+                                               onmouseout="this.style.background='rgba(255,215,0,0.1)'">
+                                                ${cve} ↗
+                                            </a>
+                                        `).join('')}
+                                    </div>
+                                </div>
                             ` : ''}
                             ${finding.credentials ? `
                                 <p style="margin-top: 10px; color: #ff4444;"><strong>Credentials:</strong> ${finding.credentials}</p>
@@ -2681,50 +3704,300 @@
 
         // Back to dashboard button
         document.getElementById('back-to-lightbox-dashboard').addEventListener('click', () => {
-            document.getElementById('lightbox-results').style.display = 'none';
-            document.getElementById('lightbox-dashboard').style.display = 'block';
+            console.log('[FINDINGS] Back to dashboard clicked');
+
+            const dashboard = document.getElementById('lightbox-dashboard');
+            const resultsView = document.getElementById('lightbox-results-view');
+            const findingsDisplay = document.getElementById('lightbox-findings-display');
+
+            // FORCE display using style.display
+            if (dashboard) dashboard.style.display = 'block';
+            if (resultsView) resultsView.style.display = 'none';
+            if (findingsDisplay) findingsDisplay.style.display = 'none';
+
+            console.log('[FINDINGS] Returned to dashboard');
         });
 
-        // Run new Lightbox scan
-        document.getElementById('run-lightbox-scan').addEventListener('click', async () => {
-            const domain = currentScanDomain;
-            const scanId = currentASMScanId;
+        // Lightbox info button handler
+        document.getElementById('lightbox-info-btn').addEventListener('click', () => {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.2s;
+            `;
 
-            if (!scanId) {
-                alert('Please run an XASM scan first');
+            modal.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                    border: 2px solid #ffd700;
+                    border-radius: 16px;
+                    padding: 40px;
+                    max-width: 650px;
+                    color: #fff;
+                    box-shadow: 0 8px 32px rgba(255,215,0,0.3);
+                    animation: slideUp 0.3s;
+                ">
+                    <h2 style="color: #ffd700; margin: 0 0 24px 0; font-size: 28px; text-align: center; text-shadow: 0 2px 4px rgba(255,215,0,0.3);">
+                        🔬 What is Lightbox Testing?
+                    </h2>
+
+                    <p style="margin: 0 0 20px 0; line-height: 1.8; font-size: 15px; color: #ddd;">
+                        Lightbox is an <strong style="color: #ffd700;">active security testing module</strong> that probes your web applications
+                        for vulnerabilities. Unlike passive reconnaissance, Lightbox actually interacts
+                        with your systems to discover security issues.
+                    </p>
+
+                    <h3 style="color: #ffd700; margin: 24px 0 16px 0; font-size: 18px; border-bottom: 2px solid rgba(255,215,0,0.3); padding-bottom: 8px;">
+                        What it tests:
+                    </h3>
+                    <ul style="line-height: 2; margin: 0 0 20px 0; padding-left: 24px; color: #ddd;">
+                        <li><strong style="color: #4ade80;">HTTP Security:</strong> Missing headers, weak SSL/TLS, insecure cookies</li>
+                        <li><strong style="color: #4ade80;">Authentication:</strong> Exposed admin panels, default credentials</li>
+                        <li><strong style="color: #4ade80;">Injection Attacks:</strong> XXE, SSRF, file upload vulnerabilities</li>
+                        <li><strong style="color: #4ade80;">Data Exposure:</strong> Sensitive files, backup files, configuration leaks</li>
+                        <li><strong style="color: #4ade80;">Network Services:</strong> Database exposure, SSH/RDP security, CVE mapping</li>
+                        <li><strong style="color: #4ade80;">Advanced Scans:</strong> Nuclei template-based vulnerability detection</li>
+                    </ul>
+
+                    <div style="margin: 24px 0; padding: 16px; background: rgba(255,215,0,0.1); border-left: 4px solid #ffd700; border-radius: 6px;">
+                        <strong style="color: #ffd700; font-size: 16px;">⚠️ Important Note:</strong>
+                        <p style="margin: 8px 0 0 0; color: #ddd; line-height: 1.6;">
+                            Lightbox testing is <strong>non-destructive</strong> but may trigger
+                            security alerts. <strong style="color: #ff6b6b;">Only scan systems you own or have explicit permission to test.</strong>
+                        </p>
+                    </div>
+
+                    <button onclick="this.closest('div').parentElement.remove()" style="
+                        background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+                        border: none;
+                        color: #000;
+                        padding: 14px 32px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 700;
+                        font-size: 15px;
+                        width: 100%;
+                        box-shadow: 0 4px 12px rgba(255,215,0,0.4);
+                        transition: all 0.2s;
+                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255,215,0,0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255,215,0,0.4)'">
+                        Got it! 👍
+                    </button>
+                </div>
+
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                        from { transform: translateY(30px); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                </style>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+
+            // Close on Escape key
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
+        });
+
+        // Run new Lightbox scan with progress tracking
+        document.getElementById('run-lightbox-scan').addEventListener('click', async () => {
+            console.log('[LIGHTBOX UI] Button clicked');
+            console.log('[LIGHTBOX UI] Current domain:', currentScanDomain);
+            console.log('[LIGHTBOX UI] Current scan ID:', currentASMScanId);
+
+            if (!currentScanDomain || !currentASMScanId) {
+                alert('Please run an XASM scan first!\n\nGo to the "Attack Surface" tab and scan a domain before running Lightbox tests.');
                 return;
             }
 
-            const button = document.getElementById('run-lightbox-scan');
-            button.disabled = true;
-            button.textContent = '⏳ Running Lightbox Scan...';
+            const btn = document.getElementById('run-lightbox-scan');
+            const progressContainer = document.getElementById('lightbox-progress-container');
+            const progressBar = document.getElementById('lightbox-progress-bar');
+            const progressPercentage = document.getElementById('lightbox-progress-percentage');
+            const progressStep = document.getElementById('lightbox-progress-step');
+            const progressStatus = document.getElementById('lightbox-progress-status');
+
+            // Clear any existing interval
+            if (currentProgressInterval) {
+                console.log('[LIGHTBOX UI] Clearing existing progress interval');
+                clearInterval(currentProgressInterval);
+                currentProgressInterval = null;
+            }
+
+            // SAFE CHECK - If progress container doesn't exist, just disable button
+            if (!progressContainer) {
+                console.warn('[LIGHTBOX UI] Progress container not found, running without progress bar');
+                btn.disabled = true;
+                btn.textContent = '⏳ Running test...';
+            } else {
+                // Hide button, show progress bar
+                btn.style.display = 'none';
+                progressContainer.style.display = 'block';
+
+                // Reset progress to 0
+                progressBar.style.width = '0%';
+                progressPercentage.textContent = '0%';
+                progressStep.textContent = 'Initializing...';
+                progressStatus.textContent = 'Starting scan...';
+            }
+
+            currentScanKey = `${currentScanDomain}_${Date.now()}`;
+            console.log('[PROGRESS] Starting scan with key:', currentScanKey);
 
             try {
-                const response = await fetch(`${API_URL}/api/ghost/lightbox/scan`, {
+                // Start the scan
+                const scanPromise = fetch(`${API_URL}/api/ghost/lightbox/scan`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ domain, scan_id: scanId })
+                    body: JSON.stringify({
+                        domain: currentScanDomain,
+                        scan_id: currentASMScanId,
+                        scan_key: currentScanKey
+                    })
                 });
 
+                // Poll for progress every 2 seconds
+                currentProgressInterval = setInterval(async () => {
+                    try {
+                        const res = await fetch(`${API_URL}/api/ghost/lightbox/progress`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ scan_key: currentScanKey })
+                        });
+
+                        const data = await res.json();
+                        const percent = Math.floor(data.progress || 0);
+
+                        console.log(`[PROGRESS] ${percent}% - ${data.current_step || 'running'}`);
+
+                        // Update UI
+                        progressBar.style.width = `${percent}%`;
+                        progressPercentage.textContent = `${percent}%`;
+
+                        if (data.current_step) {
+                            progressStep.textContent = data.current_step;
+                            progressStatus.textContent = data.current_step;
+                        }
+
+                        // Stop polling at 100%
+                        if (percent >= 100) {
+                            clearInterval(currentProgressInterval);
+                            currentProgressInterval = null;
+                        }
+                    } catch (err) {
+                        console.error('[PROGRESS] Poll error:', err);
+                    }
+                }, 2000);
+
+                // Wait for scan to complete
+                const response = await scanPromise;
+
+                // Stop progress polling
+                if (currentProgressInterval) {
+                    clearInterval(currentProgressInterval);
+                    currentProgressInterval = null;
+                }
+
+                console.log('[PROGRESS] Scan response status:', response.status);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Scan failed');
+                }
+
                 const data = await response.json();
+                console.log('[PROGRESS] Scan complete, data:', data);
 
-                if (!data.success) {
-                    throw new Error(data.error || 'Lightbox scan failed');
+                // Set progress to 100%
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
+                progressStep.textContent = 'Complete!';
+                progressStatus.textContent = 'Scan completed successfully';
+
+                // Wait a moment to show completion
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Restore button
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                    btn.style.display = 'inline-block';
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = '▶ Run Lightbox Test';
                 }
 
-                // Reload history to show new scan
-                await loadLightboxHistory(domain);
-
-                // View the new scan (use lightbox_scan_id for database lookup)
-                if (data.lightbox_scan_id) {
-                    viewLightboxScan(data.lightbox_scan_id);
+                // Hide old stacked findings view, show dashboard with cards
+                const findingsDisplay = document.getElementById('lightbox-findings-display');
+                if (findingsDisplay) {
+                    findingsDisplay.classList.remove('show');
+                    console.log('[LIGHTBOX UI] Hid old findings display');
                 }
+
+                const dashboard = document.getElementById('lightbox-dashboard');
+                if (dashboard) {
+                    dashboard.style.display = 'block';
+                    console.log('[LIGHTBOX UI] Showed dashboard');
+                }
+
+                // *** CRITICAL: Update test category cards ***
+                updateTestCategoryCards(data);
+                console.log('[LIGHTBOX] Cards updated, keeping dashboard visible');
+
+                // FORCE dashboard to stay visible
+                document.getElementById('lightbox-dashboard').style.display = 'block';
+                document.getElementById('lightbox-results-view').style.display = 'none';
+
+                // RELOAD HISTORY (wait for database write to complete)
+                setTimeout(async () => {
+                    await loadLightboxHistory(currentScanDomain);
+                }, 1000);
+
+                // Show success notification
+                showNotification('✓ Lightbox test completed!', 'success');
 
             } catch (error) {
-                alert('Scan failed: ' + error.message);
-            } finally {
-                button.disabled = false;
-                button.textContent = '▶ Run Lightbox Scan';
+                console.error('[LIGHTBOX UI] Scan failed:', error);
+
+                // Stop polling on error
+                if (currentProgressInterval) {
+                    clearInterval(currentProgressInterval);
+                    currentProgressInterval = null;
+                }
+
+                // Restore button
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                    btn.style.display = 'inline-block';
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = '▶ Run Lightbox Test';
+                }
+
+                alert('Test failed: ' + error.message);
+                showNotification('✗ Lightbox test failed', 'error');
             }
         });
 
@@ -2938,6 +4211,468 @@
 
         // Lightbox results are now loaded from historical scans
         // currentLightboxResults kept for backward compatibility with vuln assessment
+
+        // Update test category cards with scan results
+        function updateTestCategoryCards(scanData) {
+            console.log('[CARDS] Updating with data:', scanData);
+
+            const findings = scanData.findings || [];
+            latestLightboxFindings = findings; // STORE GLOBALLY
+
+            const metadata = scanData.scan_metadata || {};
+
+            // Categorize findings
+            const categories = {
+                http: ['Missing Security Header', 'Insecure Cookie', 'Cookie Accessible to JavaScript', 'Open Redirect'],
+                auth: ['Default Credentials', 'Admin Panel Accessible'],
+                injection: ['XXE Vulnerability Possible', 'SSRF Vulnerability Possible', 'File Upload Endpoint', 'Directory Traversal Possible'],
+                data: ['Sensitive File Exposed', 'Technology Disclosure'],
+                network: ['Database Auth Required (Vulnerable)', 'SSH Password Auth Enabled']
+            };
+
+            const categorizedFindings = {
+                http: findings.filter(f => categories.http.includes(f.type)),
+                auth: findings.filter(f => categories.auth.includes(f.type)),
+                injection: findings.filter(f => categories.injection.includes(f.type)),
+                data: findings.filter(f => categories.data.includes(f.type)),
+                network: findings.filter(f => categories.network.includes(f.type))
+            };
+
+            // Update card counts
+            document.getElementById('http-tests-count').textContent = metadata.checks_run || 915;
+            document.getElementById('http-findings-count').textContent = categorizedFindings.http.length;
+            updateStatColor('http-findings-count', categorizedFindings.http.length);
+
+            document.getElementById('auth-tests-count').textContent = metadata.assets_tested || 0;
+            document.getElementById('auth-findings-count').textContent = categorizedFindings.auth.length;
+            updateStatColor('auth-findings-count', categorizedFindings.auth.length);
+
+            document.getElementById('injection-tests-count').textContent = metadata.assets_tested || 0;
+            document.getElementById('injection-findings-count').textContent = categorizedFindings.injection.length;
+            updateStatColor('injection-findings-count', categorizedFindings.injection.length);
+
+            document.getElementById('data-tests-count').textContent = metadata.assets_tested || 0;
+            document.getElementById('data-findings-count').textContent = categorizedFindings.data.length;
+            updateStatColor('data-findings-count', categorizedFindings.data.length);
+
+            document.getElementById('network-tests-count').textContent = metadata.assets_tested || 0;
+            document.getElementById('network-findings-count').textContent = categorizedFindings.network.length;
+            updateStatColor('network-findings-count', categorizedFindings.network.length);
+
+            document.getElementById('nuclei-tests-count').textContent = metadata.templates_used || 1;
+            document.getElementById('nuclei-findings-count').textContent = 0;
+            updateStatColor('nuclei-findings-count', 0);
+
+            // Make finding numbers clickable
+            attachCardClickHandlers(findings);
+        }
+
+        // Update stat value color based on finding count
+        function updateStatColor(elementId, count) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            if (count === 0) {
+                element.style.color = '#4ade80'; // Green - good
+            } else if (count <= 5) {
+                element.style.color = '#fbbf24'; // Yellow - medium
+            } else if (count <= 10) {
+                element.style.color = '#fd7e14'; // Orange - high
+            } else {
+                element.style.color = '#dc3545'; // Red - critical
+            }
+        }
+
+        // Attach click handlers to finding numbers
+        function attachCardClickHandlers(findings) {
+            console.log('[CARDS] ===== ATTACHING CLICK HANDLERS =====');
+            console.log('[CARDS] Total findings received:', findings.length);
+            console.log('[CARDS] Findings data:', findings);
+
+            // Categorize findings
+            const categories = {
+                http: ['Missing Security Header', 'Insecure Cookie', 'Cookie Accessible to JavaScript', 'Open Redirect'],
+                auth: ['Default Credentials', 'Admin Panel Accessible'],
+                injection: ['XXE Vulnerability Possible', 'SSRF Vulnerability Possible', 'File Upload Endpoint', 'Directory Traversal Possible'],
+                data: ['Sensitive File Exposed', 'Technology Disclosure'],
+                network: ['Database Auth Required (Vulnerable)', 'SSH Password Auth Enabled']
+            };
+
+            const categorizedFindings = {
+                http: findings.filter(f => f && f.type && categories.http.includes(f.type)),
+                auth: findings.filter(f => f && f.type && categories.auth.includes(f.type)),
+                injection: findings.filter(f => f && f.type && categories.injection.includes(f.type)),
+                data: findings.filter(f => f && f.type && categories.data.includes(f.type)),
+                network: findings.filter(f => f && f.type && categories.network.includes(f.type)),
+                nuclei: []
+            };
+
+            console.log('[CARDS] Categorized findings:', categorizedFindings);
+
+            // Get all clickable finding elements
+            const clickables = document.querySelectorAll('.findings-clickable');
+
+            console.log(`[CARDS] Found ${clickables.length} clickable elements`);
+
+            if (clickables.length === 0) {
+                console.error('[CARDS] ERROR: No .findings-clickable elements found in DOM!');
+                return;
+            }
+
+            clickables.forEach((element, index) => {
+                const category = element.getAttribute('data-category');
+                const categoryFindings = categorizedFindings[category] || [];
+
+                console.log(`[CARDS] Setting up handler ${index + 1} for category: ${category} (${categoryFindings.length} findings)`);
+
+                // Remove old handler by cloning
+                const newElement = element.cloneNode(true);
+                element.parentNode.replaceChild(newElement, element);
+
+                // Add new click handler
+                newElement.addEventListener('click', function(e) {
+                    e.preventDefault();        // CRITICAL: Prevent default action
+                    e.stopPropagation();       // CRITICAL: Stop event bubbling
+
+                    console.log(`[CARDS] ===== CLICK EVENT =====`);
+                    console.log(`[CARDS] Category: ${category}`);
+                    console.log(`[CARDS] Findings count: ${categoryFindings.length}`);
+                    console.log(`[CARDS] Findings:`, categoryFindings);
+
+                    if (categoryFindings.length === 0) {
+                        console.log('[CARDS] No findings to display');
+                        showNotification(`No ${category} findings`, 'info');
+                        return;
+                    }
+
+                    const titles = {
+                        http: 'HTTP Security Findings',
+                        auth: 'Authentication Findings',
+                        injection: 'Injection Attack Findings',
+                        data: 'Data Exposure Findings',
+                        network: 'Network Service Findings',
+                        nuclei: 'Advanced Scan Findings'
+                    };
+
+                    console.log(`[CARDS] Calling showCategoryFindings with title: ${titles[category]}`);
+                    showCategoryFindings(titles[category], categoryFindings);
+                });
+
+                console.log(`[CARDS] Handler attached for ${category}`);
+            });
+
+            console.log('[CARDS] Click handlers attached');
+        }
+
+        // Show findings for a specific category
+        function showCategoryFindings(title, findings) {
+            console.log(`[FINDINGS] ===== SHOW CATEGORY FINDINGS =====`);
+            console.log(`[FINDINGS] Title: ${title}`);
+            console.log(`[FINDINGS] Findings count: ${findings.length}`);
+            console.log(`[FINDINGS] Findings:`, findings);
+
+            // Get elements
+            const dashboard = document.getElementById('lightbox-dashboard');
+            const resultsView = document.getElementById('lightbox-results-view');
+            const findingsContainer = document.getElementById('lightbox-findings-display');
+
+            console.log(`[FINDINGS] Dashboard element:`, dashboard);
+            console.log(`[FINDINGS] Results view element:`, resultsView);
+            console.log(`[FINDINGS] Findings container element:`, findingsContainer);
+
+            if (!dashboard || !resultsView || !findingsContainer) {
+                console.error('[FINDINGS] ERROR: Required DOM elements not found!');
+                console.error('[FINDINGS] Dashboard:', dashboard);
+                console.error('[FINDINGS] ResultsView:', resultsView);
+                console.error('[FINDINGS] FindingsContainer:', findingsContainer);
+                alert('Error: Cannot display findings. Required elements missing.');
+                return;
+            }
+
+            console.log('[FINDINGS] All elements found');
+
+            // FORCE display using style.display directly (bypasses inline styles)
+            dashboard.style.display = 'none';
+            resultsView.style.display = 'block';
+            findingsContainer.style.display = 'block';
+
+            console.log('[FINDINGS] Switched views');
+            console.log('[FINDINGS] Dashboard display:', dashboard.style.display);
+            console.log('[FINDINGS] Results view display:', resultsView.style.display);
+            console.log('[FINDINGS] Findings display:', findingsContainer.style.display);
+
+            // Build findings HTML
+            const findingsHTML = `
+                <h2 style="margin: 0 0 24px 0; color: #ffd700; font-size: 24px;">${title}</h2>
+                <p style="margin: 0 0 24px 0; color: #aaa; font-size: 14px;">Showing ${findings.length} finding(s)</p>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    ${findings.map((finding, idx) => {
+                        console.log(`[FINDINGS] Rendering finding ${idx + 1}:`, finding);
+                        return `
+                        <div style="padding: 20px; background: rgba(255,255,255,0.02); border-left: 4px solid ${getSeverityColor(finding.severity)}; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                <h3 style="margin: 0; color: #fff; font-size: 18px;">${finding.type || 'Unknown Finding'}</h3>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    ${finding.finding_type ? `
+                                        <span style="background: ${getFindingTypeBadgeColor(finding.finding_type).bg}; color: ${getFindingTypeBadgeColor(finding.finding_type).text}; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                                            ${getFindingTypeBadgeLabel(finding.finding_type)}
+                                        </span>
+                                    ` : ''}
+                                    <span style="background: ${getSeverityColor(finding.severity)}; color: ${finding.severity === 'MEDIUM' ? '#000' : '#fff'}; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700;">
+                                        ${finding.severity || 'UNKNOWN'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            ${finding.asset ? `<p style="margin: 0 0 8px 0; color: #aaa; font-size: 14px;"><strong>Asset:</strong> ${finding.asset}</p>` : ''}
+                            ${finding.url ? `<p style="margin: 0 0 8px 0; color: #4ade80; font-size: 14px;"><strong>URL:</strong> <a href="${finding.url}" target="_blank" style="color: #4ade80;">${finding.url}</a></p>` : ''}
+
+                            ${finding.explanation ? `
+                                <div style="margin: 12px 0; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                                    <p style="margin: 0; color: #ccc; font-size: 14px; line-height: 1.6;">${finding.explanation}</p>
+                                </div>
+                            ` : ''}
+
+                            ${finding.cves && finding.cves.length > 0 ? `
+                                <div style="margin: 12px 0; padding: 12px; background: rgba(255,0,0,0.1); border-left: 3px solid #dc3545; border-radius: 6px;">
+                                    <strong style="color: #dc3545; font-size: 14px;">⚠️ Related CVEs:</strong>
+                                    <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                        ${finding.cves.map(cve => `
+                                            <a href="https://nvd.nist.gov/vuln/detail/${cve}" target="_blank"
+                                               style="color: #ffd700; text-decoration: none; padding: 6px 12px; background: rgba(255,215,0,0.15); border-radius: 6px; font-size: 13px; font-weight: 600; transition: all 0.2s; border: 1px solid rgba(255,215,0,0.3);"
+                                               onmouseover="this.style.background='rgba(255,215,0,0.25)'; this.style.transform='translateY(-1px)'"
+                                               onmouseout="this.style.background='rgba(255,215,0,0.15)'; this.style.transform='translateY(0)'">
+                                                ${cve} ↗
+                                            </a>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            ${finding.remediation ? `
+                                <details style="margin-top: 12px;">
+                                    <summary style="cursor: pointer; color: #ffd700; font-weight: 600; font-size: 14px;">🔧 How to Fix</summary>
+                                    <div style="margin-top: 12px; padding: 12px; background: rgba(255,215,0,0.05); border-radius: 6px;">
+                                        ${finding.remediation.fix_steps ? `
+                                            <p style="margin: 0 0 8px 0; color: #ccc; font-size: 13px;"><strong>Steps:</strong></p>
+                                            <ul style="margin: 0; padding-left: 20px; color: #ccc; font-size: 13px;">
+                                                ${finding.remediation.fix_steps.map(step => `<li>${step}</li>`).join('')}
+                                            </ul>
+                                        ` : ''}
+                                        ${finding.remediation.nginx_config ? `
+                                            <p style="margin: 12px 0 4px 0; color: #4ade80; font-size: 13px;"><strong>Nginx:</strong></p>
+                                            <pre style="background: rgba(0,0,0,0.4); padding: 8px; border-radius: 4px; overflow-x: auto; color: #4ade80; font-size: 12px;">${finding.remediation.nginx_config}</pre>
+                                        ` : ''}
+                                    </div>
+                                </details>
+                            ` : ''}
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            console.log('[FINDINGS] Setting innerHTML...');
+            findingsContainer.innerHTML = findingsHTML;
+            console.log('[FINDINGS] Display updated successfully');
+        }
+
+        // Get severity badge color
+        function getSeverityColor(severity) {
+            const colors = {
+                'CRITICAL': '#dc3545',  // Red
+                'HIGH': '#fd7e14',       // Orange
+                'MEDIUM': '#ffc107',     // Yellow
+                'LOW': '#28a745',        // Green
+                'INFO': '#17a2b8'        // Blue
+            };
+            return colors[severity] || '#6c757d';  // Gray for unknown
+        }
+
+        // Get finding type badge color
+        function getFindingTypeBadgeColor(findingType) {
+            const badges = {
+                'cve-based': { bg: '#dc3545', text: '#fff' },      // Red
+                'config-issue': { bg: '#ffc107', text: '#000' },   // Yellow
+                'active-test': { bg: '#fd7e14', text: '#fff' }     // Orange
+            };
+            return badges[findingType] || { bg: '#6c757d', text: '#fff' };  // Gray default
+        }
+
+        // Get finding type badge label
+        function getFindingTypeBadgeLabel(findingType) {
+            const labels = {
+                'cve-based': 'CVE',
+                'config-issue': 'Config',
+                'active-test': 'Active Test'
+            };
+            return labels[findingType] || 'Unknown';
+        }
+
+        // Show notification helper
+        function showNotification(message, type = 'info') {
+            // Simple notification - can be enhanced later
+            const notification = document.createElement('div');
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.padding = '16px 24px';
+            notification.style.background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#ffd700';
+            notification.style.color = type === 'success' || type === 'error' ? '#fff' : '#000';
+            notification.style.borderRadius = '8px';
+            notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            notification.style.zIndex = '10000';
+            notification.style.fontWeight = '600';
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Clear Lightbox state when domain changes
+        function clearLightboxState() {
+            console.log('[LIGHTBOX] Clearing all Lightbox results and state');
+
+            // Clear all test category containers
+            const testCategories = [
+                'http-security-findings',
+                'auth-findings',
+                'injection-findings',
+                'data-exposure-findings',
+                'network-findings',
+                'advanced-findings'
+            ];
+
+            testCategories.forEach(categoryId => {
+                const container = document.getElementById(categoryId);
+                if (container) {
+                    container.innerHTML = '<p style="color: #888; padding: 20px; text-align: center;">No scan run yet for this domain</p>';
+                }
+            });
+
+            // Reset all test counts to "--"
+            const statIds = [
+                'http-tests-count', 'http-findings-count',
+                'auth-tests-count', 'auth-findings-count',
+                'injection-tests-count', 'injection-findings-count',
+                'data-tests-count', 'data-findings-count',
+                'network-tests-count', 'network-findings-count',
+                'nuclei-tests-count', 'nuclei-findings-count'
+            ];
+
+            statIds.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = '--';
+                    element.style.color = '#555';
+                }
+            });
+
+            // Clear "Recent Scans" section
+            const recentScansContainer = document.getElementById('lightbox-history');
+            if (recentScansContainer) {
+                recentScansContainer.innerHTML = '<p style="color: #888; padding: 20px; text-align: center;">No scan history for this domain</p>';
+            }
+
+            // Hide Lightbox findings display
+            const findingsDisplay = document.getElementById('lightbox-findings-display');
+            if (findingsDisplay) {
+                findingsDisplay.classList.remove('show');
+                findingsDisplay.innerHTML = '';
+            }
+
+            console.log('[LIGHTBOX] State cleared successfully');
+        }
+
+        // Initialize card stats to show "--" on page load
+        function initializeTestCards() {
+            const statIds = [
+                'http-tests-count', 'http-findings-count',
+                'auth-tests-count', 'auth-findings-count',
+                'injection-tests-count', 'injection-findings-count',
+                'data-tests-count', 'data-findings-count',
+                'network-tests-count', 'network-findings-count',
+                'nuclei-tests-count', 'nuclei-findings-count'
+            ];
+
+            statIds.forEach(id => {
+                const element = document.getElementById(id);
+                if (element && element.textContent === '--') {
+                    element.style.color = '#555'; // Gray for uninitialized
+                }
+            });
+        }
+
+        // Make risk categories expandable
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[INIT] Page loaded, checking for saved state...');
+
+            // Restore saved state from localStorage
+            const savedDomain = localStorage.getItem('nerve_current_domain');
+            const savedScanId = localStorage.getItem('nerve_current_scan_id');
+            const savedTab = localStorage.getItem('nerve_last_tab');
+
+            if (savedDomain && savedScanId) {
+                console.log(`[INIT] Restoring state: ${savedDomain}, scan ${savedScanId}`);
+
+                window.currentDomain = savedDomain;
+                window.currentASMScanId = parseInt(savedScanId);
+
+                // Restore domain in input field
+                const domainInput = document.getElementById('domain-input');
+                if (domainInput) {
+                    domainInput.value = savedDomain;
+                }
+
+                // Trigger XASM scan to reload data
+                console.log('[INIT] Re-running XASM scan to restore data...');
+                await runASMScan(savedDomain, false); // false = don't force rescan
+
+                // Switch to saved tab
+                if (savedTab) {
+                    const tabButton = document.querySelector(`[data-tab="${savedTab}"]`);
+                    if (tabButton) {
+                        tabButton.click();
+                    }
+                }
+            } else {
+                console.log('[INIT] No saved state found');
+            }
+
+            // Initialize test cards on page load
+            initializeTestCards();
+
+            // Clear state when going back to main dashboard
+            const backButton = document.querySelector('.back-button');
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    console.log('[INIT] Clearing saved state on back to dashboard');
+                    localStorage.removeItem('nerve_current_domain');
+                    localStorage.removeItem('nerve_current_scan_id');
+                    localStorage.removeItem('nerve_last_tab');
+                });
+            }
+
+            document.querySelectorAll('.risk-category-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const list = this.nextElementSibling;
+                    const btn = this.querySelector('.expand-btn');
+
+                    if (list.style.display === 'none') {
+                        list.style.display = 'block';
+                        btn.classList.add('expanded');
+                    } else {
+                        list.style.display = 'none';
+                        btn.classList.remove('expanded');
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

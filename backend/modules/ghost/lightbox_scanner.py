@@ -64,10 +64,10 @@ REMEDIATION_GUIDES = {
             '3. Review all configuration files for exposure',
             '4. Implement proper file permissions (600 or 400)'
         ],
-        'nginx_config': '''location ~* \.(env|config|conf|log|sql|key)$ {
+        'nginx_config': r'''location ~* \.(env|config|conf|log|sql|key)$ {
     deny all;
 }''',
-        'apache_config': '''<FilesMatch "\.(env|config|conf|log|sql|key)$">
+        'apache_config': r'''<FilesMatch "\.(env|config|conf|log|sql|key)$">
     Require all denied
 </FilesMatch>''',
         'impact': 'Prevents credential theft and database compromise',
@@ -103,8 +103,8 @@ REMEDIATION_GUIDES = {
         },
         'Content-Security-Policy': {
             'fix_steps': ['Add CSP header to prevent XSS attacks'],
-            'nginx_config': 'add_header Content-Security-Policy "default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\';" always;',
-            'apache_config': 'Header always set Content-Security-Policy "default-src \'self\'; script-src \'self\' \'unsafe-inline\'"',
+            'nginx_config': r'add_header Content-Security-Policy "default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\';" always;',
+            'apache_config': r'Header always set Content-Security-Policy "default-src \'self\'; script-src \'self\' \'unsafe-inline\'"',
             'impact': 'Prevents cross-site scripting (XSS) attacks',
             'compliance': ['PCI-DSS 6.5.7']
         },
@@ -182,7 +182,7 @@ REMEDIATION_GUIDES = {
             '3. Customize error pages to hide versions'
         ],
         'nginx_config': 'server_tokens off;',
-        'apache_config': 'ServerTokens Prod\nServerSignature Off',
+        'apache_config': r'ServerTokens Prod\nServerSignature Off',
         'php_config': 'expose_php = Off',
         'impact': 'Prevents attackers from targeting version-specific exploits',
         'compliance': ['CIS Benchmark']
@@ -209,6 +209,63 @@ def get_vulnerability_explanation(finding_type, path=None):
     }
 
     return explanations.get(finding_type, f"Security issue detected: {finding_type}")
+
+
+def categorize_finding_type(finding):
+    """
+    Categorize finding into CVE, configuration, or active_test
+
+    Args:
+        finding (dict): Finding dictionary with 'type' key
+
+    Returns:
+        str: 'cve-based', 'config-issue', or 'active-test'
+    """
+    finding_type = finding.get('type', '').lower()
+
+    # CVE-based findings
+    if 'cve' in finding_type or 'vulnerable' in finding_type:
+        return 'cve-based'
+
+    # Configuration issues
+    config_types = [
+        'missing security header',
+        'insecure cookie',
+        'cookie accessible to javascript',
+        'technology disclosure',
+        'server version disclosure',
+        'open redirect',
+        'header',
+        'ssl',
+        'tls',
+        'cookie',
+        'security',
+        'configuration',
+        'misconfiguration',
+        'weak',
+        'insecure',
+        'cors',
+        'csp'
+    ]
+
+    if any(ct in finding_type for ct in config_types):
+        return 'config-issue'
+
+    # Active test findings
+    active_types = [
+        'xxe vulnerability',
+        'ssrf vulnerability',
+        'file upload',
+        'directory traversal',
+        'sensitive file exposed',
+        'directory listing enabled'
+    ]
+
+    if any(at in finding_type for at in active_types):
+        return 'active-test'
+
+    # Default to active-test
+    return 'active-test'
 
 
 def is_real_file_exposure(response, expected_filename):
@@ -379,19 +436,33 @@ def smart_deduplicate(findings):
     return result
 
 
-def run_lightbox_scan(discovered_assets):
+def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     """
-    Automated security testing on discovered assets
+    Automated security testing on discovered assets with optional progress tracking
 
     Args:
         discovered_assets (dict): Assets from ASM scan (subdomains, cloud_assets, etc.)
+        domain (str): Target domain being scanned
+        progress_callback (callable, optional): Function to call with progress updates
 
     Returns:
         dict: Lightbox findings categorized by severity
     """
+    def report_progress(step, progress, total_steps=100):
+        """Report progress back to API"""
+        if progress_callback:
+            progress_callback({
+                'status': 'running',
+                'progress': progress,
+                'current_step': step,
+                'total_steps': total_steps
+            })
+
     print(f"\n{'='*60}")
     print(f"[LIGHTBOX] Starting automated security testing...")
     print(f"{'='*60}\n")
+
+    report_progress("Initializing scan", 0)
 
     findings = {
         'critical': [],
@@ -425,6 +496,7 @@ def run_lightbox_scan(discovered_assets):
             subdomains_to_test.append(ip)
 
     # PERFORMANCE OPTIMIZATION: Filter out unreachable hosts early
+    report_progress("Filtering reachable assets", 5)
     print(f"[LIGHTBOX] Filtering {len(subdomains_to_test)} assets for reachability...")
     reachable_assets = []
     unreachable_count = 0
@@ -448,6 +520,8 @@ def run_lightbox_scan(discovered_assets):
 
     subdomains_to_test = reachable_assets
     print(f"[LIGHTBOX] ✓ {len(reachable_assets)} reachable, {unreachable_count} skipped\n")
+
+    report_progress("Testing HTTP security", 10)
 
     # DYNAMIC PARALLEL SCALING: Adjust workers based on asset count
     optimal_workers = get_worker_count(len(subdomains_to_test))
@@ -516,6 +590,8 @@ def run_lightbox_scan(discovered_assets):
     print(f"[LIGHTBOX] HTTP Security Findings: {manual_findings}")
     print(f"{'='*60}\n")
 
+    report_progress("Testing default credentials", 30)
+
     # Test default credentials on discovered admin panels
     print(f"[LIGHTBOX] Testing default credentials on admin panels...")
     admin_panels = [f for f in findings['high'] if f['type'] == 'Admin Panel Accessible']
@@ -525,6 +601,8 @@ def run_lightbox_scan(discovered_assets):
         print(f"[LIGHTBOX] Default credential tests: {len(admin_panels)} panels tested, {len(cred_findings)} successful logins")
     else:
         print(f"[LIGHTBOX] No admin panels found to test credentials")
+
+    report_progress("Checking security headers", 40)
 
     # Check security headers
     print(f"[LIGHTBOX] Checking security headers on {len(subdomains_to_test)} assets...")
@@ -536,6 +614,8 @@ def run_lightbox_scan(discovered_assets):
         findings[severity].append(finding)
 
     print(f"[LIGHTBOX] Security header checks: {len(header_findings)} issues found\n")
+
+    report_progress("Checking SSL/TLS configuration", 50)
 
     # Check SSL/TLS vulnerabilities
     print(f"[LIGHTBOX] Checking SSL/TLS configurations on {len(subdomains_to_test)} assets...")
@@ -612,6 +692,8 @@ def run_lightbox_scan(discovered_assets):
 
     print(f"[LIGHTBOX] Upload/Traversal: {len(upload_vulns) + len(traversal_vulns)} findings\n")
 
+    report_progress("Testing injection vulnerabilities", 65)
+
     # Test XXE vulnerabilities
     print(f"[LIGHTBOX] Testing XXE vulnerabilities on {len(subdomains_to_test)} assets...")
     xxe_vulns = test_xxe_vulnerabilities(subdomains_to_test)
@@ -626,6 +708,8 @@ def run_lightbox_scan(discovered_assets):
         findings[severity].append(finding)
 
     print(f"[LIGHTBOX] XXE/SSRF: {len(xxe_vulns) + len(ssrf_vulns)} findings\n")
+
+    report_progress("Running Nuclei template scans", 75)
 
     # Run template scan
     print(f"[LIGHTBOX] Running template vulnerability scans...")
@@ -665,6 +749,8 @@ def run_lightbox_scan(discovered_assets):
     print(f"[LIGHTBOX]   Info: {len(findings.get('info', []))}")
     print(f"{'='*60}\n")
 
+    report_progress("Deduplicating findings", 90)
+
     # Deduplicate findings by URL + type
     print(f"[LIGHTBOX] Deduplicating findings...")
     for severity in ['critical', 'high', 'medium', 'low', 'info']:
@@ -695,6 +781,17 @@ def run_lightbox_scan(discovered_assets):
     )
 
     print(f"[LIGHTBOX] After smart deduplication: {findings['total_findings']} unique findings\n")
+
+    # Add finding_type badges to all findings
+    print(f"[LIGHTBOX] Categorizing findings by type...")
+    for severity in ['critical', 'high', 'medium', 'low', 'info']:
+        if severity in findings and isinstance(findings[severity], list):
+            for finding in findings[severity]:
+                if 'finding_type' not in finding:
+                    # Categorize using helper function
+                    finding['finding_type'] = categorize_finding_type(finding)
+
+    report_progress("Scan complete", 100)
 
     return findings
 
@@ -814,6 +911,7 @@ def test_sensitive_files(subdomain, findings):
 
                         findings[severity].append({
                             'type': 'Sensitive File Exposed',
+                            'finding_type': 'active-test',  # Active security test
                             'asset': subdomain,
                             'url': url,
                             'description': f"Sensitive file publicly accessible: {path} (HTTP {response.status_code})",
@@ -1459,29 +1557,113 @@ def test_database_exploitability(port_results):
                         connect_timeout=5
                     )
 
-                    findings.append({
+                    # Extract CVE IDs with robust field name detection
+                    cve_list = cves
+                    cve_ids = []
+
+                    for cve in cve_list:
+                        # Try different possible field names for CVE ID
+                        cve_id = None
+
+                        if isinstance(cve, dict):
+                            # Try common field names
+                            cve_id = cve.get('id') or cve.get('cve_id') or cve.get('cve') or cve.get('vulnerability_id')
+                        elif isinstance(cve, str):
+                            # If CVE is just a string
+                            cve_id = cve
+
+                        if cve_id and cve_id != 'Unknown':
+                            cve_ids.append(cve_id)
+
+                    # Debug logging if CVE extraction failed
+                    if len(cve_list) > 0 and len(cve_ids) == 0:
+                        print(f"[LIGHTBOX DEBUG] CVE extraction failed for MySQL anonymous access on {port['ip']}")
+                        print(f"[LIGHTBOX DEBUG] Sample CVE object: {cve_list[0]}")
+                        print(f"[LIGHTBOX DEBUG] CVE object keys: {cve_list[0].keys() if isinstance(cve_list[0], dict) else 'not a dict'}")
+
+                    # Build description based on what we found
+                    if len(cve_ids) > 0:
+                        cve_display = ', '.join(cve_ids[:5])
+                        if len(cve_ids) > 5:
+                            cve_display += f' (+{len(cve_ids)-5} more)'
+                        description = f'Database accessible without credentials + {len(cve_ids)} CVEs: {cve_display}. Immediate RCE possible.'
+                    else:
+                        description = f'Database accessible without credentials + {len(cve_list)} CVEs. Immediate RCE possible.'
+
+                    finding = {
                         'type': 'Database Anonymous Access',
                         'severity': 'CRITICAL',
                         'asset': port['ip'],
                         'url': f"mysql://{port['ip']}:3306",
                         'exploitable': 'IMMEDIATE',
-                        'explanation': f"Database accessible without credentials + {len(cves)} CVEs. Immediate RCE possible."
-                    })
+                        'explanation': description,
+                        'cves': cve_ids if len(cve_ids) > 0 else [],
+                        'finding_type': 'cve-based'
+                    }
+                    findings.append(finding)
                     conn.close()
-                    print(f"[LIGHTBOX] 🚨 CRITICAL: MySQL anonymous access on {port['ip']} + {len(cves)} CVEs")
+
+                    # Debug: Verify CVEs are in the finding object
+                    print(f"[LIGHTBOX] 🚨 CRITICAL: MySQL anonymous access on {port['ip']} + {len(cve_list)} CVEs")
+                    if len(cve_ids) > 0:
+                        print(f"[LIGHTBOX]    CVEs: {', '.join(cve_ids[:5])}{' (+more)' if len(cve_ids) > 5 else ''}")
+                    print(f"[LIGHTBOX DEBUG] Created finding with CVEs field: {finding.get('cves', [])}")
+                    print(f"[LIGHTBOX DEBUG] CVEs count in finding: {len(finding.get('cves', []))}")
 
                 except Exception as e:
                     if "Access denied" in str(e):
-                        findings.append({
+                        # Extract CVE IDs with robust field name detection
+                        cve_list = cves
+                        cve_ids = []
+
+                        for cve in cve_list:
+                            # Try different possible field names for CVE ID
+                            cve_id = None
+
+                            if isinstance(cve, dict):
+                                # Try common field names
+                                cve_id = cve.get('id') or cve.get('cve_id') or cve.get('cve') or cve.get('vulnerability_id')
+                            elif isinstance(cve, str):
+                                # If CVE is just a string
+                                cve_id = cve
+
+                            if cve_id and cve_id != 'Unknown':
+                                cve_ids.append(cve_id)
+
+                        # Debug logging if CVE extraction failed
+                        if len(cve_list) > 0 and len(cve_ids) == 0:
+                            print(f"[LIGHTBOX DEBUG] CVE extraction failed for MySQL on {port['ip']}")
+                            print(f"[LIGHTBOX DEBUG] Sample CVE object: {cve_list[0]}")
+                            print(f"[LIGHTBOX DEBUG] CVE object keys: {cve_list[0].keys() if isinstance(cve_list[0], dict) else 'not a dict'}")
+
+                        # Build description based on what we found
+                        if len(cve_ids) > 0:
+                            cve_display = ', '.join(cve_ids[:5])
+                            if len(cve_ids) > 5:
+                                cve_display += f' (+{len(cve_ids)-5} more)'
+                            description = f'Requires auth but has {len(cve_ids)} CVEs: {cve_display}. RCE possible if password obtained.'
+                        else:
+                            description = f'Requires auth but has {len(cve_list)} CVEs. RCE possible if password obtained.'
+
+                        finding = {
                             'type': 'Database Auth Required (Vulnerable)',
                             'severity': 'HIGH',
                             'asset': port['ip'],
                             'url': f"mysql://{port['ip']}:3306",
                             'exploitable': 'WITH_CREDENTIALS',
-                            'explanation': f"Requires auth but has {len(cves)} CVEs. RCE possible if password obtained.",
+                            'explanation': description,
+                            'cves': cve_ids if len(cve_ids) > 0 else [],
+                            'finding_type': 'cve-based',
                             'remediation': REMEDIATION_GUIDES.get('Database Auth Required (Vulnerable)', {})
-                        })
-                        print(f"[LIGHTBOX] ⚠️  MySQL requires auth but has {len(cves)} CVEs on {port['ip']}")
+                        }
+                        findings.append(finding)
+
+                        # Debug: Verify CVEs are in the finding object
+                        print(f"[LIGHTBOX] ⚠️  MySQL requires auth but has {len(cve_list)} CVEs on {port['ip']}")
+                        if len(cve_ids) > 0:
+                            print(f"[LIGHTBOX]    CVEs: {', '.join(cve_ids[:5])}{' (+more)' if len(cve_ids) > 5 else ''}")
+                        print(f"[LIGHTBOX DEBUG] Created finding with CVEs field: {finding.get('cves', [])}")
+                        print(f"[LIGHTBOX DEBUG] CVEs count in finding: {len(finding.get('cves', []))}")
 
     return findings
 
@@ -1518,19 +1700,71 @@ def test_ssh_exploitability(port_results):
                     transport.auth_password('test', 'test')
                 except paramiko.AuthenticationException as e:
                     if "password" in str(e).lower():
-                        findings.append({
+                        # Extract CVE IDs with robust field name detection
+                        cve_list = cves
+                        cve_ids = []
+
+                        for cve in cve_list:
+                            # Try different possible field names for CVE ID
+                            cve_id = None
+
+                            if isinstance(cve, dict):
+                                # Try common field names
+                                cve_id = cve.get('id') or cve.get('cve_id') or cve.get('cve') or cve.get('vulnerability_id')
+                            elif isinstance(cve, str):
+                                # If CVE is just a string
+                                cve_id = cve
+
+                            if cve_id and cve_id != 'Unknown':
+                                cve_ids.append(cve_id)
+
+                        # Debug logging if CVE extraction failed
+                        if len(cve_list) > 0 and len(cve_ids) == 0:
+                            print(f"[LIGHTBOX DEBUG] CVE extraction failed for SSH on {port['ip']}")
+                            print(f"[LIGHTBOX DEBUG] Sample CVE object: {cve_list[0]}")
+                            print(f"[LIGHTBOX DEBUG] CVE object keys: {cve_list[0].keys() if isinstance(cve_list[0], dict) else 'not a dict'}")
+
+                        # Build description based on what we found
+                        if len(cve_ids) > 0:
+                            cve_display = ', '.join(cve_ids[:5])
+                            if len(cve_ids) > 5:
+                                cve_display += f' (+{len(cve_ids)-5} more)'
+                            description = f'SSH has {len(cve_ids)} CVEs: {cve_display} + password auth. Brute force + exploit possible.'
+                        else:
+                            description = f'SSH has {len(cve_list)} CVEs + password auth. Brute force + exploit possible.'
+
+                        finding = {
                             'type': 'SSH Password Auth Enabled',
                             'severity': 'HIGH',
                             'asset': port['ip'],
                             'url': f"ssh://{port['ip']}:22",
                             'exploitable': 'BRUTE_FORCE',
-                            'explanation': f"SSH has {len(cves)} CVEs + password auth. Brute force + exploit possible."
-                        })
-                        print(f"[LIGHTBOX] ⚠️  SSH password auth enabled + {len(cves)} CVEs on {port['ip']}")
+                            'explanation': description,
+                            'cves': cve_ids if len(cve_ids) > 0 else [],
+                            'finding_type': 'cve-based'
+                        }
+                        findings.append(finding)
+
+                        # Debug: Verify CVEs are in the finding object
+                        print(f"[LIGHTBOX] ⚠️  SSH password auth enabled + {len(cve_list)} CVEs on {port['ip']}")
+                        if len(cve_ids) > 0:
+                            print(f"[LIGHTBOX]    CVEs: {', '.join(cve_ids[:5])}{' (+more)' if len(cve_ids) > 5 else ''}")
+                        print(f"[LIGHTBOX DEBUG] Created finding with CVEs field: {finding.get('cves', [])}")
+                        print(f"[LIGHTBOX DEBUG] CVEs count in finding: {len(finding.get('cves', []))}")
 
                 transport.close()
             except:
                 pass
+
+    # Final debug: Show summary of all findings with CVEs
+    findings_with_cves = [f for f in findings if f.get('cves') and len(f.get('cves', [])) > 0]
+    if findings_with_cves:
+        print(f"\n[LIGHTBOX DEBUG] ========================================")
+        print(f"[LIGHTBOX DEBUG] Final check: {len(findings_with_cves)} findings have CVEs")
+        for finding in findings_with_cves:
+            print(f"[LIGHTBOX DEBUG]   - {finding.get('type')}: {len(finding.get('cves', []))} CVEs")
+            print(f"[LIGHTBOX DEBUG]     CVEs: {finding.get('cves', [])[:3]}...")
+        print(f"[LIGHTBOX DEBUG] ========================================\n")
 
     return findings
 
@@ -1799,22 +2033,14 @@ def run_nuclei_scan(discovered_assets):
         return findings
 
     print(f"\n[NUCLEI] ╔════════════════════════════════════════════════════════════╗")
-    print(f"[NUCLEI] ║ CURATED SCAN: {len(subdomains_to_scan)} subdomains with high-value templates    ║")
-    print(f"[NUCLEI] ║ ~50 templates (critical/high only) + critical CVEs        ║")
+    print(f"[NUCLEI] ║ COMPREHENSIVE SCAN: {len(subdomains_to_scan)} subdomains with 6 template folders ║")
+    print(f"[NUCLEI] ║ CVEs + Vulns + Misconfigs + Exposures + Panels + Takeovers║")
     print(f"[NUCLEI] ╚════════════════════════════════════════════════════════════╝")
 
     for i, subdomain in enumerate(subdomains_to_scan, 1):
         print(f"[NUCLEI] → Testing subdomain {i}/{len(subdomains_to_scan)}: {subdomain}")
 
-    # High-value templates only (50 instead of 2000+)
-    template_dirs = [
-        'http/exposures/configs',
-        'http/exposures/backups',
-        'http/exposures/tokens',
-        'http/exposures/logs',
-        'http/takeovers'
-    ]
-
+    # Comprehensive template scanning (6 major categories)
     # Create targets file
     targets_file = os.path.join(os.path.dirname(__file__), '..', '..', 'nuclei_targets.txt')
 
@@ -1825,23 +2051,27 @@ def run_nuclei_scan(discovered_assets):
                 f.write(f"https://{subdomain}\n")
                 f.write(f"http://{subdomain}\n")
 
-        # Run curated templates + critical CVEs
-        print(f"\n[NUCLEI] ═══ Running curated high-value templates + critical CVEs ═══")
+        # Run comprehensive template scan
+        print(f"\n[NUCLEI] ═══ Running comprehensive vulnerability scan (6 template categories) ═══")
 
         try:
-            # Build command with curated templates
+            # Build command with 6 template categories
             command = [
                 nuclei_path,
                 '-l', targets_file,
-                '-t', ','.join(template_dirs),
-                '-severity', 'critical,high',
+                '-t', 'cves/',
+                '-t', 'vulnerabilities/',
+                '-t', 'misconfiguration/',
+                '-t', 'exposures/',
+                '-t', 'exposed-panels/',
+                '-t', 'takeovers/',
+                '-severity', 'critical,high,medium',
                 '-json',
                 '-silent',
                 '-timeout', '5',
                 '-retries', '1',
                 '-rate-limit', '50',
-                '-concurrency', '25',
-                '-tags', 'cve'  # Include critical CVEs
+                '-concurrency', '25'
             ]
 
             # Execute nuclei with JSON output
@@ -1883,7 +2113,7 @@ def run_nuclei_scan(discovered_assets):
                             'explanation': explanation[:500] if len(explanation) > 500 else explanation,
                             'severity': severity.upper(),
                             'template_id': template_id,
-                            'template_category': 'curated',
+                            'template_category': 'comprehensive',
                             'raw_data': vuln
                         }
 
@@ -1895,12 +2125,12 @@ def run_nuclei_scan(discovered_assets):
                     except json.JSONDecodeError:
                         continue
 
-            findings['total_templates_used'] = 1
+            findings['total_templates_used'] = 6  # 6 template folders (cves, vulnerabilities, misconfiguration, exposures, exposed-panels, takeovers)
 
         except subprocess.TimeoutExpired:
-            print(f"[NUCLEI] ⚠️  Timeout (5 min limit) for curated scan")
+            print(f"[NUCLEI] ⚠️  Timeout (5 min limit) for comprehensive scan")
         except Exception as e:
-            print(f"[NUCLEI] ❌ Error running curated scan: {e}")
+            print(f"[NUCLEI] ❌ Error running comprehensive scan: {e}")
 
     except Exception as e:
         print(f"[NUCLEI] ❌ Error: {e}")
@@ -1919,7 +2149,7 @@ def run_nuclei_scan(discovered_assets):
     print(f"[NUCLEI]   ⚠️  Medium: {len(findings['medium'])}")
     print(f"[NUCLEI]   ℹ️  Low: {len(findings['low'])}")
     print(f"[NUCLEI]   ℹ️  Info: {len(findings['info'])}")
-    print(f"[NUCLEI] Curated Templates Used: {findings['total_templates_used']}")
+    print(f"[NUCLEI] Template Categories Used: {findings['total_templates_used']}")
 
     if findings['total_findings'] > 0:
         print(f"[NUCLEI] ✓ Found {findings['total_findings']} vulnerabilities")

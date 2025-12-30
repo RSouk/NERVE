@@ -13,8 +13,13 @@ from modules.ghost.api_breaches import check_leakcheck_api, check_breachdirector
 from modules.ghost.breach_checker import check_local_breaches
 from modules.ghost.intelligence_x import search_email_intelx, search_domain_intelx, search_keyword_intelx
 from modules.ghost.hibp_passwords import check_password_pwned
+from modules.ghost.osint import check_hibp_breaches
 from datetime import datetime
 from database import get_db, GitHubFinding, PasteBinFinding
+import sys
+import os
+
+from modules.ghost.leakinsight_api import search_leakinsight
 
 class UnifiedSearch:
     """
@@ -99,6 +104,8 @@ class UnifiedSearch:
         self._query_source('hudson_rock', lambda: self._hudson_rock_email(email))
         self._query_source('leakcheck', lambda: self._leakcheck_search(email))
         self._query_source('breachdirectory', lambda: self._breachdirectory_search(email))
+        self._query_source('leakinsight', lambda: self._leakinsight_search(email))
+        self._query_source('hibp', lambda: self._check_hibp_breaches(email))
         self._query_source('intelligence_x', lambda: self._intelx_email_search(email))
         self._query_source('local_files', lambda: self._local_search(email))
         self._query_source('github', lambda: self._search_github_data(email, 'email'))
@@ -353,7 +360,7 @@ class UnifiedSearch:
     def _breachdirectory_search(self, query: str):
         """Query BreachDirectory - works for email and domain"""
         breaches, count = check_breachdirectory_api(query)
-        
+
         if count > 0:
             return {
                 'found': True,
@@ -362,11 +369,24 @@ class UnifiedSearch:
                 'type': 'breach_data'
             }
         return {'found': False, 'count': 0}
-    
+
+    def _leakinsight_search(self, email: str):
+        """Query LeakInsight API for breached credentials"""
+        results = search_leakinsight(email, search_type='email')
+
+        if results and len(results) > 0:
+            return {
+                'found': True,
+                'count': len(results),
+                'data': results,
+                'type': 'breach_data'
+            }
+        return {'found': False, 'count': 0}
+
     def _local_search(self, email: str):
         """Query local breach files"""
         breaches = check_local_breaches(email)
-        
+
         if breaches:
             return {
                 'found': True,
@@ -375,7 +395,45 @@ class UnifiedSearch:
                 'type': 'local_breach_data'
             }
         return {'found': False, 'count': 0}
-    
+
+    def _check_hibp_breaches(self, email: str):
+        """Query Have I Been Pwned Breaches API for email"""
+        breaches, count = check_hibp_breaches(email)
+
+        # Handle error codes
+        if count == -1:
+            print("[HIBP] Rate limited")
+            return {'found': False, 'count': 0, 'error': 'Rate limited'}
+        elif count == -4:
+            print("[HIBP] API key required")
+            return {'found': False, 'count': 0, 'error': 'API key required'}
+        elif count in [-2, -3] or breaches is None:
+            print("[HIBP] API error")
+            return {'found': False, 'count': 0, 'error': 'API unavailable'}
+
+        # Success - format breaches
+        if count > 0 and breaches:
+            formatted_breaches = []
+            for breach in breaches:
+                formatted_breaches.append({
+                    'name': breach.get('Name', 'Unknown'),
+                    'date': breach.get('BreachDate', 'Unknown'),
+                    'data_types': breach.get('DataClasses', []),
+                    'description': breach.get('Description', ''),
+                    'pwn_count': breach.get('PwnCount', 0),
+                    'verified': breach.get('IsVerified', False)
+                })
+
+            return {
+                'found': True,
+                'count': count,
+                'data': formatted_breaches,
+                'type': 'breach_data'
+            }
+
+        # No breaches found
+        return {'found': False, 'count': 0}
+
     def _intelx_email_search(self, email: str):
         """Query Intelligence X for email"""
         results, count = search_email_intelx(email)

@@ -21,6 +21,8 @@ import secrets
 import time
 from dotenv import load_dotenv
 import logging
+import http.client
+import urllib.parse
 
 # Load environment variables
 load_dotenv()
@@ -207,6 +209,7 @@ def scan_breaches(target_id):
     """Scan a profile for data breaches"""
     result = scan_profile_breaches(target_id)
     return jsonify(result)
+
 
 @app.route('/api/search/unified', methods=['POST'])
 def unified_search_endpoint():
@@ -1834,6 +1837,81 @@ def search_uploaded_file():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ghost/monitoring/timeline', methods=['POST'])
+def get_monitoring_timeline():
+    """Get breach timeline for monitored emails"""
+    try:
+        data = request.json
+        emails = data.get('emails', [])
+
+        if not emails:
+            return jsonify({'breaches': []})
+
+        print(f"[TIMELINE] Fetching breach history for {len(emails)} emails")
+
+        all_breaches = []
+        breach_names = set()  # Deduplicate by breach name
+
+        # Initialize unified search
+        searcher = UnifiedSearch()
+
+        # Search each email across all sources
+        for email in emails[:15]:  # Limit to 15
+            try:
+                print(f"[TIMELINE] Searching breaches for: {email}")
+
+                # Use unified search to get breach data
+                result = searcher.search(email)
+
+                # Extract breach information from results
+                if result and result.get('results'):
+                    for source, source_data in result['results'].items():
+                        if source_data.get('found') and source_data.get('type') == 'breach_data':
+                            data_items = source_data.get('data', [])
+                            if not isinstance(data_items, list):
+                                data_items = [data_items]
+
+                            for breach in data_items:
+                                breach_name = breach.get('name', 'Unknown')
+
+                                # Deduplicate breaches by name
+                                if breach_name not in breach_names:
+                                    breach_names.add(breach_name)
+                                    all_breaches.append({
+                                        'name': breach_name,
+                                        'date': breach.get('date', 'Unknown'),
+                                        'count': 1,  # Increment for each email found
+                                        'email': email,
+                                        'data_types': breach.get('data_types', [])
+                                    })
+                                else:
+                                    # Increment count for existing breach
+                                    for existing_breach in all_breaches:
+                                        if existing_breach['name'] == breach_name:
+                                            existing_breach['count'] += 1
+                                            break
+
+            except Exception as e:
+                print(f"[TIMELINE] Error fetching breaches for {email}: {e}")
+                continue
+
+        # Sort by date (most recent first)
+        all_breaches.sort(key=lambda x: x.get('date', ''), reverse=True)
+
+        print(f"[TIMELINE] Returning {len(all_breaches)} unique breaches")
+
+        return jsonify({
+            'success': True,
+            'breaches': all_breaches,
+            'total_emails': len(emails)
+        })
+
+    except Exception as e:
+        print(f"[TIMELINE] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================================
 # OPSYCH MODULE ENDPOINTS

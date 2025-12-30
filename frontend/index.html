@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NERVE - Intelligence Platform</title>
     <style>
+        /* Global link styling */
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            color: #ff8c00;
+            text-decoration: underline;
+        }
+
+        a:visited {
+            color: #ffd700;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -450,6 +466,12 @@
         // Load user's configured feeds from localStorage
         let userFeeds = JSON.parse(localStorage.getItem('nerve_rss_feeds') || '[]');
 
+        // Pagination variables
+        let allArticles = []; // Store all articles
+        let displayedCount = 0; // Track how many are displayed
+        const INITIAL_ARTICLES = 9; // Show 9 initially
+        const LOAD_MORE_COUNT = 6; // Load 6 more each time
+
         function addFeed() {
             const feedUrl = document.getElementById('feed-url-input').value.trim();
 
@@ -521,7 +543,6 @@
             articlesContainer.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">Loading articles...</p>';
 
             try {
-                // Call backend to fetch and parse RSS feeds
                 const response = await fetch('http://localhost:5000/api/rss/fetch', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -531,34 +552,109 @@
                 const data = await response.json();
 
                 if (data.articles && data.articles.length > 0) {
-                    articlesContainer.innerHTML = data.articles.map(article => `
-                        <div style="
-                            background: rgba(0,0,0,0.3);
-                            border: 1px solid rgba(255,215,0,0.2);
-                            border-radius: 12px;
-                            padding: 20px;
-                            transition: all 0.3s;
-                            cursor: pointer;
-                        " onmouseover="this.style.borderColor='#ffd700'" onmouseout="this.style.borderColor='rgba(255,215,0,0.2)'" onclick="window.open('${article.link}', '_blank')">
-                            <h4 style="color: #ffd700; margin: 0 0 12px 0; font-size: 16px; line-height: 1.4;">
-                                ${article.title}
-                            </h4>
-                            <p style="color: #aaa; font-size: 13px; margin: 0 0 12px 0; line-height: 1.6;">
-                                ${article.description || 'No description available'}
-                            </p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-                                <span style="color: #888;">${article.source}</span>
-                                <span style="color: #ffd700;">Read More →</span>
-                            </div>
-                        </div>
-                    `).join('');
+                    allArticles = data.articles;
+                    displayedCount = 0;
+
+                    // Display initial articles
+                    displayArticles(INITIAL_ARTICLES);
                 } else {
                     articlesContainer.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">No articles found</p>';
                 }
             } catch (error) {
                 console.error('Error loading feeds:', error);
-                articlesContainer.innerHTML = '<p style="color: #dc3545; grid-column: 1/-1; text-align: center;">Error loading feeds. Please check the backend is running.</p>';
+                articlesContainer.innerHTML = '<p style="color: #dc3545; grid-column: 1/-1; text-align: center;">Error loading feeds. Please try again.</p>';
             }
+        }
+
+        function displayArticles(count) {
+            const articlesContainer = document.getElementById('feed-articles');
+
+            // Get the next batch of articles
+            const articlesToShow = allArticles.slice(displayedCount, displayedCount + count);
+
+            if (displayedCount === 0) {
+                // First load - clear container
+                articlesContainer.innerHTML = '';
+            }
+
+            // Append articles
+            articlesToShow.forEach(article => {
+                const articleCard = document.createElement('div');
+                articleCard.style.cssText = `
+                    background: rgba(0,0,0,0.3);
+                    border: 1px solid rgba(255,215,0,0.2);
+                    border-radius: 12px;
+                    padding: 20px;
+                    transition: all 0.3s;
+                    cursor: pointer;
+                `;
+                articleCard.onmouseover = () => articleCard.style.borderColor = '#ffd700';
+                articleCard.onmouseout = () => articleCard.style.borderColor = 'rgba(255,215,0,0.2)';
+
+                articleCard.innerHTML = `
+                    <h4 style="color: #ffd700; margin: 0 0 12px 0; font-size: 16px; line-height: 1.4;">
+                        ${article.title}
+                    </h4>
+                    <p style="color: #aaa; font-size: 13px; margin: 0 0 12px 0; line-height: 1.6;">
+                        ${article.description || 'No description available'}
+                    </p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                        <span style="color: #888;">${article.source}</span>
+                        <a href="${article.link}" target="_blank" style="color: #ffd700; text-decoration: none;">Read More →</a>
+                    </div>
+                `;
+
+                articlesContainer.appendChild(articleCard);
+            });
+
+            displayedCount += articlesToShow.length;
+
+            // Update or remove "See More" button
+            updateSeeMoreButton();
+        }
+
+        function updateSeeMoreButton() {
+            const articlesContainer = document.getElementById('feed-articles');
+
+            // Remove existing button if present
+            const existingButton = document.getElementById('see-more-btn');
+            if (existingButton) {
+                existingButton.remove();
+            }
+
+            // If there are more articles to load, show button
+            if (displayedCount < allArticles.length) {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.id = 'see-more-btn';
+                buttonContainer.style.cssText = 'grid-column: 1/-1; text-align: center; margin-top: 24px;';
+
+                buttonContainer.innerHTML = `
+                    <button onclick="loadMoreArticles()" style="
+                        background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+                        border: none;
+                        padding: 12px 32px;
+                        border-radius: 8px;
+                        color: #000;
+                        font-weight: 600;
+                        cursor: pointer;
+                        font-size: 14px;
+                    ">
+                        See More (${allArticles.length - displayedCount} remaining)
+                    </button>
+                `;
+
+                articlesContainer.appendChild(buttonContainer);
+            } else if (allArticles.length > 0) {
+                // All articles shown
+                const endMessage = document.createElement('div');
+                endMessage.style.cssText = 'grid-column: 1/-1; text-align: center; margin-top: 24px; color: #888; font-style: italic;';
+                endMessage.textContent = `All ${allArticles.length} articles displayed`;
+                articlesContainer.appendChild(endMessage);
+            }
+        }
+
+        function loadMoreArticles() {
+            displayArticles(LOAD_MORE_COUNT);
         }
 
         // Load feeds on page load

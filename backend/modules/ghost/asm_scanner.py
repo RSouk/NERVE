@@ -567,6 +567,21 @@ def scan_domain(domain, progress_callback=None):
     print(f"[ASM] Open Ports: {results['open_ports_count']}")
     print(f"{'='*60}\n")
 
+    # Save scan to history
+    try:
+        import time
+        from database import save_xasm_scan
+        scan_id = f"xasm_{int(time.time())}_{domain.replace('.', '_')}"
+        save_xasm_scan(
+            scan_id=scan_id,
+            target=domain,
+            results=results,
+            user_id=None  # Will add user tracking later with auth
+        )
+        results['history_scan_id'] = scan_id
+    except Exception as e:
+        print(f"[ASM] Warning: Failed to save to history: {e}")
+
     return results
 
 

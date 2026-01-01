@@ -16,6 +16,7 @@ from modules.ghost.bait_seeder import BaitSeeder
 from modules.ghost.ip_intelligence import check_ip_reputation as check_ip_intel, get_ip_badge_type
 from modules.ghost.attacker_fingerprinting import analyze_attacker, get_evidence_badge_info, get_attribution_badge_info
 from modules.ghost.cti_newsfeed import get_news_feed, get_feed_stats
+from modules.ghost.ioc_fetcher import IOCFetcher
 import re
 import secrets
 import time
@@ -266,6 +267,47 @@ def analyze_adversary():
         print("="*80 + "\n")
 
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# IOC ENDPOINTS
+# ============================================================================
+
+@app.route('/api/adversary/iocs/<apt_name>', methods=['GET'])
+def get_apt_iocs(apt_name):
+    """Get IOCs for specific APT"""
+    try:
+        force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+
+        print(f"[API] Fetching IOCs for: {apt_name}")
+
+        fetcher = IOCFetcher()
+        iocs = fetcher.fetch_iocs(apt_name, force_refresh=force_refresh)
+
+        return jsonify({
+            'success': True,
+            'apt_name': apt_name,
+            'iocs': iocs['iocs'],
+            'stats': iocs['stats'],
+            'cached_at': iocs['cached_at'],
+            'sources': iocs['sources']
+        })
+
+    except Exception as e:
+        print(f"[API] IOC fetch error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/adversary/iocs/cleanup', methods=['POST'])
+def cleanup_ioc_cache():
+    """Cleanup old IOC cache files"""
+    try:
+        fetcher = IOCFetcher()
+        fetcher.cleanup_old_cache()
+
+        return jsonify({'success': True, 'message': 'Cache cleaned'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================================
 # BAIT ENDPOINTS
@@ -1360,11 +1402,7 @@ def lightbox_scan():
         logger.info(f"[LIGHTBOX API] Running Lightbox scan with progress tracking (key: {scan_key})...")
         scan_results = run_lightbox_scan(asm_scan.scan_results, domain, update_progress)
 
-        # DEBUG: Check what scan_results looks like
-        logger.info(f"[LIGHTBOX API DEBUG] Type of scan_results: {type(scan_results)}")
-        logger.info(f"[LIGHTBOX API DEBUG] Keys in scan_results: {scan_results.keys() if isinstance(scan_results, dict) else 'Not a dict'}")
-
-        # FIX: Extract findings from the dictionary structure
+        # Extract findings from the dictionary structure
         # run_lightbox_scan returns: {'critical': [], 'high': [], 'medium': [], 'low': [], 'info': [], ...}
         if isinstance(scan_results, dict):
             # Extract severity counts from the dict structure
@@ -1420,12 +1458,20 @@ def lightbox_scan():
                 del scan_progress[scan_key]
                 logger.info(f"[LIGHTBOX API] Cleaned up progress tracking for {scan_key}")
 
+        # Extract test_results from scan_results (comprehensive tracking structure for frontend cards)
+        test_results = scan_results.get('test_results', {}) if isinstance(scan_results, dict) else {}
+
         return jsonify({
             'success': True,
             'scan_id': lightbox_record.id,
             'scan_key': scan_key,  # Return for frontend progress tracking
             'findings': all_findings,  # Return as list to frontend
             'scan_metadata': json.loads(lightbox_record.scan_metadata),  # Parse JSON string for response
+            'test_results': test_results,  # NEW: Include comprehensive test tracking for frontend cards
+            'nuclei_results': {
+                'findings': scan_results.get('info', []),
+                'templates_used': scan_results.get('templates_used', 500)
+            },
             'summary': {
                 'total': total_findings,
                 'critical': critical,
@@ -1551,6 +1597,98 @@ def delete_lightbox_scan(scan_id):
         return jsonify({'error': str(e)}), 500
     finally:
         session.close()
+
+# ============================================================================
+# XASM SCAN HISTORY ENDPOINTS
+# ============================================================================
+
+@app.route('/api/xasm/history', methods=['GET'])
+def get_xasm_history():
+    """Get XASM scan history"""
+    from database import get_xasm_scan_history
+
+    try:
+        history = get_xasm_scan_history()
+        return jsonify({'success': True, 'history': history})
+    except Exception as e:
+        logger.error(f"[XASM HISTORY] Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/xasm/history/<scan_id>', methods=['GET'])
+def get_xasm_scan_details(scan_id):
+    """Get full XASM scan results by ID"""
+    from database import get_xasm_scan_by_id
+
+    try:
+        results = get_xasm_scan_by_id(scan_id)
+        if results:
+            return jsonify({'success': True, 'results': results})
+        else:
+            return jsonify({'error': 'Scan not found'}), 404
+    except Exception as e:
+        logger.error(f"[XASM HISTORY] Error fetching scan {scan_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/xasm/history/<scan_id>', methods=['DELETE'])
+def delete_xasm_scan_endpoint(scan_id):
+    """Delete XASM scan from history"""
+    from database import delete_xasm_scan
+
+    try:
+        success = delete_xasm_scan(scan_id)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Scan not found'}), 404
+    except Exception as e:
+        logger.error(f"[XASM HISTORY] Error deleting scan {scan_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================================
+# LIGHTBOX SCAN HISTORY ENDPOINTS
+# ============================================================================
+
+@app.route('/api/lightbox/history', methods=['GET'])
+def get_lightbox_history_endpoint():
+    """Get Lightbox scan history"""
+    from database import get_lightbox_scan_history
+
+    try:
+        history = get_lightbox_scan_history()
+        return jsonify({'success': True, 'history': history})
+    except Exception as e:
+        logger.error(f"[LIGHTBOX HISTORY] Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/lightbox/history/<scan_id>', methods=['GET'])
+def get_lightbox_scan_details(scan_id):
+    """Get full Lightbox scan results by ID"""
+    from database import get_lightbox_scan_by_id
+
+    try:
+        results = get_lightbox_scan_by_id(scan_id)
+        if results:
+            return jsonify({'success': True, 'results': results})
+        else:
+            return jsonify({'error': 'Scan not found'}), 404
+    except Exception as e:
+        logger.error(f"[LIGHTBOX HISTORY] Error fetching scan {scan_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/lightbox/history/<scan_id>', methods=['DELETE'])
+def delete_lightbox_scan_history_endpoint(scan_id):
+    """Delete Lightbox scan from history"""
+    from database import delete_lightbox_scan_history
+
+    try:
+        success = delete_lightbox_scan_history(scan_id)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Scan not found'}), 404
+    except Exception as e:
+        logger.error(f"[LIGHTBOX HISTORY] Error deleting scan {scan_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================================
 # AI VULNERABILITY ASSESSMENT ENDPOINT

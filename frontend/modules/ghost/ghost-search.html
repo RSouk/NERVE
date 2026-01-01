@@ -815,6 +815,27 @@
 
         <div class="search-container">
             <div style="display: flex; gap: 0; margin-bottom: 20px; align-items: stretch;">
+                <!-- History Icon Button -->
+                <button
+                    onclick="toggleQueryHistory()"
+                    title="View search history"
+                    style="
+                        background: rgba(255,215,0,0.2);
+                        border: 2px solid rgba(255,215,0,0.5);
+                        border-right: none;
+                        border-radius: 8px 0 0 8px;
+                        padding: 0 16px;
+                        cursor: pointer;
+                        color: #ffd700;
+                        font-size: 20px;
+                        transition: background 0.2s ease;
+                    "
+                    onmouseover="this.style.background='rgba(255,215,0,0.3)'"
+                    onmouseout="this.style.background='rgba(255,215,0,0.2)'"
+                >
+                    🕒
+                </button>
+
                 <input
                     type="text"
                     id="search-input"
@@ -824,8 +845,8 @@
                         padding: 16px 24px;
                         background: rgba(0,0,0,0.4);
                         border: 2px solid rgba(255,215,0,0.5);
+                        border-left: none;
                         border-right: none;
-                        border-radius: 8px 0 0 8px;
                         color: #fff;
                         font-size: 15px;
                         outline: none;
@@ -851,6 +872,33 @@
                 >
                     Search
                 </button>
+            </div>
+
+            <!-- Query History Dropdown -->
+            <div id="query-history-dropdown" style="
+                display: none;
+                position: relative;
+                background: rgba(0,0,0,0.95);
+                border: 2px solid rgba(255,215,0,0.5);
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 20px;
+                max-height: 400px;
+                overflow-y: auto;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="color: #ffd700; margin: 0;">Search History</h3>
+                    <button onclick="clearQueryHistory()" style="
+                        background: rgba(220,53,69,0.2);
+                        border: 1px solid #dc3545;
+                        color: #dc3545;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                    ">Clear All</button>
+                </div>
+                <div id="query-history-list"></div>
             </div>
 
             <!-- Upload Button -->
@@ -1126,6 +1174,21 @@
         let uploadedFileId = null;
         let currentSearchMode = 'global'; // 'global' or 'uploaded'
 
+        // Store full results globally for pagination
+        let allStealerLogs = [];
+        let allCredentials = [];
+        let displayedStealerCount = 10;
+        let displayedCredentialCount = 10;
+
+        // Store unfiltered results for date filtering
+        let unfilteredResults = {
+            stealerLogs: [],
+            credentials: []
+        };
+
+        // Query history
+        let queryHistory = JSON.parse(localStorage.getItem('ghost_query_history') || '[]');
+
         // Check for query parameter from dashboard
         const urlParams = new URLSearchParams(window.location.search);
         const queryParam = urlParams.get('q');
@@ -1337,6 +1400,9 @@
                 const data = await response.json();
                 console.log('[SEARCH] Results received:', data);
 
+                // Save to history
+                saveQueryToHistory(query, data);
+
                 // Display results using existing display function
                 if (typeof displayResults === 'function') {
                     displayResults(data);
@@ -1395,6 +1461,87 @@ ${JSON.stringify(data.results?.slice(0, 5) || [], null, 2)}
                 element.textContent = '••••••••';
                 button.textContent = 'Show';
             }
+        }
+
+        // Query History Functions
+        function toggleQueryHistory() {
+            const dropdown = document.getElementById('query-history-dropdown');
+            if (dropdown.style.display === 'none') {
+                loadQueryHistory();
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        function loadQueryHistory() {
+            const container = document.getElementById('query-history-list');
+
+            if (queryHistory.length === 0) {
+                container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">No search history yet</p>';
+                return;
+            }
+
+            // Sort by date (most recent first)
+            const sorted = [...queryHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            container.innerHTML = sorted.slice(0, 20).map(entry => `
+                <div style="
+                    background: rgba(255,255,255,0.05);
+                    padding: 12px;
+                    border-radius: 6px;
+                    margin-bottom: 8px;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.05)'"
+                onclick="viewHistoryEntry('${entry.query}')">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: #ffd700; font-weight: 600;">${entry.query}</span>
+                        <span style="color: #888; font-size: 12px;">${new Date(entry.timestamp).toLocaleDateString()}</span>
+                    </div>
+                    <div style="color: #aaa; font-size: 13px;">
+                        ${entry.total_results} results found across ${entry.sources_count} sources
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function viewHistoryEntry(query) {
+            document.getElementById('search-input').value = query;
+            toggleQueryHistory();
+            alert('Query loaded. Click Search to run again.');
+        }
+
+        function clearQueryHistory() {
+            if (confirm('Clear all search history?')) {
+                queryHistory = [];
+                localStorage.setItem('ghost_query_history', '[]');
+                loadQueryHistory();
+            }
+        }
+
+        function saveQueryToHistory(query, results) {
+            const entry = {
+                query: query,
+                timestamp: new Date().toISOString(),
+                total_results: results.total_findings || 0,
+                sources_count: results.sources_queried?.length || 0
+            };
+
+            // Remove duplicate queries
+            queryHistory = queryHistory.filter(e => e.query !== query);
+
+            // Add to front
+            queryHistory.unshift(entry);
+
+            // Keep only last 50
+            if (queryHistory.length > 50) {
+                queryHistory = queryHistory.slice(0, 50);
+            }
+
+            localStorage.setItem('ghost_query_history', JSON.stringify(queryHistory));
         }
 
         // Display results from uploaded file
@@ -1504,6 +1651,116 @@ ${JSON.stringify(data.results?.slice(0, 5) || [], null, 2)}
             return section;
         }
 
+        function generateRiskAssessment(infected, stealerCreds, breaches) {
+            const totalInfected = infected.length;
+            const totalStealerCreds = stealerCreds.length;
+            const totalBreaches = breaches.length;
+            const total = totalInfected + totalStealerCreds + totalBreaches;
+
+            // CRITICAL - Active infostealer infections
+            if (totalInfected > 0) {
+                return {
+                    level: 'CRITICAL',
+                    icon: '🚨',
+                    color: '220, 53, 69', // Red
+                    title: 'Critical Security Threat Detected',
+                    explanation: `Your credentials are actively exposed on ${totalInfected} infected machine${totalInfected > 1 ? 's' : ''}. This means an attacker currently has access to passwords, cookies, and sensitive data from these systems. This is NOT a historical breach - it's an ongoing compromise that requires immediate action.`,
+                    actions: [
+                        'Immediately reset ALL passwords for accounts found in stealer logs',
+                        'Run full antivirus/antimalware scan on infected machines',
+                        'Enable 2FA on all critical accounts (email, banking, work)',
+                        'Check for unauthorized account access or transactions',
+                        'Consider the infected machines fully compromised - restore from clean backup if possible'
+                    ]
+                };
+            }
+
+            // HIGH - Stealer log credentials but no active infections shown
+            if (totalStealerCreds > 10) {
+                return {
+                    level: 'HIGH',
+                    icon: '⚠️',
+                    color: '255, 140, 0', // Orange
+                    title: 'Serious Credential Exposure',
+                    explanation: `We found ${totalStealerCreds} credentials from infostealer malware logs. While we don't see currently infected machines in this search, these credentials were stolen by malware at some point. Attackers may still have access to accounts if passwords weren't changed.`,
+                    actions: [
+                        'Reset passwords for all exposed accounts immediately',
+                        'Enable 2FA on every account where possible',
+                        'Check account activity logs for suspicious logins',
+                        'Review connected devices and active sessions',
+                        'Monitor accounts for unauthorized changes'
+                    ]
+                };
+            }
+
+            // MEDIUM - Only data breaches, but many of them
+            if (totalBreaches > 20) {
+                return {
+                    level: 'MEDIUM',
+                    icon: '⚡',
+                    color: '255, 215, 0', // Gold
+                    title: 'Significant Historical Breach Exposure',
+                    explanation: `Your credentials appeared in ${totalBreaches} data breaches. These are historical leaks from websites and services that were hacked. The main risk is password reuse - if you use the same passwords elsewhere, attackers can access those accounts too.`,
+                    actions: [
+                        'Change passwords on any accounts where you reused these passwords',
+                        'Use unique passwords for every account (use a password manager)',
+                        'Enable 2FA on important accounts',
+                        'If passwords are very old and already changed, risk is lower',
+                        'Monitor credit report if breaches included financial data'
+                    ]
+                };
+            }
+
+            // LOW - Small number of old breaches
+            if (totalBreaches > 0 && totalBreaches <= 20) {
+                return {
+                    level: 'LOW',
+                    icon: 'ℹ️',
+                    color: '100, 181, 246', // Blue
+                    title: 'Minor Historical Exposure',
+                    explanation: `Found ${totalBreaches} credential${totalBreaches > 1 ? 's' : ''} in old data breaches. If you've already changed these passwords and don't reuse them across accounts, the immediate risk is minimal. However, it's still good practice to rotate passwords periodically and enable 2FA.`,
+                    actions: [
+                        'Verify these passwords are no longer in use',
+                        'Enable 2FA as a precaution',
+                        'Use unique passwords for each account going forward',
+                        'Consider using a password manager for better security'
+                    ]
+                };
+            }
+
+            // MINIMAL - Very few results
+            if (total < 5) {
+                return {
+                    level: 'MINIMAL',
+                    icon: '✅',
+                    color: '76, 175, 80', // Green
+                    title: 'Limited Exposure Detected',
+                    explanation: `Only ${total} exposure${total > 1 ? 's' : ''} found. This is relatively good news - your digital footprint appears fairly clean. The items found are likely old breaches. As long as you're not reusing these passwords, the risk is very low.`,
+                    actions: [
+                        'Change passwords if still in use',
+                        'Enable 2FA for added security',
+                        'Keep passwords unique across accounts',
+                        'Continue monitoring periodically'
+                    ]
+                };
+            }
+
+            // Default fallback
+            return {
+                level: 'MEDIUM',
+                icon: '⚡',
+                color: '255, 215, 0',
+                title: 'Credential Exposure Detected',
+                explanation: 'Your credentials have been found in security databases. Review the findings below and take appropriate action based on the severity.',
+                actions: [
+                    'Review all exposed credentials below',
+                    'Change passwords where needed',
+                    'Enable 2FA on all accounts',
+                    'Use unique passwords for each service'
+                ]
+            };
+        }
+
         function displayResults(data) {
             console.log('[DISPLAY] Processing results:', data);
 
@@ -1560,78 +1817,171 @@ ${JSON.stringify(data.results?.slice(0, 5) || [], null, 2)}
 
             console.log('[DISPLAY] About to render HTML for', allResults.length, 'results');
 
-            // Display header
+            // Categorize results properly
+            const infectedMachines = allResults.filter(r => {
+                // Has computer_name = actual infected machine
+                return r.computer_name || r.data_type === 'stealer_log';
+            });
+
+            const stealerLogCredentials = allResults.filter(r => {
+                // Credentials FROM stealer logs (tied to infected machines)
+                return r.malware_family || r.malware_path ||
+                       (r.data_type === 'credential' && r.computer_name);
+            });
+
+            const dataBreaches = allResults.filter(r => {
+                // Regular breach credentials (NOT from stealer logs)
+                return (r.email || r.username) &&
+                       !r.computer_name &&
+                       !r.malware_family &&
+                       !r.malware_path &&
+                       (r.breach_name || r.source?.name || r.database_name);
+            });
+
+            console.log('[DISPLAY] Categorized:', {
+                infectedMachines: infectedMachines.length,
+                stealerLogCredentials: stealerLogCredentials.length,
+                dataBreaches: dataBreaches.length
+            });
+
+            // Display header with total count
             let html = `
-                <div style="margin-bottom: 24px; padding: 20px; background: rgba(220,53,69,0.1); border-left: 4px solid #dc3545; border-radius: 8px;">
-                    <h3 style="color: #dc3545; margin: 0 0 8px 0;">⚠️ ${data.total_findings} Results Found</h3>
+                <div id="results-header" style="margin-bottom: 24px; padding: 20px; background: rgba(220,53,69,0.1); border-left: 4px solid #dc3545; border-radius: 8px;">
+                    <h3 id="total-exposures-header" style="color: #dc3545; margin: 0 0 8px 0;">⚠️ ${data.total_findings} Total Exposures Found</h3>
                     <p style="color: #aaa; margin: 0; font-size: 14px;">
-                        Found across ${data.sources_queried?.length || 0} sources
+                        Searched across ${data.sources_queried?.length || 0} intelligence sources
                     </p>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                    <button onclick="copyAllToClipboard()" style="
+                        flex: 1;
+                        background: rgba(255,215,0,0.2);
+                        border: 1px solid #ffd700;
+                        color: #ffd700;
+                        padding: 12px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='rgba(255,215,0,0.3)'"
+                       onmouseout="this.style.background='rgba(255,215,0,0.2)'">
+                        📋 Copy All to Clipboard
+                    </button>
+
+                    <button onclick="exportToCSV()" style="
+                        flex: 1;
+                        background: rgba(76,175,80,0.2);
+                        border: 1px solid #4caf50;
+                        color: #4caf50;
+                        padding: 12px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='rgba(76,175,80,0.3)'"
+                       onmouseout="this.style.background='rgba(76,175,80,0.2)'">
+                        📥 Export to CSV
+                    </button>
+
+                    <select id="date-filter" onchange="filterByDate()" style="
+                        flex: 1;
+                        background: rgba(100,181,246,0.2);
+                        border: 1px solid #64b5f6;
+                        color: #64b5f6;
+                        padding: 12px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                    ">
+                        <option value="all">All Time</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 3 Months</option>
+                        <option value="365">Last Year</option>
+                        <option value="730">Last 2 Years</option>
+                    </select>
                 </div>
             `;
 
-            // Group by data type
-            const stealerLogs = allResults.filter(r => r.data_type === 'stealer_log' || r.computer_name);
-            const credentials = allResults.filter(r => r.data_type === 'credential' || r.email || r.username);
-            const breaches = allResults.filter(r => r.data_type === 'breach');
+            // Generate and display risk assessment
+            const assessment = generateRiskAssessment(infectedMachines, stealerLogCredentials, dataBreaches);
 
-            // Display Stealer Logs (Infected Machines)
-            console.log('[DISPLAY] Rendering', stealerLogs.length, 'stealer logs');
-            if (stealerLogs.length > 0) {
-                const displayCount = 10;
+            html += `
+                <div style="
+                    margin-bottom: 32px;
+                    padding: 24px;
+                    background: rgba(${assessment.color}, 0.1);
+                    border-left: 4px solid rgb(${assessment.color});
+                    border-radius: 8px;
+                ">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div style="font-size: 32px;">${assessment.icon}</div>
+                        <div>
+                            <h3 style="color: rgb(${assessment.color}); margin: 0 0 6px 0;">
+                                ${assessment.title}
+                            </h3>
+                            <div style="color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">
+                                Risk Level: ${assessment.level}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="color: #fff; font-size: 15px; line-height: 1.6; margin-bottom: 16px;">
+                        ${assessment.explanation}
+                    </div>
+
+                    ${assessment.actions.length > 0 ? `
+                        <div style="
+                            background: rgba(0,0,0,0.3);
+                            padding: 16px;
+                            border-radius: 8px;
+                            border-left: 3px solid rgb(${assessment.color});
+                        ">
+                            <div style="color: #ffd700; font-weight: 600; margin-bottom: 10px; font-size: 14px;">
+                                📋 Recommended Actions:
+                            </div>
+                            <ul style="margin: 0; padding-left: 20px; color: #ddd; font-size: 14px;">
+                                ${assessment.actions.map(action => `<li style="margin-bottom: 6px;">${action}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // Display Infected Machines
+            // Store unfiltered results for date filtering
+            unfilteredResults = {
+                stealerLogs: [...infectedMachines],
+                credentials: [...dataBreaches]
+            };
+
+            console.log('[DISPLAY] Rendering', infectedMachines.length, 'infected machines');
+            if (infectedMachines.length > 0) {
+                allStealerLogs = [...infectedMachines];
+                displayedStealerCount = 10;
 
                 html += `
-                    <div class="fade-in" style="margin-bottom: 32px;" id="infected-machines-section">
-                        <h3 style="color: #ffd700; margin-bottom: 16px;">
-                            🦠 Infected Machines (${stealerLogs.length})
+                    <div class="fade-in" style="margin-bottom: 32px;">
+                        <h3 style="color: #dc3545; margin-bottom: 16px;">
+                            🦠 Infected Machines (${infectedMachines.length})
                         </h3>
+                        <div id="stealer-logs-container"></div>
+                        <div id="stealer-logs-button" style="text-align: center; margin-top: 16px;"></div>
+                    </div>
                 `;
-
-                stealerLogs.forEach((log, index) => {
-                    const isHidden = index >= displayCount;
-                    const displayStyle = isHidden ? 'display: none;' : '';
-                    const hiddenClass = isHidden ? 'hidden-machine' : '';
-
-                    html += `
-                        <div class="${hiddenClass}" style="${displayStyle} background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 20px; margin-bottom: 12px;">
-                            <div style="color: #ffd700; font-weight: 600; margin-bottom: 8px;">
-                                ${log.computer_name || 'Unknown Computer'}
-                            </div>
-                            <div style="color: #aaa; font-size: 13px;">
-                                Stealer: ${log.malware_family || log.malware_path || 'Unknown'}<br>
-                                Infected: ${log.infection_date || log.date_compromised || 'Unknown'}
-                            </div>
-                        </div>
-                    `;
-                });
-
-                if (stealerLogs.length > displayCount) {
-                    html += `
-                        <div id="show-more-machines-btn" style="text-align: center; margin-top: 16px;">
-                            <button onclick="showMoreResults('stealer_logs')" style="
-                                background: rgba(255,215,0,0.2);
-                                border: 1px solid #ffd700;
-                                color: #ffd700;
-                                padding: 10px 24px;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            ">
-                                Show ${stealerLogs.length - displayCount} More Infected Machines
-                            </button>
-                        </div>
-                    `;
-                }
-
-                html += '</div>';
             }
 
-            // Display Credentials
-            if (credentials.length > 0) {
-                // Group by breach name
+            // Display Data Breaches
+            if (dataBreaches.length > 0) {
+                allCredentials = [...dataBreaches];
+                displayedCredentialCount = 10;
+
                 const byBreach = {};
-                credentials.forEach(c => {
-                    const breach = c.breach_name || c.source || 'Data Breach';
+                dataBreaches.forEach(c => {
+                    const breach = c.breach_name || c.source?.name || c.database_name || 'Data Breach';
                     if (!byBreach[breach]) byBreach[breach] = [];
                     byBreach[breach].push(c);
                 });
@@ -1639,84 +1989,30 @@ ${JSON.stringify(data.results?.slice(0, 5) || [], null, 2)}
                 html += `
                     <div class="fade-in" style="margin-bottom: 32px;">
                         <h3 style="color: #ffd700; margin-bottom: 16px;">
-                            🔑 Compromised Credentials (${credentials.length} found in ${Object.keys(byBreach).length} breaches)
+                            🔓 Data Breaches (${dataBreaches.length} credentials)
                         </h3>
+                        <div id="credentials-container"></div>
+                        <div id="credentials-button" style="text-align: center; margin-top: 16px;"></div>
+                    </div>
                 `;
+            }
 
-                // Show only first 10 credentials total
-                const displayCount = 10;
-                let shownCount = 0;
-
-                for (const [breach, items] of Object.entries(byBreach)) {
-                    if (shownCount >= displayCount) break;
-
-                    html += `
-                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 20px; margin-bottom: 12px;">
-                            <div style="margin-bottom: 12px;">
-                                <h4 style="color: #ffd700; margin: 0;">${breach}</h4>
-                                <span style="color: #888; font-size: 13px;">${items.length} credential${items.length > 1 ? 's' : ''}</span>
-                            </div>
-                    `;
-
-                    // Show only first 3 credentials per breach
-                    const itemsToShow = items.slice(0, Math.min(3, displayCount - shownCount));
-
-                    itemsToShow.forEach((item, idx) => {
-                        const uniqueId = `${breach.replace(/\s/g, '_')}_${shownCount}_${idx}`;
-
-                        html += `
-                            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; margin-bottom: 8px;">
-                                <div style="color: #ffd700;">${item.email || item.username || 'N/A'}</div>
-                                ${item.password && item.password !== 'premium' && item.password !== 'You must have a premium subscription to view this password.' ? `
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
-                                        <span style="color: #aaa; font-size: 12px;">Password:</span>
-                                        <span id="pwd-${uniqueId}" style="color: #fff; font-family: monospace;">••••••••</span>
-                                        <button onclick="togglePassword('${uniqueId}', '${item.password.replace(/'/g, "\\'")}')" style="
-                                            background: rgba(255,215,0,0.2);
-                                            border: 1px solid #ffd700;
-                                            color: #ffd700;
-                                            padding: 4px 12px;
-                                            border-radius: 4px;
-                                            cursor: pointer;
-                                            font-size: 11px;
-                                        ">Show</button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `;
-                        shownCount++;
-                    });
-
-                    if (items.length > 3) {
-                        html += `<div style="color: #888; font-size: 12px; margin-top: 8px;">+${items.length - 3} more in this breach</div>`;
-                    }
-
-                    html += '</div>';
-                }
-
-                if (credentials.length > displayCount) {
-                    html += `
-                        <div style="text-align: center; margin-top: 16px;">
-                            <button onclick="showMoreResults('credentials')" style="
-                                background: rgba(255,215,0,0.2);
-                                border: 1px solid #ffd700;
-                                color: #ffd700;
-                                padding: 10px 24px;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            ">
-                                Show ${credentials.length - displayCount} More Credentials
-                            </button>
-                        </div>
-                    `;
-                }
-
-                html += '</div>';
+            // Display Stealer Log Credentials (if any that aren't already in infected machines)
+            if (stealerLogCredentials.length > 0) {
+                html += `
+                    <div class="fade-in" style="margin-bottom: 32px;">
+                        <h3 style="color: #ff8c00; margin-bottom: 16px;">
+                            🔑 Stealer Log Credentials (${stealerLogCredentials.length})
+                        </h3>
+                        <p style="color: #aaa; font-size: 14px; margin-bottom: 16px;">
+                            These credentials were stolen by infostealer malware from infected computers.
+                        </p>
+                    </div>
+                `;
             }
 
             // Extract unique breach sources
-            const breachServices = [...new Set(credentials.map(c => c.breach_name || c.source).filter(Boolean))];
+            const breachServices = [...new Set(dataBreaches.map(c => c.breach_name || c.source?.name || c.database_name || c.source).filter(Boolean))];
 
             if (breachServices.length > 0) {
                 html += `
@@ -1756,6 +2052,10 @@ ${JSON.stringify(data.results?.slice(0, 5) || [], null, 2)}
 
             resultsDiv.innerHTML = html;
 
+            // Render initial results
+            renderStealerLogs();
+            renderCredentials();
+
             // Debug visibility and positioning
             console.log('[DISPLAY] HTML set, length:', html.length);
             console.log('[DISPLAY] resultsDiv after update:', resultsDiv);
@@ -1771,21 +2071,369 @@ ${JSON.stringify(data.results?.slice(0, 5) || [], null, 2)}
 
         function showMoreResults(category) {
             if (category === 'stealer_logs') {
-                // Show all hidden machines
-                const hiddenMachines = document.querySelectorAll('.hidden-machine');
-                hiddenMachines.forEach(machine => {
-                    machine.style.display = 'block';
-                    machine.classList.remove('hidden-machine');
+                displayedStealerCount += 10;
+                renderStealerLogs();
+            } else if (category === 'credentials') {
+                displayedCredentialCount += 10;
+                renderCredentials();
+            }
+        }
+
+        // Copy all results to clipboard
+        function copyAllToClipboard() {
+            let text = `GHOST SEARCH RESULTS\n`;
+            text += `Query: ${document.getElementById('search-input').value}\n`;
+            text += `Date: ${new Date().toLocaleDateString()}\n`;
+            text += `Total Results: ${allStealerLogs.length + allCredentials.length}\n\n`;
+            text += `=`.repeat(60) + '\n\n';
+
+            // Infected Machines
+            if (allStealerLogs.length > 0) {
+                text += `INFECTED MACHINES (${allStealerLogs.length})\n`;
+                text += `-`.repeat(60) + '\n';
+                allStealerLogs.forEach((log, i) => {
+                    text += `${i + 1}. Computer: ${log.computer_name || 'Unknown'}\n`;
+                    text += `   Malware: ${log.malware_family || 'Unknown'}\n`;
+                    text += `   Infected: ${log.infection_date || 'Unknown'}\n`;
+                    if (log.ip_address) text += `   IP: ${log.ip_address}\n`;
+                    text += '\n';
+                });
+                text += '\n';
+            }
+
+            // Data Breaches
+            if (allCredentials.length > 0) {
+                text += `DATA BREACHES (${allCredentials.length} credentials)\n`;
+                text += `-`.repeat(60) + '\n';
+
+                const byBreach = {};
+                allCredentials.forEach(c => {
+                    const breach = c.breach_name || 'Unknown Breach';
+                    if (!byBreach[breach]) byBreach[breach] = [];
+                    byBreach[breach].push(c);
                 });
 
-                // Hide the "Show More" button
-                const showMoreBtn = document.getElementById('show-more-machines-btn');
-                if (showMoreBtn) {
-                    showMoreBtn.style.display = 'none';
+                for (const [breach, items] of Object.entries(byBreach)) {
+                    text += `\n${breach} (${items.length} credentials)\n`;
+                    items.forEach((item, i) => {
+                        text += `  ${i + 1}. Email: ${item.email || 'N/A'}\n`;
+                        if (item.username && item.username !== item.email) {
+                            text += `     Username: ${item.username}\n`;
+                        }
+                        if (item.password && item.password !== 'premium') {
+                            text += `     Password: ${item.password}\n`;
+                        }
+                        text += '\n';
+                    });
                 }
-            } else if (category === 'credentials') {
-                alert(`Show more ${category} - functionality coming soon!`);
-                // TODO: Implement pagination or expand to show all results
+            }
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success message
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                btn.style.background = 'rgba(76,175,80,0.3)';
+                btn.style.borderColor = '#4caf50';
+                btn.style.color = '#4caf50';
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = 'rgba(255,215,0,0.2)';
+                    btn.style.borderColor = '#ffd700';
+                    btn.style.color = '#ffd700';
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy to clipboard');
+                console.error('Copy error:', err);
+            });
+        }
+
+        // Export results to CSV
+        function exportToCSV() {
+            let csv = 'Category,Breach/Computer,Email,Username,Password,Date,Additional Info\n';
+
+            // Infected Machines
+            allStealerLogs.forEach(log => {
+                csv += `"Infected Machine","${log.computer_name || 'Unknown'}","","","","${log.infection_date || 'Unknown'}","Malware: ${log.malware_family || 'Unknown'}"\n`;
+            });
+
+            // Data Breaches
+            allCredentials.forEach(cred => {
+                const breach = cred.breach_name || 'Unknown Breach';
+                const email = (cred.email || '').replace(/"/g, '""');
+                const username = (cred.username || '').replace(/"/g, '""');
+                const password = (cred.password && cred.password !== 'premium') ? cred.password.replace(/"/g, '""') : '';
+                const date = cred.breach_date || 'Unknown';
+
+                csv += `"Data Breach","${breach}","${email}","${username}","${password}","${date}",""\n`;
+            });
+
+            // Create download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ghost_search_results_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            // Show success message
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✅ Exported!';
+            btn.style.background = 'rgba(76,175,80,0.3)';
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = 'rgba(76,175,80,0.2)';
+            }, 2000);
+        }
+
+        // Filter results by date
+        function filterByDate() {
+            const filter = document.getElementById('date-filter').value;
+
+            if (filter === 'all') {
+                // Restore all results
+                allStealerLogs = [...unfilteredResults.stealerLogs];
+                allCredentials = [...unfilteredResults.credentials];
+            } else {
+                const daysAgo = parseInt(filter);
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+
+                // Filter stealer logs
+                allStealerLogs = unfilteredResults.stealerLogs.filter(log => {
+                    if (!log.infection_date) return true; // Include if no date
+                    const logDate = new Date(log.infection_date);
+                    return logDate >= cutoffDate;
+                });
+
+                // Filter credentials
+                allCredentials = unfilteredResults.credentials.filter(cred => {
+                    if (!cred.breach_date) return true; // Include if no date
+                    const breachDate = new Date(cred.breach_date);
+                    return breachDate >= cutoffDate;
+                });
+            }
+
+            // Reset display counters
+            displayedStealerCount = 10;
+            displayedCredentialCount = 10;
+
+            // Re-render
+            renderStealerLogs();
+            renderCredentials();
+
+            // Update header count
+            const totalFiltered = allStealerLogs.length + allCredentials.length;
+            const headerEl = document.getElementById('total-exposures-header');
+            if (headerEl) {
+                headerEl.innerHTML = `⚠️ ${totalFiltered} Total Exposures Found`;
+            }
+        }
+
+        function renderStealerLogs() {
+            const container = document.getElementById('stealer-logs-container');
+            if (!container || allStealerLogs.length === 0) return;
+
+            const logsToShow = allStealerLogs.slice(0, displayedStealerCount);
+
+            let html = '';
+            logsToShow.forEach(log => {
+                html += `
+                    <div style="background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3); border-radius: 12px; padding: 20px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <div style="color: #dc3545; font-weight: 700; font-size: 16px;">
+                                🦠 ${log.computer_name || 'Unknown Computer'}
+                            </div>
+                            <div style="
+                                background: rgba(220,53,69,0.2);
+                                color: #dc3545;
+                                padding: 4px 10px;
+                                border-radius: 4px;
+                                font-size: 11px;
+                                font-weight: 700;
+                            ">INFECTED</div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px;">
+                            <div style="color: #888;">Malware:</div>
+                            <div style="color: #fff; font-weight: 500;">
+                                ${log.malware_family || log.malware_path || 'Unknown Infostealer'}
+                            </div>
+
+                            <div style="color: #888;">Infected:</div>
+                            <div style="color: #fff;">
+                                ${log.infection_date || log.date_compromised || 'Unknown Date'}
+                            </div>
+
+                            ${log.ip_address ? `
+                                <div style="color: #888;">IP Address:</div>
+                                <div style="color: #fff;">${log.ip_address}</div>
+                            ` : ''}
+
+                            ${log.operating_system ? `
+                                <div style="color: #888;">OS:</div>
+                                <div style="color: #fff;">${log.operating_system}</div>
+                            ` : ''}
+
+                            ${log.antiviruses ? `
+                                <div style="color: #888;">Antivirus:</div>
+                                <div style="color: #fff;">${log.antiviruses}</div>
+                            ` : ''}
+                        </div>
+
+                        ${log.credentials_count || log.passwords_count ? `
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(220,53,69,0.2);">
+                                <div style="color: #dc3545; font-weight: 600; font-size: 13px;">
+                                    ⚠️ ${log.credentials_count || log.passwords_count} credentials exposed from this machine
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Update show more button
+            const buttonContainer = document.getElementById('stealer-logs-button');
+            if (buttonContainer) {
+                if (displayedStealerCount >= allStealerLogs.length) {
+                    buttonContainer.innerHTML = '<div style="text-align: center; color: #888; font-size: 13px; margin-top: 12px;">All infected machines displayed</div>';
+                } else {
+                    buttonContainer.innerHTML = `
+                        <button onclick="showMoreResults('stealer_logs')" style="
+                            background: rgba(220,53,69,0.2);
+                            border: 1px solid #dc3545;
+                            color: #dc3545;
+                            padding: 10px 24px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 600;
+                        ">
+                            Show ${Math.min(10, allStealerLogs.length - displayedStealerCount)} More Infected Machines
+                        </button>
+                    `;
+                }
+            }
+        }
+
+        function renderCredentials() {
+            const container = document.getElementById('credentials-container');
+            if (!container || allCredentials.length === 0) return;
+
+            const credsToShow = allCredentials.slice(0, displayedCredentialCount);
+
+            // Group by breach name
+            const byBreach = {};
+            credsToShow.forEach(c => {
+                // Get breach name from multiple possible sources
+                const breach = c.breach_name ||
+                              c.source?.name ||
+                              c.breach ||
+                              c.database_name ||
+                              'Unknown Breach';
+
+                if (!byBreach[breach]) byBreach[breach] = [];
+                byBreach[breach].push(c);
+            });
+
+            let html = '';
+            for (const [breachName, items] of Object.entries(byBreach)) {
+                // Get breach date if available
+                const breachDate = items[0].breach_date ||
+                                  items[0].source?.breach_date ||
+                                  items[0].date_breached ||
+                                  'Date Unknown';
+
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 20px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                            <div>
+                                <h4 style="color: #ffd700; margin: 0 0 6px 0; font-size: 18px;">${breachName}</h4>
+                                <span style="color: #888; font-size: 13px;">
+                                    📅 ${breachDate} • ${items.length} credential${items.length > 1 ? 's' : ''}
+                                </span>
+                            </div>
+                        </div>
+                `;
+
+                items.forEach((item, idx) => {
+                    const uniqueId = `${breachName.replace(/\s/g, '_')}_${idx}`;
+
+                    // Filter out premium messages
+                    const hasPassword = item.password &&
+                                       item.password !== 'premium' &&
+                                       !item.password.toLowerCase().includes('premium subscription');
+
+                    html += `
+                        <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; margin-bottom: 10px;">
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;">
+                                <div style="color: #888; font-size: 12px; width: 80px;">Email:</div>
+                                <div style="color: #ffd700; font-weight: 500; word-break: break-all;">
+                                    ${item.email || 'N/A'}
+                                </div>
+
+                                ${item.username && item.username !== item.email ? `
+                                    <div style="color: #888; font-size: 12px;">Username:</div>
+                                    <div style="color: #fff;">${item.username}</div>
+                                ` : ''}
+
+                                ${hasPassword ? `
+                                    <div style="color: #888; font-size: 12px;">Password:</div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span id="pwd-${uniqueId}" style="color: #fff; font-family: monospace; font-size: 14px;">••••••••</span>
+                                        <button onclick="togglePassword('${uniqueId}', '${item.password.replace(/'/g, "\\'")}')" style="
+                                            background: rgba(255,215,0,0.2);
+                                            border: 1px solid #ffd700;
+                                            color: #ffd700;
+                                            padding: 4px 12px;
+                                            border-radius: 4px;
+                                            cursor: pointer;
+                                            font-size: 11px;
+                                            font-weight: 600;
+                                        ">Show</button>
+                                    </div>
+                                ` : `
+                                    <div style="color: #888; font-size: 12px;">Password:</div>
+                                    <div style="color: #666; font-style: italic; font-size: 13px;">Not available</div>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+
+            // Update show more button
+            const buttonContainer = document.getElementById('credentials-button');
+            if (buttonContainer) {
+                if (displayedCredentialCount >= allCredentials.length) {
+                    buttonContainer.innerHTML = '<div style="text-align: center; color: #888; font-size: 13px; margin-top: 12px;">All credentials displayed</div>';
+                } else {
+                    buttonContainer.innerHTML = `
+                        <button onclick="showMoreResults('credentials')" style="
+                            background: rgba(255,215,0,0.2);
+                            border: 1px solid #ffd700;
+                            color: #ffd700;
+                            padding: 10px 24px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 600;
+                        ">
+                            Show ${Math.min(10, allCredentials.length - displayedCredentialCount)} More Credentials
+                        </button>
+                    `;
+                }
             }
         }
 

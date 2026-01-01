@@ -6,11 +6,25 @@
     <title>GHOST - Adversary Intelligence</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+        /* Better Font Hierarchy */
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            letter-spacing: -0.01em;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
         /* Global link styling */
         a {
             color: #ffd700;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         a:hover {
@@ -28,11 +42,9 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #e0e0e0;
-            min-height: 100vh;
+        /* Smooth Transitions for interactive elements */
+        .threat-card, .attack-step, .ttp-item, .analyze-button, .export-btn, .back-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .container {
@@ -141,27 +153,34 @@
             color: #e0e0e0;
         }
 
+        /* Better Button Styling */
         .analyze-button {
             width: 100%;
-            padding: 16px;
-            background: #D4AF37;
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
             border: none;
-            border-radius: 6px;
+            padding: 16px 48px;
+            border-radius: 8px;
             color: #000;
-            font-size: 1.1em;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(255,215,0,0.3);
+            letter-spacing: 0.05em;
         }
 
         .analyze-button:hover {
-            background: #C4A037;
+            box-shadow: 0 6px 20px rgba(255,215,0,0.4);
             transform: translateY(-2px);
+        }
+
+        .analyze-button:active {
+            transform: translateY(0);
         }
 
         .analyze-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         /* Loading */
@@ -191,12 +210,75 @@
             display: none;
         }
 
+        /* Better Card Styling */
         .threat-card {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 8px;
-            padding: 30px;
-            margin-bottom: 20px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,215,0,0.25);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .threat-card:hover {
+            border-color: rgba(255,215,0,0.5);
+            box-shadow: 0 8px 24px rgba(255,215,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        /* APT Match Badge - Circular Progress */
+        .match-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 100px;
+            flex-shrink: 0;
+        }
+
+        .match-badge-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .match-badge-text {
+            position: relative;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Circular Progress Bar */
+        @keyframes fillProgress {
+            from { stroke-dashoffset: 283; }
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* APT Avatar */
+        .apt-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-right: 16px;
+            border: 3px solid;
+            flex-shrink: 0;
+        }
+
+        /* Section Headers */
+        .section-header {
+            border-bottom: 2px solid rgba(255,215,0,0.3);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
         }
 
         .threat-header {
@@ -347,8 +429,8 @@
 
         .ttps-section {
             background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 4px;
+            padding: 24px;
+            border-radius: 8px;
         }
 
         .ttps-title {
@@ -358,13 +440,68 @@
             font-weight: 600;
         }
 
-        .ttp-item {
-            padding: 10px;
-            background: rgba(212, 175, 55, 0.05);
-            border-left: 3px solid #D4AF37;
-            border-radius: 3px;
+        /* Enhanced Match Reasons Section */
+        .match-reasons-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .match-reasons-title {
+            font-size: 20px;
+            color: #ffd700;
+            margin-bottom: 16px;
+            font-weight: 700;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255,215,0,0.3);
+        }
+
+        .reason-item {
+            padding: 12px 16px;
+            border-radius: 6px;
             margin-bottom: 10px;
-            font-size: 0.9em;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .reason-item.strength-high {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        .reason-item.strength-medium {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 4px solid #fbbf24;
+            color: #fde68a;
+        }
+
+        .reason-item.strength-low {
+            background: rgba(156, 163, 175, 0.1);
+            border-left: 4px solid #9ca3af;
+            color: #d1d5db;
+        }
+
+        .reason-item:hover {
+            transform: translateX(4px);
+        }
+
+        /* Enhanced TTP List */
+        .ttp-item {
+            background: rgba(255,255,255,0.03);
+            border-left: 3px solid #ffd700;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .ttp-item:hover {
+            background: rgba(255,255,255,0.08);
+            border-left-color: #ff8c00;
         }
 
         /* Attack Path Timeline */
@@ -425,11 +562,32 @@
             position: relative;
         }
 
+        /* Enhanced Attack Chain Steps */
         .attack-step {
             display: flex;
             gap: 20px;
             margin-bottom: 25px;
             position: relative;
+            background: rgba(0,0,0,0.3);
+            border-left: 4px solid #ffd700;
+            border-radius: 8px;
+            padding: 20px;
+            padding-left: 60px;
+        }
+
+        .attack-step.medium-risk {
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.05);
+        }
+
+        .attack-step.high-risk {
+            border-color: #ff8c00;
+            background: rgba(255,140,0,0.05);
+        }
+
+        .attack-step.critical-risk {
+            border-color: #dc3545;
+            background: rgba(220,53,69,0.05);
         }
 
         .attack-step:last-child {
@@ -439,8 +597,8 @@
         .attack-step::before {
             content: '';
             position: absolute;
-            left: 19px;
-            top: 40px;
+            left: 39px;
+            top: 60px;
             bottom: -25px;
             width: 2px;
             background: linear-gradient(to bottom, rgba(212, 175, 55, 0.5), rgba(212, 175, 55, 0.1));
@@ -451,27 +609,30 @@
         }
 
         .step-number {
+            position: absolute;
+            left: 10px;
+            top: 20px;
             flex-shrink: 0;
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #D4AF37 0%, #C4A037 100%);
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             color: #000;
-            font-size: 1.1em;
-            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+            font-size: 18px;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
             z-index: 1;
+            border: 4px solid #000;
         }
 
         .step-content {
             flex: 1;
-            background: rgba(0, 0, 0, 0.4);
+            background: transparent;
             border-radius: 6px;
-            padding: 15px;
-            border-left: 3px solid #D4AF37;
+            padding: 0;
         }
 
         .step-header {
@@ -812,6 +973,67 @@
         let currentThreats = null;
         let currentFormData = null;
 
+        // APT Display Helper Functions
+        function getAptInitials(name) {
+            // Extract initials from APT name
+            // "APT19" -> "A19"
+            // "Careto (The Mask)" -> "CT"
+            const cleanName = name.split('(')[0].trim();
+            if (cleanName.match(/APT\d+/)) {
+                return cleanName.replace('APT', 'A');
+            }
+            const words = cleanName.split(' ');
+            if (words.length >= 2) {
+                return words[0][0] + words[1][0];
+            }
+            return cleanName.substring(0, 2).toUpperCase();
+        }
+
+        function getMatchColor(percent) {
+            if (percent >= 80) return '#dc3545'; // Critical - Red
+            if (percent >= 70) return '#ff8c00'; // High - Orange
+            if (percent >= 60) return '#ffd700'; // Medium - Gold
+            return '#4caf50'; // Low - Green
+        }
+
+        function getAptAvatarGradient(percent) {
+            const color = getMatchColor(percent);
+            const gradients = {
+                '#dc3545': 'linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%)',
+                '#ff8c00': 'linear-gradient(135deg, #ff8c00 0%, #ffa500 100%)',
+                '#ffd700': 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+                '#4caf50': 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)'
+            };
+            return gradients[color] || gradients['#ffd700'];
+        }
+
+        function getRiskClass(level) {
+            const map = {
+                'high': 'high-risk',
+                'medium': 'medium-risk',
+                'low': 'medium-risk'
+            };
+            return map[level] || 'medium-risk';
+        }
+
+        function getRiskColor(level) {
+            const map = {
+                'high': '#dc3545',
+                'medium': '#ff8c00',
+                'low': '#ffd700'
+            };
+            return map[level] || '#ffd700';
+        }
+
+        function getRiskBadgeColor(level) {
+            const map = {
+                'high': 'rgba(220,53,69,0.2)',
+                'medium': 'rgba(255,140,0,0.2)',
+                'low': 'rgba(255,215,0,0.2)'
+            };
+            return map[level] || 'rgba(255,215,0,0.2)';
+        }
+
         async function analyzeThreats() {
             const industry = document.getElementById('industry').value;
             const location = document.getElementById('location').value;
@@ -942,11 +1164,11 @@
                     </div>
                 ` : '';
 
-                // Generate attack path HTML
+                // Generate attack path HTML with enhanced styling
                 const attackPath = threat.attack_path || [];
                 const attackPathId = `attack-path-${Math.random().toString(36).substr(2, 9)}`;
                 const attackPathHTML = attackPath.length > 0 ? `
-                    <div class="attack-path-section">
+                    <div class="attack-path-section" style="margin-bottom: 24px;">
                         <div class="attack-path-header" onclick="toggleAttackPath('${attackPathId}')">
                             <div class="attack-path-title">
                                 <span>🎯</span>
@@ -957,20 +1179,59 @@
                         <div class="attack-path-content" id="${attackPathId}">
                             <div class="attack-path-timeline">
                                 ${attackPath.map(step => `
-                                    <div class="attack-step">
-                                        <div class="step-number">${step.step}</div>
+                                    <div class="attack-step ${getRiskClass(step.likelihood)}">
+                                        <div class="step-number" style="background: ${getRiskColor(step.likelihood)};">${step.step}</div>
                                         <div class="step-content">
-                                            <div class="step-header">
+                                            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                                 <div>
-                                                    <div class="step-phase">${step.phase}</div>
-                                                    <div class="step-tactic">${step.tactic}</div>
+                                                    <div style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
+                                                        ${step.phase}
+                                                    </div>
+                                                    <h4 style="color: #ffd700; margin: 0; font-size: 18px;">
+                                                        ${step.tactic}
+                                                    </h4>
                                                 </div>
-                                                <div class="step-likelihood ${step.likelihood}">${step.likelihood} risk</div>
+                                                <div style="
+                                                    background: ${getRiskBadgeColor(step.likelihood)};
+                                                    color: ${getRiskColor(step.likelihood)};
+                                                    padding: 6px 14px;
+                                                    border-radius: 6px;
+                                                    font-size: 11px;
+                                                    font-weight: 700;
+                                                    text-transform: uppercase;
+                                                    letter-spacing: 0.5px;
+                                                ">
+                                                    ${step.likelihood.toUpperCase()} RISK
+                                                </div>
                                             </div>
-                                            <div class="step-description">${step.description}</div>
-                                            <div class="step-impact">${step.impact}</div>
-                                            <div class="step-mitigation">${step.mitigation}</div>
-                                            <div class="step-evidence">${step.evidence}</div>
+
+                                            <p style="color: #ddd; margin: 0 0 16px 0; font-size: 14px; line-height: 1.6;">
+                                                ${step.description}
+                                            </p>
+
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px;">
+                                                <div style="background: rgba(220,53,69,0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #dc3545;">
+                                                    <div style="color: #dc3545; font-weight: 600; font-size: 12px; margin-bottom: 6px;">
+                                                        ⚠️ IMPACT
+                                                    </div>
+                                                    <div style="color: #ddd; font-size: 13px;">
+                                                        ${step.impact}
+                                                    </div>
+                                                </div>
+
+                                                <div style="background: rgba(76,175,80,0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #4caf50;">
+                                                    <div style="color: #4caf50; font-weight: 600; font-size: 12px; margin-bottom: 6px;">
+                                                        ✓ MITIGATION
+                                                    </div>
+                                                    <div style="color: #ddd; font-size: 13px;">
+                                                        ${step.mitigation}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style="color: #888; font-size: 12px; font-style: italic;">
+                                                🎯 ${step.evidence}
+                                            </div>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -979,35 +1240,112 @@
                     </div>
                 ` : '';
 
+                const matchColor = getMatchColor(threat.match_score);
+                const avatarGradient = getAptAvatarGradient(threat.match_score);
+                const strokeDashoffset = 283 - (283 * threat.match_score / 100);
+
                 card.innerHTML = `
-                    <div class="threat-header">
-                        <div class="threat-name">${threat.name} ${threat.aliases ? `(${threat.aliases})` : ''}</div>
-                        <div class="threat-match ${getThreatLevel(threat.match_score).class}">
-                            <span class="threat-icon">${getThreatLevel(threat.match_score).icon}</span>
-                            ${threat.match_score}% Match
-                    </div>
+                    <!-- APT Header with Avatar and Circular Progress -->
+                    <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,215,0,0.2);">
+                        <!-- APT Avatar -->
+                        <div class="apt-avatar" style="
+                            background: ${avatarGradient};
+                            border-color: ${matchColor};
+                            color: #fff;
+                        ">
+                            ${getAptInitials(threat.name)}
+                        </div>
+
+                        <div style="flex: 1;">
+                            <h2 style="color: #ffd700; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
+                                ${threat.name}
+                            </h2>
+                            <div style="color: #888; font-size: 14px;">
+                                ${threat.aliases || 'No known aliases'}
+                            </div>
+                        </div>
+
+                        <!-- Circular Match Progress -->
+                        <div class="match-badge">
+                            <svg class="match-badge-circle" width="100" height="100">
+                                <circle
+                                    class="progress-ring"
+                                    cx="50"
+                                    cy="50"
+                                    r="45"
+                                    stroke="rgba(255,215,0,0.2)"
+                                    stroke-width="8"
+                                    fill="none"
+                                />
+                                <circle
+                                    class="progress-ring"
+                                    cx="50"
+                                    cy="50"
+                                    r="45"
+                                    stroke="${matchColor}"
+                                    stroke-width="8"
+                                    fill="none"
+                                    stroke-dasharray="283"
+                                    stroke-dashoffset="${strokeDashoffset}"
+                                    stroke-linecap="round"
+                                    style="animation: fillProgress 1s ease-out;"
+                                />
+                            </svg>
+                            <div class="match-badge-text" style="color: ${matchColor};">
+                                ${threat.match_score}%
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="threat-info">
-                        <div class="info-item">
-                            <div class="info-label">Origin</div>
-                            <div class="info-value">${threat.origin || 'Unknown'}</div>
+                    <!-- APT Details Grid -->
+                    <div style="
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 20px;
+                        margin-bottom: 24px;
+                        padding: 20px;
+                        background: rgba(0,0,0,0.2);
+                        border-radius: 8px;
+                    ">
+                        <div>
+                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                                Origin
+                            </div>
+                            <div style="color: #ffd700; font-size: 16px; font-weight: 600;">
+                                ${threat.origin || 'Unknown'}
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label">Active Since</div>
-                            <div class="info-value">${threat.active_since || 'Unknown'}</div>
+
+                        <div>
+                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                                Active Since
+                            </div>
+                            <div style="color: #ffd700; font-size: 16px; font-weight: 600;">
+                                ${threat.active_since || 'Unknown'}
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label">Sophistication</div>
-                            <div class="info-value">${threat.sophistication || 'Unknown'}</div>
+
+                        <div>
+                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                                Sophistication
+                            </div>
+                            <div style="color: #ffd700; font-size: 16px; font-weight: 600;">
+                                ${threat.sophistication || 'Unknown'}
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label">Recent Activity</div>
-                            <div class="info-value">${threat.recent_activity || 'Unknown'}</div>
+
+                        <div>
+                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                                Recent Activity
+                            </div>
+                            <div style="color: ${(threat.recent_activity || '').includes('Ongoing') ? '#dc3545' : '#ffd700'}; font-size: 16px; font-weight: 600;">
+                                ${threat.recent_activity || 'Unknown'}
+                            </div>
                         </div>
                     </div>
 
-                    <div class="threat-description">
+                    <!-- Description -->
+                    <div style="color: #ddd; line-height: 1.6; margin-bottom: 24px; font-size: 15px;">
                         ${threat.description || 'No description available.'}
                     </div>
 
@@ -1015,9 +1353,51 @@
 
                     ${attackPathHTML}
 
+                    <!-- Enhanced TTP Section -->
                     <div class="ttps-section">
-                        <div class="ttps-title">Known Tactics, Techniques & Procedures (TTPs)</div>
-                        ${threat.ttps.map(ttp => `<div class="ttp-item">${ttp}</div>`).join('')}
+                        <div class="section-header">
+                            <h3 style="color: #ffd700; margin: 0; font-size: 20px;">
+                                Known Tactics, Techniques & Procedures (TTPs)
+                            </h3>
+                        </div>
+                        <div style="display: grid; gap: 8px;">
+                            ${threat.ttps.map(ttp => `
+                                <div class="ttp-item">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 6px; height: 6px; background: #ffd700; border-radius: 50%; flex-shrink: 0;"></div>
+                                        <div style="color: #fff; flex: 1;">${ttp}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- IOC Section -->
+                    <div class="section-header" style="margin-top: 32px;">
+                        <h3 style="color: #ffd700; margin: 0; font-size: 20px;">
+                            Indicators of Compromise (IOCs)
+                        </h3>
+                    </div>
+
+                    <div id="ioc-section-${threat.name.replace(/\s/g, '_')}" style="min-height: 100px;">
+                        <div style="text-align: center; padding: 40px;">
+                            <button onclick="loadIOCs('${threat.name}')" style="
+                                background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+                                border: none;
+                                padding: 14px 32px;
+                                border-radius: 8px;
+                                color: #000;
+                                font-weight: 700;
+                                cursor: pointer;
+                                font-size: 14px;
+                                box-shadow: 0 4px 12px rgba(255,215,0,0.3);
+                            ">
+                                🔍 Load IOCs for ${threat.name}
+                            </button>
+                            <p style="color: #888; font-size: 13px; margin-top: 12px;">
+                                Fetch latest indicators from threat intelligence feeds
+                            </p>
+                        </div>
                     </div>
                 `;
 
@@ -1224,6 +1604,221 @@
             }
 
             doc.save(`ghost-adversary-analysis-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        // IOC Functions
+        async function loadIOCs(aptName) {
+            const sectionId = `ioc-section-${aptName.replace(/\s/g, '_')}`;
+            const section = document.getElementById(sectionId);
+
+            if (!section) {
+                console.error('[IOC] Section not found:', sectionId);
+                return;
+            }
+
+            section.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <div style="color: #ffd700; font-size: 32px; margin-bottom: 16px;">⏳</div>
+                    <p style="color: #ffd700; margin-top: 16px;">Loading IOCs from threat feeds...</p>
+                    <p style="color: #888; font-size: 13px;">This may take 10-15 seconds</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`http://localhost:5000/api/adversary/iocs/${encodeURIComponent(aptName)}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch IOCs');
+                }
+
+                displayIOCs(sectionId, data);
+
+            } catch (error) {
+                console.error('[IOC] Error:', error);
+                section.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">⚠️</div>
+                        <p style="color: #dc3545;">Failed to load IOCs</p>
+                        <p style="color: #888; font-size: 13px; margin-top: 8px;">${error.message}</p>
+                        <button onclick="loadIOCs('${aptName}')" style="
+                            background: rgba(255,215,0,0.2);
+                            border: 1px solid #ffd700;
+                            color: #ffd700;
+                            padding: 8px 20px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            margin-top: 12px;
+                        ">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        function displayIOCs(sectionId, data) {
+            const section = document.getElementById(sectionId);
+            const iocs = data.iocs;
+            const stats = data.stats;
+
+            let html = `
+                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="color: #888; font-size: 12px;">Last Updated: ${new Date(data.cached_at).toLocaleDateString()}</div>
+                        <div style="color: #888; font-size: 11px; margin-top: 4px;">Sources: ${data.sources.join(', ')}</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="exportIOCsToCSV('${data.apt_name}', ${JSON.stringify(iocs).replace(/'/g, '&#39;')})" style="
+                            background: rgba(76,175,80,0.2);
+                            border: 1px solid #4caf50;
+                            color: #4caf50;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 12px;
+                            font-weight: 600;
+                        ">📥 Export CSV</button>
+                        <button onclick="loadIOCs('${data.apt_name}')" style="
+                            background: rgba(255,215,0,0.2);
+                            border: 1px solid #ffd700;
+                            color: #ffd700;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 12px;
+                            font-weight: 600;
+                        ">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+                    <div style="background: rgba(220,53,69,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #dc3545;">
+                        <div style="font-size: 24px; font-weight: 700; color: #dc3545;">${stats.total_ips}</div>
+                        <div style="color: #888; font-size: 12px; margin-top: 4px;">Malicious IPs</div>
+                    </div>
+                    <div style="background: rgba(255,140,0,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #ff8c00;">
+                        <div style="font-size: 24px; font-weight: 700; color: #ff8c00;">${stats.total_domains}</div>
+                        <div style="color: #888; font-size: 12px; margin-top: 4px;">Malicious Domains</div>
+                    </div>
+                    <div style="background: rgba(255,215,0,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #ffd700;">
+                        <div style="font-size: 24px; font-weight: 700; color: #ffd700;">${stats.total_urls}</div>
+                        <div style="color: #888; font-size: 12px; margin-top: 4px;">Malicious URLs</div>
+                    </div>
+                    <div style="background: rgba(100,181,246,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #64b5f6;">
+                        <div style="font-size: 24px; font-weight: 700; color: #64b5f6;">${stats.total_hashes}</div>
+                        <div style="color: #888; font-size: 12px; margin-top: 4px;">File Hashes</div>
+                    </div>
+                </div>
+            `;
+
+            // Display IPs
+            if (iocs.ips && iocs.ips.length > 0) {
+                html += `
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="color: #dc3545; margin: 0 0 12px 0; font-size: 16px;">🌐 Malicious IP Addresses</h4>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            ${iocs.ips.slice(0, 20).map(ip => `
+                                <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                                    <div>
+                                        <span style="color: #fff; font-family: monospace; font-size: 13px;">${ip.value}</span>
+                                        <span style="color: #888; font-size: 11px; margin-left: 12px;">${ip.context || ''}</span>
+                                    </div>
+                                    <span style="color: #666; font-size: 11px;">${ip.last_seen?.substring(0, 10) || ''}</span>
+                                </div>
+                            `).join('')}
+                            ${iocs.ips.length > 20 ? `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 8px;">+${iocs.ips.length - 20} more (export CSV)</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Display Domains
+            if (iocs.domains && iocs.domains.length > 0) {
+                html += `
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="color: #ff8c00; margin: 0 0 12px 0; font-size: 16px;">🔗 Malicious Domains</h4>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            ${iocs.domains.slice(0, 20).map(domain => `
+                                <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                                    <div>
+                                        <span style="color: #fff; font-family: monospace; font-size: 13px;">${domain.value}</span>
+                                        <span style="color: #888; font-size: 11px; margin-left: 12px;">${domain.context || ''}</span>
+                                    </div>
+                                    <span style="color: #666; font-size: 11px;">${domain.last_seen?.substring(0, 10) || ''}</span>
+                                </div>
+                            `).join('')}
+                            ${iocs.domains.length > 20 ? `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 8px;">+${iocs.domains.length - 20} more (export CSV)</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Display Hashes
+            if (iocs.hashes && iocs.hashes.length > 0) {
+                html += `
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="color: #64b5f6; margin: 0 0 12px 0; font-size: 16px;">📦 Malware File Hashes</h4>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            ${iocs.hashes.slice(0, 15).map(hash => `
+                                <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 6px; margin-bottom: 6px;">
+                                    <div style="display: flex; gap: 8px; margin-bottom: 4px;">
+                                        <span style="background: rgba(100,181,246,0.2); color: #64b5f6; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">${hash.type}</span>
+                                        ${hash.malware ? `<span style="color: #888; font-size: 11px;">${hash.malware}</span>` : ''}
+                                    </div>
+                                    <div style="color: #fff; font-family: monospace; font-size: 11px; word-break: break-all;">${hash.value}</div>
+                                </div>
+                            `).join('')}
+                            ${iocs.hashes.length > 15 ? `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 8px;">+${iocs.hashes.length - 15} more (export CSV)</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (stats.total_ips === 0 && stats.total_domains === 0 && stats.total_hashes === 0) {
+                html += `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">ℹ️</div>
+                        <p style="color: #888;">No IOCs found for this APT</p>
+                        <p style="color: #666; font-size: 12px; margin-top: 8px;">May use different aliases in threat feeds</p>
+                    </div>
+                `;
+            }
+
+            section.innerHTML = html;
+        }
+
+        function exportIOCsToCSV(aptName, iocs) {
+            let csv = 'Type,Value,Context,Last Seen\n';
+
+            (iocs.ips || []).forEach(ip => {
+                csv += `"IP","${ip.value}","${(ip.context || '').replace(/"/g, '""')}","${ip.last_seen || ''}"\n`;
+            });
+
+            (iocs.domains || []).forEach(domain => {
+                csv += `"Domain","${domain.value}","${(domain.context || '').replace(/"/g, '""')}","${domain.last_seen || ''}"\n`;
+            });
+
+            (iocs.urls || []).forEach(url => {
+                csv += `"URL","${url.value.replace(/"/g, '""')}","${(url.context || '').replace(/"/g, '""')}","${url.last_seen || ''}"\n`;
+            });
+
+            (iocs.hashes || []).forEach(hash => {
+                csv += `"Hash-${hash.type}","${hash.value}","${(hash.malware || '').replace(/"/g, '""')}","${hash.last_seen || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${aptName.replace(/\s/g, '_')}_IOCs_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
         }
     </script>
 </body>

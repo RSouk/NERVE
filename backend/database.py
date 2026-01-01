@@ -252,6 +252,64 @@ class LightboxScan(Base):
             'scan_metadata': json.loads(self.scan_metadata) if self.scan_metadata else {}
         }
 
+
+class XASMScanHistory(Base):
+    """XASM Scan History - stores all XASM scans with full results"""
+    __tablename__ = 'xasm_scan_history'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    scan_id = Column(String, unique=True, nullable=False, index=True)
+    target = Column(String, nullable=False, index=True)
+    timestamp = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    status = Column(String, nullable=False, default='completed')
+    results_json = Column(Text)  # Full scan results as JSON
+    summary_stats = Column(Text)  # Summary statistics as JSON
+    user_id = Column(String, nullable=True)  # For future auth integration
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'scan_id': self.scan_id,
+            'target': self.target,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'status': self.status,
+            'summary': json.loads(self.summary_stats) if self.summary_stats else {},
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class LightboxScanHistory(Base):
+    """Lightbox Scan History - stores all Lightbox scans with full results"""
+    __tablename__ = 'lightbox_scan_history'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    scan_id = Column(String, unique=True, nullable=False, index=True)
+    target = Column(String, nullable=False, index=True)
+    timestamp = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    status = Column(String, nullable=False, default='completed')
+    results_json = Column(Text)  # Full scan results as JSON
+    summary_stats = Column(Text)  # Summary statistics as JSON
+    total_tests = Column(Integer, default=0)
+    passed_tests = Column(Integer, default=0)
+    failed_tests = Column(Integer, default=0)
+    user_id = Column(String, nullable=True)  # For future auth integration
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'scan_id': self.scan_id,
+            'target': self.target,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'status': self.status,
+            'summary': json.loads(self.summary_stats) if self.summary_stats else {},
+            'total_tests': self.total_tests,
+            'passed_tests': self.passed_tests,
+            'failed_tests': self.failed_tests,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 def init_db():
     """Initialize the database and create all tables"""
     Base.metadata.create_all(engine)
@@ -264,6 +322,292 @@ def get_db():
         return db
     finally:
         pass
+
+
+# ============================================================================
+# XASM SCAN HISTORY FUNCTIONS
+# ============================================================================
+
+def save_xasm_scan(scan_id, target, results, user_id=None):
+    """Save XASM scan to history"""
+    from datetime import timedelta
+
+    session = SessionLocal()
+
+    # Calculate summary stats
+    summary = {
+        'total_subdomains': len(results.get('subdomains', [])),
+        'total_services': len(results.get('port_scan_results', [])),
+        'total_vulnerabilities': results.get('cve_statistics', {}).get('total_cves', 0),
+        'critical_vulns': results.get('cve_statistics', {}).get('critical_cves', 0),
+        'high_vulns': len([v for v in results.get('port_scan_results', []) if v.get('risk_level') == 'HIGH']),
+        'risk_score': results.get('risk_score', 0),
+        'risk_level': results.get('risk_level', 'low')
+    }
+
+    try:
+        # Check if scan already exists
+        existing = session.query(XASMScanHistory).filter_by(scan_id=scan_id).first()
+
+        if existing:
+            # Update existing scan
+            existing.results_json = json.dumps(results)
+            existing.summary_stats = json.dumps(summary)
+            existing.status = results.get('status', 'completed')
+            existing.timestamp = datetime.now(timezone.utc)
+            session.commit()
+            print(f"[DB] Updated XASM scan: {scan_id}")
+        else:
+            # Create new scan record
+            new_scan = XASMScanHistory(
+                scan_id=scan_id,
+                target=target,
+                timestamp=datetime.now(timezone.utc),
+                status=results.get('status', 'completed'),
+                results_json=json.dumps(results),
+                summary_stats=json.dumps(summary),
+                user_id=user_id
+            )
+            session.add(new_scan)
+            session.commit()
+            print(f"[DB] Saved XASM scan: {scan_id}")
+
+    except Exception as e:
+        session.rollback()
+        print(f"[DB] Error saving XASM scan: {e}")
+    finally:
+        session.close()
+
+
+def save_lightbox_scan(scan_id, target, results, user_id=None):
+    """Save Lightbox scan to history"""
+    from datetime import timedelta
+
+    session = SessionLocal()
+
+    # Calculate summary stats
+    test_results = results.get('test_results', {})
+
+    # Handle both dict and list formats for results
+    if isinstance(results, dict):
+        total_tests = results.get('total_tests', 0)
+        total_findings = results.get('total_findings', 0)
+        critical = len(results.get('critical', []))
+        high = len(results.get('high', []))
+        medium = len(results.get('medium', []))
+        low = len(results.get('low', []))
+        passed = total_tests - total_findings if total_tests > total_findings else 0
+        failed = total_findings
+    else:
+        total_tests = 0
+        passed = 0
+        failed = 0
+
+    summary = {
+        'total_tests': total_tests,
+        'passed': passed,
+        'failed': failed,
+        'pass_rate': round((passed / total_tests * 100) if total_tests > 0 else 0, 1),
+        'critical': critical if 'critical' in dir() else 0,
+        'high': high if 'high' in dir() else 0,
+        'medium': medium if 'medium' in dir() else 0,
+        'low': low if 'low' in dir() else 0
+    }
+
+    try:
+        # Check if scan already exists
+        existing = session.query(LightboxScanHistory).filter_by(scan_id=scan_id).first()
+
+        if existing:
+            # Update existing scan
+            existing.results_json = json.dumps(results)
+            existing.summary_stats = json.dumps(summary)
+            existing.status = results.get('status', 'completed') if isinstance(results, dict) else 'completed'
+            existing.total_tests = total_tests
+            existing.passed_tests = passed
+            existing.failed_tests = failed
+            existing.timestamp = datetime.now(timezone.utc)
+            session.commit()
+            print(f"[DB] Updated Lightbox scan: {scan_id}")
+        else:
+            # Create new scan record
+            new_scan = LightboxScanHistory(
+                scan_id=scan_id,
+                target=target,
+                timestamp=datetime.now(timezone.utc),
+                status=results.get('status', 'completed') if isinstance(results, dict) else 'completed',
+                results_json=json.dumps(results),
+                summary_stats=json.dumps(summary),
+                total_tests=total_tests,
+                passed_tests=passed,
+                failed_tests=failed,
+                user_id=user_id
+            )
+            session.add(new_scan)
+            session.commit()
+            print(f"[DB] Saved Lightbox scan: {scan_id}")
+
+    except Exception as e:
+        session.rollback()
+        print(f"[DB] Error saving Lightbox scan: {e}")
+    finally:
+        session.close()
+
+
+def get_xasm_scan_history(user_id=None, limit=30):
+    """Get XASM scan history (last 30 days)"""
+    from datetime import timedelta
+
+    session = SessionLocal()
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+
+    try:
+        query = session.query(XASMScanHistory).filter(
+            XASMScanHistory.timestamp > thirty_days_ago
+        )
+
+        if user_id:
+            query = query.filter(XASMScanHistory.user_id == user_id)
+
+        scans = query.order_by(XASMScanHistory.timestamp.desc()).limit(limit).all()
+
+        history = [scan.to_dict() for scan in scans]
+        return history
+
+    finally:
+        session.close()
+
+
+def get_lightbox_scan_history(user_id=None, limit=30):
+    """Get Lightbox scan history (last 30 days)"""
+    from datetime import timedelta
+
+    session = SessionLocal()
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+
+    try:
+        query = session.query(LightboxScanHistory).filter(
+            LightboxScanHistory.timestamp > thirty_days_ago
+        )
+
+        if user_id:
+            query = query.filter(LightboxScanHistory.user_id == user_id)
+
+        scans = query.order_by(LightboxScanHistory.timestamp.desc()).limit(limit).all()
+
+        history = [scan.to_dict() for scan in scans]
+        return history
+
+    finally:
+        session.close()
+
+
+def delete_xasm_scan(scan_id):
+    """Delete XASM scan from history"""
+    session = SessionLocal()
+
+    try:
+        scan = session.query(XASMScanHistory).filter_by(scan_id=scan_id).first()
+        if scan:
+            session.delete(scan)
+            session.commit()
+            print(f"[DB] Deleted XASM scan: {scan_id}")
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        print(f"[DB] Error deleting XASM scan: {e}")
+        return False
+    finally:
+        session.close()
+
+
+def delete_lightbox_scan_history(scan_id):
+    """Delete Lightbox scan from history"""
+    session = SessionLocal()
+
+    try:
+        scan = session.query(LightboxScanHistory).filter_by(scan_id=scan_id).first()
+        if scan:
+            session.delete(scan)
+            session.commit()
+            print(f"[DB] Deleted Lightbox scan: {scan_id}")
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        print(f"[DB] Error deleting Lightbox scan: {e}")
+        return False
+    finally:
+        session.close()
+
+
+def get_xasm_scan_by_id(scan_id):
+    """Get full XASM scan results by ID with target info"""
+    session = SessionLocal()
+
+    try:
+        scan = session.query(XASMScanHistory).filter_by(scan_id=scan_id).first()
+        if scan and scan.results_json:
+            return {
+                'target': scan.target,
+                'results': json.loads(scan.results_json),
+                'timestamp': scan.timestamp.isoformat() if scan.timestamp else None,
+                'scan_id': scan.scan_id
+            }
+        return None
+    finally:
+        session.close()
+
+
+def get_lightbox_scan_by_id(scan_id):
+    """Get full Lightbox scan results by ID with target info"""
+    session = SessionLocal()
+
+    try:
+        scan = session.query(LightboxScanHistory).filter_by(scan_id=scan_id).first()
+        if scan and scan.results_json:
+            return {
+                'target': scan.target,
+                'results': json.loads(scan.results_json),
+                'timestamp': scan.timestamp.isoformat() if scan.timestamp else None,
+                'scan_id': scan.scan_id,
+                'total_tests': scan.total_tests,
+                'passed_tests': scan.passed_tests,
+                'failed_tests': scan.failed_tests
+            }
+        return None
+    finally:
+        session.close()
+
+
+def cleanup_old_scan_history(days=30):
+    """Delete scan history older than specified days"""
+    from datetime import timedelta
+
+    session = SessionLocal()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    try:
+        # Delete old XASM scans
+        xasm_deleted = session.query(XASMScanHistory).filter(
+            XASMScanHistory.timestamp < cutoff
+        ).delete()
+
+        # Delete old Lightbox scans
+        lightbox_deleted = session.query(LightboxScanHistory).filter(
+            LightboxScanHistory.timestamp < cutoff
+        ).delete()
+
+        session.commit()
+        print(f"[DB] Cleaned up {xasm_deleted} XASM and {lightbox_deleted} Lightbox scans older than {days} days")
+
+    except Exception as e:
+        session.rollback()
+        print(f"[DB] Error cleaning up scan history: {e}")
+    finally:
+        session.close()
+
 
 # Initialize database on import
 init_db()

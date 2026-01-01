@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import os
 import json
 
@@ -310,6 +310,34 @@ class LightboxScanHistory(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+# ============================================================================
+# AI REPORT SCAN STORAGE MODELS (48-hour expiry)
+# ============================================================================
+
+class ScanResultsXASM(Base):
+    """Store XASM scan results for AI report generation (48h expiry)"""
+    __tablename__ = 'scan_results_xasm'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    company = Column(String, nullable=False, unique=True, index=True)
+    results_json = Column(Text, nullable=False)
+    scan_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ScanResultsLightbox(Base):
+    """Store Lightbox scan results for AI report generation (48h expiry)"""
+    __tablename__ = 'scan_results_lightbox'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    company = Column(String, nullable=False, unique=True, index=True)
+    results_json = Column(Text, nullable=False)
+    scan_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 def init_db():
     """Initialize the database and create all tables"""
     Base.metadata.create_all(engine)
@@ -330,7 +358,6 @@ def get_db():
 
 def save_xasm_scan(scan_id, target, results, user_id=None):
     """Save XASM scan to history"""
-    from datetime import timedelta
 
     session = SessionLocal()
 
@@ -381,7 +408,6 @@ def save_xasm_scan(scan_id, target, results, user_id=None):
 
 def save_lightbox_scan(scan_id, target, results, user_id=None):
     """Save Lightbox scan to history"""
-    from datetime import timedelta
 
     session = SessionLocal()
 
@@ -456,7 +482,6 @@ def save_lightbox_scan(scan_id, target, results, user_id=None):
 
 def get_xasm_scan_history(user_id=None, limit=30):
     """Get XASM scan history (last 30 days)"""
-    from datetime import timedelta
 
     session = SessionLocal()
     thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
@@ -480,7 +505,6 @@ def get_xasm_scan_history(user_id=None, limit=30):
 
 def get_lightbox_scan_history(user_id=None, limit=30):
     """Get Lightbox scan history (last 30 days)"""
-    from datetime import timedelta
 
     session = SessionLocal()
     thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
@@ -583,7 +607,6 @@ def get_lightbox_scan_by_id(scan_id):
 
 def cleanup_old_scan_history(days=30):
     """Delete scan history older than specified days"""
-    from datetime import timedelta
 
     session = SessionLocal()
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
@@ -605,6 +628,267 @@ def cleanup_old_scan_history(days=30):
     except Exception as e:
         session.rollback()
         print(f"[DB] Error cleaning up scan history: {e}")
+    finally:
+        session.close()
+
+
+# ============================================================================
+# AI REPORT SCAN STORAGE FUNCTIONS (48-hour expiry)
+# ============================================================================
+
+def save_xasm_for_ai(company: str, results: dict) -> bool:
+    """Save XASM results for AI report generation (48h expiry)"""
+    import json
+    from datetime import datetime, timedelta, timezone
+
+    session = SessionLocal()
+
+    try:
+        # Use timezone-aware datetime
+        now = datetime.now(timezone.utc)
+        expires_at = (now + timedelta(hours=48)).isoformat()
+
+        # Check if scan already exists
+        existing = session.query(ScanResultsXASM).filter_by(company=company).first()
+
+        if existing:
+            # Update existing
+            existing.results_json = json.dumps(results)
+            existing.scan_date = now.isoformat()
+            existing.expires_at = expires_at
+        else:
+            # Create new
+            scan = ScanResultsXASM(
+                company=company,
+                results_json=json.dumps(results),
+                scan_date=now.isoformat(),
+                expires_at=expires_at
+            )
+            session.add(scan)
+
+        session.commit()
+        print(f"[DB] Saved XASM scan for AI report: {company} (expires in 48h)")
+        return True
+
+    except Exception as e:
+        print(f"[DB] Error saving XASM for AI: {e}")
+        session.rollback()
+        return False
+    finally:
+        session.close()
+
+
+def save_lightbox_for_ai(company: str, results: dict) -> bool:
+    """Save Lightbox results for AI report generation (48h expiry)"""
+    import json
+    from datetime import datetime, timedelta, timezone
+
+    session = SessionLocal()
+
+    try:
+        # Use timezone-aware datetime
+        now = datetime.now(timezone.utc)
+        expires_at = (now + timedelta(hours=48)).isoformat()
+
+        # Check if scan already exists
+        existing = session.query(ScanResultsLightbox).filter_by(company=company).first()
+
+        if existing:
+            # Update existing
+            existing.results_json = json.dumps(results)
+            existing.scan_date = now.isoformat()
+            existing.expires_at = expires_at
+        else:
+            # Create new
+            scan = ScanResultsLightbox(
+                company=company,
+                results_json=json.dumps(results),
+                scan_date=now.isoformat(),
+                expires_at=expires_at
+            )
+            session.add(scan)
+
+        session.commit()
+        print(f"[DB] Saved Lightbox scan for AI report: {company} (expires in 48h)")
+        return True
+
+    except Exception as e:
+        print(f"[DB] Error saving Lightbox for AI: {e}")
+        session.rollback()
+        return False
+    finally:
+        session.close()
+
+
+def load_xasm_for_ai(company: str) -> dict:
+    """Load XASM results for AI report (returns None if expired/missing)"""
+    import json
+    from datetime import datetime, timezone
+
+    session = SessionLocal()
+
+    try:
+        scan = session.query(ScanResultsXASM).filter_by(company=company).first()
+
+        if not scan:
+            print(f"[DB] No XASM scan found for {company}")
+            return None
+
+        # expires_at is already a datetime object from SQLAlchemy, not a string
+        expires_at = scan.expires_at
+
+        # Make both timezone-aware for comparison
+        now = datetime.now(timezone.utc)
+
+        # If expires_at has no timezone info, assume UTC
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        else:
+            # Convert to UTC if it has a different timezone
+            expires_at = expires_at.astimezone(timezone.utc)
+
+        # Check expiry
+        if now > expires_at:
+            print(f"[DB] XASM scan expired for {company}")
+            session.delete(scan)
+            session.commit()
+            return None
+
+        print(f"[DB] Loaded XASM scan for {company}")
+        return json.loads(scan.results_json)
+
+    except Exception as e:
+        print(f"[DB] Error loading XASM for AI: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+    finally:
+        session.close()
+
+
+def load_lightbox_for_ai(company: str) -> dict:
+    """Load Lightbox results for AI report (returns None if expired/missing)"""
+    import json
+    from datetime import datetime, timezone
+
+    session = SessionLocal()
+
+    try:
+        scan = session.query(ScanResultsLightbox).filter_by(company=company).first()
+
+        if not scan:
+            print(f"[DB] No Lightbox scan found for {company}")
+            return None
+
+        # expires_at is already a datetime object from SQLAlchemy, not a string
+        expires_at = scan.expires_at
+
+        # Make both timezone-aware for comparison
+        now = datetime.now(timezone.utc)
+
+        # If expires_at has no timezone info, assume UTC
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        else:
+            # Convert to UTC if it has a different timezone
+            expires_at = expires_at.astimezone(timezone.utc)
+
+        # Check expiry
+        if now > expires_at:
+            print(f"[DB] Lightbox scan expired for {company}")
+            session.delete(scan)
+            session.commit()
+            return None
+
+        print(f"[DB] Loaded Lightbox scan for {company}")
+        return json.loads(scan.results_json)
+
+    except Exception as e:
+        print(f"[DB] Error loading Lightbox for AI: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+    finally:
+        session.close()
+
+
+def get_companies_with_scans() -> list:
+    """Get list of companies with available scans for AI reports"""
+    session = SessionLocal()
+    now = datetime.now(timezone.utc)
+
+    try:
+        # Get all non-expired XASM scans
+        xasm_records = session.query(ScanResultsXASM).filter(
+            ScanResultsXASM.expires_at > now
+        ).all()
+
+        # Get all non-expired Lightbox scans
+        lightbox_records = session.query(ScanResultsLightbox).filter(
+            ScanResultsLightbox.expires_at > now
+        ).all()
+
+        # Build company map
+        company_map = {}
+
+        for record in xasm_records:
+            if record.company not in company_map:
+                company_map[record.company] = {
+                    'company': record.company,
+                    'has_xasm': False,
+                    'has_lightbox': False,
+                    'xasm_date': None,
+                    'lightbox_date': None
+                }
+            company_map[record.company]['has_xasm'] = True
+            company_map[record.company]['xasm_date'] = record.scan_date.isoformat() if record.scan_date else None
+
+        for record in lightbox_records:
+            if record.company not in company_map:
+                company_map[record.company] = {
+                    'company': record.company,
+                    'has_xasm': False,
+                    'has_lightbox': False,
+                    'xasm_date': None,
+                    'lightbox_date': None
+                }
+            company_map[record.company]['has_lightbox'] = True
+            company_map[record.company]['lightbox_date'] = record.scan_date.isoformat() if record.scan_date else None
+
+        return list(company_map.values())
+
+    except Exception as e:
+        print(f"[DB] Error getting companies: {e}")
+        return []
+    finally:
+        session.close()
+
+
+def cleanup_expired_ai_scans():
+    """Delete all expired scan results (run periodically)"""
+    session = SessionLocal()
+    now = datetime.now(timezone.utc)
+
+    try:
+        # Delete expired XASM scans
+        xasm_deleted = session.query(ScanResultsXASM).filter(
+            ScanResultsXASM.expires_at < now
+        ).delete()
+
+        # Delete expired Lightbox scans
+        lightbox_deleted = session.query(ScanResultsLightbox).filter(
+            ScanResultsLightbox.expires_at < now
+        ).delete()
+
+        session.commit()
+
+        total = xasm_deleted + lightbox_deleted
+        if total > 0:
+            print(f"[DB] Cleanup: Deleted {total} expired scans ({xasm_deleted} XASM, {lightbox_deleted} Lightbox)")
+
+    except Exception as e:
+        session.rollback()
+        print(f"[DB] Error during cleanup: {e}")
     finally:
         session.close()
 

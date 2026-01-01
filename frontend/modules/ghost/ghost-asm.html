@@ -1230,7 +1230,7 @@
             <button class="tab active" onclick="switchTab('asm')">🌐 Attack Surface</button>
             <button class="tab" onclick="switchTab('lightbox')">🔬 Lightbox Testing</button>
             <button class="tab" onclick="switchTab('compliance')">📋 Compliance Mapping</button>
-            <button class="tab" onclick="switchTab('vulnassess')">🤖 Vulnerability Assessment</button>
+            <button class="tab" id="tab-vulnerability" onclick="switchTab('vulnerability')">🛡️ Vulnerability Report</button>
         </div>
 
         <!-- ASM Tab Content -->
@@ -1745,54 +1745,78 @@
         </div>
         <!-- End Compliance Mapping Tab -->
 
-        <!-- Vulnerability Assessment Tab Content -->
-        <div id="vulnassessTab" class="tab-content">
-            <!-- Loading Indicator -->
-            <div id="vulnassessLoadingIndicator" class="loading">
-                <div class="spinner"></div>
-                <p>Generating AI-powered vulnerability assessments...</p>
-                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                    Analyzing critical/high findings with Gemini AI...
+        <!-- VULNERABILITY REPORT TAB -->
+        <div id="vulnerabilityTab" class="tab-content">
+            <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #ffd700; margin-bottom: 8px;">🛡️ Vulnerability Assessment Report</h2>
+                <p style="color: #888; margin-bottom: 32px;">
+                    Comprehensive security analysis combining XASM and Lightbox scan results with advanced risk prioritization
                 </p>
-            </div>
 
-            <!-- Error Container -->
-            <div id="vulnassessErrorContainer"></div>
-
-            <!-- Results Container -->
-            <div id="vulnassessResultsContainer" class="results-container">
-                <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button class="action-btn btn-export" onclick="exportVulnAssessment()">
-                        📄 Export Assessment as TXT
-                    </button>
-                </div>
-
-                <!-- Summary Banner -->
-                <div class="risk-banner">
-                    <div class="risk-score" id="vulnassessTotalAssessed">0</div>
-                    <div class="risk-label">Vulnerabilities Assessed</div>
-                    <div class="risk-stats">
-                        <div class="risk-stat">
-                            <div class="risk-stat-value" id="vulnassessCritical">0</div>
-                            <div class="risk-stat-label">Critical</div>
-                        </div>
-                        <div class="risk-stat">
-                            <div class="risk-stat-value" id="vulnassessHigh">0</div>
-                            <div class="risk-stat-label">High</div>
-                        </div>
-                        <div class="risk-stat">
-                            <div class="risk-stat-value" id="vulnassessThreatActors">0</div>
-                            <div class="risk-stat-label">Threat Actors Linked</div>
+                <!-- STATE 1: No Scans Available -->
+                <div id="vuln-state-no-scans" style="display: none;">
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 60px 40px; text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+                        <h2 style="color: #ffd700; margin-bottom: 16px;">No Recent Scans Available</h2>
+                        <p style="color: #888; max-width: 600px; margin: 0 auto 24px;">
+                            Run XASM and Lightbox scans first to generate a vulnerability report.
+                            Both scan types are required for comprehensive analysis.
+                        </p>
+                        <div style="display: flex; gap: 16px; justify-content: center;">
+                            <button onclick="switchTab('asm')" style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; padding: 12px 32px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                🌐 Go to XASM Scanner
+                            </button>
+                            <button onclick="switchTab('lightbox')" style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; padding: 12px 32px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                ⚡ Go to Lightbox Scanner
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Assessments List -->
-                <div id="vulnassessmentsList"></div>
+                <!-- STATE 2: Select Company -->
+                <div id="vuln-state-select" style="display: none;">
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 40px;">
+                        <h3 style="color: #ffd700; margin-bottom: 24px;">Select Company to Analyze</h3>
+
+                        <input
+                            type="text"
+                            id="vuln-company-search"
+                            placeholder="🔍 Search companies..."
+                            style="width: 100%; padding: 12px 20px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #fff; font-size: 15px; margin-bottom: 24px; box-sizing: border-box;"
+                            oninput="filterVulnCompanies()"
+                        />
+
+                        <div id="vuln-companies-list"></div>
+                    </div>
+                </div>
+
+                <!-- STATE 3: Generating Report -->
+                <div id="vuln-state-generating" style="display: none;">
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 60px 40px; text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 24px;">🔄</div>
+                        <h2 style="color: #ffd700; margin-bottom: 16px;">Generating Vulnerability Assessment...</h2>
+                        <p id="vuln-generating-company" style="color: #888; font-size: 18px; margin-bottom: 32px;"></p>
+
+                        <div style="max-width: 500px; margin: 0 auto; text-align: left;">
+                            <div id="vuln-step-1" style="color: #4caf50; margin-bottom: 8px;">✓ Loading XASM scan results</div>
+                            <div id="vuln-step-2" style="color: #4caf50; margin-bottom: 8px;">✓ Loading Lightbox scan results</div>
+                            <div id="vuln-step-3" style="color: #888; margin-bottom: 8px;">⏳ AI analyzing vulnerabilities...</div>
+                            <div id="vuln-step-4" style="color: #666; margin-bottom: 8px;">⏸️ Prioritizing by business risk...</div>
+                            <div id="vuln-step-5" style="color: #666; margin-bottom: 8px;">⏸️ Generating attack scenarios...</div>
+                            <div id="vuln-step-6" style="color: #666; margin-bottom: 8px;">⏸️ Creating remediation plan...</div>
+                        </div>
+
+                        <p style="color: #666; margin-top: 32px; font-size: 13px;">This may take 30-60 seconds...</p>
+                    </div>
+                </div>
+
+                <!-- STATE 4: Report Display -->
+                <div id="vuln-state-report" style="display: none;">
+                    <!-- Report will be rendered here -->
+                </div>
             </div>
         </div>
-        <!-- End Vulnerability Assessment Tab -->
+        <!-- End Vulnerability Report Tab -->
     </div>
 
     <script>
@@ -3566,11 +3590,11 @@
             // Add active class to clicked tab
             event.target.classList.add('active');
 
-            // Auto-run Vuln Assessment tab, load Lightbox history
+            // Auto-run tab actions
             if (tabName === 'lightbox' && currentScanDomain) {
                 loadMostRecentLightboxScan(currentScanDomain);
-            } else if (tabName === 'vulnassess') {
-                runVulnAssessment();
+            } else if (tabName === 'vulnerability') {
+                onVulnerabilityTabOpen();
             }
         }
 
@@ -5145,6 +5169,421 @@
                 });
             });
         });
+
+        // ========================================
+        // VULNERABILITY REPORT TAB FUNCTIONS
+        // ========================================
+
+        let vulnCompanies = [];
+        let currentVulnCompany = null;
+
+        async function loadVulnCompanies() {
+            console.log('[AI-VULN] Loading companies...');
+
+            // Reset states
+            document.getElementById('vuln-state-no-scans').style.display = 'none';
+            document.getElementById('vuln-state-select').style.display = 'none';
+            document.getElementById('vuln-state-generating').style.display = 'none';
+            document.getElementById('vuln-state-report').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/ai/companies`);
+                const data = await response.json();
+
+                console.log('[AI-VULN] Companies response:', data);
+
+                if (!data.success || !data.companies || data.companies.length === 0) {
+                    document.getElementById('vuln-state-no-scans').style.display = 'block';
+                    return;
+                }
+
+                vulnCompanies = data.companies;
+                document.getElementById('vuln-state-select').style.display = 'block';
+                displayVulnCompanies(vulnCompanies);
+
+            } catch (error) {
+                console.error('[AI-VULN] Error loading companies:', error);
+                document.getElementById('vuln-state-no-scans').style.display = 'block';
+            }
+        }
+
+        function displayVulnCompanies(companies) {
+            const container = document.getElementById('vuln-companies-list');
+
+            let html = '';
+
+            companies.forEach(company => {
+                const hasXasm = company.has_xasm;
+                const hasLightbox = company.has_lightbox;
+                const canGenerate = hasXasm && hasLightbox;
+
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 24px; margin-bottom: 16px; cursor: ${canGenerate ? 'pointer' : 'default'}; transition: border-color 0.2s;"
+                         onmouseover="if(${canGenerate}) this.style.borderColor='rgba(255,215,0,0.5)'"
+                         onmouseout="this.style.borderColor='rgba(255,215,0,0.2)'"
+                         onclick="${canGenerate ? `generateVulnReport('${company.company.replace(/'/g, "\\'")}')` : ''}">
+
+                        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 16px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="color: #ffd700; font-size: 20px; font-weight: 700; margin-bottom: 12px;">${company.company}</div>
+
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                                    <div style="color: ${hasXasm ? '#4caf50' : '#dc3545'}; font-size: 13px;">
+                                        ${hasXasm ? '✓' : '✗'} XASM Scan
+                                    </div>
+                                    <div style="color: ${hasLightbox ? '#4caf50' : '#dc3545'}; font-size: 13px;">
+                                        ${hasLightbox ? '✓' : '✗'} Lightbox Scan
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                style="background: ${canGenerate ? 'linear-gradient(135deg, #ffd700 0%, #ff8c00 100%)' : 'rgba(128,128,128,0.3)'}; border: none; color: ${canGenerate ? '#000' : '#666'}; padding: 12px 32px; border-radius: 8px; cursor: ${canGenerate ? 'pointer' : 'not-allowed'}; font-weight: 700;"
+                                ${!canGenerate ? 'disabled' : ''}
+                                onclick="event.stopPropagation(); generateVulnReport('${company.company.replace(/'/g, "\\'")}')"
+                            >
+                                ${canGenerate ? 'Generate Report' : 'Missing Scans'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function filterVulnCompanies() {
+            const search = document.getElementById('vuln-company-search').value.toLowerCase();
+            const filtered = vulnCompanies.filter(c => c.company.toLowerCase().includes(search));
+            displayVulnCompanies(filtered);
+        }
+
+        async function generateVulnReport(company) {
+            currentVulnCompany = company;
+
+            console.log('[AI-VULN] Generating report for:', company);
+
+            // Hide selection, show generating
+            document.getElementById('vuln-state-select').style.display = 'none';
+            document.getElementById('vuln-state-generating').style.display = 'block';
+            document.getElementById('vuln-generating-company').textContent = company;
+
+            // Reset step indicators
+            resetVulnSteps();
+
+            // Animate progress steps
+            setTimeout(() => updateVulnStep('vuln-step-3', '✓', '#4caf50'), 2000);
+            setTimeout(() => updateVulnStep('vuln-step-4', '⏳', '#ffd700'), 2500);
+            setTimeout(() => updateVulnStep('vuln-step-4', '✓', '#4caf50'), 4000);
+            setTimeout(() => updateVulnStep('vuln-step-5', '⏳', '#ffd700'), 4500);
+            setTimeout(() => updateVulnStep('vuln-step-5', '✓', '#4caf50'), 6000);
+            setTimeout(() => updateVulnStep('vuln-step-6', '⏳', '#ffd700'), 6500);
+
+            try {
+                const response = await fetch(`${API_URL}/api/ai/generate-report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ company })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Wait for animations to complete, then show report
+                    setTimeout(() => {
+                        updateVulnStep('vuln-step-6', '✓', '#4caf50');
+                        displayVulnReport(data.report);
+                    }, 8000);
+                } else {
+                    console.error('[AI-VULN] API Error:', data.error);
+                    alert('Failed to generate report: ' + data.error);
+                    // Return to company selection
+                    document.getElementById('vuln-state-generating').style.display = 'none';
+                    document.getElementById('vuln-state-select').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('[AI-VULN] Error:', error);
+                alert('Error generating report. Please try again.');
+                // Return to company selection
+                document.getElementById('vuln-state-generating').style.display = 'none';
+                document.getElementById('vuln-state-select').style.display = 'block';
+            }
+        }
+
+        function resetVulnSteps() {
+            document.getElementById('vuln-step-1').textContent = '✓ Loading XASM scan results';
+            document.getElementById('vuln-step-1').style.color = '#4caf50';
+            document.getElementById('vuln-step-2').textContent = '✓ Loading Lightbox scan results';
+            document.getElementById('vuln-step-2').style.color = '#4caf50';
+            document.getElementById('vuln-step-3').textContent = '⏳ AI analyzing vulnerabilities...';
+            document.getElementById('vuln-step-3').style.color = '#888';
+            document.getElementById('vuln-step-4').textContent = '⏸️ Prioritizing by business risk...';
+            document.getElementById('vuln-step-4').style.color = '#666';
+            document.getElementById('vuln-step-5').textContent = '⏸️ Generating attack scenarios...';
+            document.getElementById('vuln-step-5').style.color = '#666';
+            document.getElementById('vuln-step-6').textContent = '⏸️ Creating remediation plan...';
+            document.getElementById('vuln-step-6').style.color = '#666';
+        }
+
+        function updateVulnStep(stepId, icon, color) {
+            const step = document.getElementById(stepId);
+            if (step) {
+                const text = step.textContent.substring(2).trim();
+                step.textContent = icon + ' ' + text;
+                step.style.color = color;
+            }
+        }
+
+        // Display the generated vulnerability report
+        function displayVulnReport(report) {
+            // Hide generating, show report
+            document.getElementById('vuln-state-generating').style.display = 'none';
+            document.getElementById('vuln-state-report').style.display = 'block';
+
+            const container = document.getElementById('vuln-state-report');
+
+            // Determine risk color
+            const riskScore = report.risk_score;
+            let riskColor = '#4caf50'; // Low
+            if (riskScore >= 70) riskColor = '#dc3545'; // Critical/High
+            else if (riskScore >= 40) riskColor = '#ffd700'; // Medium
+
+            const html = `
+                <!-- Header -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 32px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="color: #ffd700; margin: 0 0 8px 0;">Vulnerability Assessment</h2>
+                            <p style="color: #888; margin: 0; font-size: 18px;">${report.company}</p>
+                            <p style="color: #666; margin: 8px 0 0 0; font-size: 13px;">Generated: ${new Date(report.generated_at).toLocaleString()}</p>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <button onclick="exportReportPDF()" style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                Export PDF
+                            </button>
+                            <button onclick="loadVulnCompanies(); document.getElementById('vuln-state-report').style.display='none';" style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                Back
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Risk Score -->
+                    <div style="display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: center;">
+                        <div style="position: relative; width: 160px; height: 160px;">
+                            <svg width="160" height="160" style="transform: rotate(-90deg);">
+                                <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12"/>
+                                <circle cx="80" cy="80" r="70" fill="none" stroke="${riskColor}" stroke-width="12"
+                                    stroke-dasharray="${2 * Math.PI * 70}"
+                                    stroke-dashoffset="${2 * Math.PI * 70 * (1 - riskScore / 100)}"
+                                    style="transition: stroke-dashoffset 1s;"/>
+                            </svg>
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                <div style="font-size: 36px; font-weight: 700; color: ${riskColor};">${riskScore}</div>
+                                <div style="font-size: 12px; color: #888;">/ 100</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: 700; color: ${riskColor}; margin-bottom: 8px;">${report.risk_level} RISK</div>
+                            <div style="color: #888; font-size: 14px;">
+                                Total Findings: ${report.scan_data.total_findings} |
+                                Critical: ${report.findings_by_category.critical} |
+                                High: ${report.findings_by_category.high} |
+                                Medium: ${report.findings_by_category.medium} |
+                                Low: ${report.findings_by_category.low}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Summary -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 32px; margin-bottom: 24px;">
+                    <h3 style="color: #ffd700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                        Executive Summary
+                    </h3>
+                    <div style="color: #ccc; line-height: 1.8; white-space: pre-wrap;">${report.executive_summary}</div>
+                </div>
+
+                <!-- Top 5 Critical Issues -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 32px; margin-bottom: 24px;">
+                    <h3 style="color: #ffd700; margin: 0 0 24px 0; display: flex; align-items: center; gap: 8px;">
+                        Top ${report.top_issues.length} Critical Issues
+                    </h3>
+                    ${report.top_issues.map((issue, idx) => {
+                        const severityColor = issue.severity === 'CRITICAL' ? '#dc3545' :
+                                             issue.severity === 'HIGH' ? '#ff8c00' :
+                                             issue.severity === 'MEDIUM' ? '#ffd700' : '#4caf50';
+
+                        return `
+                            <div style="background: rgba(0,0,0,0.2); border-left: 4px solid ${severityColor}; border-radius: 8px; padding: 24px; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 12px;">
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                                            ${idx + 1}. ${issue.title}
+                                        </div>
+                                        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+                                            <span style="background: rgba(${severityColor === '#dc3545' ? '220,53,69' : severityColor === '#ff8c00' ? '255,140,0' : severityColor === '#ffd700' ? '255,215,0' : '76,175,80'},0.2); border: 1px solid ${severityColor}; color: ${severityColor}; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700;">
+                                                ${issue.severity}
+                                            </span>
+                                            ${issue.cvss ? `<span style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700;">CVSS: ${issue.cvss}</span>` : ''}
+                                            ${issue.cve_cwe ? `<span style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700;">${issue.cve_cwe}</span>` : ''}
+                                            <span style="color: #888; font-size: 12px; padding: 4px 0;">Est. ${issue.effort_hours}h to fix</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="color: #ccc; margin-bottom: 12px; line-height: 1.6;">${issue.description}</div>
+
+                                <div style="background: rgba(255,140,0,0.1); border: 1px solid rgba(255,140,0,0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                    <div style="color: #ff8c00; font-weight: 700; font-size: 12px; margin-bottom: 4px;">IMPACT</div>
+                                    <div style="color: #ccc; font-size: 14px;">${issue.impact}</div>
+                                </div>
+
+                                ${issue.affected_assets && issue.affected_assets.length > 0 ? `
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="color: #888; font-size: 12px; margin-bottom: 6px;">AFFECTED ASSETS:</div>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                            ${issue.affected_assets.map(asset => `
+                                                <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 4px; font-size: 12px; color: #888;">${asset}</span>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                <div style="background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.3); border-radius: 6px; padding: 12px;">
+                                    <div style="color: #4caf50; font-weight: 700; font-size: 12px; margin-bottom: 4px;">REMEDIATION</div>
+                                    <div style="color: #ccc; font-size: 14px; white-space: pre-wrap;">${issue.remediation}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <!-- Attack Scenarios -->
+                ${report.attack_scenarios && report.attack_scenarios.length > 0 ? `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 32px; margin-bottom: 24px;">
+                        <h3 style="color: #ffd700; margin: 0 0 24px 0; display: flex; align-items: center; gap: 8px;">
+                            Attack Scenarios
+                        </h3>
+                        ${report.attack_scenarios.map((scenario, idx) => {
+                            const likelihoodColor = scenario.likelihood === 'HIGH' ? '#dc3545' :
+                                                   scenario.likelihood === 'MEDIUM' ? '#ffd700' : '#4caf50';
+
+                            return `
+                                <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 24px; margin-bottom: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                                        <div style="font-size: 18px; font-weight: 700; color: #fff;">
+                                            Scenario ${idx + 1}: ${scenario.title}
+                                        </div>
+                                        <span style="background: rgba(${likelihoodColor === '#dc3545' ? '220,53,69' : likelihoodColor === '#ffd700' ? '255,215,0' : '76,175,80'},0.2); border: 1px solid ${likelihoodColor}; color: ${likelihoodColor}; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700;">
+                                            ${scenario.likelihood} LIKELIHOOD
+                                        </span>
+                                    </div>
+
+                                    <div style="margin-bottom: 16px;">
+                                        ${scenario.steps.map((step, stepIdx) => `
+                                            <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                                                <div style="background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;">
+                                                    ${stepIdx + 1}
+                                                </div>
+                                                <div style="color: #ccc; padding-top: 2px;">${step}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+
+                                    <div style="background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3); border-radius: 6px; padding: 12px;">
+                                        <div style="color: #dc3545; font-weight: 700; font-size: 12px; margin-bottom: 4px;">POTENTIAL IMPACT</div>
+                                        <div style="color: #ccc; font-size: 14px;">${scenario.impact}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : ''}
+
+                <!-- Remediation Roadmap -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 32px;">
+                    <h3 style="color: #ffd700; margin: 0 0 24px 0; display: flex; align-items: center; gap: 8px;">
+                        Prioritized Remediation Roadmap
+                    </h3>
+
+                    ${report.remediation_roadmap.immediate && report.remediation_roadmap.immediate.length > 0 ? `
+                        <div style="margin-bottom: 32px;">
+                            <h4 style="color: #dc3545; margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                                IMMEDIATE (Next 24 Hours)
+                            </h4>
+                            ${report.remediation_roadmap.immediate.map(task => `
+                                <div style="background: rgba(220,53,69,0.1); border-left: 3px solid #dc3545; padding: 16px; margin-bottom: 12px; border-radius: 6px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                        <div style="color: #fff; font-weight: 600; flex: 1;">${task.task}</div>
+                                        <div style="color: #4caf50; font-size: 12px; font-weight: 700; white-space: nowrap; margin-left: 16px;">
+                                            -${task.risk_reduction}% Risk
+                                        </div>
+                                    </div>
+                                    <div style="color: #888; font-size: 13px;">
+                                        Effort: ${task.effort_hours}h | Priority: ${'*'.repeat(task.priority)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${report.remediation_roadmap.this_week && report.remediation_roadmap.this_week.length > 0 ? `
+                        <div style="margin-bottom: 32px;">
+                            <h4 style="color: #ffd700; margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                                THIS WEEK
+                            </h4>
+                            ${report.remediation_roadmap.this_week.map(task => `
+                                <div style="background: rgba(255,215,0,0.1); border-left: 3px solid #ffd700; padding: 16px; margin-bottom: 12px; border-radius: 6px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                        <div style="color: #fff; font-weight: 600; flex: 1;">${task.task}</div>
+                                        <div style="color: #4caf50; font-size: 12px; font-weight: 700; white-space: nowrap; margin-left: 16px;">
+                                            -${task.risk_reduction}% Risk
+                                        </div>
+                                    </div>
+                                    <div style="color: #888; font-size: 13px;">
+                                        Effort: ${task.effort_hours}h | Priority: ${'*'.repeat(task.priority)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${report.remediation_roadmap.this_month && report.remediation_roadmap.this_month.length > 0 ? `
+                        <div>
+                            <h4 style="color: #4caf50; margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                                THIS MONTH
+                            </h4>
+                            ${report.remediation_roadmap.this_month.map(task => `
+                                <div style="background: rgba(76,175,80,0.1); border-left: 3px solid #4caf50; padding: 16px; margin-bottom: 12px; border-radius: 6px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                        <div style="color: #fff; font-weight: 600; flex: 1;">${task.task}</div>
+                                        <div style="color: #4caf50; font-size: 12px; font-weight: 700; white-space: nowrap; margin-left: 16px;">
+                                            -${task.risk_reduction}% Risk
+                                        </div>
+                                    </div>
+                                    <div style="color: #888; font-size: 13px;">
+                                        Effort: ${task.effort_hours}h | Priority: ${'*'.repeat(task.priority)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function exportReportPDF() {
+            alert('PDF export will be added in next version! For now, use browser print (Ctrl+P)');
+        }
+
+        // Load companies when vulnerability tab is opened
+        function onVulnerabilityTabOpen() {
+            console.log('[AI-VULN] Tab opened, loading companies...');
+            loadVulnCompanies();
+        }
     </script>
 </body>
 </html>

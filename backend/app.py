@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from database import get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan, CachedASMScan, LightboxScan
+from database import get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan, CachedASMScan, LightboxScan, save_xasm_for_ai, save_lightbox_for_ai, get_companies_with_scans, cleanup_expired_ai_scans
 import feedparser
 from modules.ghost.osint import scan_profile_breaches
 from modules.opsych.exposure_analysis import analyze_exposure
@@ -24,6 +24,8 @@ from dotenv import load_dotenv
 import logging
 import http.client
 import urllib.parse
+import atexit
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Load environment variables
 load_dotenv()
@@ -38,6 +40,20 @@ CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DEL
 # Format: {domain: {status: str, current_step: str, progress: int, total: int, message: str}}
 scan_progress = {}
 scan_progress_lock = threading.Lock()
+
+# Initialize cleanup scheduler for expired AI scan data
+scheduler = BackgroundScheduler()
+scheduler.add_job(
+    func=cleanup_expired_ai_scans,
+    trigger='interval',
+    hours=1,
+    id='cleanup_expired_scans'
+)
+scheduler.start()
+print("[SCHEDULER] Started hourly cleanup of expired AI scan data")
+
+# Ensure scheduler shuts down with app
+atexit.register(lambda: scheduler.shutdown())
 
 @app.route('/')
 def index():
@@ -1229,6 +1245,13 @@ def asm_scan():
         logger.info(f"[ASM API] Risk Score: {scan_results.get('risk_score', 0)}/100")
         logger.info(f"[ASM API] Total CVEs: {cve_stats.get('total_cves', 0)}")
 
+        # Save XASM results for AI report generation
+        try:
+            save_xasm_for_ai(domain, scan_results)
+        except Exception as e:
+            logger.warning(f"[XASM] Failed to save for AI report: {e}")
+            # Don't fail the scan if storage fails
+
         # Return with ID included - THIS IS CRITICAL
         return jsonify({
             'id': new_scan.id,
@@ -1451,6 +1474,13 @@ def lightbox_scan():
         session.refresh(lightbox_record)  # Get the ID
 
         logger.info(f"[LIGHTBOX API] Saved to database with ID {lightbox_record.id}")
+
+        # Save Lightbox results for AI report generation
+        try:
+            save_lightbox_for_ai(domain, scan_results)
+        except Exception as e:
+            logger.warning(f"[LIGHTBOX] Failed to save for AI report: {e}")
+            # Don't fail the scan if storage fails
 
         # Clean up progress tracking
         with scan_progress_lock:
@@ -1689,6 +1719,67 @@ def delete_lightbox_scan_history_endpoint(scan_id):
     except Exception as e:
         logger.error(f"[LIGHTBOX HISTORY] Error deleting scan {scan_id}: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# ============================================================================
+# AI REPORT DATA ENDPOINTS
+# ============================================================================
+
+@app.route('/api/ai/companies', methods=['GET'])
+def get_companies_for_ai():
+    """Get list of companies with available scans for AI reports"""
+    try:
+        companies = get_companies_with_scans()
+
+        return jsonify({
+            'success': True,
+            'companies': companies,
+            'count': len(companies)
+        })
+
+    except Exception as e:
+        logger.error(f"[AI API] Error getting companies: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ai/generate-report', methods=['POST'])
+def generate_ai_report():
+    """Generate AI vulnerability assessment report"""
+    from database import load_xasm_for_ai, load_lightbox_for_ai
+    from modules.ghost.ai_vuln_report import generate_vulnerability_report
+
+    try:
+        data = request.get_json()
+        company = data.get('company')
+
+        if not company:
+            return jsonify({'error': 'Company required'}), 400
+
+        print(f"[AI API] Generating report for {company}")
+
+        # Load scan results
+        xasm_data = load_xasm_for_ai(company)
+        lightbox_data = load_lightbox_for_ai(company)
+
+        if not xasm_data:
+            return jsonify({'error': 'XASM scan results not found or expired'}), 404
+
+        if not lightbox_data:
+            return jsonify({'error': 'Lightbox scan results not found or expired'}), 404
+
+        # Generate AI report
+        report = generate_vulnerability_report(company, xasm_data, lightbox_data)
+
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+
+    except Exception as e:
+        print(f"[AI API] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 # ============================================================================
 # AI VULNERABILITY ASSESSMENT ENDPOINT

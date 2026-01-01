@@ -445,6 +445,287 @@ def smart_deduplicate(findings):
     return result
 
 
+def get_exposure_remediation(filepath):
+    """Get remediation steps for exposed files"""
+
+    remediations = {
+        '.env': '''Steps:
+* 1. Move .env files outside web root immediately
+* 2. Add web server rules to block .env access
+* 3. Rotate all exposed credentials
+* 4. Review all environment files for exposure
+
+Nginx:
+location ~* \\.env {
+    deny all;
+}
+
+Apache:
+<Files ".env">
+    Require all denied
+</Files>''',
+
+        '.git': '''Steps:
+* 1. Remove .git folder from production web root
+* 2. Add .git to web server deny rules
+* 3. Review git history for exposed secrets
+* 4. Rotate any credentials in git history
+
+Nginx:
+location ~* /\\.git {
+    deny all;
+}''',
+
+        '.aws': '''Steps:
+* 1. Revoke exposed AWS credentials immediately via AWS Console
+* 2. Remove credentials file from web server
+* 3. Use IAM roles instead of static credentials
+* 4. Enable AWS CloudTrail to audit credential usage''',
+
+        'config.php': '''Steps:
+* 1. Move config files outside web root
+* 2. Use environment variables for sensitive data
+* 3. Set proper file permissions (chmod 600)
+* 4. Add web server deny rules for config files''',
+
+        'id_rsa': '''Steps:
+* 1. Revoke compromised SSH key immediately
+* 2. Generate new SSH key pair
+* 3. Remove all SSH keys from web-accessible directories
+* 4. Audit all servers for unauthorized access''',
+
+        '.sql': '''Steps:
+* 1. Remove all database dumps from web server
+* 2. Store backups in secure, non-web-accessible location
+* 3. Encrypt database backups
+* 4. Review backup for exposed user data''',
+
+        'phpinfo.php': '''Steps:
+* 1. Delete phpinfo.php from production servers
+* 2. Use environment-specific debug pages
+* 3. Implement IP whitelisting for debug endpoints
+* 4. Never expose phpinfo() in production''',
+    }
+
+    # Match remediation by file pattern
+    for pattern, remediation in remediations.items():
+        if pattern in filepath:
+            return remediation
+
+    return '''Steps:
+* 1. Remove or restrict access to sensitive file
+* 2. Review file for exposed credentials
+* 3. Implement proper access controls
+* 4. Rotate any exposed secrets'''
+
+
+def check_data_exposure(assets):
+    """
+    Check for exposed sensitive files with content validation
+
+    Args:
+        assets (list): List of assets (subdomains/IPs) to check
+
+    Returns:
+        dict: Results with category, files checked, findings, and status
+    """
+    findings = []
+
+    # Sensitive files to check with content validators
+    sensitive_files = {
+        # Environment files
+        '/.env': {
+            'severity': 'CRITICAL',
+            'description': 'Environment file with passwords and secrets in plaintext',
+            'validators': ['=', 'DB_', 'API_', 'SECRET', 'PASSWORD', 'KEY']
+        },
+        '/.env.local': {
+            'severity': 'HIGH',
+            'description': 'Local environment file with database credentials and API keys',
+            'validators': ['=', 'DB_', 'API_', 'SECRET']
+        },
+        '/.env.production': {
+            'severity': 'HIGH',
+            'description': 'Production environment file with sensitive production secrets',
+            'validators': ['=', 'DB_', 'API_', 'SECRET']
+        },
+        '/.env.development': {
+            'severity': 'HIGH',
+            'description': 'Development environment file',
+            'validators': ['=']
+        },
+
+        # Git exposure
+        '/.git/': {
+            'severity': 'CRITICAL',
+            'description': 'Git repository exposing source code and commit history',
+            'validators': ['ref:', 'HEAD', 'refs/']
+        },
+        '/.git/config': {
+            'severity': 'HIGH',
+            'description': 'Git configuration with repository URLs and credentials',
+            'validators': ['[core]', '[remote', 'url =']
+        },
+        '/.git/HEAD': {
+            'severity': 'HIGH',
+            'description': 'Git HEAD file',
+            'validators': ['ref:', 'refs/heads/']
+        },
+
+        # AWS credentials
+        '/.aws/credentials': {
+            'severity': 'CRITICAL',
+            'description': 'AWS keys providing full cloud access to infrastructure',
+            'validators': ['aws_access_key_id', 'aws_secret_access_key']
+        },
+
+        # Config files
+        '/config.php': {
+            'severity': 'HIGH',
+            'description': 'Configuration file containing database passwords and API keys',
+            'validators': ['<?php', 'password', 'db_']
+        },
+        '/wp-config.php': {
+            'severity': 'HIGH',
+            'description': 'WordPress config with database credentials and security salts',
+            'validators': ['DB_NAME', 'DB_USER', 'DB_PASSWORD']
+        },
+        '/web.config': {
+            'severity': 'HIGH',
+            'description': 'ASP.NET config with database credentials and API keys',
+            'validators': ['<configuration', 'connectionString']
+        },
+
+        # SSH keys
+        '/.ssh/id_rsa': {
+            'severity': 'HIGH',
+            'description': 'SSH private key providing root server access',
+            'validators': ['BEGIN RSA PRIVATE KEY', 'BEGIN OPENSSH PRIVATE KEY']
+        },
+        '/id_rsa': {
+            'severity': 'HIGH',
+            'description': 'SSH private key for server access - full system compromise possible',
+            'validators': ['BEGIN RSA PRIVATE KEY', 'BEGIN OPENSSH PRIVATE KEY']
+        },
+
+        # Database backups
+        '/backup.sql': {
+            'severity': 'HIGH',
+            'description': 'Database backup with all user data and credentials',
+            'validators': ['CREATE TABLE', 'INSERT INTO', 'DROP TABLE']
+        },
+        '/database.sql': {
+            'severity': 'HIGH',
+            'description': 'Database dump with sensitive user and application data',
+            'validators': ['CREATE TABLE', 'INSERT INTO']
+        },
+        '/dump.sql': {
+            'severity': 'HIGH',
+            'description': 'SQL dump file',
+            'validators': ['CREATE TABLE', 'INSERT INTO']
+        },
+
+        # PHP info
+        '/phpinfo.php': {
+            'severity': 'HIGH',
+            'description': 'PHP info page exposing server configuration and paths',
+            'validators': ['phpinfo()', 'PHP Version', 'System']
+        },
+
+        # Htaccess
+        '/.htaccess': {
+            'severity': 'HIGH',
+            'description': 'Apache config file',
+            'validators': ['RewriteRule', 'RewriteCond', 'Require']
+        },
+        '/.htpasswd': {
+            'severity': 'HIGH',
+            'description': 'Password file with hashed credentials for brute forcing',
+            'validators': [':', '$apr1$', '$2y$']
+        }
+    }
+
+    # Browser-like headers for requests
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive'
+    }
+
+    print(f"[DATA EXPOSURE] Checking for exposed sensitive files on {len(assets)} assets...")
+
+    for asset in assets:
+        for filepath, config in sensitive_files.items():
+            try:
+                # Try both HTTP and HTTPS
+                for protocol in ['https', 'http']:
+                    url = f"{protocol}://{asset}{filepath}"
+
+                    response = requests.get(url, headers=headers, timeout=5, verify=False)
+
+                    if response.status_code == 200:
+                        content = response.text.upper()
+
+                        # CRITICAL: Validate content is actually the sensitive file
+                        validators = config['validators']
+                        matches = sum(1 for validator in validators if validator.upper() in content)
+
+                        # Need at least 2 validators to match (prevents false positives)
+                        min_matches = 2 if len(validators) > 2 else 1
+
+                        # Also check for common false positive patterns
+                        false_positive_indicators = [
+                            'ROUTE NOT',
+                            'NOT FOUND',
+                            'PAGE NOT FOUND',
+                            '404',
+                            'NOT IMPLEMENTED',
+                            'COMING SOON',
+                            'UNDER CONSTRUCTION',
+                            'ACCESS DENIED',
+                            'FORBIDDEN',
+                            'UNAUTHORIZED'
+                        ]
+
+                        is_false_positive = any(indicator in content for indicator in false_positive_indicators)
+
+                        # Only report if validators match AND not a false positive
+                        if matches >= min_matches and not is_false_positive:
+                            findings.append({
+                                'type': 'Sensitive File Exposed',
+                                'test': 'Data Exposure Check',
+                                'severity': config['severity'],
+                                'description': config['description'],
+                                'explanation': f"Validated exposure: {filepath} contains {matches}/{len(validators)} expected patterns",
+                                'evidence': url,
+                                'url': url,
+                                'asset': asset,
+                                'file': filepath,
+                                'finding_type': 'active-test',
+                                'remediation': get_exposure_remediation(filepath),
+                                'cve': None,
+                                'cvss': 9.0 if config['severity'] == 'CRITICAL' else 7.5
+                            })
+
+                            print(f"[DATA EXPOSURE] 🚨 VALIDATED: {url} ({matches}/{len(validators)} patterns matched)")
+                            break  # Found via one protocol, skip the other
+                        elif response.status_code == 200 and matches < min_matches:
+                            print(f"[DATA EXPOSURE] ℹ️  Skipped false positive: {url} (validators: {matches}/{len(validators)})")
+
+            except Exception as e:
+                continue
+
+    print(f"[DATA EXPOSURE] Content validation complete: {len(findings)} actual exposures found")
+
+    return {
+        'category': 'Data Exposure',
+        'files_checked': len(assets) * len(sensitive_files),
+        'findings': findings,
+        'status': 'failed' if findings else 'passed'
+    }
+
+
 def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     """
     Automated security testing on discovered assets with optional progress tracking
@@ -510,22 +791,47 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     reachable_assets = []
     unreachable_count = 0
 
+    # Browser-like headers to bypass basic bot detection
+    reachability_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+
     for asset in subdomains_to_test:
+        reachable = False
+
+        # Try HTTPS first
         try:
-            # Quick reachability check (HEAD request with short timeout)
-            response = requests.head(f"https://{asset}", timeout=2, verify=False, allow_redirects=True)
-            reachable_assets.append(asset)
+            url = f"https://{asset}"
+            response = requests.get(url, headers=reachability_headers, timeout=5, verify=False)
+            if response.status_code < 500:
+                reachable = True
+                reachable_assets.append(asset)
         except requests.exceptions.SSLError:
             # SSL errors often mean the host is reachable, just has cert issues
+            reachable = True
             reachable_assets.append(asset)
         except:
-            # Try HTTP if HTTPS failed
+            pass
+
+        # If HTTPS failed, try HTTP
+        if not reachable:
             try:
-                response = requests.head(f"http://{asset}", timeout=2, verify=False, allow_redirects=True)
-                reachable_assets.append(asset)
+                url = f"http://{asset}"
+                response = requests.get(url, headers=reachability_headers, timeout=5, verify=False)
+                if response.status_code < 500:
+                    reachable = True
+                    reachable_assets.append(asset)
             except:
-                print(f"[LIGHTBOX] ⏩ Skipping unreachable: {asset}")
-                unreachable_count += 1
+                pass
+
+        if not reachable:
+            print(f"[LIGHTBOX] ⏩ Skipping unreachable: {asset}")
+            unreachable_count += 1
 
     subdomains_to_test = reachable_assets
     print(f"[LIGHTBOX] ✓ {len(reachable_assets)} reachable, {unreachable_count} skipped\n")

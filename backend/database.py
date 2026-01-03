@@ -138,6 +138,421 @@ class User(Base):
         return f'<User {self.email}>'
 
 
+class Session(Base):
+    __tablename__ = 'sessions'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # User
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Tokens
+    token = Column(String(255), unique=True, nullable=False, index=True)
+    refresh_token = Column(String(255), unique=True)
+
+    # Device Info
+    ip_address = Column(String(45), nullable=False)
+    user_agent = Column(Text)
+    device_type = Column(String(20))  # web, mobile, api
+    device_name = Column(String(255))
+    location = Column(String(255))
+
+    # Session Management
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    last_activity = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    revoked_at = Column(DateTime)
+
+    def __repr__(self):
+        return f'<Session {self.id} for user {self.user_id}>'
+
+
+class AuditLog(Base):
+    __tablename__ = 'audit_logs'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # User & Action
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    action = Column(String(100), nullable=False, index=True)
+    resource_type = Column(String(50))
+    resource_id = Column(Integer)
+
+    # Details
+    description = Column(Text)
+    metadata_json = Column(Text)  # JSON
+
+    # Request Info
+    ip_address = Column(String(45))
+    user_agent = Column(Text)
+
+    # Result
+    success = Column(Boolean, nullable=False, default=True)
+    error_message = Column(Text)
+
+    # Timestamp
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<AuditLog {self.action} by user {self.user_id}>'
+
+
+class PasswordHistory(Base):
+    __tablename__ = 'password_history'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # User
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Password Hash
+    password_hash = Column(String(255), nullable=False)
+
+    # Timestamp
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<PasswordHistory for user {self.user_id}>'
+
+
+class LoginAttempt(Base):
+    __tablename__ = 'login_attempts'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Attempt Info
+    email = Column(String(255), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+
+    # Request Info
+    ip_address = Column(String(45), nullable=False)
+    user_agent = Column(Text)
+
+    # Result
+    success = Column(Boolean, nullable=False)
+    failure_reason = Column(String(100))
+
+    # Timestamp
+    attempted_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def __repr__(self):
+        return f'<LoginAttempt {self.email} at {self.attempted_at}>'
+
+
+# ============================================================================
+# GHOST SEARCH MODELS
+# ============================================================================
+
+class GhostSearchQuery(Base):
+    __tablename__ = 'ghost_search_queries'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # User
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Query Info
+    query_type = Column(String(20), nullable=False)  # email, domain, phone, ip
+    query_value = Column(String(255), nullable=False)
+    results_count = Column(Integer, nullable=False, default=0)
+
+    # Search Metadata
+    search_sources = Column(Text)  # JSON array
+    response_time_ms = Column(Integer)
+
+    # Timestamp
+    searched_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<GhostSearchQuery {self.query_type}: {self.query_value}>'
+
+
+class MonitoredEmail(Base):
+    __tablename__ = 'monitored_emails'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Ownership
+    company_id = Column(Integer, ForeignKey('companies.id', ondelete='CASCADE'), index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), index=True)
+    created_by_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=False)
+
+    # Email
+    email_address = Column(String(255), nullable=False, index=True)
+    monitor_scope = Column(String(20), nullable=False)  # company, analyst, admin
+
+    # Status
+    last_checked = Column(DateTime)
+    findings_count = Column(Integer, nullable=False, default=0)
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<MonitoredEmail {self.email_address}>'
+
+
+class MonitoredEmailFinding(Base):
+    __tablename__ = 'monitored_email_findings'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Monitored Email
+    monitored_email_id = Column(Integer, ForeignKey('monitored_emails.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Finding Info
+    finding_type = Column(String(50), nullable=False)  # breach, paste, darkweb, credential_leak
+    source = Column(String(100), nullable=False)
+    breach_name = Column(String(255))
+    breach_date = Column(DateTime)
+
+    # Details
+    details = Column(Text, nullable=False)  # JSON
+    severity = Column(String(20), nullable=False)  # critical, high, medium, low
+
+    # Notification
+    notified = Column(Boolean, nullable=False, default=False)
+    notified_at = Column(DateTime)
+
+    # Timestamp
+    found_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<MonitoredEmailFinding {self.finding_type} from {self.source}>'
+
+
+class UploadedBreachFile(Base):
+    __tablename__ = 'uploaded_breach_files'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # User
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # File Info
+    filename = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_path = Column(String(500), nullable=False)
+    storage_location = Column(String(20), nullable=False)  # local, s3
+
+    # Processing
+    indexed = Column(Boolean, nullable=False, default=False)
+    records_count = Column(Integer)
+    processing_status = Column(String(20), nullable=False, default='pending')  # pending, processing, completed, failed
+    processing_error = Column(Text)
+
+    # Security
+    content_hash = Column(String(64), nullable=False)  # SHA256
+    mime_type = Column(String(100), nullable=False)
+    virus_scanned = Column(Boolean, nullable=False, default=False)
+    virus_scan_result = Column(String(100))
+    security_flags = Column(Text)  # JSON
+
+    # Expiry (24 hours)
+    uploaded_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=False)
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<UploadedBreachFile {self.filename}>'
+
+
+class BreachFileResult(Base):
+    __tablename__ = 'breach_file_results'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Source File
+    uploaded_file_id = Column(Integer, ForeignKey('uploaded_breach_files.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Breach Data
+    email = Column(String(255), nullable=False, index=True)
+    password_hash = Column(String(255))
+    password_plain = Column(String(255))
+    additional_data = Column(Text)  # JSON
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<BreachFileResult {self.email}>'
+
+
+# ============================================================================
+# COMPLIANCE & VULNERABILITY REPORT MODELS
+# ============================================================================
+
+class ComplianceAssessment(Base):
+    __tablename__ = 'compliance_assessments'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Company
+    company_id = Column(Integer, ForeignKey('companies.id', ondelete='CASCADE'), nullable=False, index=True)
+    created_by_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=False)
+
+    # Framework
+    framework = Column(String(50), nullable=False, index=True)  # SOC2, ISO27001, GDPR, NIS2, PIPEDA
+    framework_version = Column(String(20))
+
+    # Status
+    status = Column(String(20), nullable=False, default='in_progress')  # in_progress, completed, expired
+    overall_compliance_score = Column(Integer)  # 0-100
+
+    # Dates
+    assessment_date = Column(DateTime, nullable=False)
+    completion_date = Column(DateTime)
+    expiry_date = Column(DateTime)
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<ComplianceAssessment {self.framework} for company {self.company_id}>'
+
+
+class ComplianceControl(Base):
+    __tablename__ = 'compliance_controls'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Assessment
+    assessment_id = Column(Integer, ForeignKey('compliance_assessments.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Control Info
+    control_id = Column(String(50), nullable=False)  # e.g., "SOC2-CC6.1"
+    control_name = Column(String(255), nullable=False)
+    control_category = Column(String(100))
+
+    # Status
+    status = Column(String(20), nullable=False, default='not_tested')  # compliant, non_compliant, partial, not_tested
+    compliance_score = Column(Integer)  # 0-100
+
+    # Evidence & Notes
+    evidence_summary = Column(Text)
+    remediation_notes = Column(Text)
+    assigned_to_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'))
+
+    # Dates
+    last_reviewed = Column(DateTime)
+    next_review_date = Column(DateTime)
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<ComplianceControl {self.control_id}: {self.status}>'
+
+
+class ComplianceEvidence(Base):
+    __tablename__ = 'compliance_evidence'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Control
+    control_id = Column(Integer, ForeignKey('compliance_controls.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Evidence Info
+    evidence_type = Column(String(50), nullable=False)  # document, scan, screenshot, policy, log
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+
+    # File
+    file_path = Column(String(500))
+    file_size = Column(Integer)
+    file_type = Column(String(100))
+
+    # Metadata
+    uploaded_by_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=False)
+    evidence_date = Column(DateTime)  # When evidence was created (not uploaded)
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<ComplianceEvidence {self.title}>'
+
+
+class VulnerabilityReport(Base):
+    __tablename__ = 'vulnerability_reports'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Company & User
+    company_id = Column(Integer, ForeignKey('companies.id', ondelete='CASCADE'), index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Source Scans
+    xasm_scan_id = Column(Integer, ForeignKey('scan_results_xasm.id', ondelete='SET NULL'))
+    lightbox_scan_id = Column(Integer, ForeignKey('scan_results_lightbox.id', ondelete='SET NULL'))
+
+    # Report Data
+    risk_score = Column(Integer, nullable=False)  # 0-100
+    risk_level = Column(String(20), nullable=False)  # CRITICAL, HIGH, MEDIUM, LOW
+    executive_summary = Column(Text, nullable=False)
+    report_json = Column(Text, nullable=False)  # Full AI-generated report
+
+    # AI Metadata
+    ai_model = Column(String(50), nullable=False)  # gemini-flash-latest
+    generation_time_ms = Column(Integer)
+
+    # Standard Columns
+    generated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<VulnerabilityReport risk_level={self.risk_level} for user {self.user_id}>'
+
+
 # ============================================================================
 # EXISTING MODELS
 # ============================================================================

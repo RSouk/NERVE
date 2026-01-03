@@ -1391,41 +1391,20 @@ def save_lightbox_for_ai(company: str, results: dict) -> bool:
 
 
 def load_xasm_for_ai(company: str) -> dict:
-    """Load XASM results for AI report (returns None if expired/missing)"""
-    import json
-    from datetime import datetime, timezone
-
+    """Load XASM results for AI report from CachedASMScan"""
     session = SessionLocal()
 
     try:
-        scan = session.query(ScanResultsXASM).filter_by(company=company).first()
+        # Query CachedASMScan by domain (company parameter is actually domain)
+        scan = session.query(CachedASMScan).filter_by(domain=company).first()
 
         if not scan:
             print(f"[DB] No XASM scan found for {company}")
             return None
 
-        # expires_at is already a datetime object from SQLAlchemy, not a string
-        expires_at = scan.expires_at
-
-        # Make both timezone-aware for comparison
-        now = datetime.now(timezone.utc)
-
-        # If expires_at has no timezone info, assume UTC
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        else:
-            # Convert to UTC if it has a different timezone
-            expires_at = expires_at.astimezone(timezone.utc)
-
-        # Check expiry
-        if now > expires_at:
-            print(f"[DB] XASM scan expired for {company}")
-            session.delete(scan)
-            session.commit()
-            return None
-
         print(f"[DB] Loaded XASM scan for {company}")
-        return json.loads(scan.results_json)
+        # scan_results is already a dict (JSON column)
+        return scan.scan_results if scan.scan_results else None
 
     except Exception as e:
         print(f"[DB] Error loading XASM for AI: {e}")
@@ -1437,41 +1416,20 @@ def load_xasm_for_ai(company: str) -> dict:
 
 
 def load_lightbox_for_ai(company: str) -> dict:
-    """Load Lightbox results for AI report (returns None if expired/missing)"""
-    import json
-    from datetime import datetime, timezone
-
+    """Load Lightbox results for AI report from LightboxScan"""
     session = SessionLocal()
 
     try:
-        scan = session.query(ScanResultsLightbox).filter_by(company=company).first()
+        # Query LightboxScan by domain (company parameter is actually domain)
+        scan = session.query(LightboxScan).filter_by(domain=company).first()
 
         if not scan:
             print(f"[DB] No Lightbox scan found for {company}")
             return None
 
-        # expires_at is already a datetime object from SQLAlchemy, not a string
-        expires_at = scan.expires_at
-
-        # Make both timezone-aware for comparison
-        now = datetime.now(timezone.utc)
-
-        # If expires_at has no timezone info, assume UTC
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        else:
-            # Convert to UTC if it has a different timezone
-            expires_at = expires_at.astimezone(timezone.utc)
-
-        # Check expiry
-        if now > expires_at:
-            print(f"[DB] Lightbox scan expired for {company}")
-            session.delete(scan)
-            session.commit()
-            return None
-
         print(f"[DB] Loaded Lightbox scan for {company}")
-        return json.loads(scan.results_json)
+        # Return the scan as a dict using the to_dict method
+        return scan.to_dict()
 
     except Exception as e:
         print(f"[DB] Error loading Lightbox for AI: {e}")
@@ -1483,49 +1441,44 @@ def load_lightbox_for_ai(company: str) -> dict:
 
 
 def get_companies_with_scans() -> list:
-    """Get list of companies with available scans for AI reports"""
+    """Get list of domains with available scans for AI reports"""
     session = SessionLocal()
-    now = datetime.now(timezone.utc)
 
     try:
-        # Get all non-expired XASM scans
-        xasm_records = session.query(ScanResultsXASM).filter(
-            ScanResultsXASM.expires_at > now
-        ).all()
+        # Get all available XASM scans
+        xasm_records = session.query(CachedASMScan).all()
 
-        # Get all non-expired Lightbox scans
-        lightbox_records = session.query(ScanResultsLightbox).filter(
-            ScanResultsLightbox.expires_at > now
-        ).all()
+        # Get all available Lightbox scans
+        lightbox_records = session.query(LightboxScan).all()
 
-        # Build company map
-        company_map = {}
+        # Build domain map
+        domain_map = {}
 
         for record in xasm_records:
-            if record.company not in company_map:
-                company_map[record.company] = {
-                    'company': record.company,
+            if record.domain not in domain_map:
+                domain_map[record.domain] = {
+                    'company': record.domain,
                     'has_xasm': False,
                     'has_lightbox': False,
                     'xasm_date': None,
                     'lightbox_date': None
                 }
-            company_map[record.company]['has_xasm'] = True
-            company_map[record.company]['xasm_date'] = record.scan_date.isoformat() if record.scan_date else None
+            domain_map[record.domain]['has_xasm'] = True
+            domain_map[record.domain]['xasm_date'] = record.scanned_at.isoformat() if record.scanned_at else None
 
         for record in lightbox_records:
-            if record.company not in company_map:
-                company_map[record.company] = {
-                    'company': record.company,
+            if record.domain not in domain_map:
+                domain_map[record.domain] = {
+                    'company': record.domain,
                     'has_xasm': False,
                     'has_lightbox': False,
                     'xasm_date': None,
                     'lightbox_date': None
                 }
-            company_map[record.company]['has_lightbox'] = True
-            company_map[record.company]['lightbox_date'] = record.scan_date.isoformat() if record.scan_date else None
+            domain_map[record.domain]['has_lightbox'] = True
+            domain_map[record.domain]['lightbox_date'] = record.scanned_at.isoformat() if record.scanned_at else None
 
-        return list(company_map.values())
+        return list(domain_map.values())
 
     except Exception as e:
         print(f"[DB] Error getting companies: {e}")

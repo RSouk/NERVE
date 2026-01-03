@@ -1,9 +1,10 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON, Boolean, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime, timedelta, timezone
 import os
 import json
+import enum
 
 # Create database in the data folder
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'ghost.db')
@@ -12,6 +13,134 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
+
+
+# ============================================================================
+# USER & COMPANY ENUMS
+# ============================================================================
+
+class UserRole(enum.Enum):
+    SUPER_ADMIN = 'super_admin'
+    ADMIN = 'admin'
+    ANALYST = 'analyst'
+    USER = 'user'
+    COMPANY_USER = 'company_user'
+    DEMO = 'demo'
+
+class UserStatus(enum.Enum):
+    ACTIVE = 'active'
+    LOCKED = 'locked'
+    SUSPENDED = 'suspended'
+    PENDING_VERIFICATION = 'pending_verification'
+
+
+# ============================================================================
+# USER & COMPANY MODELS
+# ============================================================================
+
+class Company(Base):
+    __tablename__ = 'companies'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Company Info
+    name = Column(String(255), nullable=False)
+    primary_domain = Column(String(255), unique=True, nullable=False, index=True)
+    additional_domains = Column(Text)  # JSON array
+
+    # Subscription
+    max_seats = Column(Integer, nullable=False, default=1)
+    max_domains = Column(Integer, nullable=False, default=1)
+    subscription_tier = Column(String(20), nullable=False, default='basic')
+
+    # Billing
+    stripe_customer_id = Column(String(255))
+    billing_email = Column(String(255))
+    subscription_status = Column(String(20))
+
+    # Standard Columns
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<Company {self.name}>'
+
+
+class User(Base):
+    __tablename__ = 'users'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Identity
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(100), unique=True)
+    password_hash = Column(String(255), nullable=False)
+    full_name = Column(String(255))
+
+    # Role & Company
+    role = Column(Enum(UserRole), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey('companies.id', ondelete='SET NULL'), index=True)
+
+    # Account Status
+    status = Column(Enum(UserStatus), nullable=False, default=UserStatus.ACTIVE, index=True)
+    email_verified = Column(Boolean, nullable=False, default=False)
+    email_verification_token = Column(String(255))
+    email_verified_at = Column(DateTime)
+
+    # Security
+    twofa_enabled = Column('2fa_enabled', Boolean, nullable=False, default=False)
+    twofa_secret = Column('2fa_secret', String(255))
+    twofa_backup_codes = Column('2fa_backup_codes', Text)
+    failed_login_attempts = Column(Integer, nullable=False, default=0)
+    locked_until = Column(DateTime)
+
+    # Password Management
+    password_reset_token = Column(String(255))
+    password_reset_expires = Column(DateTime)
+    last_password_change = Column(DateTime)
+    must_change_password = Column(Boolean, nullable=False, default=False)
+
+    # Contact
+    phone_number = Column(String(20))
+    timezone = Column(String(50), default='UTC')
+    language = Column(String(10), default='en')
+
+    # Subscription
+    subscription_tier = Column(String(20))
+    subscription_status = Column(String(20))
+    stripe_customer_id = Column(String(255))
+    stripe_subscription_id = Column(String(255))
+
+    # Demo Accounts
+    expires_at = Column(DateTime)
+
+    # Preferences
+    email_notifications = Column(Boolean, nullable=False, default=True)
+    security_alerts = Column(Boolean, nullable=False, default=True)
+    marketing_emails = Column(Boolean, nullable=False, default=False)
+    theme = Column(String(10), default='dark')
+
+    # Tracking
+    last_login_at = Column(DateTime)
+    last_login_ip = Column(String(45))
+
+    # Standard Columns (soft delete pattern)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<User {self.email}>'
+
+
+# ============================================================================
+# EXISTING MODELS
+# ============================================================================
 
 class Profile(Base):
     __tablename__ = 'profiles'

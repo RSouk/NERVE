@@ -559,7 +559,7 @@ class VulnerabilityReport(Base):
 
 class Profile(Base):
     __tablename__ = 'profiles'
-    
+
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     email = Column(String)
@@ -567,18 +567,24 @@ class Profile(Base):
     phone = Column(String)
     notes = Column(Text)
     risk_score = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
+
     # OSINT data fields
     breach_count = Column(Integer, default=0)
     social_media_json = Column(Text)  # Store as JSON string
     exposed_passwords = Column(Text)
     data_leaks = Column(Text)
 
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 class SocialMedia(Base):
     __tablename__ = 'social_media'
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     profile_id = Column(String, nullable=False)
     platform = Column(String)
@@ -588,15 +594,29 @@ class SocialMedia(Base):
     posts_count = Column(Integer)
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 class Breach(Base):
     __tablename__ = 'breaches'
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     profile_id = Column(String, nullable=False)
     breach_name = Column(String)
     breach_date = Column(String)
     data_classes = Column(Text)  # What data was leaked
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
 
 class Device(Base):
     __tablename__ = 'devices'
@@ -610,6 +630,13 @@ class Device(Base):
     vulnerabilities = Column(Text)
     location = Column(String)
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
 
 class BaitToken(Base):
     __tablename__ = 'bait_tokens'
@@ -627,6 +654,13 @@ class BaitToken(Base):
 
     # Relationship to access logs
     accesses = relationship('BaitAccess', back_populates='bait_token', cascade='all, delete-orphan')
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
 
 class BaitAccess(Base):
     __tablename__ = 'bait_accesses'
@@ -654,6 +688,13 @@ class BaitAccess(Base):
     # Relationship to bait token
     bait_token = relationship('BaitToken', back_populates='accesses')
 
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 class UploadedFile(Base):
     __tablename__ = 'uploaded_files'
 
@@ -669,6 +710,13 @@ class UploadedFile(Base):
     # Relationship to credentials
     credentials = relationship('UploadedCredential', back_populates='uploaded_file', cascade='all, delete-orphan')
 
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 class UploadedCredential(Base):
     __tablename__ = 'uploaded_credentials'
 
@@ -681,6 +729,13 @@ class UploadedCredential(Base):
 
     # Relationship to uploaded file
     uploaded_file = relationship('UploadedFile', back_populates='credentials')
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
 
 class GitHubFinding(Base):
     __tablename__ = 'github_findings'
@@ -697,6 +752,13 @@ class GitHubFinding(Base):
     context = Column(Text)  # surrounding 500 chars
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
 
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 class PasteBinFinding(Base):
     __tablename__ = 'pastebin_findings'
 
@@ -711,6 +773,13 @@ class PasteBinFinding(Base):
     context = Column(Text)  # surrounding 500 chars
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
 
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 class LightboxFinding(Base):
     __tablename__ = 'lightbox_findings'
 
@@ -723,6 +792,13 @@ class LightboxFinding(Base):
     status_code = Column(Integer)  # HTTP status code
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
     scan_id = Column(String, index=True)  # to group findings from the same scan
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
 
 class OpsychSearchResult(Base):
     __tablename__ = 'opsych_search_results'
@@ -738,6 +814,13 @@ class OpsychSearchResult(Base):
     source = Column(String)  # Sherlock, Holehe, Mastodon API, GitHub API
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # when we found it
 
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 class ASMScan(Base):
     __tablename__ = 'asm_scans'
 
@@ -748,6 +831,13 @@ class ASMScan(Base):
     risk_score = Column(Integer)  # cached risk score
     risk_level = Column(String)  # cached risk level
     vulnerabilities_found = Column(Integer)  # cached vuln count
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
 
 class CachedASMScan(Base):
     __tablename__ = 'cached_asm_scans'
@@ -762,6 +852,13 @@ class CachedASMScan(Base):
     vulnerabilities_found = Column(Integer, default=0)  # Total vulnerability count
     open_ports_count = Column(Integer, default=0)  # Number of open ports
     scan_results = Column(JSON)
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
 
 class LightboxScan(Base):
     """Store Lightbox scan results"""
@@ -781,6 +878,12 @@ class LightboxScan(Base):
     # Full results (JSON)
     findings = Column(Text)  # JSON-serialized findings
     scan_metadata = Column(Text)  # JSON-serialized metadata: assets tested, checks run, etc.
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
     def to_dict(self):
         return {
@@ -808,8 +911,13 @@ class XASMScanHistory(Base):
     status = Column(String, nullable=False, default='completed')
     results_json = Column(Text)  # Full scan results as JSON
     summary_stats = Column(Text)  # Summary statistics as JSON
-    user_id = Column(String, nullable=True)  # For future auth integration
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
     def to_dict(self):
         return {
@@ -837,8 +945,13 @@ class LightboxScanHistory(Base):
     total_tests = Column(Integer, default=0)
     passed_tests = Column(Integer, default=0)
     failed_tests = Column(Integer, default=0)
-    user_id = Column(String, nullable=True)  # For future auth integration
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
     def to_dict(self):
         return {
@@ -854,6 +967,7 @@ class LightboxScanHistory(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+
 # ============================================================================
 # AI REPORT SCAN STORAGE MODELS (48-hour expiry)
 # ============================================================================
@@ -867,7 +981,13 @@ class ScanResultsXASM(Base):
     results_json = Column(Text, nullable=False)
     scan_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     expires_at = Column(DateTime, nullable=False)
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
 
 class ScanResultsLightbox(Base):
@@ -879,7 +999,13 @@ class ScanResultsLightbox(Base):
     results_json = Column(Text, nullable=False)
     scan_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     expires_at = Column(DateTime, nullable=False)
+
+    # User & Standard Columns
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
 
 def init_db():

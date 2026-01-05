@@ -1,0 +1,396 @@
+{
+  "standard": "General Data Protection Regulation (GDPR)",
+  "regulation": "Regulation (EU) 2016/679",
+  "version": "2016",
+  "effectiveDate": "2018-05-25",
+  "jurisdiction": "European Union",
+  "officialSource": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+  "domains": [
+    {
+      "title": "Chapter I - General Provisions",
+      "articles": [
+        {
+          "ref": "Article 1",
+          "title": "Subject-matter and objectives",
+          "summary": "This Regulation lays down rules relating to the protection of natural persons with regard to the processing of personal data and rules relating to the free movement of personal data.",
+          "requirements": [
+            "Protect fundamental rights and freedoms of natural persons, particularly the right to protection of personal data",
+            "Ensure free movement of personal data within the Union"
+          ]
+        },
+        {
+          "ref": "Article 2",
+          "title": "Material scope",
+          "summary": "This Regulation applies to the processing of personal data wholly or partly by automated means and to other processing.",
+          "requirements": [
+            "Applies to automated processing of personal data",
+            "Applies to non-automated processing if part of a filing system"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter II - Principles",
+      "articles": [
+        {
+          "ref": "Article 5",
+          "title": "Principles relating to processing of personal data",
+          "summary": "Personal data shall be processed lawfully, fairly and in a transparent manner; collected for specified, explicit and legitimate purposes; adequate, relevant and limited to what is necessary; accurate and kept up to date; kept in a form which permits identification for no longer than necessary; processed in a manner that ensures appropriate security.",
+          "requirements": [
+            "Lawfulness, fairness and transparency: Process data lawfully, fairly and in a transparent manner",
+            "Purpose limitation: Collect data for specified, explicit and legitimate purposes only",
+            "Data minimisation: Ensure data is adequate, relevant and limited to what is necessary",
+            "Accuracy: Keep personal data accurate and up to date",
+            "Storage limitation: Keep data in identifiable form only as long as necessary",
+            "Integrity and confidentiality: Process data securely using appropriate technical and organisational measures",
+            "Accountability: Controller shall be responsible for and able to demonstrate compliance"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 6",
+          "title": "Lawfulness of processing",
+          "summary": "Processing shall be lawful only if at least one legal basis applies: consent, contract, legal obligation, vital interests, public task, or legitimate interests.",
+          "requirements": [
+            "Obtain consent from the data subject",
+            "Processing necessary for performance of a contract",
+            "Processing necessary for compliance with legal obligation",
+            "Processing necessary to protect vital interests",
+            "Processing necessary for public interest or official authority",
+            "Processing necessary for legitimate interests (except where overridden by data subject interests)"
+          ],
+          "isCore": true
+        }
+      ]
+    },
+    {
+      "title": "Chapter III - Rights of the Data Subject",
+      "articles": [
+        {
+          "ref": "Article 12",
+          "title": "Transparent information, communication and modalities",
+          "summary": "Controller shall take appropriate measures to provide information in a concise, transparent, intelligible and easily accessible form, using clear and plain language.",
+          "requirements": [
+            "Provide information in concise, transparent, intelligible form",
+            "Use clear and plain language",
+            "Respond to requests without undue delay, within one month",
+            "Provide information free of charge"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 13",
+          "title": "Information to be provided where personal data are collected from the data subject",
+          "summary": "Where personal data are collected from the data subject, controller shall provide identity, contact details, purposes, legal basis, recipients, retention period, rights, right to withdraw consent, right to lodge complaint.",
+          "requirements": [
+            "Provide controller identity and contact details",
+            "Provide Data Protection Officer contact details",
+            "Provide purposes and legal basis for processing",
+            "Disclose legitimate interests (if applicable)",
+            "Identify recipients or categories of recipients",
+            "Disclose international transfers",
+            "Specify retention period",
+            "Inform of data subject rights (access, rectification, erasure, restriction, portability, objection)",
+            "Inform of right to withdraw consent",
+            "Inform of right to lodge complaint with supervisory authority",
+            "State whether provision of data is statutory, contractual requirement, or necessary",
+            "Disclose automated decision-making including profiling"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 15",
+          "title": "Right of access by the data subject",
+          "summary": "Data subject shall have the right to obtain confirmation as to whether personal data are being processed, and access to the personal data and information.",
+          "requirements": [
+            "Confirm whether personal data is being processed",
+            "Provide access to personal data",
+            "Provide copy of personal data undergoing processing",
+            "Provide information about processing purposes, categories, recipients, retention period, rights, complaint rights, source of data, automated decision-making"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 16",
+          "title": "Right to rectification",
+          "summary": "Data subject shall have the right to obtain rectification of inaccurate personal data and completion of incomplete personal data.",
+          "requirements": [
+            "Rectify inaccurate personal data without undue delay",
+            "Complete incomplete personal data"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 17",
+          "title": "Right to erasure ('right to be forgotten')",
+          "summary": "Data subject shall have the right to obtain erasure of personal data without undue delay where grounds apply.",
+          "requirements": [
+            "Erase data when no longer necessary for purposes",
+            "Erase data when consent is withdrawn",
+            "Erase data when data subject objects and no overriding legitimate grounds exist",
+            "Erase data when processed unlawfully",
+            "Erase data to comply with legal obligation",
+            "Inform other controllers processing the data about erasure request"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 18",
+          "title": "Right to restriction of processing",
+          "summary": "Data subject shall have the right to obtain restriction of processing in specific circumstances.",
+          "requirements": [
+            "Restrict processing when accuracy is contested",
+            "Restrict processing when processing is unlawful but erasure is opposed",
+            "Restrict processing when no longer needed but required for legal claims",
+            "Restrict processing when objection is pending verification"
+          ]
+        },
+        {
+          "ref": "Article 20",
+          "title": "Right to data portability",
+          "summary": "Data subject shall have the right to receive personal data in structured, commonly used, machine-readable format and transmit to another controller.",
+          "requirements": [
+            "Provide data in structured, commonly used, machine-readable format",
+            "Allow transmission of data to another controller where technically feasible"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 21",
+          "title": "Right to object",
+          "summary": "Data subject shall have the right to object to processing of personal data based on legitimate interests, public interest, or for direct marketing.",
+          "requirements": [
+            "Allow objection to processing based on legitimate interests or public interest",
+            "Allow objection to direct marketing at any time",
+            "Cease processing upon objection unless compelling legitimate grounds exist"
+          ],
+          "isCore": true
+        }
+      ]
+    },
+    {
+      "title": "Chapter IV - Controller and Processor",
+      "articles": [
+        {
+          "ref": "Article 24",
+          "title": "Responsibility of the controller",
+          "summary": "Controller shall implement appropriate technical and organisational measures to ensure and demonstrate compliance with this Regulation (accountability).",
+          "requirements": [
+            "Implement appropriate technical and organisational measures",
+            "Demonstrate compliance with GDPR (accountability principle)",
+            "Review and update measures when necessary",
+            "Implement data protection by design and by default"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 25",
+          "title": "Data protection by design and by default",
+          "summary": "Controller shall implement appropriate technical and organisational measures designed to implement data protection principles and integrate safeguards into processing.",
+          "requirements": [
+            "Implement data protection by design (at time of determining means of processing)",
+            "Implement data protection by default (ensure only necessary personal data is processed)",
+            "Apply pseudonymisation where appropriate",
+            "Minimise processing of personal data",
+            "Ensure transparency regarding functions and processing"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 28",
+          "title": "Processor",
+          "summary": "Processor shall only act on documented instructions from controller and implement appropriate technical and organisational measures.",
+          "requirements": [
+            "Process data only on documented instructions from controller",
+            "Ensure persons processing data are bound by confidentiality",
+            "Implement appropriate technical and organisational measures (Article 32)",
+            "Engage sub-processors only with controller authorization",
+            "Assist controller in ensuring compliance with Articles 32-36",
+            "Delete or return personal data after end of services",
+            "Make available information necessary to demonstrate compliance"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 30",
+          "title": "Records of processing activities",
+          "summary": "Controller and processor shall maintain records of processing activities under their responsibility.",
+          "requirements": [
+            "Maintain record of processing activities including: name and contact details, purposes, categories of data subjects and personal data, categories of recipients, international transfers, retention periods, security measures",
+            "Make records available to supervisory authority on request"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 32",
+          "title": "Security of processing",
+          "summary": "Controller and processor shall implement appropriate technical and organisational measures to ensure a level of security appropriate to the risk.",
+          "requirements": [
+            "Implement pseudonymisation and encryption of personal data",
+            "Ensure ongoing confidentiality, integrity, availability and resilience of processing systems",
+            "Restore availability and access to data in timely manner after incident",
+            "Regularly test, assess and evaluate effectiveness of security measures",
+            "Assess risks to rights and freedoms of natural persons",
+            "Implement measures appropriate to the risk level"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 33",
+          "title": "Notification of a personal data breach to the supervisory authority",
+          "summary": "Controller shall notify personal data breach to supervisory authority without undue delay and, where feasible, within 72 hours.",
+          "requirements": [
+            "Notify supervisory authority within 72 hours of becoming aware of breach",
+            "Describe nature of breach (categories and approximate number of data subjects and records)",
+            "Provide contact point for more information",
+            "Describe likely consequences of breach",
+            "Describe measures taken or proposed to address breach",
+            "Document all personal data breaches"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 34",
+          "title": "Communication of a personal data breach to the data subject",
+          "summary": "When breach is likely to result in high risk to rights and freedoms, controller shall communicate breach to data subject without undue delay.",
+          "requirements": [
+            "Communicate breach to data subject when high risk exists",
+            "Describe nature of breach in clear and plain language",
+            "Provide contact point for more information",
+            "Describe likely consequences",
+            "Describe measures taken or proposed",
+            "No communication required if: technical protection applied (encryption), subsequent measures ensure no high risk, or disproportionate effort (public communication instead)"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 35",
+          "title": "Data protection impact assessment",
+          "summary": "Where processing is likely to result in high risk, controller shall carry out data protection impact assessment (DPIA).",
+          "requirements": [
+            "Conduct DPIA when processing likely results in high risk",
+            "DPIA required for: systematic and extensive evaluation, large-scale processing of special categories, large-scale systematic monitoring of public areas",
+            "DPIA shall contain: description of processing operations and purposes, assessment of necessity and proportionality, assessment of risks, measures to address risks",
+            "Consult supervisory authority if DPIA indicates high risk"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 37",
+          "title": "Designation of the data protection officer",
+          "summary": "Controller and processor shall designate data protection officer (DPO) in specific cases.",
+          "requirements": [
+            "Designate DPO when: processing by public authority, core activities require regular and systematic monitoring on large scale, core activities consist of large-scale processing of special categories",
+            "Publish contact details of DPO",
+            "Communicate DPO contact details to supervisory authority",
+            "Ensure DPO is involved in all data protection matters",
+            "Ensure DPO has appropriate resources and access to personal data"
+          ],
+          "isCore": true
+        }
+      ]
+    },
+    {
+      "title": "Chapter V - Transfers of Personal Data to Third Countries",
+      "articles": [
+        {
+          "ref": "Article 44",
+          "title": "General principle for transfers",
+          "summary": "Transfer of personal data to third country or international organisation may only take place if conditions of this Chapter are complied with by controller and processor.",
+          "requirements": [
+            "Ensure level of protection of natural persons is not undermined",
+            "Comply with transfer mechanisms under this Chapter"
+          ]
+        },
+        {
+          "ref": "Article 45",
+          "title": "Transfers on the basis of an adequacy decision",
+          "summary": "Transfer may take place where Commission has decided third country ensures adequate level of protection.",
+          "requirements": [
+            "Transfer to third country with adequacy decision does not require specific authorisation"
+          ]
+        },
+        {
+          "ref": "Article 46",
+          "title": "Transfers subject to appropriate safeguards",
+          "summary": "In absence of adequacy decision, controller or processor may transfer data if appropriate safeguards provided and enforceable rights available.",
+          "requirements": [
+            "Use standard contractual clauses adopted by Commission",
+            "Use binding corporate rules",
+            "Use approved code of conduct with binding enforcement",
+            "Use approved certification mechanism with binding commitments"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 49",
+          "title": "Derogations for specific situations",
+          "summary": "In absence of adequacy decision or appropriate safeguards, transfer may take place only if specific derogation applies.",
+          "requirements": [
+            "Obtain explicit consent after informing of risks",
+            "Transfer necessary for performance of contract",
+            "Transfer necessary for important reasons of public interest",
+            "Transfer necessary for legal claims",
+            "Transfer necessary to protect vital interests"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter VI - Independent Supervisory Authorities",
+      "articles": [
+        {
+          "ref": "Article 51",
+          "title": "Supervisory authority",
+          "summary": "Each Member State shall provide for one or more independent public authorities to be responsible for monitoring application of this Regulation.",
+          "requirements": [
+            "Establish independent supervisory authority",
+            "Ensure independence from external influence"
+          ]
+        },
+        {
+          "ref": "Article 58",
+          "title": "Powers",
+          "summary": "Supervisory authority shall have investigative, corrective and authorisation powers.",
+          "requirements": [
+            "Order controller/processor to provide information",
+            "Carry out investigations and audits",
+            "Access data and premises",
+            "Issue warnings and reprimands",
+            "Order compliance with data subject requests",
+            "Order rectification, erasure or restriction",
+            "Impose temporary or definitive processing ban",
+            "Impose administrative fines"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter IX - Specific Data Processing Situations",
+      "articles": [
+        {
+          "ref": "Article 82",
+          "title": "Right to compensation and liability",
+          "summary": "Any person who has suffered material or non-material damage as result of infringement of this Regulation shall have right to receive compensation.",
+          "requirements": [
+            "Provide compensation for material damage",
+            "Provide compensation for non-material damage",
+            "Controller involved in processing liable for damage",
+            "Processor liable if not complied with obligations or acted outside lawful instructions"
+          ]
+        },
+        {
+          "ref": "Article 83",
+          "title": "General conditions for imposing administrative fines",
+          "summary": "Administrative fines shall be effective, proportionate and dissuasive, up to €20 million or 4% of annual global turnover.",
+          "requirements": [
+            "Lower tier (€10 million or 2%): violations of Articles 8, 11, 25-39, 42, 43",
+            "Higher tier (€20 million or 4%): violations of Articles 5, 6, 7, 9, data subject rights, transfer rules, Member State law",
+            "Consider: nature, gravity, duration of infringement, intentional or negligent character, actions to mitigate damage, degree of cooperation, previous infringements"
+          ],
+          "isCore": true
+        }
+      ]
+    }
+  ]
+}

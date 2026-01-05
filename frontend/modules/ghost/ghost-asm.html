@@ -602,6 +602,1378 @@
             display: block;
         }
 
+        /* ============================================
+           COMPLIANCE TAB STYLES
+           ============================================ */
+
+        /* Typography imports */
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        /* CSS Variables for Compliance Tab */
+        .compliance-container {
+            --gold: #D4AF37;
+            --gold-light: #E5C76B;
+            --gold-dark: #B8942E;
+            --gold-glow: rgba(212, 175, 55, 0.15);
+            --gold-border: rgba(212, 175, 55, 0.3);
+
+            --status-compliant: #10B981;
+            --status-compliant-bg: rgba(16, 185, 129, 0.12);
+            --status-non-compliant: #EF4444;
+            --status-non-compliant-bg: rgba(239, 68, 68, 0.12);
+            --status-partial: #F59E0B;
+            --status-partial-bg: rgba(245, 158, 11, 0.12);
+            --status-not-tested: #6B7280;
+            --status-not-tested-bg: rgba(107, 114, 128, 0.12);
+
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-elevated: #1a1a1a;
+            --bg-card: linear-gradient(145deg, #141414 0%, #0d0d0d 100%);
+
+            --text-primary: #F5F5F5;
+            --text-secondary: #A0A0A0;
+            --text-muted: #666666;
+
+            --font-display: 'JetBrains Mono', monospace;
+            --font-body: 'DM Sans', sans-serif;
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            --shadow-glow: 0 0 40px rgba(212, 175, 55, 0.08);
+        }
+
+        .compliance-container {
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            padding: 32px;
+            min-height: 80vh;
+        }
+
+        .compliance-container * {
+            box-sizing: border-box;
+        }
+
+        /* Compliance Header */
+        .compliance-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .compliance-header h2 {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--gold);
+            letter-spacing: -0.5px;
+            margin: 0 0 12px 0;
+        }
+
+        .compliance-header p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin: 0;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Framework Grid */
+        .frameworks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .framework-card {
+            background: var(--bg-card);
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+
+        .framework-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .framework-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--gold);
+            box-shadow: var(--shadow-card), var(--shadow-glow);
+        }
+
+        .framework-card:hover::before {
+            opacity: 1;
+        }
+
+        .framework-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .framework-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background: var(--gold-glow);
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius-md);
+        }
+
+        .framework-badge {
+            font-family: var(--font-display);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 6px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .framework-card-body {
+            position: relative;
+            z-index: 1;
+        }
+
+        .framework-name {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px 0;
+            letter-spacing: -0.3px;
+        }
+
+        .framework-version {
+            font-size: 13px;
+            color: var(--gold);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .framework-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .framework-stats {
+            display: flex;
+            gap: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 20px;
+        }
+
+        .framework-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .framework-stat-value {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .framework-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .framework-card-footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        .framework-progress {
+            margin-bottom: 16px;
+        }
+
+        .framework-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .framework-progress-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .framework-progress-value {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .framework-progress-bar {
+            height: 6px;
+            background: var(--bg-elevated);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .framework-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+            border-radius: 3px;
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-framework {
+            width: 100%;
+            padding: 14px 24px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-framework-primary {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: #000;
+        }
+
+        .btn-framework-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-framework-secondary {
+            background: var(--gold-glow);
+            color: var(--gold);
+            border: 1px solid var(--gold-border);
+        }
+
+        .btn-framework-secondary:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--gold);
+        }
+
+        /* Assessment Dashboard */
+        .assessment-view {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .assessment-view.active {
+            display: block;
+            animation: complianceFadeIn 0.4s ease;
+        }
+
+        @keyframes complianceFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .assessment-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .assessment-header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-back {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background: var(--gold-glow);
+            border-color: var(--gold-border);
+            color: var(--gold);
+        }
+
+        .assessment-title-group h3 {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px 0;
+        }
+
+        .assessment-title-group p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .assessment-header-right {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-export {
+            padding: 12px 24px;
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--bg-elevated);
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius-md);
+            color: var(--gold);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-export:hover {
+            background: var(--gold-glow);
+            transform: translateY(-1px);
+        }
+
+        /* Progress Overview */
+        .assessment-overview {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .progress-circle-card {
+            background: var(--bg-card);
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-circle {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin-bottom: 20px;
+        }
+
+        .progress-circle svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-circle-bg {
+            fill: none;
+            stroke: var(--bg-elevated);
+            stroke-width: 12;
+        }
+
+        .progress-circle-fill {
+            fill: none;
+            stroke: url(#goldGradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 502;
+            stroke-dashoffset: 502;
+            transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .progress-circle-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-circle-value {
+            font-family: var(--font-display);
+            font-size: 42px;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1;
+        }
+
+        .progress-circle-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .progress-circle-card h4 {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin: 0;
+            text-align: center;
+        }
+
+        /* Status Cards */
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .status-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .status-card.compliant::before { background: var(--status-compliant); }
+        .status-card.non-compliant::before { background: var(--status-non-compliant); }
+        .status-card.partial::before { background: var(--status-partial); }
+        .status-card.not-tested::before { background: var(--status-not-tested); }
+
+        .status-card-value {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .status-card.compliant .status-card-value { color: var(--status-compliant); }
+        .status-card.non-compliant .status-card-value { color: var(--status-non-compliant); }
+        .status-card.partial .status-card-value { color: var(--status-partial); }
+        .status-card.not-tested .status-card-value { color: var(--status-not-tested); }
+
+        .status-card-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Controls List */
+        .controls-section {
+            margin-top: 32px;
+        }
+
+        .controls-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .controls-header h4 {
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .controls-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-md);
+            width: 280px;
+        }
+
+        .controls-search input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .controls-search input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .controls-search svg {
+            color: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Category Accordion */
+        .category-accordion {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-group {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .category-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .category-header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .category-chevron {
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+
+        .category-group.expanded .category-chevron {
+            transform: rotate(180deg);
+        }
+
+        .category-name {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .category-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .category-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-progress-bar {
+            width: 120px;
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .category-progress-fill {
+            height: 100%;
+            background: var(--gold);
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+
+        .category-progress-text {
+            font-family: var(--font-display);
+            font-size: 12px;
+            color: var(--text-secondary);
+            min-width: 36px;
+        }
+
+        .category-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 4px 10px;
+            background: var(--bg-elevated);
+            border-radius: 12px;
+        }
+
+        .category-content {
+            display: none;
+            padding: 0 24px 20px;
+        }
+
+        .category-group.expanded .category-content {
+            display: block;
+        }
+
+        /* Control Row */
+        .control-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 140px 140px 100px;
+            gap: 16px;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .control-row:last-child {
+            border-bottom: none;
+        }
+
+        .control-id {
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gold);
+            background: var(--gold-glow);
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+
+        .control-info h5 {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0 0 4px 0;
+            line-height: 1.4;
+        }
+
+        .control-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .control-status-select {
+            position: relative;
+        }
+
+        .control-status-select select {
+            width: 100%;
+            padding: 10px 32px 10px 12px;
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 500;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            cursor: pointer;
+            appearance: none;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .control-status-select select:hover {
+            border-color: var(--gold-border);
+        }
+
+        .control-status-select select:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-glow);
+        }
+
+        .control-status-select::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--text-muted);
+            pointer-events: none;
+        }
+
+        select.status-compliant { color: var(--status-compliant); }
+        select.status-non-compliant { color: var(--status-non-compliant); }
+        select.status-partial { color: var(--status-partial); }
+        select.status-not-tested { color: var(--status-not-tested); }
+
+        .control-notes {
+            position: relative;
+        }
+
+        .control-notes input {
+            width: 100%;
+            padding: 10px 12px;
+            font-family: var(--font-body);
+            font-size: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .control-notes input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .control-notes input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-glow);
+        }
+
+        .btn-evidence {
+            padding: 10px 14px;
+            font-family: var(--font-body);
+            font-size: 11px;
+            font-weight: 600;
+            background: transparent;
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius-sm);
+            color: var(--gold);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-evidence:hover {
+            background: var(--gold-glow);
+            border-color: var(--gold);
+        }
+
+        .btn-evidence .evidence-count {
+            background: var(--gold);
+            color: #000;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        /* Scan Integration Badges */
+        .scan-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .scan-badge-finding {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .scan-badge-manual {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+            border: 1px solid rgba(234, 179, 8, 0.4);
+        }
+
+        .scan-badge-verified {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        .scan-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-left: 8px;
+        }
+
+        .scan-info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scan-domain {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Import from Scans Button */
+        .btn-import-scans {
+            padding: 10px 18px;
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: var(--radius-md);
+            color: #3b82f6;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-import-scans:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: #3b82f6;
+        }
+
+        .btn-import-scans:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Re-scan to Verify Button */
+        .btn-rescan {
+            padding: 6px 12px;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            border-radius: var(--radius-sm);
+            color: #22c55e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .btn-rescan:hover {
+            background: rgba(34, 197, 94, 0.25);
+            border-color: #22c55e;
+        }
+
+        .btn-rescan:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Scan Summary Card */
+        .scan-summary-card {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .scan-summary-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .scan-summary-icon {
+            font-size: 24px;
+        }
+
+        .scan-summary-text h5 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin: 0 0 4px 0;
+        }
+
+        .scan-summary-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .scan-summary-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .scan-stat {
+            text-align: center;
+        }
+
+        .scan-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ef4444;
+        }
+
+        .scan-stat-value.verified {
+            color: #22c55e;
+        }
+
+        .scan-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Control row with scan info */
+        .control-row.scan-flagged {
+            border-left: 3px solid #ef4444;
+            padding-left: 17px;
+        }
+
+        .control-row.scan-verified {
+            border-left: 3px solid #22c55e;
+            padding-left: 17px;
+        }
+
+        /* Evidence Modal */
+        .evidence-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .evidence-modal-overlay.active {
+            display: flex;
+            animation: complianceFadeIn 0.3s ease;
+        }
+
+        .evidence-modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 640px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: complianceSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes complianceSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .evidence-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .evidence-modal-header h3 {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .btn-modal-close {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-modal-close:hover {
+            background: var(--status-non-compliant-bg);
+            border-color: var(--status-non-compliant);
+            color: var(--status-non-compliant);
+        }
+
+        .evidence-modal-body {
+            padding: 28px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .evidence-control-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+        }
+
+        .evidence-control-id {
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gold);
+            background: var(--gold-glow);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+        }
+
+        .evidence-control-name {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .evidence-form-group {
+            margin-bottom: 20px;
+        }
+
+        .evidence-form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .evidence-form-group input,
+        .evidence-form-group textarea,
+        .evidence-form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            background: var(--bg-primary);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .evidence-form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .evidence-form-group input:focus,
+        .evidence-form-group textarea:focus,
+        .evidence-form-group select:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-glow);
+        }
+
+        .file-upload-area {
+            border: 2px dashed var(--gold-border);
+            border-radius: var(--radius-md);
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--gold);
+            background: var(--gold-glow);
+        }
+
+        .file-upload-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .file-upload-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .file-upload-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .evidence-list {
+            margin-top: 24px;
+        }
+
+        .evidence-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .evidence-list-header h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .evidence-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+        }
+
+        .evidence-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .evidence-item-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gold-glow);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+        }
+
+        .evidence-item-info h5 {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0 0 2px 0;
+        }
+
+        .evidence-item-info p {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .btn-evidence-delete {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-evidence-delete:hover {
+            background: var(--status-non-compliant-bg);
+            border-color: var(--status-non-compliant);
+            color: var(--status-non-compliant);
+        }
+
+        .evidence-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px 28px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .btn-modal-cancel {
+            padding: 12px 24px;
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-modal-cancel:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-modal-save {
+            padding: 12px 24px;
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-modal-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Loading State */
+        .compliance-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 40px;
+            grid-column: 1 / -1;
+        }
+
+        .compliance-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--bg-elevated);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: complianceSpin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes complianceSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .compliance-loading p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .assessment-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-circle-card {
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 32px;
+            }
+
+            .progress-circle {
+                margin-bottom: 0;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .status-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .control-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 20px 0;
+            }
+
+            .control-id {
+                width: fit-content;
+            }
+
+            .assessment-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .compliance-container {
+                padding: 20px;
+            }
+
+            .frameworks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .status-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .evidence-modal {
+                margin: 20px;
+                max-height: calc(100vh - 40px);
+            }
+        }
+
         /* Risk Score Gauge */
         .risk-gauge-container {
             display: flex;
@@ -1113,6 +2485,78 @@
         #lightbox-dashboard.hidden {
             display: none;
         }
+        /* XASM Tab Redesign Styles */
+        .xasm-empty-state {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 80px 40px; text-align: center;
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.03) 0%, transparent 100%);
+            border: 2px dashed rgba(212, 175, 55, 0.2); border-radius: 24px; margin: 40px 0;
+        }
+        .xasm-empty-icon { font-size: 80px; margin-bottom: 24px; animation: xasmFloat 3s ease-in-out infinite; }
+        @keyframes xasmFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .xasm-empty-state h2 { font-size: 28px; font-weight: 700; color: #ffd700; margin: 0 0 12px 0; }
+        .xasm-empty-state p { font-size: 16px; color: #888; max-width: 500px; margin: 0 0 32px 0; line-height: 1.6; }
+
+        .xasm-scanning-container {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 20px; padding: 48px; margin: 24px 0;
+        }
+        .xasm-progress-bar-container { background: rgba(0, 0, 0, 0.4); border-radius: 12px; height: 24px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.2); }
+        .xasm-progress-bar-fill { height: 100%; background: linear-gradient(90deg, #D4AF37, #ffd700, #D4AF37); background-size: 200% 100%; animation: xasmShimmer 2s linear infinite; border-radius: 12px; transition: width 0.5s ease; }
+        @keyframes xasmShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .xasm-scan-steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
+        .xasm-scan-step { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+        .xasm-scan-step.completed { border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.08); }
+        .xasm-scan-step.active { border-color: rgba(212, 175, 55, 0.5); background: rgba(212, 175, 55, 0.1); }
+        .xasm-step-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .xasm-scan-step.completed .xasm-step-icon { background: #22c55e; color: #fff; }
+        .xasm-scan-step.active .xasm-step-icon { background: #ffd700; color: #000; }
+        .xasm-scan-step.pending .xasm-step-icon { background: rgba(255, 255, 255, 0.1); color: #666; }
+        .xasm-step-text { font-size: 13px; color: #aaa; }
+        .xasm-scan-step.completed .xasm-step-text { color: #22c55e; }
+        .xasm-scan-step.active .xasm-step-text { color: #ffd700; font-weight: 500; }
+
+        .xasm-executive-summary { background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(212, 175, 55, 0.05) 100%); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 24px; padding: 40px; margin-bottom: 32px; }
+        .xasm-summary-content { display: grid; grid-template-columns: 320px 1fr; gap: 48px; align-items: center; }
+        .xasm-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .xasm-stat-card { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 24px; text-align: center; transition: all 0.3s ease; }
+        .xasm-stat-card:hover { border-color: rgba(212, 175, 55, 0.3); transform: translateY(-2px); }
+        .xasm-stat-value { font-size: 42px; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+        .xasm-stat-value.critical { color: #ef4444; }
+        .xasm-stat-value.high { color: #f59e0b; }
+        .xasm-stat-value.medium { color: #eab308; }
+        .xasm-stat-value.low { color: #22c55e; }
+        .xasm-stat-value.gold { color: #ffd700; }
+        .xasm-stat-label { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        .xasm-filter-bar { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px 24px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; margin-bottom: 24px; }
+        .xasm-filter-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .xasm-filter-btn { padding: 10px 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #888; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .xasm-filter-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .xasm-filter-btn.active { background: rgba(212, 175, 55, 0.2); border-color: rgba(212, 175, 55, 0.5); color: #ffd700; }
+        .xasm-search-input { padding: 10px 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 13px; width: 220px; }
+        .xasm-search-input:focus { outline: none; border-color: rgba(212, 175, 55, 0.5); }
+
+        .xasm-severity-badge { padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .xasm-severity-badge.critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .xasm-severity-badge.high { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .xasm-severity-badge.medium { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.4); }
+        .xasm-severity-badge.low { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .xasm-severity-badge.info { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.4); }
+
+        .xasm-export-panel { display: flex; justify-content: space-between; align-items: center; padding: 20px 28px; background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 16px; margin-top: 32px; }
+        .xasm-export-buttons { display: flex; gap: 12px; }
+        .xasm-export-btn { padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
+        .xasm-export-btn.pdf { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; }
+        .xasm-export-btn.csv { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #22c55e; }
+        .xasm-export-btn.json { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #3b82f6; }
+        .xasm-export-btn:hover { transform: translateY(-2px); }
+
+        .xasm-cache-banner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; margin-bottom: 24px; }
+
+        @media (max-width: 1200px) { .xasm-summary-content { grid-template-columns: 1fr; } .xasm-scan-steps { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .xasm-filter-bar { flex-direction: column; align-items: stretch; } .xasm-export-panel { flex-direction: column; gap: 20px; text-align: center; } .xasm-stats-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -1126,6 +2570,13 @@
                 </div>
             </div>
             <a href="ghost.html" class="back-button">← Back to Dashboard</a>
+        </div>
+
+        <!-- Quick Navigation -->
+        <div style="display: flex; gap: 12px; justify-content: center; padding: 16px 30px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(212,175,55,0.15); margin-bottom: 20px;">
+            <a href="ghost-search.html" style="padding: 8px 16px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; color: #D4AF37; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.2)'" onmouseout="this.style.background='rgba(212,175,55,0.1)'">Global Search</a>
+            <a href="ghost-adversary.html" style="padding: 8px 16px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; color: #D4AF37; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.2)'" onmouseout="this.style.background='rgba(212,175,55,0.1)'">Adversary Matching</a>
+            <a href="ghost-roadmap.html" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px; color: #ffd700; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.25)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))'">Security Roadmap</a>
         </div>
 
         <!-- Search Section with History Icon -->
@@ -1235,21 +2686,64 @@
 
         <!-- ASM Tab Content -->
         <div id="asmTab" class="tab-content active">
-        <!-- Loading Indicator with Progress -->
-        <div id="loadingIndicator" class="loading">
-            <div class="spinner"></div>
-            <p id="scanningMessage">Scanning attack surface...</p>
-            <div style="width: 100%; max-width: 600px; margin: 20px auto;">
-                <div style="background: rgba(212, 175, 55, 0.1); border-radius: 10px; height: 20px; overflow: hidden;">
-                    <div id="progressBar" style="background: linear-gradient(90deg, #D4AF37, #C4A037); height: 100%; width: 0%; transition: width 0.3s;"></div>
-                </div>
-                <p id="progressText" style="font-size: 0.9em; color: #D4AF37; margin-top: 10px; text-align: center;">
-                    Starting scan...
-                </p>
+        <!-- Empty State (shown when no scan has been run) -->
+        <div id="xasmEmptyState" class="xasm-empty-state">
+            <div class="xasm-empty-icon">🛡️</div>
+            <h2>Discover Your Attack Surface</h2>
+            <p>Run an XASM scan to identify exposed assets, vulnerable services, and potential security risks across your external infrastructure.</p>
+            <button onclick="document.getElementById('domainInput').focus()" style="padding: 16px 40px; background: linear-gradient(135deg, #D4AF37 0%, #B8960C 100%); border: none; border-radius: 12px; color: #000; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(212, 175, 55, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(212, 175, 55, 0.3)'">
+                Start Your First Scan
+            </button>
+            <div style="margin-top: 24px; font-size: 14px; color: #666;">
+                Try scanning: <span onclick="exampleScan('stripe.com')" style="color: #ffd700; cursor: pointer; font-weight: 600;">stripe.com</span> or <span onclick="exampleScan('github.com')" style="color: #ffd700; cursor: pointer; font-weight: 600;">github.com</span>
             </div>
-            <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                Certificate transparency, cloud assets, Shodan, DNS enumeration...
-            </p>
+        </div>
+
+        <!-- Loading Indicator with Enhanced Progress -->
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="xasm-scanning-container">
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <h2 style="font-size: 24px; color: #ffd700; margin: 0 0 8px 0;">Scanning Attack Surface</h2>
+                    <p id="scanningMessage" style="font-size: 16px; color: #888; margin: 0;">Initializing scan...</p>
+                </div>
+
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div class="xasm-progress-bar-container">
+                        <div id="progressBar" class="xasm-progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                        <p id="progressText" style="font-size: 14px; color: #ffd700; margin: 0;">Starting scan...</p>
+                        <span id="progressPercent" style="font-size: 18px; color: #fff; font-weight: 700;">0%</span>
+                    </div>
+
+                    <div class="xasm-scan-steps">
+                        <div id="step-dns" class="xasm-scan-step pending">
+                            <div class="xasm-step-icon">○</div>
+                            <span class="xasm-step-text">DNS Enumeration</span>
+                        </div>
+                        <div id="step-certs" class="xasm-scan-step pending">
+                            <div class="xasm-step-icon">○</div>
+                            <span class="xasm-step-text">Certificate Analysis</span>
+                        </div>
+                        <div id="step-ports" class="xasm-scan-step pending">
+                            <div class="xasm-step-icon">○</div>
+                            <span class="xasm-step-text">Port Scanning</span>
+                        </div>
+                        <div id="step-cloud" class="xasm-scan-step pending">
+                            <div class="xasm-step-icon">○</div>
+                            <span class="xasm-step-text">Cloud Asset Discovery</span>
+                        </div>
+                        <div id="step-intel" class="xasm-scan-step pending">
+                            <div class="xasm-step-icon">○</div>
+                            <span class="xasm-step-text">Threat Intelligence</span>
+                        </div>
+                        <div id="step-risk" class="xasm-scan-step pending">
+                            <div class="xasm-step-icon">○</div>
+                            <span class="xasm-step-text">Risk Assessment</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Error Container -->
@@ -1258,17 +2752,51 @@
         <!-- Results Container -->
         <div id="resultsContainer" class="results-container">
             <!-- Cache Info Banner -->
-            <div id="cacheInfo" style="display: none; padding: 15px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; margin-bottom: 20px; text-align: center;">
-                <span id="cacheInfoText" style="color: #D4AF37;"></span>
-                <button id="rescanButton" style="margin-left: 15px; padding: 8px 20px; background: rgba(212, 175, 55, 0.2); border: 1px solid #D4AF37; border-radius: 4px; color: #D4AF37; cursor: pointer; font-weight: 600;">
+            <div id="cacheInfo" class="xasm-cache-banner" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 20px;">💾</span>
+                    <span id="cacheInfoText" style="font-size: 14px; color: #3b82f6;"></span>
+                </div>
+                <button id="rescanButton" style="padding: 10px 20px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; color: #3b82f6; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(59, 130, 246, 0.3)'" onmouseout="this.style.background='rgba(59, 130, 246, 0.2)'">
                     🔄 Re-scan Now
                 </button>
             </div>
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <button class="action-btn btn-export" onclick="exportAsTXT()">
-                    📄 Export as TXT
-                </button>
+            <!-- Export Panel -->
+            <div class="xasm-export-panel">
+                <div>
+                    <h4 style="font-size: 16px; font-weight: 600; color: #fff; margin: 0 0 4px 0;">Export Scan Results</h4>
+                    <p style="font-size: 13px; color: #888; margin: 0;">Download your attack surface analysis</p>
+                </div>
+                <div class="xasm-export-buttons">
+                    <button class="xasm-export-btn pdf" onclick="exportAsPDF()">
+                        📑 PDF Report
+                    </button>
+                    <button class="xasm-export-btn csv" onclick="exportAsCSV()">
+                        📊 CSV Data
+                    </button>
+                    <button class="xasm-export-btn json" onclick="exportAsTXT()">
+                        📄 TXT Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="xasm-filter-bar" style="margin-bottom: 24px;">
+                <div class="xasm-filter-buttons">
+                    <button class="xasm-filter-btn active" onclick="filterFindings('all')" data-filter="all">All Findings</button>
+                    <button class="xasm-filter-btn" onclick="filterFindings('critical')" data-filter="critical" style="border-color: rgba(239, 68, 68, 0.3);">Critical</button>
+                    <button class="xasm-filter-btn" onclick="filterFindings('high')" data-filter="high" style="border-color: rgba(245, 158, 11, 0.3);">High</button>
+                    <button class="xasm-filter-btn" onclick="filterFindings('medium')" data-filter="medium" style="border-color: rgba(234, 179, 8, 0.3);">Medium</button>
+                    <button class="xasm-filter-btn" onclick="filterFindings('low')" data-filter="low" style="border-color: rgba(34, 197, 94, 0.3);">Low</button>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <input type="text" class="xasm-search-input" placeholder="Search findings..." oninput="searchFindings(this.value)" style="background-image: url(\'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23888888\' stroke-width=\'2\'%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'8\'/%3E%3Cpath d=\'m21 21-4.35-4.35\'/%3E%3C/svg%3E\'); background-repeat: no-repeat; background-position: 12px center; padding-left: 40px;">
+                    <select onchange="sortFindings(this.value)" style="padding: 10px 36px 10px 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 13px; cursor: pointer;">
+                        <option value="severity">Sort by Severity</option>
+                        <option value="category">Sort by Category</option>
+                        <option value="name">Sort by Name</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Enhanced 3D Risk Score Display -->
@@ -1494,6 +3022,30 @@
         <div id="lightboxTab" class="tab-content">
             <!-- Lightbox Dashboard -->
             <div id="lightbox-dashboard">
+                <!-- Legal Authorization Warning Banner -->
+                <div id="lightbox-legal-warning" style="background: linear-gradient(135deg, rgba(220,53,69,0.15) 0%, rgba(255,140,0,0.15) 100%); border: 2px solid #dc3545; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(220,53,69,0.2);">
+                    <div style="display: flex; align-items: flex-start; gap: 16px;">
+                        <div style="font-size: 36px; line-height: 1;">⚠️</div>
+                        <div style="flex: 1;">
+                            <h3 style="color: #ff6b6b; margin: 0 0 12px 0; font-size: 18px; font-weight: 700;">
+                                ⚖️ LEGAL AUTHORIZATION REQUIRED
+                            </h3>
+                            <p style="color: #ffaa99; margin: 0 0 16px 0; font-size: 14px; line-height: 1.6;">
+                                <strong style="color: #ff6b6b;">IMPORTANT:</strong> Only test domains you own or have explicit written authorization to test.
+                                Unauthorized security testing may violate computer crime laws in your jurisdiction, including but not limited to the
+                                Computer Fraud and Abuse Act (CFAA), Computer Misuse Act, or equivalent legislation.
+                                <strong>You are solely responsible for ensuring you have proper authorization.</strong>
+                            </p>
+                            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px 16px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,107,107,0.3); transition: all 0.2s;" onmouseover="this.style.borderColor='#ff6b6b'" onmouseout="this.style.borderColor='rgba(255,107,107,0.3)'">
+                                <input type="checkbox" id="lightbox-auth-checkbox" style="width: 20px; height: 20px; cursor: pointer; accent-color: #4caf50;">
+                                <span style="color: #fff; font-size: 14px; font-weight: 500;">
+                                    I confirm I have legal authorization to perform security testing on the target domain
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Header Section -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 20px; background: rgba(255,215,0,0.05); border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -1505,8 +3057,8 @@
                             ℹ️ What is Lightbox?
                         </button>
                     </div>
-                    <button id="run-lightbox-scan" class="btn-primary" style="padding: 14px 28px; font-size: 16px; font-weight: 600; background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); border: none; border-radius: 8px; color: #000; cursor: pointer; box-shadow: 0 4px 15px rgba(255,215,0,0.3); transition: all 0.3s;">
-                        ▶ Run Lightbox Test
+                    <button id="run-lightbox-scan" class="btn-primary" disabled style="padding: 14px 28px; font-size: 16px; font-weight: 600; background: linear-gradient(135deg, #666 0%, #444 100%); border: none; border-radius: 8px; color: #999; cursor: not-allowed; box-shadow: none; transition: all 0.3s; opacity: 0.6;">
+                        🔒 Authorization Required
                     </button>
                 </div>
 
@@ -1723,23 +3275,253 @@
 
         <!-- Compliance Mapping Tab Content -->
         <div id="complianceTab" class="tab-content">
-            <div style="text-align: center; padding: 60px 20px;">
-                <h2>🏛️ Compliance Mapping</h2>
-                <p style="font-size: 18px; color: #888; margin: 20px 0;">
-                    Map vulnerabilities to compliance requirements
-                </p>
-                <div style="background: rgba(255,215,0,0.1); border: 2px solid #ffd700; border-radius: 12px; padding: 30px; max-width: 600px; margin: 40px auto;">
-                    <h3 style="color: #ffd700; margin-bottom: 15px;">🚧 Coming Soon</h3>
-                    <p style="color: #aaa; line-height: 1.6;">
-                        Automatic compliance mapping for:<br>
-                        • PCI-DSS (Payment Card Industry)<br>
-                        • HIPAA (Healthcare)<br>
-                        • SOC 2 (Security Standards)<br>
-                        • GDPR (Data Protection)<br>
-                    </p>
-                    <p style="color: #888; margin-top: 20px; font-size: 14px;">
-                        In the meantime, all findings include relevant compliance violations in their details.
-                    </p>
+            <!-- Compliance Container -->
+            <div class="compliance-container">
+                <!-- SVG Gradient Definition -->
+                <svg width="0" height="0" style="position: absolute;">
+                    <defs>
+                        <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#B8942E"/>
+                            <stop offset="50%" stop-color="#D4AF37"/>
+                            <stop offset="100%" stop-color="#E5C76B"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+
+                <!-- FRAMEWORK SELECTION VIEW -->
+                <div id="frameworksView" class="frameworks-view">
+                    <div class="compliance-header">
+                        <h2>Compliance Management</h2>
+                        <p>Select a compliance framework to begin your assessment. Track controls, upload evidence, and monitor your organization's compliance posture.</p>
+                    </div>
+
+                    <div class="frameworks-grid" id="frameworksGrid">
+                        <!-- Framework cards will be populated by JavaScript -->
+                        <div class="compliance-loading">
+                            <div class="compliance-spinner"></div>
+                            <p>Loading frameworks...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ASSESSMENT DASHBOARD VIEW -->
+                <div id="assessmentView" class="assessment-view">
+                    <div class="assessment-header">
+                        <div class="assessment-header-left">
+                            <button class="btn-back" onclick="ComplianceManager.showFrameworks()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                                </svg>
+                            </button>
+                            <div class="assessment-title-group">
+                                <h3 id="assessmentTitle">SOC 2 Assessment</h3>
+                                <p id="assessmentSubtitle">Started on January 5, 2026</p>
+                            </div>
+                        </div>
+                        <div class="assessment-header-right">
+                            <button class="btn-import-scans" onclick="ComplianceManager.openImportModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/>
+                                    <polyline points="15 3 21 3 21 9"/>
+                                    <line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                                Import from Scans
+                            </button>
+                            <button class="btn-export" onclick="ComplianceManager.exportReport()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                                </svg>
+                                Export Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scan Summary Card (hidden by default) -->
+                    <div id="scanSummaryCard" class="scan-summary-card" style="display: none;">
+                        <div class="scan-summary-info">
+                            <div class="scan-summary-icon">🔍</div>
+                            <div class="scan-summary-text">
+                                <h5>Scan Integration Active</h5>
+                                <p id="scanSummaryText">Controls have been auto-flagged based on XASM/Lightbox scan findings</p>
+                            </div>
+                        </div>
+                        <div class="scan-summary-stats">
+                            <div class="scan-stat">
+                                <div class="scan-stat-value" id="scanFlaggedCount">0</div>
+                                <div class="scan-stat-label">Flagged</div>
+                            </div>
+                            <div class="scan-stat">
+                                <div class="scan-stat-value verified" id="scanVerifiedCount">0</div>
+                                <div class="scan-stat-label">Verified</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="assessment-overview">
+                        <div class="progress-circle-card">
+                            <div class="progress-circle">
+                                <svg viewBox="0 0 180 180">
+                                    <circle class="progress-circle-bg" cx="90" cy="90" r="80"/>
+                                    <circle class="progress-circle-fill" id="progressCircle" cx="90" cy="90" r="80"/>
+                                </svg>
+                                <div class="progress-circle-text">
+                                    <span class="progress-circle-value" id="progressValue">0%</span>
+                                    <span class="progress-circle-label">Complete</span>
+                                </div>
+                            </div>
+                            <h4>Overall Assessment Progress</h4>
+                        </div>
+
+                        <div class="status-cards">
+                            <div class="status-card compliant">
+                                <div class="status-card-value" id="statCompliant">0</div>
+                                <div class="status-card-label">Compliant</div>
+                            </div>
+                            <div class="status-card partial">
+                                <div class="status-card-value" id="statPartial">0</div>
+                                <div class="status-card-label">In Progress</div>
+                            </div>
+                            <div class="status-card non-compliant">
+                                <div class="status-card-value" id="statNonCompliant">0</div>
+                                <div class="status-card-label">Non-Compliant</div>
+                            </div>
+                            <div class="status-card not-tested">
+                                <div class="status-card-value" id="statNotTested">0</div>
+                                <div class="status-card-label">Not Tested</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls-section">
+                        <div class="controls-header">
+                            <h4>Control Requirements</h4>
+                            <div class="controls-search">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="M21 21l-4.35-4.35"/>
+                                </svg>
+                                <input type="text" placeholder="Search controls..." id="controlsSearch" oninput="ComplianceManager.filterControls(this.value)">
+                            </div>
+                        </div>
+
+                        <div class="category-accordion" id="categoriesContainer">
+                            <!-- Categories will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EVIDENCE MODAL -->
+            <div class="evidence-modal-overlay" id="evidenceModal">
+                <div class="evidence-modal">
+                    <div class="evidence-modal-header">
+                        <h3>Manage Evidence</h3>
+                        <button class="btn-modal-close" onclick="ComplianceManager.closeEvidenceModal()">&times;</button>
+                    </div>
+                    <div class="evidence-modal-body">
+                        <div class="evidence-control-info">
+                            <span class="evidence-control-id" id="evidenceControlId">CC1.1.a</span>
+                            <span class="evidence-control-name" id="evidenceControlName">Sets the Tone at the Top</span>
+                        </div>
+
+                        <div class="evidence-form-group">
+                            <label>Evidence Type</label>
+                            <select id="evidenceType">
+                                <option value="document">Document / Policy</option>
+                                <option value="screenshot">Screenshot</option>
+                                <option value="scan">Security Scan Result</option>
+                                <option value="log">System Log</option>
+                                <option value="note">Text Note</option>
+                            </select>
+                        </div>
+
+                        <div class="evidence-form-group">
+                            <label>Title</label>
+                            <input type="text" id="evidenceTitle" placeholder="e.g., Information Security Policy v2.1">
+                        </div>
+
+                        <div class="evidence-form-group">
+                            <label>Description / Notes</label>
+                            <textarea id="evidenceDescription" placeholder="Add details about this evidence..."></textarea>
+                        </div>
+
+                        <div class="evidence-form-group">
+                            <label>Upload File (Optional)</label>
+                            <div class="file-upload-area" onclick="document.getElementById('evidenceFile').click()">
+                                <div class="file-upload-icon">📎</div>
+                                <div class="file-upload-text">Click to upload or drag and drop</div>
+                                <div class="file-upload-hint">PDF, PNG, JPG, DOCX up to 10MB</div>
+                                <input type="file" id="evidenceFile" style="display: none" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+                            </div>
+                        </div>
+
+                        <div class="evidence-list" id="evidenceList">
+                            <div class="evidence-list-header">
+                                <h4>Uploaded Evidence</h4>
+                            </div>
+                            <!-- Evidence items will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="evidence-modal-footer">
+                        <button class="btn-modal-cancel" onclick="ComplianceManager.closeEvidenceModal()">Cancel</button>
+                        <button class="btn-modal-save" onclick="ComplianceManager.saveEvidence()">Save Evidence</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IMPORT FROM SCANS MODAL -->
+            <div class="evidence-modal-overlay" id="importScanModal">
+                <div class="evidence-modal" style="max-width: 700px;">
+                    <div class="evidence-modal-header">
+                        <h3>Import Findings from Scans</h3>
+                        <button class="btn-modal-close" onclick="ComplianceManager.closeImportModal()">&times;</button>
+                    </div>
+                    <div class="evidence-modal-body">
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">
+                            Select a domain to analyze XASM and Lightbox scan findings and auto-flag relevant compliance controls.
+                        </p>
+
+                        <div class="evidence-form-group">
+                            <label>Domain / Asset</label>
+                            <select id="importDomainSelect" style="width: 100%; padding: 12px; background: var(--bg-tertiary); border: 1px solid var(--gold-border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 14px;">
+                                <option value="">Loading domains...</option>
+                            </select>
+                        </div>
+
+                        <div id="importPreview" style="display: none; margin-top: 20px;">
+                            <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-md); padding: 16px;">
+                                <h4 style="color: #3b82f6; margin: 0 0 12px 0; font-size: 14px;">Scan Analysis Preview</h4>
+                                <div id="importPreviewContent" style="color: var(--text-muted); font-size: 13px;">
+                                    <!-- Preview content will be populated -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="importResults" style="display: none; margin-top: 20px;">
+                            <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: var(--radius-md); padding: 16px;">
+                                <h4 style="color: #22c55e; margin: 0 0 8px 0; font-size: 14px;">✓ Import Complete</h4>
+                                <p id="importResultsText" style="color: var(--text-muted); font-size: 13px; margin: 0;"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="evidence-modal-footer">
+                        <button class="btn-modal-cancel" onclick="ComplianceManager.closeImportModal()">Cancel</button>
+                        <button class="btn-modal-save" id="importAnalyzeBtn" onclick="ComplianceManager.analyzeDomain()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                            Analyze Scans
+                        </button>
+                        <button class="btn-modal-save" id="importConfirmBtn" onclick="ComplianceManager.confirmImport()" style="display: none; background: #22c55e;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                            Import & Flag Controls
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1989,6 +3771,10 @@
             const scanButton = document.getElementById('scanButton');
 
             loadingIndicator.style.display = 'block';
+
+            // Hide empty state when scan starts
+            const emptyState = document.getElementById('xasmEmptyState');
+            if (emptyState) emptyState.style.display = 'none';
             resultsContainer.style.display = 'none';
             errorContainer.innerHTML = '';
             scanButton.disabled = true;
@@ -2173,6 +3959,10 @@
 
             // Show results container
             document.getElementById('resultsContainer').style.display = 'block';
+
+            // Keep empty state hidden when results are shown
+            const emptyStateEl = document.getElementById('xasmEmptyState');
+            if (emptyStateEl) emptyStateEl.style.display = 'none';
         }
 
         // Chart.js instances (store globally to destroy on re-render)
@@ -3595,6 +5385,8 @@
                 loadMostRecentLightboxScan(currentScanDomain);
             } else if (tabName === 'vulnerability') {
                 onVulnerabilityTabOpen();
+            } else if (tabName === 'compliance') {
+                initComplianceTab();
             }
         }
 
@@ -4062,6 +5854,13 @@
             console.log('[LIGHTBOX UI] Current domain:', currentScanDomain);
             console.log('[LIGHTBOX UI] Current scan ID:', currentASMScanId);
 
+            // Check authorization checkbox
+            const authCheckbox = document.getElementById('lightbox-auth-checkbox');
+            if (!authCheckbox || !authCheckbox.checked) {
+                alert('⚠️ Authorization Required\n\nYou must confirm you have legal authorization to test this domain before running Lightbox security tests.');
+                return;
+            }
+
             if (!currentScanDomain || !currentASMScanId) {
                 alert('Please run an XASM scan first!\n\nGo to the "Attack Surface" tab and scan a domain before running Lightbox tests.');
                 return;
@@ -4159,6 +5958,38 @@
             }
         });
 
+        // Lightbox Authorization Checkbox Handler - Toggle button state based on consent
+        (function() {
+            const authCheckbox = document.getElementById('lightbox-auth-checkbox');
+            const runLightboxBtn = document.getElementById('run-lightbox-scan');
+
+            if (authCheckbox && runLightboxBtn) {
+                authCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        // Enable the button with active styling
+                        runLightboxBtn.disabled = false;
+                        runLightboxBtn.style.background = 'linear-gradient(135deg, #ffd700 0%, #ff8c00 100%)';
+                        runLightboxBtn.style.color = '#000';
+                        runLightboxBtn.style.cursor = 'pointer';
+                        runLightboxBtn.style.opacity = '1';
+                        runLightboxBtn.style.boxShadow = '0 4px 15px rgba(255,215,0,0.3)';
+                        runLightboxBtn.textContent = '▶ Run Lightbox Test';
+                    } else {
+                        // Disable the button
+                        runLightboxBtn.disabled = true;
+                        runLightboxBtn.style.background = 'linear-gradient(135deg, #666 0%, #444 100%)';
+                        runLightboxBtn.style.color = '#999';
+                        runLightboxBtn.style.cursor = 'not-allowed';
+                        runLightboxBtn.style.opacity = '0.6';
+                        runLightboxBtn.style.boxShadow = 'none';
+                        runLightboxBtn.textContent = '🔒 Authorization Required';
+                    }
+                });
+                console.log('[LIGHTBOX] Checkbox handler registered successfully');
+            } else {
+                console.error('[LIGHTBOX] Could not find checkbox or button elements');
+            }
+        })();
 
         // Vulnerability Assessment
         let currentAssessments = null;
@@ -5584,6 +7415,878 @@
             console.log('[AI-VULN] Tab opened, loading companies...');
             loadVulnCompanies();
         }
+
+        // ============================================
+        // COMPLIANCE MANAGER - JavaScript Module
+        // ============================================
+
+        const ComplianceManager = {
+            currentFramework: null,
+            currentAssessmentId: null,
+            currentControlId: null,
+            assessmentData: null,
+            scanAnalysisData: null,
+            selectedDomain: null,
+            availableDomains: [],
+
+            // Initialize the compliance tab
+            async init() {
+                await this.loadFrameworks();
+            },
+
+            // Load available frameworks
+            async loadFrameworks() {
+                const grid = document.getElementById('frameworksGrid');
+                if (!grid) return;
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/compliance/frameworks');
+                    const data = await response.json();
+
+                    if (!data.success) throw new Error(data.error);
+
+                    // Check for existing assessments for each framework
+                    const frameworksWithProgress = await Promise.all(
+                        data.frameworks.map(async (fw) => {
+                            try {
+                                const assessmentRes = await fetch(`http://localhost:5000/api/compliance/assessment/by-framework/${fw.id}`);
+                                const assessmentData = await assessmentRes.json();
+                                return { ...fw, existingAssessment: assessmentData.assessment };
+                            } catch {
+                                return { ...fw, existingAssessment: null };
+                            }
+                        })
+                    );
+
+                    grid.innerHTML = frameworksWithProgress.map(fw => this.renderFrameworkCard(fw)).join('');
+
+                } catch (error) {
+                    console.error('Error loading frameworks:', error);
+                    grid.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #ef4444; grid-column: 1 / -1;">
+                            <p>Failed to load frameworks. Please try again.</p>
+                            <button onclick="ComplianceManager.loadFrameworks()" style="margin-top: 16px; padding: 10px 20px; background: #D4AF37; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                Retry
+                            </button>
+                        </div>
+                    `;
+                }
+            },
+
+            // Render a framework card
+            renderFrameworkCard(fw) {
+                const hasAssessment = fw.existingAssessment !== null;
+                const progress = hasAssessment ? fw.existingAssessment.completion_percentage : 0;
+
+                return `
+                    <div class="framework-card" onclick="ComplianceManager.selectFramework('${fw.id}')">
+                        <div class="framework-card-header">
+                            <div class="framework-icon">${fw.icon}</div>
+                            <span class="framework-badge">${fw.version}</span>
+                        </div>
+                        <div class="framework-card-body">
+                            <h3 class="framework-name">${fw.name}</h3>
+                            <div class="framework-version">${fw.full_name}</div>
+                            <p class="framework-description">${fw.description}</p>
+                            <div class="framework-stats">
+                                <div class="framework-stat">
+                                    <span class="framework-stat-value">${fw.control_count}</span>
+                                    <span class="framework-stat-label">Controls</span>
+                                </div>
+                                ${hasAssessment ? `
+                                <div class="framework-stat">
+                                    <span class="framework-stat-value">${fw.existingAssessment.statistics.compliant}</span>
+                                    <span class="framework-stat-label">Compliant</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="framework-card-footer">
+                            ${hasAssessment ? `
+                            <div class="framework-progress">
+                                <div class="framework-progress-header">
+                                    <span class="framework-progress-label">Progress</span>
+                                    <span class="framework-progress-value">${progress}%</span>
+                                </div>
+                                <div class="framework-progress-bar">
+                                    <div class="framework-progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                            <button class="btn-framework btn-framework-secondary">
+                                Continue Assessment
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                            </button>
+                            ` : `
+                            <button class="btn-framework btn-framework-primary">
+                                Start Assessment
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                            </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            },
+
+            // Select a framework and start/continue assessment
+            async selectFramework(frameworkId) {
+                this.currentFramework = frameworkId;
+
+                try {
+                    // Create or get existing assessment
+                    const createRes = await fetch('http://localhost:5000/api/compliance/assessment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ framework_id: frameworkId })
+                    });
+                    const createData = await createRes.json();
+
+                    if (!createData.success) throw new Error(createData.error);
+
+                    this.currentAssessmentId = createData.assessment_id;
+
+                    // Load assessment details
+                    await this.loadAssessment(this.currentAssessmentId);
+
+                    // Switch views
+                    document.getElementById('frameworksView').style.display = 'none';
+                    document.getElementById('assessmentView').classList.add('active');
+
+                } catch (error) {
+                    console.error('Error selecting framework:', error);
+                    alert('Failed to load assessment. Please try again.');
+                }
+            },
+
+            // Load assessment data
+            async loadAssessment(assessmentId) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/compliance/assessment/${assessmentId}`);
+                    const data = await response.json();
+
+                    if (!data.success) throw new Error(data.error);
+
+                    this.assessmentData = data;
+                    this.renderAssessment(data);
+
+                } catch (error) {
+                    console.error('Error loading assessment:', error);
+                }
+            },
+
+            // Render assessment dashboard
+            renderAssessment(data) {
+                const frameworkNames = {
+                    'soc2': 'SOC 2 Type II',
+                    'iso27001': 'ISO 27001:2022',
+                    'gdpr': 'GDPR',
+                    'nis2': 'NIS2 Directive'
+                };
+
+                // Update header
+                document.getElementById('assessmentTitle').textContent = `${frameworkNames[data.assessment.framework] || data.assessment.framework} Assessment`;
+                document.getElementById('assessmentSubtitle').textContent = `Started on ${new Date(data.assessment.assessment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+                // Update progress circle
+                const progress = data.completion_percentage;
+                const circle = document.getElementById('progressCircle');
+                const circumference = 2 * Math.PI * 80;
+                const offset = circumference - (progress / 100) * circumference;
+                circle.style.strokeDashoffset = offset;
+                document.getElementById('progressValue').textContent = `${Math.round(progress)}%`;
+
+                // Update stats
+                document.getElementById('statCompliant').textContent = data.statistics.compliant;
+                document.getElementById('statPartial').textContent = data.statistics.partial;
+                document.getElementById('statNonCompliant').textContent = data.statistics.non_compliant;
+                document.getElementById('statNotTested').textContent = data.statistics.not_tested;
+
+                // Render categories
+                this.renderCategories(data.categories);
+
+                // Load scan summary
+                this.loadScanSummary();
+            },
+
+            // Render control categories
+            renderCategories(categories) {
+                const container = document.getElementById('categoriesContainer');
+
+                const categoryHtml = Object.entries(categories).map(([catName, controls], index) => {
+                    const compliantCount = controls.filter(c => c.status === 'compliant').length;
+                    const progress = Math.round((compliantCount / controls.length) * 100) || 0;
+
+                    return `
+                        <div class="category-group ${index === 0 ? 'expanded' : ''}" data-category="${catName}">
+                            <div class="category-header" onclick="ComplianceManager.toggleCategory(this)">
+                                <div class="category-header-left">
+                                    <svg class="category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                    <span class="category-name">${this.formatCategoryName(catName)}</span>
+                                </div>
+                                <div class="category-header-right">
+                                    <div class="category-progress">
+                                        <div class="category-progress-bar">
+                                            <div class="category-progress-fill" style="width: ${progress}%"></div>
+                                        </div>
+                                        <span class="category-progress-text">${progress}%</span>
+                                    </div>
+                                    <span class="category-count">${controls.length} controls</span>
+                                </div>
+                            </div>
+                            <div class="category-content">
+                                ${controls.map(ctrl => this.renderControlRow(ctrl)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = categoryHtml;
+            },
+
+            // Format category name for display
+            formatCategoryName(name) {
+                return name
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())
+                    .replace(/_/g, ' ')
+                    .trim();
+            },
+
+            // Render a single control row
+            renderControlRow(ctrl) {
+                const statusClass = `status-${ctrl.status.replace('_', '-')}`;
+
+                // Determine scan state
+                const isScanFlagged = ctrl.scan_source && !ctrl.scan_verified_at;
+                const isScanVerified = ctrl.scan_source && ctrl.scan_verified_at;
+                const rowClass = isScanFlagged ? 'scan-flagged' : (isScanVerified ? 'scan-verified' : '');
+
+                // Build scan badge HTML
+                let scanBadgeHtml = '';
+                if (isScanVerified) {
+                    scanBadgeHtml = `<span class="scan-badge scan-badge-verified">✓ Verified</span>`;
+                } else if (isScanFlagged) {
+                    scanBadgeHtml = `<span class="scan-badge scan-badge-finding">⚠ Scan Finding</span>`;
+                } else if (ctrl.status === 'partial' || ctrl.status === 'non_compliant') {
+                    scanBadgeHtml = `<span class="scan-badge scan-badge-manual">Manual Review</span>`;
+                }
+
+                // Build scan info HTML
+                let scanInfoHtml = '';
+                if (ctrl.scan_source) {
+                    const scanSource = ctrl.scan_source.toUpperCase();
+                    const findingType = ctrl.scan_finding_type || 'Unknown';
+                    scanInfoHtml = `
+                        <div class="scan-info">
+                            <span class="scan-domain">${scanSource}: ${findingType}</span>
+                        </div>
+                    `;
+                }
+
+                // Build re-scan button HTML
+                let rescanBtnHtml = '';
+                if (isScanFlagged && ctrl.scan_domain) {
+                    rescanBtnHtml = `
+                        <button class="btn-rescan" onclick="event.stopPropagation(); ComplianceManager.verifyFix(${ctrl.id}, '${ctrl.scan_domain}')" title="Re-scan to verify fix">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                            </svg>
+                            Re-scan
+                        </button>
+                    `;
+                }
+
+                return `
+                    <div class="control-row ${rowClass}" data-control-id="${ctrl.id}">
+                        <div class="control-id">
+                            ${ctrl.control_id}
+                            ${scanBadgeHtml}
+                        </div>
+                        <div class="control-info">
+                            <h5>${ctrl.control_name}</h5>
+                            ${scanInfoHtml}
+                        </div>
+                        <div class="control-status-select">
+                            <select class="${statusClass}" onchange="ComplianceManager.updateControlStatus(${ctrl.id}, this.value, this)">
+                                <option value="not_tested" ${ctrl.status === 'not_tested' ? 'selected' : ''}>Not Tested</option>
+                                <option value="partial" ${ctrl.status === 'partial' ? 'selected' : ''}>In Progress</option>
+                                <option value="compliant" ${ctrl.status === 'compliant' ? 'selected' : ''}>Compliant</option>
+                                <option value="non_compliant" ${ctrl.status === 'non_compliant' ? 'selected' : ''}>Non-Compliant</option>
+                            </select>
+                        </div>
+                        <div class="control-notes">
+                            <input type="text" placeholder="Add notes..." value="${ctrl.remediation_notes || ''}" onchange="ComplianceManager.updateControlNotes(${ctrl.id}, this.value)">
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${rescanBtnHtml}
+                            <button class="btn-evidence" onclick="ComplianceManager.openEvidenceModal(${ctrl.id}, '${ctrl.control_id}', '${ctrl.control_name.replace(/'/g, "\\'")}')">
+                                <span>Evidence</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            },
+
+            // Toggle category expansion
+            toggleCategory(header) {
+                const group = header.closest('.category-group');
+                group.classList.toggle('expanded');
+            },
+
+            // Update control status
+            async updateControlStatus(controlId, status, selectEl) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/compliance/control/${controlId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status })
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.error);
+
+                    // Update select styling
+                    selectEl.className = `status-${status.replace('_', '-')}`;
+
+                    // Refresh assessment to update stats
+                    await this.loadAssessment(this.currentAssessmentId);
+
+                } catch (error) {
+                    console.error('Error updating control:', error);
+                    alert('Failed to update control status');
+                }
+            },
+
+            // Update control notes
+            async updateControlNotes(controlId, notes) {
+                try {
+                    await fetch(`http://localhost:5000/api/compliance/control/${controlId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ remediation_notes: notes })
+                    });
+                } catch (error) {
+                    console.error('Error updating notes:', error);
+                }
+            },
+
+            // Filter controls by search
+            filterControls(query) {
+                const rows = document.querySelectorAll('.control-row');
+                const lowerQuery = query.toLowerCase();
+
+                rows.forEach(row => {
+                    const id = row.querySelector('.control-id').textContent.toLowerCase();
+                    const name = row.querySelector('.control-info h5').textContent.toLowerCase();
+                    const matches = id.includes(lowerQuery) || name.includes(lowerQuery);
+                    row.style.display = matches ? '' : 'none';
+                });
+            },
+
+            // Open evidence modal
+            async openEvidenceModal(controlId, controlCode, controlName) {
+                this.currentControlId = controlId;
+
+                document.getElementById('evidenceControlId').textContent = controlCode;
+                document.getElementById('evidenceControlName').textContent = controlName;
+
+                // Clear form
+                document.getElementById('evidenceTitle').value = '';
+                document.getElementById('evidenceDescription').value = '';
+                document.getElementById('evidenceType').value = 'document';
+                document.getElementById('evidenceFile').value = '';
+
+                // Load existing evidence
+                await this.loadEvidence(controlId);
+
+                document.getElementById('evidenceModal').classList.add('active');
+            },
+
+            // Close evidence modal
+            closeEvidenceModal() {
+                document.getElementById('evidenceModal').classList.remove('active');
+                this.currentControlId = null;
+            },
+
+            // Load evidence for a control
+            async loadEvidence(controlId) {
+                const listContainer = document.getElementById('evidenceList');
+
+                try {
+                    const response = await fetch(`http://localhost:5000/api/compliance/evidence/${controlId}`);
+                    const data = await response.json();
+
+                    if (!data.success) throw new Error(data.error);
+
+                    if (data.evidence.length === 0) {
+                        listContainer.innerHTML = `
+                            <div class="evidence-list-header">
+                                <h4>Uploaded Evidence</h4>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">
+                                No evidence uploaded yet
+                            </p>
+                        `;
+                        return;
+                    }
+
+                    listContainer.innerHTML = `
+                        <div class="evidence-list-header">
+                            <h4>Uploaded Evidence (${data.evidence.length})</h4>
+                        </div>
+                        ${data.evidence.map(ev => `
+                            <div class="evidence-item">
+                                <div class="evidence-item-left">
+                                    <div class="evidence-item-icon">${this.getEvidenceIcon(ev.evidence_type)}</div>
+                                    <div class="evidence-item-info">
+                                        <h5>${ev.title}</h5>
+                                        <p>${ev.evidence_type} &bull; ${new Date(ev.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <button class="btn-evidence-delete" onclick="ComplianceManager.deleteEvidence(${ev.id})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        `).join('')}
+                    `;
+
+                } catch (error) {
+                    console.error('Error loading evidence:', error);
+                    listContainer.innerHTML = `<p style="color: #ef4444;">Failed to load evidence</p>`;
+                }
+            },
+
+            // Get icon for evidence type
+            getEvidenceIcon(type) {
+                const icons = {
+                    'document': '📄',
+                    'screenshot': '🖼️',
+                    'scan': '🔍',
+                    'log': '📋',
+                    'note': '📝'
+                };
+                return icons[type] || '📎';
+            },
+
+            // Save evidence
+            async saveEvidence() {
+                const title = document.getElementById('evidenceTitle').value.trim();
+                const description = document.getElementById('evidenceDescription').value.trim();
+                const evidenceType = document.getElementById('evidenceType').value;
+
+                if (!title) {
+                    alert('Please enter a title for the evidence');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/compliance/evidence', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            control_id: this.currentControlId,
+                            title,
+                            description,
+                            evidence_type: evidenceType
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.error);
+
+                    // Reload evidence list
+                    await this.loadEvidence(this.currentControlId);
+
+                    // Clear form
+                    document.getElementById('evidenceTitle').value = '';
+                    document.getElementById('evidenceDescription').value = '';
+
+                } catch (error) {
+                    console.error('Error saving evidence:', error);
+                    alert('Failed to save evidence');
+                }
+            },
+
+            // Delete evidence
+            async deleteEvidence(evidenceId) {
+                if (!confirm('Are you sure you want to delete this evidence?')) return;
+
+                try {
+                    const response = await fetch(`http://localhost:5000/api/compliance/evidence/${evidenceId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.error);
+
+                    // Reload evidence list
+                    await this.loadEvidence(this.currentControlId);
+
+                } catch (error) {
+                    console.error('Error deleting evidence:', error);
+                    alert('Failed to delete evidence');
+                }
+            },
+
+            // Show frameworks view
+            showFrameworks() {
+                document.getElementById('assessmentView').classList.remove('active');
+                document.getElementById('frameworksView').style.display = 'block';
+                this.loadFrameworks();
+            },
+
+            // Export report
+            async exportReport() {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/compliance/export/${this.currentAssessmentId}`);
+                    const data = await response.json();
+
+                    if (!data.success) throw new Error(data.error);
+
+                    // Create downloadable JSON
+                    const blob = new Blob([JSON.stringify(data.export, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `compliance-report-${this.currentFramework}-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                } catch (error) {
+                    console.error('Error exporting report:', error);
+                    alert('Failed to export report');
+                }
+            },
+
+            // ============================================
+            // SCAN INTEGRATION METHODS
+            // ============================================
+
+            // Load scan summary for the current assessment
+            async loadScanSummary() {
+                if (!this.currentAssessmentId) return;
+
+                try {
+                    const response = await fetch(`http://localhost:5000/api/compliance/scan-summary/${this.currentAssessmentId}`);
+                    const data = await response.json();
+
+                    if (!data.success) return;
+
+                    const card = document.getElementById('scanSummaryCard');
+                    // API returns: total_flagged, verified, unverified, by_finding_type, by_severity
+                    const flaggedCount = data.total_flagged || 0;
+                    const verifiedCount = data.verified || 0;
+
+                    if (flaggedCount > 0 || verifiedCount > 0) {
+                        card.style.display = 'flex';
+                        document.getElementById('scanFlaggedCount').textContent = flaggedCount;
+                        document.getElementById('scanVerifiedCount').textContent = verifiedCount;
+
+                        // Extract finding types for display
+                        const findingTypes = Object.keys(data.by_finding_type || {});
+                        if (findingTypes.length > 0) {
+                            const typeNames = findingTypes.slice(0, 3).map(t => {
+                                const info = data.by_finding_type[t];
+                                return info.name || t;
+                            });
+                            document.getElementById('scanSummaryText').textContent =
+                                `Scan findings: ${typeNames.join(', ')}${findingTypes.length > 3 ? ` +${findingTypes.length - 3} more` : ''}`;
+                        }
+                    } else {
+                        card.style.display = 'none';
+                    }
+
+                } catch (error) {
+                    console.error('Error loading scan summary:', error);
+                }
+            },
+
+            // Open the import from scans modal
+            async openImportModal() {
+                const modal = document.getElementById('importScanModal');
+                const select = document.getElementById('importDomainSelect');
+
+                // Reset modal state
+                document.getElementById('importPreview').style.display = 'none';
+                document.getElementById('importResults').style.display = 'none';
+                document.getElementById('importAnalyzeBtn').style.display = 'inline-flex';
+                document.getElementById('importConfirmBtn').style.display = 'none';
+                this.scanAnalysisData = null;
+
+                // Load available domains from XASM and Lightbox scans
+                try {
+                    const response = await fetch('http://localhost:5000/api/xasm/cached-domains');
+                    const data = await response.json();
+
+                    if (data.success && data.domains && data.domains.length > 0) {
+                        this.availableDomains = data.domains;
+                        select.innerHTML = `
+                            <option value="">Select a domain...</option>
+                            ${data.domains.map(d => {
+                                const scanTypes = [];
+                                if (d.has_xasm) scanTypes.push('XASM');
+                                if (d.has_lightbox) scanTypes.push('Lightbox');
+                                return `<option value="${d.domain}">${d.domain} (${scanTypes.join(' + ')})</option>`;
+                            }).join('')}
+                        `;
+                    } else {
+                        select.innerHTML = '<option value="">No scanned domains found</option>';
+                    }
+
+                } catch (error) {
+                    console.error('Error loading domains:', error);
+                    select.innerHTML = '<option value="">Error loading domains</option>';
+                }
+
+                modal.classList.add('active');
+            },
+
+            // Close the import modal
+            closeImportModal() {
+                document.getElementById('importScanModal').classList.remove('active');
+                this.scanAnalysisData = null;
+                this.selectedDomain = null;
+            },
+
+            // Analyze scans for selected domain
+            async analyzeDomain() {
+                const select = document.getElementById('importDomainSelect');
+                const domain = select.value;
+
+                if (!domain) {
+                    alert('Please select a domain to analyze');
+                    return;
+                }
+
+                this.selectedDomain = domain;
+                const analyzeBtn = document.getElementById('importAnalyzeBtn');
+                const previewDiv = document.getElementById('importPreview');
+                const previewContent = document.getElementById('importPreviewContent');
+
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '<span class="compliance-spinner" style="width: 14px; height: 14px; margin-right: 6px;"></span> Analyzing...';
+
+                try {
+                    // Call the analyze-scan endpoint
+                    const response = await fetch('http://localhost:5000/api/compliance/analyze-scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            domain: domain,
+                            framework: this.currentFramework,
+                            assessment_id: this.currentAssessmentId
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!data.success) throw new Error(data.error);
+
+                    this.scanAnalysisData = data;
+
+                    // Show preview
+                    const affectedCount = data.affected_controls ? data.affected_controls.length : 0;
+                    const vulnCount = data.vulnerabilities_found ? data.vulnerabilities_found.length : 0;
+
+                    previewContent.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 12px;">
+                            <div style="text-align: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                                <div style="font-size: 24px; font-weight: 700; color: #3b82f6;">${vulnCount}</div>
+                                <div style="font-size: 11px; color: #888;">Vulnerabilities Found</div>
+                            </div>
+                            <div style="text-align: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                                <div style="font-size: 24px; font-weight: 700; color: #ef4444;">${affectedCount}</div>
+                                <div style="font-size: 11px; color: #888;">Controls to Flag</div>
+                            </div>
+                            <div style="text-align: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                                <div style="font-size: 24px; font-weight: 700; color: #22c55e;">${data.evidence_items || 0}</div>
+                                <div style="font-size: 11px; color: #888;">Evidence Items</div>
+                            </div>
+                        </div>
+                        ${data.vulnerabilities_found && data.vulnerabilities_found.length > 0 ? `
+                        <div style="margin-top: 8px;">
+                            <strong style="color: #fff;">Findings:</strong>
+                            <ul style="margin: 8px 0 0 20px; padding: 0;">
+                                ${data.vulnerabilities_found.slice(0, 5).map(v => `<li>${v}</li>`).join('')}
+                                ${data.vulnerabilities_found.length > 5 ? `<li style="color: #888;">...and ${data.vulnerabilities_found.length - 5} more</li>` : ''}
+                            </ul>
+                        </div>
+                        ` : '<p>No security findings detected in recent scans.</p>'}
+                    `;
+
+                    previewDiv.style.display = 'block';
+
+                    // Show confirm button if there are controls to flag
+                    if (affectedCount > 0) {
+                        document.getElementById('importConfirmBtn').style.display = 'inline-flex';
+                    }
+
+                } catch (error) {
+                    console.error('Error analyzing domain:', error);
+                    previewContent.innerHTML = `<p style="color: #ef4444;">Error analyzing scans: ${error.message}</p>`;
+                    previewDiv.style.display = 'block';
+
+                } finally {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        Analyze Scans
+                    `;
+                }
+            },
+
+            // Confirm import and flag controls
+            async confirmImport() {
+                if (!this.scanAnalysisData || !this.selectedDomain) {
+                    alert('Please analyze a domain first');
+                    return;
+                }
+
+                const confirmBtn = document.getElementById('importConfirmBtn');
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<span class="compliance-spinner" style="width: 14px; height: 14px; margin-right: 6px;"></span> Importing...';
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/compliance/flag-from-scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            domain: this.selectedDomain,
+                            framework: this.currentFramework,
+                            assessment_id: this.currentAssessmentId
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!data.success) throw new Error(data.error);
+
+                    // Show results
+                    document.getElementById('importPreview').style.display = 'none';
+                    document.getElementById('importResults').style.display = 'block';
+                    document.getElementById('importResultsText').textContent =
+                        `Successfully flagged ${data.controls_flagged} controls and added ${data.evidence_added} evidence items.`;
+
+                    // Hide buttons
+                    document.getElementById('importAnalyzeBtn').style.display = 'none';
+                    document.getElementById('importConfirmBtn').style.display = 'none';
+
+                    // Reload assessment after a short delay
+                    setTimeout(async () => {
+                        await this.loadAssessment(this.currentAssessmentId);
+                        this.closeImportModal();
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('Error importing findings:', error);
+                    alert('Failed to import findings: ' + error.message);
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                        Import & Flag Controls
+                    `;
+                }
+            },
+
+            // Verify a fix by re-scanning
+            async verifyFix(controlId, domain) {
+                if (!confirm(`This will trigger a re-scan of ${domain} to verify the fix. Continue?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`http://localhost:5000/api/compliance/verify-fix/${controlId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ domain })
+                    });
+
+                    const data = await response.json();
+
+                    if (!data.success) throw new Error(data.error);
+
+                    if (data.verified) {
+                        alert('Fix verified! The vulnerability was not detected in the latest scan.');
+                    } else {
+                        alert('Fix not verified. The vulnerability is still present in the latest scan.');
+                    }
+
+                    // Reload assessment to update UI
+                    await this.loadAssessment(this.currentAssessmentId);
+
+                } catch (error) {
+                    console.error('Error verifying fix:', error);
+                    alert('Failed to verify fix: ' + error.message);
+                }
+            }
+        };
+
+        // Initialize compliance tab when switching to it
+        function initComplianceTab() {
+            ComplianceManager.init();
+        }
+    
+        // XASM Filter Functions
+        function filterFindings(severity) {
+            // Update active button state
+            document.querySelectorAll('.xasm-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === severity) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Filter the findings cards
+            document.querySelectorAll('.dashboard-card, .xasm-finding-card').forEach(card => {
+                if (severity === 'all') {
+                    card.style.display = '';
+                } else {
+                    const cardSeverity = card.dataset?.severity || '';
+                    card.style.display = cardSeverity.toLowerCase() === severity ? '' : 'none';
+                }
+            });
+        }
+
+        function searchFindings(query) {
+            const lowerQuery = query.toLowerCase();
+            document.querySelectorAll('.dashboard-card, .xasm-finding-card').forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(lowerQuery) ? '' : 'none';
+            });
+        }
+
+        function sortFindings(sortBy) {
+            console.log('Sorting by:', sortBy);
+            // Sorting would require more complex DOM manipulation
+            // This is a placeholder for the sorting functionality
+        }
+
+        // Export functions (placeholders)
+        function exportAsPDF() {
+            alert('PDF export feature coming soon!');
+        }
+
+        function exportAsCSV() {
+            alert('CSV export feature coming soon!');
+        }
+
     </script>
 </body>
 </html>

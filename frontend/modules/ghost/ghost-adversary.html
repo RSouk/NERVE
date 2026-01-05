@@ -5,35 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHOST - Adversary Intelligence</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Better Font Hierarchy */
-        body {
-            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-            letter-spacing: -0.01em;
-            background: #0a0a0a;
-            color: #e0e0e0;
-            min-height: 100vh;
-        }
-
-        h1, h2, h3, h4 {
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        /* Global link styling */
-        a {
-            color: #ffd700;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        a:hover {
-            color: #ff8c00;
-            text-decoration: underline;
-        }
-
-        a:visited {
-            color: #ffd700;
+        :root {
+            --gold-primary: #D4AF37;
+            --gold-light: #F4D03F;
+            --gold-dark: #B8860B;
+            --bg-deep: #050508;
+            --bg-card: rgba(10, 10, 15, 0.8);
+            --bg-elevated: rgba(20, 20, 28, 0.9);
+            --text-primary: #E8E6E3;
+            --text-secondary: #8B8D94;
+            --text-muted: #5A5C63;
+            --tier-strong: #E53935;
+            --tier-strong-bg: rgba(229, 57, 53, 0.12);
+            --tier-possible: #FF9800;
+            --tier-possible-bg: rgba(255, 152, 0, 0.12);
+            --tier-weak: #FDD835;
+            --tier-weak-bg: rgba(253, 216, 53, 0.12);
+            --mitre-blue: #4FC3F7;
+            --success-green: #66BB6A;
+            --border-subtle: rgba(212, 175, 55, 0.15);
+            --border-hover: rgba(212, 175, 55, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.02);
+            --shadow-gold: 0 0 40px rgba(212, 175, 55, 0.08);
         }
 
         * {
@@ -42,15 +39,29 @@
             box-sizing: border-box;
         }
 
-        /* Smooth Transitions for interactive elements */
-        .threat-card, .attack-step, .ttp-item, .analyze-button, .export-btn, .back-button {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
+                linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
         }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold-primary); }
 
         .container {
             max-width: 1600px;
             margin: 0 auto;
-            padding: 30px;
+            padding: 24px 32px;
         }
 
         /* Header */
@@ -58,63 +69,90 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 30px;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
-            margin-bottom: 30px;
+            padding: 20px 0;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
 
         .header-left img {
-            height: 60px;
+            height: 52px;
+            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.3));
+        }
+
+        .header-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .header-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-top: 2px;
+            letter-spacing: 0.02em;
         }
 
         .back-button {
             padding: 10px 20px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--gold-primary);
             text-decoration: none;
-            font-size: 0.9em;
-            transition: all 0.2s;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.25s ease;
         }
 
         .back-button:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--border-hover);
+            transform: translateX(-4px);
         }
 
-        /* Form Section */
+        /* Form Container */
         .form-container {
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
             padding: 40px;
-            margin-bottom: 30px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-gold);
         }
 
         .form-container h2 {
-            font-size: 1.8em;
-            color: #D4AF37;
-            margin-bottom: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
         }
 
-        .form-container p {
-            color: #888;
-            margin-bottom: 30px;
-            line-height: 1.6;
+        .form-container > p {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 0.95rem;
+            max-width: 800px;
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
         }
 
         .form-group {
@@ -123,54 +161,115 @@
         }
 
         .form-group label {
-            color: #D4AF37;
-            font-size: 0.85em;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--gold-primary);
+            font-size: 0.7rem;
             font-weight: 600;
             margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.1em;
         }
 
         .form-group select,
         .form-group input {
-            padding: 12px 15px;
-            background: rgba(212, 175, 55, 0.05);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #e0e0e0;
-            font-size: 0.95em;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-group select:hover,
+        .form-group input:hover {
+            border-color: var(--border-hover);
         }
 
         .form-group select:focus,
         .form-group input:focus {
             outline: none;
-            border-color: #D4AF37;
-            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
         }
 
         .form-group select option {
-            background: #1a1a1a;
-            color: #e0e0e0;
+            background: #1a1a1f;
+            color: var(--text-primary);
         }
 
-        /* Better Button Styling */
+        .checkbox-group {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 12px 16px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-weight: 400;
+            text-transform: none;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: color 0.2s;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: normal;
+        }
+
+        .checkbox-group label:hover {
+            color: var(--gold-primary);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--gold-primary);
+        }
+
+        /* Analyze Button */
         .analyze-button {
             width: 100%;
-            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
             border: none;
-            padding: 16px 48px;
-            border-radius: 8px;
+            border-radius: 10px;
             color: #000;
-            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
             font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 16px rgba(255,215,0,0.3);
             letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analyze-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .analyze-button:hover::before {
+            left: 100%;
         }
 
         .analyze-button:hover {
-            box-shadow: 0 6px 20px rgba(255,215,0,0.4);
             transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
         }
 
         .analyze-button:active {
@@ -186,23 +285,27 @@
         /* Loading */
         .loading {
             text-align: center;
-            padding: 60px;
+            padding: 80px 40px;
             display: none;
         }
 
-        .spinner {
-            border: 3px solid rgba(212, 175, 55, 0.1);
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-subtle);
+            border-top-color: var(--gold-primary);
             border-radius: 50%;
-            border-top: 3px solid #D4AF37;
-            width: 40px;
-            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 20px;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
         }
 
         /* Results Container */
@@ -210,336 +313,541 @@
             display: none;
         }
 
-        /* Better Card Styling */
-        .threat-card {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,215,0,0.25);
+        /* Results Summary */
+        .results-summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .summary-card {
+            flex: 1;
+            min-width: 200px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: 12px;
-            padding: 24px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .summary-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .summary-icon.strong { background: var(--tier-strong-bg); }
+        .summary-icon.possible { background: var(--tier-possible-bg); }
+        .summary-icon.weak { background: var(--tier-weak-bg); }
+
+        .summary-content h4 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .summary-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Threat Card */
+        .threat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
             margin-bottom: 24px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-gold);
         }
 
         .threat-card:hover {
-            border-color: rgba(255,215,0,0.5);
-            box-shadow: 0 8px 24px rgba(255,215,0,0.15);
+            border-color: var(--border-hover);
             transform: translateY(-2px);
         }
 
-        /* APT Match Badge - Circular Progress */
-        .match-badge {
+        /* Card Header with Confidence Tier */
+        .card-header {
+            padding: 28px 32px;
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            border-bottom: 1px solid var(--border-subtle);
             position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100px;
-            height: 100px;
-            flex-shrink: 0;
         }
 
-        .match-badge-circle {
+        /* Confidence Tier Badge */
+        .confidence-tier {
             position: absolute;
-            width: 100%;
-            height: 100%;
-        }
-
-        .match-badge-text {
-            position: relative;
-            font-size: 24px;
+            top: 0;
+            right: 32px;
+            padding: 10px 20px 12px;
+            border-radius: 0 0 12px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
             font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Circular Progress Bar */
-        @keyframes fillProgress {
-            from { stroke-dashoffset: 283; }
+        .confidence-tier.strong {
+            background: linear-gradient(135deg, var(--tier-strong) 0%, #C62828 100%);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(229, 57, 53, 0.4);
+            animation: pulse-strong 2s infinite;
         }
 
-        .progress-ring {
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
+        .confidence-tier.possible {
+            background: linear-gradient(135deg, var(--tier-possible) 0%, #F57C00 100%);
+            color: #000;
+            box-shadow: 0 4px 20px rgba(255, 152, 0, 0.3);
+        }
+
+        .confidence-tier.weak {
+            background: linear-gradient(135deg, var(--tier-weak) 0%, #F9A825 100%);
+            color: #000;
+            box-shadow: 0 4px 16px rgba(253, 216, 53, 0.25);
+        }
+
+        @keyframes pulse-strong {
+            0%, 100% { box-shadow: 0 4px 20px rgba(229, 57, 53, 0.4); }
+            50% { box-shadow: 0 4px 30px rgba(229, 57, 53, 0.6); }
+        }
+
+        .tier-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
         /* APT Avatar */
         .apt-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: inline-flex;
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
             font-weight: 700;
-            margin-right: 16px;
-            border: 3px solid;
+            color: #000;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .apt-avatar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            filter: blur(20px);
+            opacity: 0.5;
+        }
+
+        .apt-avatar span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* APT Info */
+        .apt-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .apt-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.01em;
+        }
+
+        .apt-aliases {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .apt-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .meta-item strong {
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+
+        /* Match Score Gauge */
+        .match-gauge {
+            width: 100px;
+            height: 100px;
+            position: relative;
             flex-shrink: 0;
         }
 
-        /* Section Headers */
-        .section-header {
-            border-bottom: 2px solid rgba(255,215,0,0.3);
-            padding-bottom: 12px;
-            margin-bottom: 24px;
+        .match-gauge svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
         }
 
-        .threat-header {
+        .match-gauge circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+
+        .match-gauge .bg {
+            stroke: rgba(255, 255, 255, 0.05);
+        }
+
+        .match-gauge .progress {
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .match-gauge-value {
+            position: absolute;
+            inset: 0;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+            justify-content: center;
         }
 
-        .threat-name {
-            font-size: 1.5em;
-            color: #D4AF37;
-            font-weight: 600;
+        .match-gauge-percent {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
         }
 
-        .threat-match {
-            padding: 8px 16px;
-            background: rgba(239, 68, 68, 0.2);
-            border-radius: 4px;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #ef4444;
-        }
-
-        .threat-match.critical {
-            background: rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-            border: 2px solid #ef4444;
-            animation: pulse 2s infinite;
-        }
-
-        .threat-match.high {
-            background: rgba(251, 146, 60, 0.2);
-            color: #fb923c;
-        }
-
-        .threat-match.medium {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .threat-icon {
-            font-size: 1.3em;
-            margin-right: 8px;
-        }
-
-        .threat-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .info-item {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 12px;
-            border-radius: 4px;
-        }
-
-        .info-label {
-            font-size: 0.8em;
-            color: #888;
+        .match-gauge-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
         }
 
-        .info-value {
-            font-size: 1em;
-            color: #e0e0e0;
+        /* Card Body */
+        .card-body {
+            padding: 28px 32px;
         }
 
-        .threat-description {
-            font-size: 0.95em;
-            color: #aaa;
-            line-height: 1.6;
-            margin-bottom: 20px;
+        /* Profile Grid */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .profile-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .profile-section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--gold-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .profile-section-title::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            background: var(--gold-primary);
+            border-radius: 2px;
+        }
+
+        /* Target Industries */
+        .industry-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .industry-tag {
+            padding: 6px 12px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--gold-primary);
+            font-weight: 500;
+        }
+
+        /* MITRE Techniques */
+        .mitre-techniques {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mitre-technique {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(79, 195, 247, 0.05);
+            border: 1px solid rgba(79, 195, 247, 0.15);
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .mitre-technique:hover {
+            background: rgba(79, 195, 247, 0.1);
+            border-color: rgba(79, 195, 247, 0.3);
+            transform: translateX(4px);
+        }
+
+        .mitre-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--mitre-blue);
+            background: rgba(79, 195, 247, 0.15);
+            padding: 4px 8px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .mitre-name {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .mitre-tactic {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Data Sources */
+        .data-sources {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .data-source {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .data-source.verified {
+            border-color: rgba(102, 187, 106, 0.3);
+            color: var(--success-green);
+        }
+
+        .data-source .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Description */
+        .apt-description {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border-left: 3px solid var(--gold-dark);
         }
 
         /* Match Reasons */
         .match-reasons-section {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
-        .match-reasons-title {
-            font-size: 1.1em;
-            color: #D4AF37;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .reason-item {
-            padding: 10px 12px;
-            border-radius: 3px;
-            margin-bottom: 8px;
-            font-size: 0.9em;
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .reason-item.strength-high {
-            background: rgba(239, 68, 68, 0.15);
-            border-left: 3px solid #ef4444;
-            color: #fca5a5;
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-subtle);
         }
 
-        .reason-item.strength-medium {
-            background: rgba(251, 191, 36, 0.15);
-            border-left: 3px solid #fbbf24;
-            color: #fde68a;
-        }
-
-        .reason-item.strength-low {
-            background: rgba(156, 163, 175, 0.15);
-            border-left: 3px solid #9ca3af;
-            color: #d1d5db;
-        }
-
-        .reason-checkmark {
-            font-size: 1.1em;
-            flex-shrink: 0;
-        }
-
-        .reason-factor {
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .reason-points {
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .reason-evidence {
-            opacity: 0.9;
-        }
-
-        .ttps-section {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 24px;
-            border-radius: 8px;
-        }
-
-        .ttps-title {
-            font-size: 1.1em;
-            color: #D4AF37;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        /* Enhanced Match Reasons Section */
-        .match-reasons-section {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 24px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-        }
-
-        .match-reasons-title {
-            font-size: 20px;
-            color: #ffd700;
-            margin-bottom: 16px;
-            font-weight: 700;
-            padding-bottom: 12px;
-            border-bottom: 2px solid rgba(255,215,0,0.3);
+        .match-reasons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .reason-item {
-            padding: 12px 16px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            font-size: 14px;
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .reason-item.strength-high {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid #ef4444;
-            color: #fca5a5;
-        }
-
-        .reason-item.strength-medium {
-            background: rgba(251, 191, 36, 0.1);
-            border-left: 4px solid #fbbf24;
-            color: #fde68a;
-        }
-
-        .reason-item.strength-low {
-            background: rgba(156, 163, 175, 0.1);
-            border-left: 4px solid #9ca3af;
-            color: #d1d5db;
+            gap: 14px;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border-left: 4px solid transparent;
+            transition: all 0.2s ease;
         }
 
         .reason-item:hover {
             transform: translateX(4px);
         }
 
-        /* Enhanced TTP List */
-        .ttp-item {
-            background: rgba(255,255,255,0.03);
-            border-left: 3px solid #ffd700;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            font-size: 14px;
+        .reason-item.strength-high {
+            border-left-color: var(--tier-strong);
+            background: var(--tier-strong-bg);
         }
 
-        .ttp-item:hover {
-            background: rgba(255,255,255,0.08);
-            border-left-color: #ff8c00;
+        .reason-item.strength-medium {
+            border-left-color: var(--tier-possible);
+            background: var(--tier-possible-bg);
         }
 
-        /* Attack Path Timeline */
-        .attack-path-section {
-            background: rgba(0, 0, 0, 0.3);
+        .reason-item.strength-low {
+            border-left-color: var(--tier-weak);
+            background: var(--tier-weak-bg);
+        }
+
+        .reason-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .strength-high .reason-check { background: var(--tier-strong); color: #fff; }
+        .strength-medium .reason-check { background: var(--tier-possible); color: #000; }
+        .strength-low .reason-check { background: var(--tier-weak); color: #000; }
+
+        .reason-content {
+            flex: 1;
+        }
+
+        .reason-factor {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .reason-evidence {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .reason-points {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gold-primary);
+            background: rgba(212, 175, 55, 0.1);
+            padding: 4px 10px;
             border-radius: 4px;
-            margin-bottom: 20px;
+        }
+
+        /* Attack Path Section */
+        .attack-path-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin-bottom: 24px;
             overflow: hidden;
+            border: 1px solid var(--border-subtle);
         }
 
         .attack-path-header {
-            padding: 15px 20px;
-            background: rgba(212, 175, 55, 0.1);
-            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
-            cursor: pointer;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
             transition: background 0.2s;
         }
 
         .attack-path-header:hover {
-            background: rgba(212, 175, 55, 0.15);
+            background: rgba(212, 175, 55, 0.05);
         }
 
         .attack-path-title {
-            font-size: 1.1em;
-            color: #D4AF37;
-            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: 600;
+            color: var(--gold-primary);
         }
 
         .attack-path-toggle {
-            color: #D4AF37;
-            font-size: 1.2em;
+            color: var(--gold-primary);
             transition: transform 0.3s;
+            font-size: 0.8rem;
         }
 
         .attack-path-toggle.expanded {
@@ -549,223 +857,321 @@
         .attack-path-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.4s ease;
         }
 
         .attack-path-content.expanded {
-            max-height: 2000px;
-            transition: max-height 0.5s ease-in;
+            max-height: 3000px;
         }
 
         .attack-path-timeline {
             padding: 20px;
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        /* Enhanced Attack Chain Steps */
         .attack-step {
             display: flex;
             gap: 20px;
-            margin-bottom: 25px;
-            position: relative;
-            background: rgba(0,0,0,0.3);
-            border-left: 4px solid #ffd700;
-            border-radius: 8px;
             padding: 20px;
-            padding-left: 60px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border-left: 4px solid var(--gold-primary);
+            position: relative;
         }
 
-        .attack-step.medium-risk {
-            border-color: #ffd700;
-            background: rgba(255,215,0,0.05);
-        }
-
-        .attack-step.high-risk {
-            border-color: #ff8c00;
-            background: rgba(255,140,0,0.05);
-        }
-
-        .attack-step.critical-risk {
-            border-color: #dc3545;
-            background: rgba(220,53,69,0.05);
-        }
-
-        .attack-step:last-child {
-            margin-bottom: 0;
-        }
-
-        .attack-step::before {
-            content: '';
-            position: absolute;
-            left: 39px;
-            top: 60px;
-            bottom: -25px;
-            width: 2px;
-            background: linear-gradient(to bottom, rgba(212, 175, 55, 0.5), rgba(212, 175, 55, 0.1));
-        }
-
-        .attack-step:last-child::before {
-            display: none;
-        }
+        .attack-step.high-risk { border-left-color: var(--tier-strong); }
+        .attack-step.medium-risk { border-left-color: var(--tier-possible); }
 
         .step-number {
-            position: absolute;
-            left: 10px;
-            top: 20px;
-            flex-shrink: 0;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
             font-weight: 700;
             color: #000;
-            font-size: 18px;
-            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
-            z-index: 1;
-            border: 4px solid #000;
+            flex-shrink: 0;
         }
 
         .step-content {
             flex: 1;
-            background: transparent;
-            border-radius: 6px;
-            padding: 0;
-        }
-
-        .step-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 10px;
         }
 
         .step-phase {
-            font-size: 0.75em;
-            color: #888;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
         }
 
         .step-tactic {
-            font-size: 1.05em;
-            color: #D4AF37;
+            font-size: 1rem;
             font-weight: 600;
+            color: var(--gold-primary);
             margin-bottom: 8px;
-        }
-
-        .step-likelihood {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .step-likelihood.high {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: 1px solid #ef4444;
-        }
-
-        .step-likelihood.medium {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-            border: 1px solid #fbbf24;
-        }
-
-        .step-likelihood.low {
-            background: rgba(156, 163, 175, 0.2);
-            color: #9ca3af;
-            border: 1px solid #9ca3af;
         }
 
         .step-description {
-            color: #ccc;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
             line-height: 1.6;
-            margin-bottom: 10px;
+        }
+
+        .step-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .step-impact, .step-mitigation {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
         }
 
         .step-impact {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 2px solid #ef4444;
-            padding: 8px 12px;
-            border-radius: 3px;
-            margin-bottom: 10px;
-            font-size: 0.9em;
-            color: #fca5a5;
+            background: rgba(229, 57, 53, 0.1);
+            border-left: 3px solid var(--tier-strong);
         }
 
-        .step-impact::before {
-            content: '⚠ Impact: ';
+        .step-impact-label, .step-mitigation-label {
             font-weight: 600;
-            color: #ef4444;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .step-impact-label { color: var(--tier-strong); }
+        .step-mitigation-label { color: var(--success-green); }
+
+        .step-impact-text, .step-mitigation-text {
+            color: var(--text-secondary);
         }
 
         .step-mitigation {
-            background: rgba(34, 197, 94, 0.1);
-            border-left: 2px solid #22c55e;
-            padding: 8px 12px;
-            border-radius: 3px;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-            color: #86efac;
+            background: rgba(102, 187, 106, 0.1);
+            border-left: 3px solid var(--success-green);
         }
 
-        .step-mitigation::before {
-            content: '🛡 Mitigation: ';
+        .step-likelihood {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
             font-weight: 600;
-            color: #22c55e;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 4px 10px;
+            border-radius: 4px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
 
-        .step-evidence {
-            font-size: 0.85em;
-            color: #888;
-            font-style: italic;
+        .step-likelihood.high {
+            background: var(--tier-strong-bg);
+            color: var(--tier-strong);
         }
 
-        .step-evidence::before {
-            content: '📌 ';
+        .step-likelihood.medium {
+            background: var(--tier-possible-bg);
+            color: var(--tier-possible);
         }
 
-        .no-results {
-            text-align: center;
-            padding: 60px;
-            color: #666;
+        .step-likelihood.low {
+            background: var(--tier-weak-bg);
+            color: var(--tier-weak);
+        }
+
+        /* TTPs Section */
+        .ttps-section {
+            margin-bottom: 24px;
+        }
+
+        .ttps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+
+        .ttp-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border-left: 3px solid var(--gold-dark);
+            transition: all 0.2s ease;
+        }
+
+        .ttp-item:hover {
+            border-left-color: var(--gold-primary);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .ttp-bullet {
+            width: 6px;
+            height: 6px;
+            background: var(--gold-primary);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .ttp-text {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        /* IOC Section */
+        .ioc-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .ioc-load-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 40px;
+        }
+
+        .ioc-load-btn button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+        }
+
+        .ioc-load-btn button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(212, 175, 55, 0.4);
+        }
+
+        .ioc-load-btn p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* IOC Stats */
+        .ioc-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .ioc-stat {
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border-left: 3px solid;
+        }
+
+        .ioc-stat.ips { border-left-color: var(--tier-strong); }
+        .ioc-stat.domains { border-left-color: var(--tier-possible); }
+        .ioc-stat.urls { border-left-color: var(--tier-weak); }
+        .ioc-stat.hashes { border-left-color: var(--mitre-blue); }
+
+        .ioc-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .ioc-stat.ips .ioc-stat-value { color: var(--tier-strong); }
+        .ioc-stat.domains .ioc-stat-value { color: var(--tier-possible); }
+        .ioc-stat.urls .ioc-stat-value { color: var(--tier-weak); }
+        .ioc-stat.hashes .ioc-stat-value { color: var(--mitre-blue); }
+
+        .ioc-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
         }
 
         /* Export Buttons */
         .export-buttons {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 32px 0;
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 32px;
         }
 
         .export-btn {
-            padding: 10px 20px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
-            font-size: 0.9em;
+            padding: 12px 24px;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--gold-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
+            transition: all 0.2s ease;
+            display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .export-btn:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--border-hover);
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--text-secondary);
+        }
+
+        .no-results-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .no-results h3 {
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .no-results p {
+            font-size: 0.9rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .form-container { padding: 24px; }
+            .card-header { flex-direction: column; gap: 16px; }
+            .confidence-tier { position: static; border-radius: 8px; align-self: flex-start; }
+            .profile-grid { grid-template-columns: 1fr; }
+            .step-details { grid-template-columns: 1fr; }
+            .ioc-stats { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -775,22 +1181,28 @@
             <div class="header-left">
                 <img src="ghost-logo.png" alt="GHOST">
                 <div>
-                    <h1 style="font-size: 2em; color: #D4AF37; margin: 0;">Adversary Intelligence</h1>
-                    <p style="color: #888; margin: 0;">Personalized Threat Actor Profiling</p>
+                    <h1 class="header-title">Adversary Intelligence</h1>
+                    <p class="header-subtitle">Advanced Threat Actor Profiling & Attribution</p>
                 </div>
             </div>
-            <a href="ghost.html" class="back-button">← Back to GHOST Dashboard</a>
+            <a href="ghost.html" class="back-button">Back to GHOST</a>
+        </div>
+
+        <!-- Quick Navigation -->
+        <div style="display: flex; gap: 12px; justify-content: center; padding: 16px 30px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px;">
+            <a href="ghost-search.html" style="padding: 8px 16px; background: var(--glass-bg); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='var(--glass-bg)'">Global Search</a>
+            <a href="ghost-asm.html" style="padding: 8px 16px; background: var(--glass-bg); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='var(--glass-bg)'">Attack Surface</a>
+            <a href="ghost-roadmap.html" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border: 1px solid var(--border-hover); border-radius: 6px; color: var(--gold-light); text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.25)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))'">Security Roadmap</a>
         </div>
 
         <!-- Input Form -->
         <div class="form-container">
             <h2>Organization Threat Profile</h2>
-            <p>Provide detailed information about your organization to receive personalized threat intelligence. We'll analyze your attack surface and match your profile against 50+ known APT groups and threat actors.</p>
-            
+            <p>Provide detailed information about your organization to receive personalized threat intelligence. We analyze your attack surface and match against 100+ known APT groups using MISP Galaxy and MITRE ATT&CK data.</p>
+
             <div class="form-grid">
-                <!-- Row 1: Basic Info -->
                 <div class="form-group">
-                    <label for="industry">Industry Sector *</label>
+                    <label for="industry">Industry Sector</label>
                     <select id="industry">
                         <option value="">Select Industry...</option>
                         <option value="financial">Financial Services & Banking</option>
@@ -809,7 +1221,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="location">Primary Location *</label>
+                    <label for="location">Primary Location</label>
                     <select id="location">
                         <option value="">Select Region...</option>
                         <option value="north-america">North America</option>
@@ -822,7 +1234,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="company-size">Company Size *</label>
+                    <label for="company-size">Company Size</label>
                     <select id="company-size">
                         <option value="">Select Size...</option>
                         <option value="small">Small (1-50 employees)</option>
@@ -832,9 +1244,8 @@
                     </select>
                 </div>
 
-                <!-- Row 2: Technical Infrastructure -->
                 <div class="form-group">
-                    <label for="tech-stack">Primary Tech Stack *</label>
+                    <label for="tech-stack">Primary Tech Stack</label>
                     <select id="tech-stack">
                         <option value="">Select Technology...</option>
                         <option value="windows">Windows Infrastructure</option>
@@ -848,7 +1259,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="cloud-usage">Cloud Adoption *</label>
+                    <label for="cloud-usage">Cloud Adoption</label>
                     <select id="cloud-usage">
                         <option value="">Select Cloud Usage...</option>
                         <option value="none">No Cloud (100% On-Premise)</option>
@@ -860,7 +1271,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="remote-work">Remote Workforce *</label>
+                    <label for="remote-work">Remote Workforce</label>
                     <select id="remote-work">
                         <option value="">Select Remote Work Model...</option>
                         <option value="none">No Remote Work</option>
@@ -871,9 +1282,8 @@
                     </select>
                 </div>
 
-                <!-- Row 3: Security & Assets -->
                 <div class="form-group">
-                    <label for="security-maturity">Security Maturity *</label>
+                    <label for="security-maturity">Security Maturity</label>
                     <select id="security-maturity">
                         <option value="">Select Security Level...</option>
                         <option value="basic">Basic (Antivirus, Firewall)</option>
@@ -884,7 +1294,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="internet-facing">Internet-Facing Systems *</label>
+                    <label for="internet-facing">Internet-Facing Systems</label>
                     <select id="internet-facing">
                         <option value="">Select Exposed Systems...</option>
                         <option value="minimal">Minimal (Website only)</option>
@@ -895,43 +1305,42 @@
                     </select>
                 </div>
 
-                    <div class="form-group">
-                        <label>Critical Assets *</label>
-                        <div style="background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; padding: 12px; max-height: 180px; overflow-y: auto;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
-                                <input type="checkbox" name="critical-assets" value="customer-data" style="margin-right: 8px;">
-                                Customer Data (PII)
-                            </label>
-                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
-                                <input type="checkbox" name="critical-assets" value="financial" style="margin-right: 8px;">
-                                Financial Systems
-                            </label>
-                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
-                                <input type="checkbox" name="critical-assets" value="ip" style="margin-right: 8px;">
-                                Intellectual Property
-                            </label>
-                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
-                                <input type="checkbox" name="critical-assets" value="infrastructure" style="margin-right: 8px;">
-                                Critical Infrastructure
-                            </label>
-                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
-                                <input type="checkbox" name="critical-assets" value="healthcare" style="margin-right: 8px;">
-                                Healthcare Records
-                            </label>
-                            <label style="display: block; margin-bottom: 8px; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
-                                <input type="checkbox" name="critical-assets" value="government" style="margin-right: 8px;">
-                                Government/Classified
-                            </label>
-                            <label style="display: block; margin-bottom: 0; font-weight: normal; text-transform: none; font-size: 0.9em; cursor: pointer;">
-                                <input type="checkbox" name="critical-assets" value="operational" style="margin-right: 8px;">
-                                Operational Systems
-                            </label>
-                        </div>
-                    </div>
-
-                <!-- Row 4: Data Types -->
                 <div class="form-group">
-                    <label for="data-sensitivity">Data Sensitivity *</label>
+                    <label>Critical Assets</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" name="critical-assets" value="customer-data">
+                            Customer Data (PII)
+                        </label>
+                        <label>
+                            <input type="checkbox" name="critical-assets" value="financial">
+                            Financial Systems
+                        </label>
+                        <label>
+                            <input type="checkbox" name="critical-assets" value="ip">
+                            Intellectual Property
+                        </label>
+                        <label>
+                            <input type="checkbox" name="critical-assets" value="infrastructure">
+                            Critical Infrastructure
+                        </label>
+                        <label>
+                            <input type="checkbox" name="critical-assets" value="healthcare">
+                            Healthcare Records
+                        </label>
+                        <label>
+                            <input type="checkbox" name="critical-assets" value="government">
+                            Government/Classified
+                        </label>
+                        <label>
+                            <input type="checkbox" name="critical-assets" value="operational">
+                            Operational Systems
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="data-sensitivity">Data Sensitivity</label>
                     <select id="data-sensitivity">
                         <option value="">Select Data Type...</option>
                         <option value="public">Mostly Public Data</option>
@@ -948,7 +1357,7 @@
 
         <!-- Loading Indicator -->
         <div id="loadingIndicator" class="loading">
-            <div class="spinner"></div>
+            <div class="loading-spinner"></div>
             <p>Analyzing threat actor database...</p>
         </div>
 
@@ -957,13 +1366,13 @@
             <!-- Results populated by JavaScript -->
         </div>
 
-        <!-- Export Buttons (shown when results are available) -->
+        <!-- Export Buttons -->
         <div id="exportSection" class="export-buttons" style="display: none;">
             <button class="export-btn" onclick="exportToJSON()">
-                <span>📥</span> Export JSON
+                <span>JSON</span> Export Data
             </button>
             <button class="export-btn" onclick="exportToPDF()">
-                <span>📄</span> Export PDF
+                <span>PDF</span> Generate Report
             </button>
         </div>
     </div>
@@ -973,11 +1382,8 @@
         let currentThreats = null;
         let currentFormData = null;
 
-        // APT Display Helper Functions
+        // Helper Functions
         function getAptInitials(name) {
-            // Extract initials from APT name
-            // "APT19" -> "A19"
-            // "Careto (The Mask)" -> "CT"
             const cleanName = name.split('(')[0].trim();
             if (cleanName.match(/APT\d+/)) {
                 return cleanName.replace('APT', 'A');
@@ -989,49 +1395,25 @@
             return cleanName.substring(0, 2).toUpperCase();
         }
 
-        function getMatchColor(percent) {
-            if (percent >= 80) return '#dc3545'; // Critical - Red
-            if (percent >= 70) return '#ff8c00'; // High - Orange
-            if (percent >= 60) return '#ffd700'; // Medium - Gold
-            return '#4caf50'; // Low - Green
+        function getTierColor(tier) {
+            const colors = {
+                'strong': '#E53935',
+                'possible': '#FF9800',
+                'weak': '#FDD835'
+            };
+            return colors[tier] || colors.possible;
         }
 
-        function getAptAvatarGradient(percent) {
-            const color = getMatchColor(percent);
-            const gradients = {
-                '#dc3545': 'linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%)',
-                '#ff8c00': 'linear-gradient(135deg, #ff8c00 0%, #ffa500 100%)',
-                '#ffd700': 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
-                '#4caf50': 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)'
-            };
-            return gradients[color] || gradients['#ffd700'];
+        function getScoreColor(score) {
+            if (score >= 70) return '#E53935';
+            if (score >= 50) return '#FF9800';
+            return '#FDD835';
         }
 
-        function getRiskClass(level) {
-            const map = {
-                'high': 'high-risk',
-                'medium': 'medium-risk',
-                'low': 'medium-risk'
-            };
-            return map[level] || 'medium-risk';
-        }
-
-        function getRiskColor(level) {
-            const map = {
-                'high': '#dc3545',
-                'medium': '#ff8c00',
-                'low': '#ffd700'
-            };
-            return map[level] || '#ffd700';
-        }
-
-        function getRiskBadgeColor(level) {
-            const map = {
-                'high': 'rgba(220,53,69,0.2)',
-                'medium': 'rgba(255,140,0,0.2)',
-                'low': 'rgba(255,215,0,0.2)'
-            };
-            return map[level] || 'rgba(255,215,0,0.2)';
+        function getAvatarGradient(score) {
+            if (score >= 70) return 'linear-gradient(135deg, #E53935, #C62828)';
+            if (score >= 50) return 'linear-gradient(135deg, #FF9800, #F57C00)';
+            return 'linear-gradient(135deg, #FDD835, #F9A825)';
         }
 
         async function analyzeThreats() {
@@ -1047,50 +1429,31 @@
             const criticalAssets = Array.from(criticalAssetsCheckboxes).map(cb => cb.value);
             const dataSensitivity = document.getElementById('data-sensitivity').value;
 
-            // Validate all fields
             if (!industry || !location || !companySize || !techStack || !cloudUsage ||
                 !remoteWork || !securityMaturity || !internetFacing || criticalAssets.length === 0 || !dataSensitivity) {
-                alert('Please fill in all required fields (*) - You must select at least one Critical Asset');
+                alert('Please fill in all required fields and select at least one Critical Asset');
                 return;
             }
 
-            // Store form data for export
             currentFormData = {
-                industry,
-                location,
-                company_size: companySize,
-                tech_stack: techStack,
-                cloud_usage: cloudUsage,
-                remote_work: remoteWork,
-                security_maturity: securityMaturity,
-                internet_facing: internetFacing,
-                critical_assets: criticalAssets,
-                data_sensitivity: dataSensitivity
+                industry, location, company_size: companySize, tech_stack: techStack,
+                cloud_usage: cloudUsage, remote_work: remoteWork, security_maturity: securityMaturity,
+                internet_facing: internetFacing, critical_assets: criticalAssets, data_sensitivity: dataSensitivity
             };
 
             document.getElementById('loadingIndicator').style.display = 'block';
             document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('exportSection').style.display = 'none';
 
             try {
                 const response = await fetch(`${API_URL}/api/adversary/analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        industry,
-                        location,
-                        company_size: companySize,
-                        tech_stack: techStack,
-                        cloud_usage: cloudUsage,
-                        remote_work: remoteWork,
-                        security_maturity: securityMaturity,
-                        internet_facing: internetFacing,
-                        critical_assets: criticalAssets,
-                        data_sensitivity: dataSensitivity
-                    })
+                    body: JSON.stringify(currentFormData)
                 });
 
                 const result = await response.json();
-                
+
                 if (result.success) {
                     displayThreats(result.threats);
                 } else {
@@ -1104,135 +1467,173 @@
             }
         }
 
-        function getThreatLevel(score) {
-            if (score >= 80) {
-                return { class: 'critical', icon: '⚠️', label: 'CRITICAL THREAT' };
-            } else if (score >= 60) {
-                return { class: 'high', icon: '🔴', label: 'HIGH RISK' };
-            } else {
-                return { class: 'medium', icon: '🟡', label: 'MODERATE RISK' };
-            }
-        }
-
         function displayThreats(threats) {
             const container = document.getElementById('resultsContainer');
             const exportSection = document.getElementById('exportSection');
             container.innerHTML = '';
-
             currentThreats = threats;
 
             if (!threats || threats.length === 0) {
-                container.innerHTML = '<div class="no-results">No significant threats identified for your profile.</div>';
-                // Add threshold note
-                const note = document.createElement('div');
-                note.style.cssText = 'text-align: center; margin-top: 30px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 6px; font-size: 0.85em; color: #888; font-style: italic;';
-                note.innerHTML = `
-                    📊 Showing threats with 30% or higher match confidence.
-                    Lower-confidence matches are excluded to reduce false positives.
-                    <br><br>
-                    <strong>Match Scoring:</strong> Industry (35%) + Region (25%) + Tech Stack (20%) + Attack Surface (10%) + Data Profile (10%)
+                container.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">&#128274;</div>
+                        <h3>No Significant Threats Identified</h3>
+                        <p>Based on your organization profile, no threat actors matched with sufficient confidence. This doesn't mean you're safe - consider broadening your profile parameters.</p>
+                    </div>
                 `;
-                container.appendChild(note);
                 container.style.display = 'block';
-                exportSection.style.display = 'none';
                 return;
             }
 
-            exportSection.style.display = 'flex';
+            // Count by tier
+            const tierCounts = { strong: 0, possible: 0, weak: 0 };
+            threats.forEach(t => {
+                const tier = t.confidence_tier?.tier || 'possible';
+                tierCounts[tier]++;
+            });
 
-            threats.forEach(threat => {
+            // Results Summary
+            const summaryHTML = `
+                <div class="results-summary">
+                    <div class="summary-card">
+                        <div class="summary-icon strong">&#9888;</div>
+                        <div class="summary-content">
+                            <h4 style="color: var(--tier-strong);">${tierCounts.strong}</h4>
+                            <p>Strong Matches</p>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon possible">&#9888;</div>
+                        <div class="summary-content">
+                            <h4 style="color: var(--tier-possible);">${tierCounts.possible}</h4>
+                            <p>Possible Matches</p>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon weak">&#128269;</div>
+                        <div class="summary-content">
+                            <h4 style="color: var(--tier-weak);">${tierCounts.weak}</h4>
+                            <p>Weak Matches</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = summaryHTML;
+
+            threats.forEach((threat, index) => {
                 const card = document.createElement('div');
                 card.className = 'threat-card';
 
-                // Sort match reasons by points (descending) and take top 5
-                const sortedReasons = (threat.match_reasons || [])
-                    .sort((a, b) => b.points - a.points)
-                    .slice(0, 5);
+                const tier = threat.confidence_tier || { tier: 'possible', label: 'Possible Match' };
+                const tierColor = getTierColor(tier.tier);
+                const scoreColor = getScoreColor(threat.match_score);
+                const avatarGradient = getAvatarGradient(threat.match_score);
 
-                // Generate match reasons HTML
+                const strokeDashoffset = 283 - (283 * threat.match_score / 100);
+
+                // Match Reasons
+                const sortedReasons = (threat.match_reasons || []).sort((a, b) => b.points - a.points).slice(0, 5);
                 const matchReasonsHTML = sortedReasons.length > 0 ? `
                     <div class="match-reasons-section">
-                        <div class="match-reasons-title">Match Reasons</div>
-                        ${sortedReasons.map(reason => `
-                            <div class="reason-item strength-${reason.strength}">
-                                <span class="reason-checkmark">✓</span>
-                                <span class="reason-factor">${reason.factor}</span>
-                                <span class="reason-points">(+${reason.points} pts)</span>
-                                <span class="reason-evidence">- ${reason.evidence}</span>
-                            </div>
-                        `).join('')}
+                        <div class="section-title">Match Analysis</div>
+                        <div class="match-reasons">
+                            ${sortedReasons.map(reason => `
+                                <div class="reason-item strength-${reason.strength}">
+                                    <div class="reason-check">&#10003;</div>
+                                    <div class="reason-content">
+                                        <div class="reason-factor">${reason.factor}</div>
+                                        <div class="reason-evidence">${reason.evidence}</div>
+                                    </div>
+                                    <div class="reason-points">+${reason.points}</div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 ` : '';
 
-                // Generate attack path HTML with enhanced styling
+                // MITRE Techniques
+                const mitreTechniques = threat.mitre_techniques || [];
+                const mitreHTML = mitreTechniques.length > 0 ? `
+                    <div class="profile-section">
+                        <div class="profile-section-title">MITRE ATT&CK Techniques</div>
+                        <div class="mitre-techniques">
+                            ${mitreTechniques.slice(0, 5).map(tech => `
+                                <a href="${tech.mitre_url}" target="_blank" class="mitre-technique">
+                                    <span class="mitre-id">${tech.id}</span>
+                                    <span class="mitre-name">${tech.name}</span>
+                                    <span class="mitre-tactic">${tech.tactic}</span>
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : '';
+
+                // Target Industries
+                const industries = threat.target_industries || [];
+                const industriesHTML = industries.length > 0 ? `
+                    <div class="profile-section">
+                        <div class="profile-section-title">Target Industries</div>
+                        <div class="industry-tags">
+                            ${industries.map(ind => `<span class="industry-tag">${ind}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : '';
+
+                // Data Sources
+                const sources = threat.data_sources || ['MISP Galaxy'];
+                const sourcesHTML = `
+                    <div class="profile-section">
+                        <div class="profile-section-title">Intelligence Sources</div>
+                        <div class="data-sources">
+                            ${sources.map(src => `
+                                <div class="data-source ${src.includes('MITRE') ? 'verified' : ''}">
+                                    <span class="dot"></span>
+                                    ${src}
+                                </div>
+                            `).join('')}
+                            ${threat.attribution_confidence && threat.attribution_confidence !== 'Unknown' ? `
+                                <div class="data-source">
+                                    <span class="dot"></span>
+                                    Attribution: ${threat.attribution_confidence}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                // Attack Path
                 const attackPath = threat.attack_path || [];
-                const attackPathId = `attack-path-${Math.random().toString(36).substr(2, 9)}`;
+                const attackPathId = `attack-path-${index}`;
                 const attackPathHTML = attackPath.length > 0 ? `
-                    <div class="attack-path-section" style="margin-bottom: 24px;">
+                    <div class="attack-path-section">
                         <div class="attack-path-header" onclick="toggleAttackPath('${attackPathId}')">
                             <div class="attack-path-title">
-                                <span>🎯</span>
+                                <span>&#127919;</span>
                                 <span>Predicted Attack Chain (${attackPath.length} steps)</span>
                             </div>
-                            <div class="attack-path-toggle" id="${attackPathId}-toggle">▼</div>
+                            <div class="attack-path-toggle" id="${attackPathId}-toggle">&#9660;</div>
                         </div>
                         <div class="attack-path-content" id="${attackPathId}">
                             <div class="attack-path-timeline">
                                 ${attackPath.map(step => `
-                                    <div class="attack-step ${getRiskClass(step.likelihood)}">
-                                        <div class="step-number" style="background: ${getRiskColor(step.likelihood)};">${step.step}</div>
+                                    <div class="attack-step ${step.likelihood === 'high' ? 'high-risk' : 'medium-risk'}">
+                                        <div class="step-number">${step.step}</div>
                                         <div class="step-content">
-                                            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                                <div>
-                                                    <div style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
-                                                        ${step.phase}
-                                                    </div>
-                                                    <h4 style="color: #ffd700; margin: 0; font-size: 18px;">
-                                                        ${step.tactic}
-                                                    </h4>
+                                            <div class="step-phase">${step.phase}</div>
+                                            <div class="step-tactic">${step.tactic}</div>
+                                            <div class="step-description">${step.description}</div>
+                                            <div class="step-details">
+                                                <div class="step-impact">
+                                                    <div class="step-impact-label">Impact</div>
+                                                    <div class="step-impact-text">${step.impact}</div>
                                                 </div>
-                                                <div style="
-                                                    background: ${getRiskBadgeColor(step.likelihood)};
-                                                    color: ${getRiskColor(step.likelihood)};
-                                                    padding: 6px 14px;
-                                                    border-radius: 6px;
-                                                    font-size: 11px;
-                                                    font-weight: 700;
-                                                    text-transform: uppercase;
-                                                    letter-spacing: 0.5px;
-                                                ">
-                                                    ${step.likelihood.toUpperCase()} RISK
+                                                <div class="step-mitigation">
+                                                    <div class="step-mitigation-label">Mitigation</div>
+                                                    <div class="step-mitigation-text">${step.mitigation}</div>
                                                 </div>
-                                            </div>
-
-                                            <p style="color: #ddd; margin: 0 0 16px 0; font-size: 14px; line-height: 1.6;">
-                                                ${step.description}
-                                            </p>
-
-                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px;">
-                                                <div style="background: rgba(220,53,69,0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #dc3545;">
-                                                    <div style="color: #dc3545; font-weight: 600; font-size: 12px; margin-bottom: 6px;">
-                                                        ⚠️ IMPACT
-                                                    </div>
-                                                    <div style="color: #ddd; font-size: 13px;">
-                                                        ${step.impact}
-                                                    </div>
-                                                </div>
-
-                                                <div style="background: rgba(76,175,80,0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #4caf50;">
-                                                    <div style="color: #4caf50; font-weight: 600; font-size: 12px; margin-bottom: 6px;">
-                                                        ✓ MITIGATION
-                                                    </div>
-                                                    <div style="color: #ddd; font-size: 13px;">
-                                                        ${step.mitigation}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div style="color: #888; font-size: 12px; font-style: italic;">
-                                                🎯 ${step.evidence}
                                             </div>
                                         </div>
+                                        <div class="step-likelihood ${step.likelihood}">${step.likelihood.toUpperCase()}</div>
                                     </div>
                                 `).join('')}
                             </div>
@@ -1240,163 +1641,99 @@
                     </div>
                 ` : '';
 
-                const matchColor = getMatchColor(threat.match_score);
-                const avatarGradient = getAptAvatarGradient(threat.match_score);
-                const strokeDashoffset = 283 - (283 * threat.match_score / 100);
-
-                card.innerHTML = `
-                    <!-- APT Header with Avatar and Circular Progress -->
-                    <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,215,0,0.2);">
-                        <!-- APT Avatar -->
-                        <div class="apt-avatar" style="
-                            background: ${avatarGradient};
-                            border-color: ${matchColor};
-                            color: #fff;
-                        ">
-                            ${getAptInitials(threat.name)}
-                        </div>
-
-                        <div style="flex: 1;">
-                            <h2 style="color: #ffd700; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                ${threat.name}
-                            </h2>
-                            <div style="color: #888; font-size: 14px;">
-                                ${threat.aliases || 'No known aliases'}
-                            </div>
-                        </div>
-
-                        <!-- Circular Match Progress -->
-                        <div class="match-badge">
-                            <svg class="match-badge-circle" width="100" height="100">
-                                <circle
-                                    class="progress-ring"
-                                    cx="50"
-                                    cy="50"
-                                    r="45"
-                                    stroke="rgba(255,215,0,0.2)"
-                                    stroke-width="8"
-                                    fill="none"
-                                />
-                                <circle
-                                    class="progress-ring"
-                                    cx="50"
-                                    cy="50"
-                                    r="45"
-                                    stroke="${matchColor}"
-                                    stroke-width="8"
-                                    fill="none"
-                                    stroke-dasharray="283"
-                                    stroke-dashoffset="${strokeDashoffset}"
-                                    stroke-linecap="round"
-                                    style="animation: fillProgress 1s ease-out;"
-                                />
-                            </svg>
-                            <div class="match-badge-text" style="color: ${matchColor};">
-                                ${threat.match_score}%
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- APT Details Grid -->
-                    <div style="
-                        display: grid;
-                        grid-template-columns: repeat(4, 1fr);
-                        gap: 20px;
-                        margin-bottom: 24px;
-                        padding: 20px;
-                        background: rgba(0,0,0,0.2);
-                        border-radius: 8px;
-                    ">
-                        <div>
-                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-                                Origin
-                            </div>
-                            <div style="color: #ffd700; font-size: 16px; font-weight: 600;">
-                                ${threat.origin || 'Unknown'}
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-                                Active Since
-                            </div>
-                            <div style="color: #ffd700; font-size: 16px; font-weight: 600;">
-                                ${threat.active_since || 'Unknown'}
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-                                Sophistication
-                            </div>
-                            <div style="color: #ffd700; font-size: 16px; font-weight: 600;">
-                                ${threat.sophistication || 'Unknown'}
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-                                Recent Activity
-                            </div>
-                            <div style="color: ${(threat.recent_activity || '').includes('Ongoing') ? '#dc3545' : '#ffd700'}; font-size: 16px; font-weight: 600;">
-                                ${threat.recent_activity || 'Unknown'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Description -->
-                    <div style="color: #ddd; line-height: 1.6; margin-bottom: 24px; font-size: 15px;">
-                        ${threat.description || 'No description available.'}
-                    </div>
-
-                    ${matchReasonsHTML}
-
-                    ${attackPathHTML}
-
-                    <!-- Enhanced TTP Section -->
+                // TTPs Section
+                const ttps = threat.ttps || [];
+                const ttpsHTML = ttps.length > 0 ? `
                     <div class="ttps-section">
-                        <div class="section-header">
-                            <h3 style="color: #ffd700; margin: 0; font-size: 20px;">
-                                Known Tactics, Techniques & Procedures (TTPs)
-                            </h3>
-                        </div>
-                        <div style="display: grid; gap: 8px;">
-                            ${threat.ttps.map(ttp => `
+                        <div class="section-title">Known TTPs</div>
+                        <div class="ttps-grid">
+                            ${ttps.map(ttp => `
                                 <div class="ttp-item">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        <div style="width: 6px; height: 6px; background: #ffd700; border-radius: 50%; flex-shrink: 0;"></div>
-                                        <div style="color: #fff; flex: 1;">${ttp}</div>
-                                    </div>
+                                    <div class="ttp-bullet"></div>
+                                    <div class="ttp-text">${ttp}</div>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
+                ` : '';
 
-                    <!-- IOC Section -->
-                    <div class="section-header" style="margin-top: 32px;">
-                        <h3 style="color: #ffd700; margin: 0; font-size: 20px;">
-                            Indicators of Compromise (IOCs)
-                        </h3>
+                // IOC Section
+                const iocSectionId = `ioc-section-${threat.name.replace(/\s/g, '_')}`;
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="confidence-tier ${tier.tier}">
+                            <span class="tier-indicator"></span>
+                            ${tier.label}
+                        </div>
+
+                        <div class="apt-avatar" style="background: ${avatarGradient};">
+                            <span>${getAptInitials(threat.name)}</span>
+                        </div>
+
+                        <div class="apt-info">
+                            <h2 class="apt-name">${threat.name}</h2>
+                            <div class="apt-aliases">${threat.aliases || 'No known aliases'}</div>
+                            <div class="apt-meta">
+                                <div class="meta-item">
+                                    <span>Origin:</span>
+                                    <strong>${threat.origin || 'Unknown'}</strong>
+                                </div>
+                                <div class="meta-item">
+                                    <span>Active Since:</span>
+                                    <strong>${threat.active_since || 'Unknown'}</strong>
+                                </div>
+                                <div class="meta-item">
+                                    <span>Sophistication:</span>
+                                    <strong>${threat.sophistication || 'Unknown'}</strong>
+                                </div>
+                                ${threat.motivation ? `
+                                <div class="meta-item">
+                                    <span>Motivation:</span>
+                                    <strong>${threat.motivation}</strong>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <div class="match-gauge">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="bg" cx="50" cy="50" r="45"/>
+                                <circle class="progress" cx="50" cy="50" r="45"
+                                    stroke="${scoreColor}"
+                                    stroke-dasharray="283"
+                                    stroke-dashoffset="${strokeDashoffset}"/>
+                            </svg>
+                            <div class="match-gauge-value">
+                                <div class="match-gauge-percent" style="color: ${scoreColor};">${threat.match_score}%</div>
+                                <div class="match-gauge-label">Match</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="ioc-section-${threat.name.replace(/\s/g, '_')}" style="min-height: 100px;">
-                        <div style="text-align: center; padding: 40px;">
-                            <button onclick="loadIOCs('${threat.name}')" style="
-                                background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-                                border: none;
-                                padding: 14px 32px;
-                                border-radius: 8px;
-                                color: #000;
-                                font-weight: 700;
-                                cursor: pointer;
-                                font-size: 14px;
-                                box-shadow: 0 4px 12px rgba(255,215,0,0.3);
-                            ">
-                                🔍 Load IOCs for ${threat.name}
-                            </button>
-                            <p style="color: #888; font-size: 13px; margin-top: 12px;">
-                                Fetch latest indicators from threat intelligence feeds
-                            </p>
+                    <div class="card-body">
+                        <div class="apt-description">${threat.description || 'No description available.'}</div>
+
+                        <div class="profile-grid">
+                            ${mitreHTML}
+                            ${industriesHTML}
+                            ${sourcesHTML}
+                        </div>
+
+                        ${matchReasonsHTML}
+                        ${attackPathHTML}
+                        ${ttpsHTML}
+
+                        <div class="ioc-section">
+                            <div class="section-title">Indicators of Compromise</div>
+                            <div id="${iocSectionId}">
+                                <div class="ioc-load-btn">
+                                    <button onclick="loadIOCs('${threat.name}')">
+                                        Load IOCs for ${threat.name}
+                                    </button>
+                                    <p>Fetch latest indicators from threat intelligence feeds</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1405,255 +1742,45 @@
             });
 
             container.style.display = 'block';
+            exportSection.style.display = 'flex';
         }
 
-        // Toggle attack path visibility
         function toggleAttackPath(id) {
             const content = document.getElementById(id);
             const toggle = document.getElementById(id + '-toggle');
-
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                toggle.classList.remove('expanded');
-            } else {
-                content.classList.add('expanded');
-                toggle.classList.add('expanded');
-            }
+            content.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
         }
 
-        // Export to JSON
-        function exportToJSON() {
-            if (!currentThreats || !currentFormData) {
-                alert('No threat analysis to export');
-                return;
-            }
-
-            const exportData = {
-                timestamp: new Date().toISOString(),
-                organization_profile: currentFormData,
-                threats_identified: currentThreats.length,
-                threats: currentThreats
-            };
-
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `ghost-adversary-analysis-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-
-        // Export to PDF
-        function exportToPDF() {
-            if (!currentThreats || !currentFormData) {
-                alert('No threat analysis to export');
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            let yPos = 20;
-            const lineHeight = 7;
-            const pageHeight = doc.internal.pageSize.height;
-            const margin = 20;
-            const maxWidth = doc.internal.pageSize.width - (margin * 2);
-
-            // Helper function to check if we need a new page
-            function checkPageBreak(additionalHeight = lineHeight) {
-                if (yPos + additionalHeight > pageHeight - margin) {
-                    doc.addPage();
-                    yPos = margin;
-                    return true;
-                }
-                return false;
-            }
-
-            // Helper function to wrap text
-            function addWrappedText(text, x, y, maxWidth, lineHeight) {
-                const lines = doc.splitTextToSize(text, maxWidth);
-                lines.forEach(line => {
-                    checkPageBreak();
-                    doc.text(line, x, yPos);
-                    yPos += lineHeight;
-                });
-            }
-
-            // Title
-            doc.setFontSize(20);
-            doc.setTextColor(212, 175, 55);
-            doc.text('GHOST - Adversary Intelligence Report', margin, yPos);
-            yPos += 15;
-
-            // Organization Profile
-            doc.setFontSize(14);
-            doc.setTextColor(100, 100, 100);
-            doc.text('Organization Profile', margin, yPos);
-            yPos += 10;
-
-            doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-            doc.text(`Industry: ${currentFormData.industry}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Location: ${currentFormData.location}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Company Size: ${currentFormData.company_size}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Tech Stack: ${currentFormData.tech_stack}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Cloud Usage: ${currentFormData.cloud_usage}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Remote Work: ${currentFormData.remote_work}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Security Maturity: ${currentFormData.security_maturity}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Internet-Facing: ${currentFormData.internet_facing}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Critical Assets: ${currentFormData.critical_assets.join(', ')}`, margin + 5, yPos);
-            yPos += lineHeight;
-            doc.text(`Data Sensitivity: ${currentFormData.data_sensitivity}`, margin + 5, yPos);
-            yPos += 15;
-
-            // Summary
-            checkPageBreak(20);
-            doc.setFontSize(12);
-            doc.setTextColor(100, 100, 100);
-            doc.text(`Analysis Date: ${new Date().toLocaleString()}`, margin, yPos);
-            yPos += lineHeight;
-            doc.text(`Threats Identified: ${currentThreats.length}`, margin, yPos);
-            yPos += 15;
-
-            // Threats
-            doc.setFontSize(14);
-            doc.setTextColor(212, 175, 55);
-            doc.text('Identified Threat Actors', margin, yPos);
-            yPos += 10;
-
-            currentThreats.forEach((threat, index) => {
-                checkPageBreak(50);
-
-                // Threat Name
-                doc.setFontSize(12);
-                doc.setTextColor(0, 0, 0);
-                doc.setFont(undefined, 'bold');
-                doc.text(`${index + 1}. ${threat.name}${threat.aliases ? ` (${threat.aliases})` : ''}`, margin + 5, yPos);
-                yPos += lineHeight + 2;
-
-                // Match Score
-                doc.setFont(undefined, 'normal');
-                doc.setFontSize(10);
-                const threatLevel = getThreatLevel(threat.match_score);
-                if (threat.match_score >= 80) {
-                    doc.setTextColor(239, 68, 68);
-                } else if (threat.match_score >= 60) {
-                    doc.setTextColor(251, 146, 60);
-                } else {
-                    doc.setTextColor(251, 191, 36);
-                }
-                doc.text(`Match Score: ${threat.match_score}% - ${threatLevel.label}`, margin + 10, yPos);
-                yPos += lineHeight + 2;
-
-                // Threat Info
-                doc.setTextColor(0, 0, 0);
-                doc.text(`Origin: ${threat.origin || 'Unknown'}`, margin + 10, yPos);
-                yPos += lineHeight;
-                doc.text(`Active Since: ${threat.active_since || 'Unknown'}`, margin + 10, yPos);
-                yPos += lineHeight;
-                doc.text(`Sophistication: ${threat.sophistication || 'Unknown'}`, margin + 10, yPos);
-                yPos += lineHeight;
-                doc.text(`Recent Activity: ${threat.recent_activity || 'Unknown'}`, margin + 10, yPos);
-                yPos += lineHeight + 2;
-
-                // Description
-                if (threat.description) {
-                    checkPageBreak(20);
-                    doc.setFont(undefined, 'italic');
-                    addWrappedText(threat.description, margin + 10, yPos, maxWidth - 10, lineHeight);
-                    yPos += 3;
-                }
-
-                // TTPs
-                if (threat.ttps && threat.ttps.length > 0) {
-                    checkPageBreak(20);
-                    doc.setFont(undefined, 'bold');
-                    doc.text('Tactics, Techniques & Procedures:', margin + 10, yPos);
-                    yPos += lineHeight;
-
-                    doc.setFont(undefined, 'normal');
-                    threat.ttps.forEach(ttp => {
-                        checkPageBreak(10);
-                        addWrappedText(`• ${ttp}`, margin + 15, yPos, maxWidth - 15, lineHeight);
-                    });
-                }
-
-                yPos += 10;
-            });
-
-            // Footer
-            const totalPages = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150, 150, 150);
-                doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width / 2, pageHeight - 10, { align: 'center' });
-                doc.text('Generated by NERVE GHOST System', doc.internal.pageSize.width / 2, pageHeight - 5, { align: 'center' });
-            }
-
-            doc.save(`ghost-adversary-analysis-${new Date().toISOString().split('T')[0]}.pdf`);
-        }
-
-        // IOC Functions
         async function loadIOCs(aptName) {
             const sectionId = `ioc-section-${aptName.replace(/\s/g, '_')}`;
             const section = document.getElementById(sectionId);
-
-            if (!section) {
-                console.error('[IOC] Section not found:', sectionId);
-                return;
-            }
+            if (!section) return;
 
             section.innerHTML = `
                 <div style="text-align: center; padding: 40px;">
-                    <div style="color: #ffd700; font-size: 32px; margin-bottom: 16px;">⏳</div>
-                    <p style="color: #ffd700; margin-top: 16px;">Loading IOCs from threat feeds...</p>
-                    <p style="color: #888; font-size: 13px;">This may take 10-15 seconds</p>
+                    <div class="loading-spinner" style="width: 32px; height: 32px; margin: 0 auto 16px;"></div>
+                    <p style="color: var(--text-secondary);">Loading IOCs...</p>
                 </div>
             `;
 
             try {
-                const response = await fetch(`http://localhost:5000/api/adversary/iocs/${encodeURIComponent(aptName)}`);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
+                const response = await fetch(`${API_URL}/api/adversary/iocs/${encodeURIComponent(aptName)}`);
                 const data = await response.json();
 
-                if (!data.success) {
-                    throw new Error(data.error || 'Failed to fetch IOCs');
-                }
-
+                if (!data.success) throw new Error(data.error || 'Failed to fetch IOCs');
                 displayIOCs(sectionId, data);
-
             } catch (error) {
-                console.error('[IOC] Error:', error);
                 section.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 32px; margin-bottom: 12px;">⚠️</div>
-                        <p style="color: #dc3545;">Failed to load IOCs</p>
-                        <p style="color: #888; font-size: 13px; margin-top: 8px;">${error.message}</p>
+                        <p style="color: var(--tier-strong); margin-bottom: 12px;">Failed to load IOCs</p>
                         <button onclick="loadIOCs('${aptName}')" style="
-                            background: rgba(255,215,0,0.2);
-                            border: 1px solid #ffd700;
-                            color: #ffd700;
-                            padding: 8px 20px;
+                            padding: 8px 16px;
+                            background: rgba(212, 175, 55, 0.1);
+                            border: 1px solid var(--border-subtle);
                             border-radius: 6px;
+                            color: var(--gold-primary);
                             cursor: pointer;
-                            margin-top: 12px;
                         ">Retry</button>
                     </div>
                 `;
@@ -1666,159 +1793,143 @@
             const stats = data.stats;
 
             let html = `
-                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="color: #888; font-size: 12px;">Last Updated: ${new Date(data.cached_at).toLocaleDateString()}</div>
-                        <div style="color: #888; font-size: 11px; margin-top: 4px;">Sources: ${data.sources.join(', ')}</div>
+                <div class="ioc-stats">
+                    <div class="ioc-stat ips">
+                        <div class="ioc-stat-value">${stats.total_ips}</div>
+                        <div class="ioc-stat-label">Malicious IPs</div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="exportIOCsToCSV('${data.apt_name}', ${JSON.stringify(iocs).replace(/'/g, '&#39;')})" style="
-                            background: rgba(76,175,80,0.2);
-                            border: 1px solid #4caf50;
-                            color: #4caf50;
-                            padding: 8px 16px;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            font-weight: 600;
-                        ">📥 Export CSV</button>
-                        <button onclick="loadIOCs('${data.apt_name}')" style="
-                            background: rgba(255,215,0,0.2);
-                            border: 1px solid #ffd700;
-                            color: #ffd700;
-                            padding: 8px 16px;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            font-weight: 600;
-                        ">🔄 Refresh</button>
+                    <div class="ioc-stat domains">
+                        <div class="ioc-stat-value">${stats.total_domains}</div>
+                        <div class="ioc-stat-label">Domains</div>
                     </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
-                    <div style="background: rgba(220,53,69,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #dc3545;">
-                        <div style="font-size: 24px; font-weight: 700; color: #dc3545;">${stats.total_ips}</div>
-                        <div style="color: #888; font-size: 12px; margin-top: 4px;">Malicious IPs</div>
+                    <div class="ioc-stat urls">
+                        <div class="ioc-stat-value">${stats.total_urls}</div>
+                        <div class="ioc-stat-label">URLs</div>
                     </div>
-                    <div style="background: rgba(255,140,0,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #ff8c00;">
-                        <div style="font-size: 24px; font-weight: 700; color: #ff8c00;">${stats.total_domains}</div>
-                        <div style="color: #888; font-size: 12px; margin-top: 4px;">Malicious Domains</div>
-                    </div>
-                    <div style="background: rgba(255,215,0,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #ffd700;">
-                        <div style="font-size: 24px; font-weight: 700; color: #ffd700;">${stats.total_urls}</div>
-                        <div style="color: #888; font-size: 12px; margin-top: 4px;">Malicious URLs</div>
-                    </div>
-                    <div style="background: rgba(100,181,246,0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #64b5f6;">
-                        <div style="font-size: 24px; font-weight: 700; color: #64b5f6;">${stats.total_hashes}</div>
-                        <div style="color: #888; font-size: 12px; margin-top: 4px;">File Hashes</div>
+                    <div class="ioc-stat hashes">
+                        <div class="ioc-stat-value">${stats.total_hashes}</div>
+                        <div class="ioc-stat-label">Hashes</div>
                     </div>
                 </div>
             `;
 
-            // Display IPs
             if (iocs.ips && iocs.ips.length > 0) {
                 html += `
-                    <div style="margin-bottom: 24px;">
-                        <h4 style="color: #dc3545; margin: 0 0 12px 0; font-size: 16px;">🌐 Malicious IP Addresses</h4>
-                        <div style="max-height: 200px; overflow-y: auto;">
-                            ${iocs.ips.slice(0, 20).map(ip => `
-                                <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between;">
-                                    <div>
-                                        <span style="color: #fff; font-family: monospace; font-size: 13px;">${ip.value}</span>
-                                        <span style="color: #888; font-size: 11px; margin-left: 12px;">${ip.context || ''}</span>
-                                    </div>
-                                    <span style="color: #666; font-size: 11px;">${ip.last_seen?.substring(0, 10) || ''}</span>
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="color: var(--tier-strong); font-size: 0.9rem; margin-bottom: 8px;">IP Addresses</h4>
+                        <div style="max-height: 150px; overflow-y: auto;">
+                            ${iocs.ips.slice(0, 10).map(ip => `
+                                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 4px;">
+                                    ${ip.value}
                                 </div>
                             `).join('')}
-                            ${iocs.ips.length > 20 ? `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 8px;">+${iocs.ips.length - 20} more (export CSV)</div>` : ''}
                         </div>
                     </div>
                 `;
             }
 
-            // Display Domains
             if (iocs.domains && iocs.domains.length > 0) {
                 html += `
-                    <div style="margin-bottom: 24px;">
-                        <h4 style="color: #ff8c00; margin: 0 0 12px 0; font-size: 16px;">🔗 Malicious Domains</h4>
-                        <div style="max-height: 200px; overflow-y: auto;">
-                            ${iocs.domains.slice(0, 20).map(domain => `
-                                <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between;">
-                                    <div>
-                                        <span style="color: #fff; font-family: monospace; font-size: 13px;">${domain.value}</span>
-                                        <span style="color: #888; font-size: 11px; margin-left: 12px;">${domain.context || ''}</span>
-                                    </div>
-                                    <span style="color: #666; font-size: 11px;">${domain.last_seen?.substring(0, 10) || ''}</span>
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="color: var(--tier-possible); font-size: 0.9rem; margin-bottom: 8px;">Domains</h4>
+                        <div style="max-height: 150px; overflow-y: auto;">
+                            ${iocs.domains.slice(0, 10).map(d => `
+                                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 4px;">
+                                    ${d.value}
                                 </div>
                             `).join('')}
-                            ${iocs.domains.length > 20 ? `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 8px;">+${iocs.domains.length - 20} more (export CSV)</div>` : ''}
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Display Hashes
-            if (iocs.hashes && iocs.hashes.length > 0) {
-                html += `
-                    <div style="margin-bottom: 24px;">
-                        <h4 style="color: #64b5f6; margin: 0 0 12px 0; font-size: 16px;">📦 Malware File Hashes</h4>
-                        <div style="max-height: 200px; overflow-y: auto;">
-                            ${iocs.hashes.slice(0, 15).map(hash => `
-                                <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 6px; margin-bottom: 6px;">
-                                    <div style="display: flex; gap: 8px; margin-bottom: 4px;">
-                                        <span style="background: rgba(100,181,246,0.2); color: #64b5f6; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">${hash.type}</span>
-                                        ${hash.malware ? `<span style="color: #888; font-size: 11px;">${hash.malware}</span>` : ''}
-                                    </div>
-                                    <div style="color: #fff; font-family: monospace; font-size: 11px; word-break: break-all;">${hash.value}</div>
-                                </div>
-                            `).join('')}
-                            ${iocs.hashes.length > 15 ? `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 8px;">+${iocs.hashes.length - 15} more (export CSV)</div>` : ''}
                         </div>
                     </div>
                 `;
             }
 
             if (stats.total_ips === 0 && stats.total_domains === 0 && stats.total_hashes === 0) {
-                html += `
-                    <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 32px; margin-bottom: 12px;">ℹ️</div>
-                        <p style="color: #888;">No IOCs found for this APT</p>
-                        <p style="color: #666; font-size: 12px; margin-top: 8px;">May use different aliases in threat feeds</p>
-                    </div>
-                `;
+                html += `<p style="text-align: center; color: var(--text-muted); padding: 20px;">No IOCs found for this threat actor</p>`;
             }
 
             section.innerHTML = html;
         }
 
-        function exportIOCsToCSV(aptName, iocs) {
-            let csv = 'Type,Value,Context,Last Seen\n';
+        function exportToJSON() {
+            if (!currentThreats || !currentFormData) {
+                alert('No data to export');
+                return;
+            }
 
-            (iocs.ips || []).forEach(ip => {
-                csv += `"IP","${ip.value}","${(ip.context || '').replace(/"/g, '""')}","${ip.last_seen || ''}"\n`;
-            });
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                organization_profile: currentFormData,
+                threats_identified: currentThreats.length,
+                threats: currentThreats
+            };
 
-            (iocs.domains || []).forEach(domain => {
-                csv += `"Domain","${domain.value}","${(domain.context || '').replace(/"/g, '""')}","${domain.last_seen || ''}"\n`;
-            });
-
-            (iocs.urls || []).forEach(url => {
-                csv += `"URL","${url.value.replace(/"/g, '""')}","${(url.context || '').replace(/"/g, '""')}","${url.last_seen || ''}"\n`;
-            });
-
-            (iocs.hashes || []).forEach(hash => {
-                csv += `"Hash-${hash.type}","${hash.value}","${(hash.malware || '').replace(/"/g, '""')}","${hash.last_seen || ''}"\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${aptName.replace(/\s/g, '_')}_IOCs_${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
+            a.download = `ghost-adversary-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToPDF() {
+            if (!currentThreats || !currentFormData) {
+                alert('No data to export');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let yPos = 20;
+            const lineHeight = 7;
+            const margin = 20;
+            const pageHeight = doc.internal.pageSize.height;
+
+            function checkPage(h = lineHeight) {
+                if (yPos + h > pageHeight - margin) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+            }
+
+            // Title
+            doc.setFontSize(18);
+            doc.setTextColor(212, 175, 55);
+            doc.text('GHOST - Adversary Intelligence Report', margin, yPos);
+            yPos += 15;
+
+            // Summary
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, margin, yPos);
+            yPos += 7;
+            doc.text(`Threats Identified: ${currentThreats.length}`, margin, yPos);
+            yPos += 15;
+
+            // Threats
+            currentThreats.forEach((threat, i) => {
+                checkPage(40);
+
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'bold');
+                doc.text(`${i + 1}. ${threat.name}`, margin, yPos);
+                yPos += 8;
+
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(10);
+
+                const tier = threat.confidence_tier?.label || 'Possible Match';
+                doc.text(`Confidence: ${tier} (${threat.match_score}%)`, margin + 5, yPos);
+                yPos += 6;
+                doc.text(`Origin: ${threat.origin || 'Unknown'}`, margin + 5, yPos);
+                yPos += 6;
+                doc.text(`Sophistication: ${threat.sophistication || 'Unknown'}`, margin + 5, yPos);
+                yPos += 10;
+            });
+
+            doc.save(`ghost-adversary-${new Date().toISOString().split('T')[0]}.pdf`);
         }
     </script>
 </body>

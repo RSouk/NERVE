@@ -1,21 +1,239 @@
 import json
-from typing import List, Dict
+import os
+from typing import List, Dict, Optional
+
+# MITRE ATT&CK Technique ID to Name mapping (top techniques)
+MITRE_TECHNIQUES = {
+    'T1566': {'name': 'Phishing', 'tactic': 'Initial Access', 'description': 'Adversaries send phishing messages to gain access'},
+    'T1059': {'name': 'Command and Scripting Interpreter', 'tactic': 'Execution', 'description': 'Abuse command/script interpreters to execute commands'},
+    'T1053': {'name': 'Scheduled Task/Job', 'tactic': 'Execution', 'description': 'Abuse task scheduling for persistent execution'},
+    'T1204': {'name': 'User Execution', 'tactic': 'Execution', 'description': 'Rely on user interaction to execute malicious code'},
+    'T1078': {'name': 'Valid Accounts', 'tactic': 'Defense Evasion', 'description': 'Use compromised credentials to access systems'},
+    'T1036': {'name': 'Masquerading', 'tactic': 'Defense Evasion', 'description': 'Disguise malicious artifacts as legitimate'},
+    'T1027': {'name': 'Obfuscated Files or Information', 'tactic': 'Defense Evasion', 'description': 'Obfuscate content to evade detection'},
+    'T1562': {'name': 'Impair Defenses', 'tactic': 'Defense Evasion', 'description': 'Disable or modify security tools'},
+    'T1003': {'name': 'OS Credential Dumping', 'tactic': 'Credential Access', 'description': 'Dump credentials from OS to obtain account logins'},
+    'T1110': {'name': 'Brute Force', 'tactic': 'Credential Access', 'description': 'Use brute force techniques to access accounts'},
+    'T1087': {'name': 'Account Discovery', 'tactic': 'Discovery', 'description': 'Enumerate accounts on a system or domain'},
+    'T1082': {'name': 'System Information Discovery', 'tactic': 'Discovery', 'description': 'Get detailed information about the OS and hardware'},
+    'T1083': {'name': 'File and Directory Discovery', 'tactic': 'Discovery', 'description': 'Enumerate files and directories'},
+    'T1018': {'name': 'Remote System Discovery', 'tactic': 'Discovery', 'description': 'Get a listing of other systems on network'},
+    'T1016': {'name': 'System Network Configuration', 'tactic': 'Discovery', 'description': 'Look for details about network configuration'},
+    'T1021': {'name': 'Remote Services', 'tactic': 'Lateral Movement', 'description': 'Use remote services to move through environment'},
+    'T1570': {'name': 'Lateral Tool Transfer', 'tactic': 'Lateral Movement', 'description': 'Transfer tools between systems'},
+    'T1005': {'name': 'Data from Local System', 'tactic': 'Collection', 'description': 'Search local system sources for data'},
+    'T1074': {'name': 'Data Staged', 'tactic': 'Collection', 'description': 'Stage collected data for exfiltration'},
+    'T1041': {'name': 'Exfiltration Over C2 Channel', 'tactic': 'Exfiltration', 'description': 'Steal data over existing C2 channel'},
+    'T1486': {'name': 'Data Encrypted for Impact', 'tactic': 'Impact', 'description': 'Encrypt data on target systems (ransomware)'},
+    'T1190': {'name': 'Exploit Public-Facing Application', 'tactic': 'Initial Access', 'description': 'Exploit vulnerabilities in internet-facing systems'},
+    'T1133': {'name': 'External Remote Services', 'tactic': 'Initial Access', 'description': 'Leverage external-facing remote services like VPNs'},
+    'T1195': {'name': 'Supply Chain Compromise', 'tactic': 'Initial Access', 'description': 'Manipulate products or delivery mechanisms'},
+    'T1071': {'name': 'Application Layer Protocol', 'tactic': 'Command and Control', 'description': 'Communicate using application layer protocols'},
+    'T1105': {'name': 'Ingress Tool Transfer', 'tactic': 'Command and Control', 'description': 'Transfer tools into compromised environment'},
+    'T1140': {'name': 'Deobfuscate/Decode Files', 'tactic': 'Defense Evasion', 'description': 'Decode obfuscated files or information'},
+    'T1505': {'name': 'Server Software Component', 'tactic': 'Persistence', 'description': 'Abuse server software to establish persistence'},
+    'T1543': {'name': 'Create or Modify System Process', 'tactic': 'Persistence', 'description': 'Create/modify system processes for persistence'},
+    'T1069': {'name': 'Permission Groups Discovery', 'tactic': 'Discovery', 'description': 'Find group and permission settings'},
+    'T1049': {'name': 'System Network Connections', 'tactic': 'Discovery', 'description': 'Get network connections to/from system'},
+    'T1007': {'name': 'System Service Discovery', 'tactic': 'Discovery', 'description': 'Get information about registered services'},
+    'T1046': {'name': 'Network Service Discovery', 'tactic': 'Discovery', 'description': 'Scan for services running on remote hosts'},
+    'T1119': {'name': 'Automated Collection', 'tactic': 'Collection', 'description': 'Automatically collect data of interest'},
+    'T1560': {'name': 'Archive Collected Data', 'tactic': 'Collection', 'description': 'Compress/encrypt collected data before exfil'},
+    'T1583': {'name': 'Acquire Infrastructure', 'tactic': 'Resource Development', 'description': 'Acquire infrastructure for operations'},
+    'T1203': {'name': 'Exploitation for Client Execution', 'tactic': 'Execution', 'description': 'Exploit software vulnerabilities in client apps'},
+}
+
+# Source reliability weights
+SOURCE_RELIABILITY = {
+    'mitre': 1.0,       # MITRE ATT&CK - highest reliability
+    'misp': 0.9,        # MISP Galaxy - high reliability
+    'cti_feed': 0.7,    # CTI feeds - moderate reliability
+    'enriched': 0.8     # Enriched/merged data
+}
+
 
 class AdversaryMatcher:
     def __init__(self):
         self.threat_actors = []
+        self.mitre_groups = {}  # MITRE ATT&CK group data
+        self.technique_map = MITRE_TECHNIQUES
         self.load_threat_actors()
-    
+        self.load_mitre_data()
+
     def load_threat_actors(self):
         """Load MISP threat actor database"""
         try:
-            with open('data/misp_threat_actors.json', 'r', encoding='utf-8') as f:
-                self.threat_actors = json.load(f)
-            print(f"[+] Loaded {len(self.threat_actors)} threat actors")
+            # Try multiple paths for flexibility
+            paths = [
+                'data/misp_threat_actors.json',
+                'backend/data/misp_threat_actors.json',
+                os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'misp_threat_actors.json')
+            ]
+
+            for path in paths:
+                if os.path.exists(path):
+                    with open(path, 'r', encoding='utf-8') as f:
+                        self.threat_actors = json.load(f)
+                    print(f"[+] Loaded {len(self.threat_actors)} threat actors from MISP")
+                    break
+            else:
+                print("[!] Could not find MISP threat actors file")
+                self.threat_actors = []
+
         except Exception as e:
             print(f"[!] Error loading threat actors: {e}")
             self.threat_actors = []
-    
+
+    def load_mitre_data(self):
+        """Load MITRE ATT&CK groups for technique enrichment"""
+        try:
+            paths = [
+                'data/mitre_groups.json',
+                'backend/data/mitre_groups.json',
+                os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'mitre_groups.json')
+            ]
+
+            for path in paths:
+                if os.path.exists(path):
+                    with open(path, 'r', encoding='utf-8') as f:
+                        mitre_data = json.load(f)
+
+                    # Index by name and aliases for fast lookup
+                    for group in mitre_data:
+                        name = group.get('name', '').lower()
+                        self.mitre_groups[name] = group
+
+                        # Also index by aliases
+                        for alias in group.get('aliases', []):
+                            self.mitre_groups[alias.lower()] = group
+
+                    print(f"[+] Loaded {len(mitre_data)} MITRE ATT&CK groups")
+                    break
+            else:
+                print("[!] Could not find MITRE groups file")
+
+        except Exception as e:
+            print(f"[!] Error loading MITRE data: {e}")
+
+    def get_mitre_techniques(self, actor_name: str, aliases: List[str] = None) -> List[Dict]:
+        """Get MITRE ATT&CK techniques for a threat actor"""
+        techniques = []
+
+        # Try to find in MITRE data
+        search_names = [actor_name.lower()]
+        if aliases:
+            search_names.extend([a.lower() for a in aliases])
+
+        mitre_group = None
+        for name in search_names:
+            if name in self.mitre_groups:
+                mitre_group = self.mitre_groups[name]
+                break
+
+        if mitre_group and 'techniques' in mitre_group:
+            for tech in mitre_group['techniques']:
+                tech_id = tech.get('name', '')  # Actually the ID in MITRE data
+                if tech_id in self.technique_map:
+                    tech_info = self.technique_map[tech_id]
+                    techniques.append({
+                        'id': tech_id,
+                        'name': tech_info['name'],
+                        'tactic': tech_info['tactic'],
+                        'description': tech_info['description'],
+                        'mitre_url': f"https://attack.mitre.org/techniques/{tech_id}/"
+                    })
+
+        return techniques[:10]  # Return top 10 techniques
+
+    def classify_confidence_tier(self, score: int, match_reasons: List[Dict]) -> Dict:
+        """
+        Classify match confidence into tiers based on score and evidence quality
+
+        Returns:
+            Dict with tier, label, description, and color
+        """
+        # Count high-strength matches
+        high_strength_count = sum(1 for r in match_reasons if r.get('strength') == 'high')
+
+        if score >= 70 and high_strength_count >= 2:
+            return {
+                'tier': 'strong',
+                'label': 'Strong Match',
+                'description': 'High confidence attribution based on multiple strong indicators',
+                'color': '#dc3545',  # Red
+                'icon': 'shield-exclamation',
+                'priority': 1
+            }
+        elif score >= 50 or (score >= 35 and high_strength_count >= 1):
+            return {
+                'tier': 'possible',
+                'label': 'Possible Match',
+                'description': 'Moderate confidence based on profile alignment',
+                'color': '#ff8c00',  # Orange
+                'icon': 'shield-alert',
+                'priority': 2
+            }
+        else:
+            return {
+                'tier': 'weak',
+                'label': 'Weak Match',
+                'description': 'Low confidence - limited indicators of targeting',
+                'color': '#fbbf24',  # Yellow
+                'icon': 'shield',
+                'priority': 3
+            }
+
+    def get_actor_profile_data(self, actor: Dict) -> Dict:
+        """Extract comprehensive profile data for UI display"""
+        name = actor.get('name', 'Unknown')
+        aliases = actor.get('aliases', [])
+
+        # Get MITRE techniques
+        mitre_techniques = self.get_mitre_techniques(name, aliases)
+
+        # Extract target industries from various fields
+        target_industries = []
+        target_cats = actor.get('target_categories', [])
+        if target_cats:
+            target_industries.extend(target_cats)
+
+        meta = actor.get('meta', {})
+        if meta.get('targeted-sector'):
+            target_industries.extend(meta['targeted-sector'])
+        if meta.get('cfr-target-category'):
+            target_industries.extend(meta['cfr-target-category'])
+
+        # Deduplicate
+        target_industries = list(set(target_industries))
+
+        # Extract known campaigns
+        campaigns = []
+        description = actor.get('description', '')
+        refs = meta.get('refs', [])
+
+        # Look for campaign/operation names in description
+        import re
+        campaign_patterns = re.findall(r'(?:Operation|Campaign)\s+[\w\s]+', description, re.IGNORECASE)
+        campaigns.extend(campaign_patterns[:3])
+
+        # Attribution confidence from MISP
+        attribution_confidence = meta.get('attribution-confidence', 'Unknown')
+        if attribution_confidence != 'Unknown':
+            try:
+                attribution_confidence = f"{int(attribution_confidence)}%"
+            except (ValueError, TypeError):
+                pass
+
+        return {
+            'mitre_techniques': mitre_techniques,
+            'target_industries': target_industries[:6],
+            'known_campaigns': campaigns,
+            'attribution_confidence': attribution_confidence,
+            'references': refs[:5],
+            'has_mitre_data': len(mitre_techniques) > 0,
+            'source_reliability': 'mitre' if len(mitre_techniques) > 0 else 'misp'
+        }
+
     def analyze_threat_landscape(self, profile: Dict) -> List[Dict]:
         """
         Match user profile against threat actor database
@@ -311,11 +529,23 @@ class AdversaryMatcher:
         state_sponsor = actor.get('state_sponsor', origin)
         description = actor.get('description', 'No description available')
 
+        # Get confidence tier classification
+        confidence_tier = self.classify_confidence_tier(score, reasons)
+
+        # Get enriched actor profile data (MITRE techniques, industries, etc.)
+        profile_data = self.get_actor_profile_data(actor)
+
         # Generate personalized risk explanation
         risk_explanation = self._generate_risk_explanation(actor, reasons, user_profile)
 
-        # Extract TTPs (simplified)
-        ttps = self._extract_ttps(actor)
+        # Extract TTPs - use MITRE techniques if available, fallback to extraction
+        if profile_data['mitre_techniques']:
+            ttps = [
+                f"{t['id']}: {t['name']} ({t['tactic']})"
+                for t in profile_data['mitre_techniques'][:5]
+            ]
+        else:
+            ttps = self._extract_ttps(actor)
 
         # Generate attack path simulation
         attack_path = self._generate_attack_path(actor, user_profile)
@@ -323,21 +553,38 @@ class AdversaryMatcher:
         # For backward compatibility, create why_you from reasons evidence
         why_you_parts = [reason['evidence'] for reason in reasons] if reasons else []
 
+        # Determine motivation type
+        incident_types = actor.get('incident_types', '')
+        if isinstance(incident_types, list):
+            motivation = ', '.join(incident_types)
+        else:
+            motivation = incident_types or 'Unknown'
+
         return {
             'name': name,
             'aliases': ', '.join(aliases[:3]) if aliases else None,
+            'aliases_list': aliases[:5],  # Full list for UI
             'origin': origin,
             'state_sponsor': state_sponsor,
             'match_score': score,
             'match_reasons': reasons,  # Structured match reasons
+            'confidence_tier': confidence_tier,  # NEW: Strong/Possible/Weak classification
             'description': description[:500],  # Truncate long descriptions
             'risk_explanation': risk_explanation,
             'why_you': ' | '.join(why_you_parts),  # Legacy format
             'sophistication': self._determine_sophistication(actor),
             'active_since': self._extract_active_since(description),
             'recent_activity': self._extract_recent_activity(description),
+            'motivation': motivation,  # NEW: Primary motivation
             'ttps': ttps,
-            'attack_path': attack_path  # NEW: Intelligent attack chain simulation
+            'mitre_techniques': profile_data['mitre_techniques'],  # NEW: Rich MITRE data
+            'target_industries': profile_data['target_industries'],  # NEW: Known target sectors
+            'known_campaigns': profile_data['known_campaigns'],  # NEW: Named operations
+            'attribution_confidence': profile_data['attribution_confidence'],  # NEW: Intel confidence
+            'references': profile_data['references'],  # NEW: Reference links
+            'has_mitre_data': profile_data['has_mitre_data'],  # NEW: Flag for MITRE enrichment
+            'attack_path': attack_path,
+            'data_sources': ['MISP Galaxy', 'MITRE ATT&CK'] if profile_data['has_mitre_data'] else ['MISP Galaxy']
         }
     
     def _determine_sophistication(self, actor: Dict) -> str:

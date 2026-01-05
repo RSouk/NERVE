@@ -466,6 +466,14 @@ class ComplianceControl(Base):
     status = Column(String(20), nullable=False, default='not_tested')  # compliant, non_compliant, partial, not_tested
     compliance_score = Column(Integer)  # 0-100
 
+    # Scan Integration - Auto-flagging from XASM/Lightbox scans
+    scan_source = Column(String(20))  # 'xasm', 'lightbox', 'manual', None
+    scan_finding_type = Column(String(100))  # The vulnerability type that flagged this
+    scan_finding_id = Column(String(100))  # Reference to original scan finding
+    scan_flagged_at = Column(DateTime)  # When auto-flagged by scan
+    scan_verified_at = Column(DateTime)  # When verified by re-scan
+    scan_domain = Column(String(255))  # Domain that was scanned
+
     # Evidence & Notes
     evidence_summary = Column(Text)
     remediation_notes = Column(Text)
@@ -551,6 +559,280 @@ class VulnerabilityReport(Base):
 
     def __repr__(self):
         return f'<VulnerabilityReport risk_level={self.risk_level} for user {self.user_id}>'
+
+
+# ============================================================================
+# ROADMAP MODELS
+# ============================================================================
+
+class RoadmapProfile(Base):
+    """
+    Stores company/user assessment profile data for the security roadmap.
+    Maps company characteristics, current security posture, and targets.
+    """
+    __tablename__ = 'roadmap_profiles'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # User/Company Link (nullable - can be standalone)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    company_id = Column(Integer, ForeignKey('companies.id', ondelete='SET NULL'), index=True)
+
+    # Company Profile
+    company_name = Column(String(255), nullable=False)
+    company_size = Column(String(50))  # small, medium, large, enterprise
+    industry = Column(String(100), index=True)  # healthcare, finance, retail, tech, etc.
+    employee_count = Column(Integer)
+
+    # Security Posture
+    current_security_score = Column(Integer, default=0)  # 0-100
+    target_security_score = Column(Integer, default=75)  # Target to reach
+
+    # Data Sensitivity Flags
+    handles_pii = Column(Boolean, default=False)
+    handles_payment_data = Column(Boolean, default=False)
+    handles_health_data = Column(Boolean, default=False)
+    handles_financial_data = Column(Boolean, default=False)
+
+    # JSON Fields for complex data
+    current_measures = Column(Text)  # JSON: existing security measures
+    compliance_requirements = Column(Text)  # JSON: ["soc2", "hipaa", "pci"]
+    assessment_responses = Column(Text)  # JSON: responses to assessment questions
+
+    # Timestamps
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    last_recalculated = Column(DateTime)  # When score was last recalculated
+    deleted_at = Column(DateTime, index=True)
+
+    # Flags
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    # Relationships
+    user_tasks = relationship('RoadmapUserTask', back_populates='profile', cascade='all, delete-orphan')
+    achievements = relationship('RoadmapAchievement', back_populates='profile', cascade='all, delete-orphan')
+    progress_history = relationship('RoadmapProgressHistory', back_populates='profile', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<RoadmapProfile {self.company_name} (Score: {self.current_security_score}/{self.target_security_score})>'
+
+
+class RoadmapTask(Base):
+    """
+    Master library of all possible security tasks.
+    These are templates that get assigned to user profiles.
+    """
+    __tablename__ = 'roadmap_tasks'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Unique Task Identifier
+    task_id = Column(String(100), unique=True, nullable=False, index=True)  # e.g., "TASK_MFA_ENABLE"
+
+    # Task Information
+    task_name = Column(String(255), nullable=False)
+    task_category = Column(String(50), index=True)  # authentication, network, data, etc.
+    description = Column(Text)
+    why_it_matters = Column(Text)  # Explains the security importance
+    how_to_fix = Column(Text)  # Step-by-step remediation guidance
+
+    # Effort Estimates
+    estimated_time_minutes = Column(Integer)  # Time to complete
+    estimated_cost_min = Column(Float)  # Minimum cost estimate
+    estimated_cost_max = Column(Float)  # Maximum cost estimate
+
+    # Difficulty & Impact
+    difficulty_level = Column(String(20))  # easy, medium, hard
+    security_score_impact = Column(Integer)  # Points gained when completed
+    risk_level = Column(String(20), index=True)  # critical, high, medium, low
+
+    # Applicability Rules (JSON)
+    applies_to_industries = Column(Text)  # JSON: ["healthcare", "finance", "all"]
+    applies_to_sizes = Column(Text)  # JSON: ["small", "medium", "large", "all"]
+    requires_compliance = Column(Text)  # JSON: ["soc2", "hipaa", null]
+
+    # Resources
+    documentation_url = Column(Text)
+    video_tutorial_url = Column(Text)
+
+    # Timestamps
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Flags
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<RoadmapTask {self.task_id}: {self.task_name}>'
+
+
+class RoadmapUserTask(Base):
+    """
+    Tasks assigned to a specific user/profile.
+    Tracks progress, status, and source of the task.
+    """
+    __tablename__ = 'roadmap_user_tasks'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Profile Link
+    profile_id = Column(Integer, ForeignKey('roadmap_profiles.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Task Reference (string ID, not FK for flexibility)
+    task_id = Column(String(100), nullable=False, index=True)  # References RoadmapTask.task_id
+
+    # Status & Progress
+    status = Column(String(20), nullable=False, default='not_started', index=True)
+    # Status options: not_started, in_progress, completed, skipped, not_applicable
+
+    # Phase & Priority
+    phase = Column(Integer, default=1, index=True)  # 1, 2, 3, or 4
+    priority_order = Column(Integer)  # Order within phase
+
+    # Source Information - Where did this task come from?
+    source = Column(String(50), index=True)  # profile, xasm_scan, lightbox_scan, compliance, ghost_search, adversary
+    source_reference_id = Column(Integer)  # ID of scan/finding that created it
+    source_details = Column(Text)  # JSON: additional source context
+
+    # Scan-based task details
+    finding_type = Column(String(100))  # exposed_admin, outdated_ssl, etc.
+    finding_severity = Column(String(20))  # critical, high, medium, low
+    scan_domain = Column(String(255))  # Domain that was scanned
+    scan_date = Column(DateTime)  # When the scan was run
+
+    # Threat Actor Integration
+    matched_threat_actor = Column(String(255))  # If from adversary matching
+    threat_actor_ttp = Column(Text)  # JSON: TTPs from threat actor
+
+    # Assignment
+    assigned_to_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+
+    # Timeline Tracking
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+    verified_at = Column(DateTime)  # When completion was verified
+    last_reminded = Column(DateTime)
+
+    # Notes
+    user_notes = Column(Text)
+    admin_notes = Column(Text)
+
+    # Timestamps
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime, index=True)
+
+    # Flags
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    # Relationships
+    profile = relationship('RoadmapProfile', back_populates='user_tasks')
+
+    def __repr__(self):
+        return f'<RoadmapUserTask {self.task_id} - {self.status}>'
+
+
+class RoadmapAchievement(Base):
+    """
+    Achievements/badges unlocked by users as they progress.
+    Gamification element to encourage completion.
+    """
+    __tablename__ = 'roadmap_achievements'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Profile & User Links
+    profile_id = Column(Integer, ForeignKey('roadmap_profiles.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+
+    # Achievement Details
+    achievement_id = Column(String(100), nullable=False, index=True)  # FIRST_STEPS, MFA_MASTER, etc.
+    achievement_name = Column(String(255), nullable=False)
+    achievement_description = Column(Text)
+    achievement_icon = Column(String(50))  # Icon identifier
+
+    # Unlock Criteria
+    requirement_type = Column(String(50))  # tasks_completed, score_reached, streak, category_complete
+    requirement_value = Column(Integer)  # Number required to unlock
+
+    # Status
+    unlocked_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    is_claimed = Column(Boolean, default=False)
+    claimed_at = Column(DateTime)
+
+    # Rewards (JSON)
+    rewards = Column(Text)  # JSON: {"type": "certificate", "value": "Security Champion"}
+
+    # Timestamps
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    profile = relationship('RoadmapProfile', back_populates='achievements')
+
+    def __repr__(self):
+        return f'<RoadmapAchievement {self.achievement_id} for profile {self.profile_id}>'
+
+
+class RoadmapProgressHistory(Base):
+    """
+    Historical snapshots of security progress.
+    Used for trending and progress visualization.
+    """
+    __tablename__ = 'roadmap_progress_history'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Profile Link
+    profile_id = Column(Integer, ForeignKey('roadmap_profiles.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Snapshot Data
+    security_score = Column(Integer)
+    tasks_completed = Column(Integer)
+    tasks_total = Column(Integer)
+
+    # Phase Breakdown
+    phase1_completed = Column(Integer, default=0)
+    phase2_completed = Column(Integer, default=0)
+    phase3_completed = Column(Integer, default=0)
+    phase4_completed = Column(Integer, default=0)
+
+    # Snapshot Metadata
+    snapshot_date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    snapshot_reason = Column(String(50))  # daily, task_completed, scan_run, manual
+
+    # Relationships
+    profile = relationship('RoadmapProfile', back_populates='progress_history')
+
+    def __repr__(self):
+        return f'<RoadmapProgressHistory profile={self.profile_id} score={self.security_score} at {self.snapshot_date}>'
+
+
+class RoadmapTaskLibraryMeta(Base):
+    """
+    Metadata about the task library itself.
+    Tracks versioning and updates to the master task list.
+    """
+    __tablename__ = 'roadmap_task_library_meta'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Library Info
+    library_version = Column(String(20), nullable=False)  # e.g., "1.0.0"
+    total_tasks = Column(Integer)  # Count of tasks in library
+    changelog = Column(Text)  # Description of changes
+
+    # Timestamps
+    last_updated = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<RoadmapTaskLibraryMeta v{self.library_version} ({self.total_tasks} tasks)>'
 
 
 # ============================================================================

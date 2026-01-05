@@ -5,21 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHOST - CTI Intelligence Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* Global link styling */
-        a {
-            color: #ffd700;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
+        :root {
+            --bg-deep: #030305;
+            --bg-card: rgba(8, 8, 12, 0.95);
+            --bg-elevated: rgba(15, 15, 22, 0.9);
+            --bg-glass: rgba(255, 255, 255, 0.02);
 
-        a:hover {
-            color: #ff8c00;
-            text-decoration: underline;
-        }
+            --gold-primary: #D4AF37;
+            --gold-light: #F4D03F;
+            --gold-dark: #B8860B;
+            --gold-glow: rgba(212, 175, 55, 0.4);
 
-        a:visited {
-            color: #ffd700;
+            --cyan: #00E5FF;
+            --cyan-glow: rgba(0, 229, 255, 0.3);
+            --purple: #BB86FC;
+            --green: #00E676;
+            --red: #FF5252;
+            --orange: #FF9800;
+            --blue: #42A5F5;
+
+            --text-primary: #F0EDE6;
+            --text-secondary: #9A9DA6;
+            --text-muted: #5A5D66;
+
+            --border-subtle: rgba(212, 175, 55, 0.12);
+            --border-hover: rgba(212, 175, 55, 0.35);
+
+            --shadow-gold: 0 0 60px rgba(212, 175, 55, 0.08);
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
         }
 
         * {
@@ -29,16 +46,53 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #e0e0e0;
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
             min-height: 100vh;
+            line-height: 1.6;
         }
+
+        /* Background Effects */
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(212, 175, 55, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0, 229, 255, 0.04) 0%, transparent 40%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(ellipse 70% 50% at 50% 20%, black 20%, transparent 70%);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold-primary); }
+
+        a { color: var(--gold-primary); text-decoration: none; transition: color 0.2s; }
+        a:hover { color: var(--gold-light); }
 
         .container {
             max-width: 1800px;
             margin: 0 auto;
-            padding: 30px;
+            padding: 24px 32px;
         }
 
         /* Header */
@@ -46,9 +100,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 30px;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
-            margin-bottom: 30px;
+            padding: 20px 0;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .header-left {
@@ -58,83 +112,102 @@
         }
 
         .header-left img {
-            height: 70px;
+            height: 60px;
+            filter: drop-shadow(0 0 20px var(--gold-glow));
         }
 
         .header-title h1 {
-            font-size: 2.5em;
-            color: #D4AF37;
-            font-weight: 700;
-            letter-spacing: 3px;
-            margin: 0;
+            font-size: 2.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.05em;
         }
 
         .header-title p {
-            color: #888;
-            font-size: 1em;
-            margin-top: 5px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .beta-badge {
+            padding: 2px 8px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .header-right {
             display: flex;
+            gap: 12px;
             align-items: center;
-            gap: 15px;
         }
 
-        .refresh-button {
+        .header-btn {
             padding: 10px 20px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.2s;
-        }
-
-        .refresh-button:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
-        }
-
-        .back-button {
-            padding: 12px 24px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
-            text-decoration: none;
-            font-size: 0.95em;
-            transition: all 0.2s;
-        }
-
-        .back-button:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
-        }
-
-        /* Main Content Area */
-        .main-content {
-            display: flex;
-            gap: 30px;
-        }
-
-        /* Sidebar Navigation */
-        .sidebar {
-            width: 280px;
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-subtle);
             border-radius: 8px;
-            padding: 25px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+        }
+
+        .header-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        .header-btn.primary {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .header-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--gold-glow);
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 32px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
             height: fit-content;
+            position: sticky;
+            top: 24px;
         }
 
         .sidebar-title {
-            font-size: 0.9em;
-            color: #888;
+            font-size: 0.7rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
+            letter-spacing: 0.15em;
+            margin-bottom: 16px;
             font-weight: 600;
         }
 
@@ -143,310 +216,610 @@
             align-items: center;
             gap: 12px;
             padding: 14px 16px;
-            background: rgba(212, 175, 55, 0.05);
-            border-left: 3px solid transparent;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
+            border-radius: 10px;
+            color: var(--text-secondary);
             text-decoration: none;
-            color: #e0e0e0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.25s;
+            margin-bottom: 6px;
         }
 
         .nav-item:hover {
-            background: rgba(212, 175, 55, 0.15);
-            border-left-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.08);
+            color: var(--text-primary);
         }
 
-        .nav-item.active {
-            background: rgba(212, 175, 55, 0.2);
-            border-left-color: #D4AF37;
+        .nav-item.featured {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.04) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+
+        .nav-item.featured:hover {
+            border-color: var(--gold-primary);
         }
 
         .nav-icon {
-            font-size: 1.3em;
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
         }
 
-        .nav-text {
-            font-size: 0.95em;
-            font-weight: 500;
+        .nav-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .nav-badge.new {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000;
+        }
+
+        .sidebar-footer {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-info-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-info-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--text-secondary);
         }
 
         /* Content Area */
         .content {
-            flex: 1;
-        }
-
-        .welcome-section {
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            padding: 40px;
-            margin-bottom: 30px;
-        }
-
-        .welcome-section h2 {
-            font-size: 2em;
-            color: #D4AF37;
-            margin-bottom: 15px;
-        }
-
-        .welcome-section p {
-            font-size: 1.1em;
-            color: #aaa;
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-
-        /* Compact Stats Bar */
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card-compact {
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            padding: 18px;
-            transition: all 0.2s;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 28px;
         }
 
-        .stat-card-compact:hover {
-            border-color: #D4AF37;
+        /* Section Cards */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            transition: all 0.3s;
+        }
+
+        .section-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border-radius: 2px;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--gold-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.25s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-subtle);
             transform: translateY(-2px);
         }
 
-        .stat-compact-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #D4AF37;
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
             line-height: 1;
+            margin-bottom: 6px;
         }
 
-        .stat-compact-label {
-            font-size: 0.85em;
-            color: #888;
+        .stat-value.gold { color: var(--gold-primary); }
+        .stat-value.green { color: var(--green); }
+        .stat-value.red { color: var(--red); }
+        .stat-value.blue { color: var(--blue); }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
         }
 
-        /* News Feed Section */
-        .news-feed-section {
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            padding: 25px;
+        /* Module Cards Grid */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
-        .news-feed-header {
+        .module-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold-primary), var(--gold-dark));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .module-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-card);
+        }
+
+        .module-card:hover::before {
+            opacity: 1;
+        }
+
+        .module-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 12px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            transition: all 0.3s;
         }
 
-        .news-feed-title {
-            font-size: 1.4em;
-            color: #D4AF37;
-            font-weight: 600;
+        .module-card:hover .module-icon {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-color: transparent;
+            transform: scale(1.05);
         }
 
-        .last-updated {
-            font-size: 0.85em;
-            color: #666;
-        }
-
-        .news-articles {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .news-article {
-            background: rgba(212, 175, 55, 0.03);
-            border: 1px solid rgba(212, 175, 55, 0.15);
-            border-radius: 6px;
-            padding: 15px;
-            transition: all 0.2s;
-        }
-
-        .news-article:hover {
-            background: rgba(212, 175, 55, 0.08);
-            border-color: rgba(212, 175, 55, 0.3);
-        }
-
-        .article-header {
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
+        .module-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
 
-        .source-badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-
-        .source-krebs {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .source-bleeping {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .source-hackernews {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .source-cisa {
-            background: rgba(168, 85, 247, 0.2);
-            color: #c084fc;
-            border: 1px solid rgba(168, 85, 247, 0.3);
-        }
-
-        .article-title {
-            flex: 1;
-        }
-
-        .article-title a {
-            color: #e0e0e0;
-            text-decoration: none;
-            font-size: 1em;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-
-        .article-title a:hover {
-            color: #D4AF37;
-            text-decoration: underline;
-        }
-
-        .article-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 0.85em;
-            color: #666;
-            margin-top: 8px;
-        }
-
-        .article-date {
-            color: #888;
-        }
-
-        .article-summary {
-            margin-top: 10px;
-            font-size: 0.9em;
-            color: #999;
+        .module-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
             line-height: 1.5;
         }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 1.1em;
+        .module-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 6px;
-            padding: 20px;
-            color: #f87171;
+        .module-badge.active {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: #000;
+        }
+
+        .module-badge.new {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000;
+        }
+
+        /* Roadmap Widget */
+        .roadmap-widget {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .score-ring-container {
+            text-align: center;
+        }
+
+        .score-ring {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+        }
+
+        .score-ring svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .score-ring-bg {
+            fill: none;
+            stroke: rgba(212, 175, 55, 0.1);
+            stroke-width: 10;
+        }
+
+        .score-ring-fill {
+            fill: none;
+            stroke: url(#scoreGradient);
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 408;
+            stroke-dashoffset: 408;
+            transition: stroke-dashoffset 1.5s ease;
+            filter: drop-shadow(0 0 8px var(--gold-glow));
+        }
+
+        .score-value-wrap {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .score-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--gold-primary);
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 4px;
+        }
+
+        .roadmap-details {
+            flex: 1;
+        }
+
+        .progress-section {
             margin-bottom: 20px;
         }
 
-        .show-more-container {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(212, 175, 55, 0.2);
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
         }
 
-        .show-more-btn {
-            padding: 12px 32px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
-            cursor: pointer;
-            font-size: 0.95em;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .show-more-btn:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
-            transform: translateY(-2px);
-        }
-
-        /* Beta Badge */
-        .beta-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            background: rgba(212, 175, 55, 0.15);
-            border: 1px solid #D4AF37;
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
-            color: #D4AF37;
-            font-size: 0.7em;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--green));
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .roadmap-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .roadmap-stat {
+            text-align: center;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+
+        .roadmap-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
             font-weight: 700;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .roadmap-stat-value.green { color: var(--green); }
+        .roadmap-stat-value.cyan { color: var(--cyan); }
+        .roadmap-stat-value.red { color: var(--red); }
+
+        .roadmap-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .quick-win-card {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), transparent);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .quick-win-label {
+            font-size: 0.7rem;
+            color: var(--gold-primary);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-left: 10px;
-            vertical-align: middle;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            margin-bottom: 2px;
         }
 
-        /* Info Button */
-        .info-button {
-            padding: 10px 20px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
-            cursor: pointer;
-            font-size: 0.9em;
+        .quick-win-title {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .quick-win-points {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        /* Maintenance Checklist */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
             transition: all 0.2s;
-            font-weight: 500;
+            cursor: pointer;
         }
 
-        .info-button:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
+        .checklist-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-subtle);
+        }
+
+        .checklist-item.checked {
+            opacity: 0.6;
+        }
+
+        .checklist-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            color: transparent;
+        }
+
+        .checklist-item.checked .checklist-checkbox {
+            background: var(--green);
+            border-color: var(--green);
+            color: #000;
+        }
+
+        .checklist-content {
+            flex: 1;
+        }
+
+        .checklist-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+
+        .checklist-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .next-scan-banner {
+            margin-top: 20px;
+            padding: 18px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .next-scan-label {
+            font-size: 0.8rem;
+            color: var(--gold-primary);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .next-scan-date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        /* News Grid */
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .news-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.25s;
+        }
+
+        .news-card:hover {
+            border-color: var(--border-subtle);
+            background: rgba(212, 175, 55, 0.03);
+        }
+
+        .news-source {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .news-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-link {
+            font-size: 0.85rem;
+            color: var(--gold-primary);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* Modal */
         .modal-overlay {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            justify-content: center;
+            backdrop-filter: blur(8px);
+            display: none;
             align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 24px;
         }
 
         .modal-overlay.active {
@@ -454,201 +827,196 @@
         }
 
         .modal-content {
-            background: #0a0a0a;
-            border: 2px solid #D4AF37;
-            border-radius: 8px;
-            max-width: 700px;
-            width: 90%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
             max-height: 80vh;
             overflow-y: auto;
-            position: relative;
         }
 
         .modal-header {
-            padding: 25px 30px 20px;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .modal-title {
-            font-size: 1.5em;
-            color: #D4AF37;
-            font-weight: 600;
-            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gold-primary);
         }
 
         .modal-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 1.8em;
-            cursor: pointer;
-            line-height: 1;
-            padding: 0;
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            cursor: pointer;
             transition: all 0.2s;
         }
 
         .modal-close:hover {
-            color: #D4AF37;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
         }
 
         .modal-body {
-            padding: 30px;
-        }
-
-        .modal-body h3 {
-            color: #D4AF37;
-            font-size: 1.1em;
-            margin: 25px 0 12px 0;
-            font-weight: 600;
-        }
-
-        .modal-body h3:first-child {
-            margin-top: 0;
+            padding: 28px;
         }
 
         .modal-body p {
-            color: #aaa;
+            color: var(--text-secondary);
             line-height: 1.7;
-            margin-bottom: 15px;
-            font-size: 0.95em;
+            margin-bottom: 16px;
+        }
+
+        .modal-body h3 {
+            color: var(--gold-primary);
+            font-size: 1rem;
+            margin: 24px 0 12px;
         }
 
         .modal-body ul {
-            list-style: none;
-            padding-left: 0;
-            margin: 15px 0;
+            color: var(--text-secondary);
+            padding-left: 20px;
         }
 
-        .modal-body ul li {
-            color: #aaa;
-            padding: 8px 0 8px 25px;
-            position: relative;
-            line-height: 1.6;
-            font-size: 0.95em;
+        .modal-body li {
+            margin-bottom: 8px;
         }
 
-        .modal-body ul li:before {
-            content: "•";
-            color: #D4AF37;
-            font-weight: bold;
-            position: absolute;
-            left: 10px;
-        }
-
-        .sidebar-footer {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(212, 175, 55, 0.2);
-        }
-
-        .sidebar-info-btn {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
-            cursor: pointer;
-            font-size: 0.9em;
-            font-weight: 500;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .sidebar-info-btn:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
-        }
-
-        /* Quick Actions */
-        .quick-actions {
-            background: #000000;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            padding: 30px;
-        }
-
-        .quick-actions h3 {
-            font-size: 1.3em;
-            color: #D4AF37;
-            margin-bottom: 20px;
-        }
-
-        .action-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .action-btn {
-            padding: 16px 20px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
-            color: #D4AF37;
-            text-decoration: none;
-            font-size: 0.95em;
-            font-weight: 500;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .action-btn:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #D4AF37;
-            transform: translateY(-2px);
-        }
-
-        /* Maintenance Checklist Styles */
-        .maintenance-item {
+        /* Scan History */
+        .scan-history-list {
             display: flex;
-            align-items: flex-start;
-            padding: 16px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            margin-bottom: 12px;
-            transition: all 0.3s;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .maintenance-item:hover {
-            background: rgba(255,255,255,0.08);
+        .scan-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 20px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            align-items: center;
+            transition: all 0.2s;
         }
 
-        .maintenance-item input[type="checkbox"] {
-            margin-right: 16px;
-            width: 20px;
-            height: 20px;
+        .scan-item:hover {
+            border-color: var(--border-subtle);
+        }
+
+        .scan-domain {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .scan-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .scan-findings {
+            padding: 4px 10px;
+            background: rgba(255, 152, 0, 0.1);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--orange);
+            font-weight: 600;
+        }
+
+        .scan-action {
+            padding: 8px 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
             cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .maintenance-item label {
-            flex: 1;
-            cursor: pointer;
+        .scan-action:hover {
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
         }
 
-        .maintenance-item label strong {
-            color: #ffd700;
-            display: block;
-            margin-bottom: 4px;
+        /* Loading */
+        .loading-text {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px;
         }
 
-        .maintenance-item label span {
-            color: #aaa;
-            font-size: 14px;
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .roadmap-widget {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-left {
+                flex-direction: column;
+            }
+        }
+
+        /* Chart styles */
+        #security-score-chart {
+            max-height: 200px;
         }
     </style>
 </head>
 <body>
+    <div class="bg-mesh"></div>
+    <div class="grid-overlay"></div>
+
     <div class="container">
-        <div class="header">
+        <!-- Header -->
+        <header class="header">
             <div class="header-left">
                 <img src="ghost-logo.png" alt="GHOST">
                 <div class="header-title">
@@ -657,153 +1025,219 @@
                 </div>
             </div>
             <div class="header-right">
-                <button class="refresh-button" onclick="refreshDashboard()">Refresh Feed</button>
-                <a href="../../index.html" class="back-button">← Back to NERVE Dashboard</a>
+                <button class="header-btn" onclick="refreshDashboard()">Refresh</button>
+                <a href="../../index.html" class="header-btn">Back to NERVE</a>
             </div>
-        </div>
+        </header>
 
+        <!-- Main Content -->
         <div class="main-content">
-            <!-- Sidebar Navigation -->
-            <div class="sidebar">
+            <!-- Sidebar -->
+            <aside class="sidebar">
                 <div class="sidebar-title">Module Features</div>
                 <a href="ghost-search.html" class="nav-item">
-                    <span class="nav-text">Global Search</span>
+                    <span class="nav-icon">&#128269;</span>
+                    <span>Global Search</span>
                 </a>
                 <a href="ghost-adversary.html" class="nav-item">
-                    <span class="nav-text">Adversary Matching</span>
-                </a>
-                <a href="ghost-bait.html" class="nav-item">
-                    <span class="nav-text">BAIT</span>
+                    <span class="nav-icon">&#127919;</span>
+                    <span>Adversary Matching</span>
                 </a>
                 <a href="ghost-asm.html" class="nav-item">
-                    <span class="nav-text">Attack Surface</span>
+                    <span class="nav-icon">&#127760;</span>
+                    <span>Attack Surface</span>
                 </a>
-                <a href="ghost-monitor.html" class="nav-item">
-                    <span class="nav-text">Monitor</span>
+                <a href="ghost-roadmap.html" class="nav-item featured">
+                    <span class="nav-icon">&#128739;</span>
+                    <span>Security Roadmap</span>
+                    <span class="nav-badge new">New</span>
                 </a>
                 <div class="sidebar-footer">
                     <button class="sidebar-info-btn" onclick="openInfoModal()">About GHOST</button>
                 </div>
-            </div>
+            </aside>
 
-            <!-- Main Content -->
+            <!-- Content -->
             <div class="content">
-                <!-- Your Security Score Over Time -->
-                <div class="dashboard-section" style="margin-bottom: 32px;">
-                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Your Security Score Over Time</h2>
+                <!-- Quick Actions - Module Cards -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Quick Actions</h2>
+                    </div>
+                    <div class="modules-grid">
+                        <a href="ghost-search.html" class="module-card">
+                            <div class="module-icon">&#128269;</div>
+                            <h3 class="module-title">Global Search</h3>
+                            <p class="module-desc">Search across breach databases and dark web sources for exposed credentials.</p>
+                            <span class="module-badge active">Active</span>
+                        </a>
+                        <a href="ghost-adversary.html" class="module-card">
+                            <div class="module-icon">&#127919;</div>
+                            <h3 class="module-title">Adversary Matching</h3>
+                            <p class="module-desc">Match threat actors targeting your industry using MISP and MITRE data.</p>
+                        </a>
+                        <a href="ghost-asm.html" class="module-card">
+                            <div class="module-icon">&#127760;</div>
+                            <h3 class="module-title">Attack Surface</h3>
+                            <p class="module-desc">Scan and analyze your external attack surface for vulnerabilities.</p>
+                        </a>
+                        <a href="ghost-roadmap.html" class="module-card">
+                            <span class="module-badge new">New</span>
+                            <div class="module-icon">&#128739;</div>
+                            <h3 class="module-title">Security Roadmap</h3>
+                            <p class="module-desc">Personalized security improvement plan with gamified progress tracking.</p>
+                        </a>
+                    </div>
+                </div>
 
-                    <div style="background: rgba(0,0,0,0.3); padding: 32px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
-                        <!-- Canvas for Chart.js graph -->
-                        <canvas id="security-score-chart" height="80"></canvas>
-
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px;">
-                            <div style="text-align: center; padding: 16px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                                <div style="font-size: 32px; font-weight: 700; color: #ffd700;" id="current-score">--</div>
-                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Current Score</div>
-                            </div>
-
-                            <div style="text-align: center; padding: 16px; background: rgba(34,197,94,0.1); border-radius: 8px;">
-                                <div style="font-size: 32px; font-weight: 700; color: #22c55e;" id="score-change">--</div>
-                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Change (30 days)</div>
-                            </div>
-
-                            <div style="text-align: center; padding: 16px; background: rgba(220,53,69,0.1); border-radius: 8px;">
-                                <div style="font-size: 32px; font-weight: 700; color: #dc3545;" id="critical-count">--</div>
-                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Critical Issues</div>
-                            </div>
-
-                            <div style="text-align: center; padding: 16px; background: rgba(59,130,246,0.1); border-radius: 8px;">
-                                <div style="font-size: 32px; font-weight: 700; color: #3b82f6;" id="total-findings">--</div>
-                                <div style="color: #aaa; font-size: 14px; margin-top: 4px;">Total Findings</div>
-                            </div>
+                <!-- Security Score -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Security Score Over Time</h2>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary" onclick="exportSecurityReport()">Export Report</button>
+                            <button class="btn btn-primary" onclick="scheduleNextScan()">Schedule Scan</button>
                         </div>
-
-                        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
-                            <button onclick="exportSecurityReport()" style="
-                                background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-                                border: none;
-                                padding: 12px 24px;
-                                border-radius: 8px;
-                                color: #000;
-                                font-weight: 600;
-                                cursor: pointer;
-                            ">Export Report</button>
-
-                            <button onclick="scheduleNextScan()" style="
-                                background: rgba(255,215,0,0.2);
-                                border: 2px solid #ffd700;
-                                padding: 12px 24px;
-                                border-radius: 8px;
-                                color: #ffd700;
-                                font-weight: 600;
-                                cursor: pointer;
-                            ">Schedule Next Scan</button>
+                    </div>
+                    <canvas id="security-score-chart" height="80"></canvas>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value gold" id="current-score">--</div>
+                            <div class="stat-label">Current Score</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value green" id="score-change">--</div>
+                            <div class="stat-label">30 Day Change</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value red" id="critical-count">--</div>
+                            <div class="stat-label">Critical Issues</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value blue" id="total-findings">--</div>
+                            <div class="stat-label">Total Findings</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Scan History & Comparison Section -->
-                <div class="dashboard-section" style="margin-bottom: 32px;">
-                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Scan History & Comparison</h2>
-
-                    <div id="scan-history-container" style="background: rgba(0,0,0,0.3); padding: 24px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
-                        <p style="color: #888; text-align: center;">Loading scan history...</p>
+                <!-- Scan History -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Scan History</h2>
+                    </div>
+                    <div id="scan-history-container" class="scan-history-list">
+                        <p class="loading-text">Loading scan history...</p>
                     </div>
                 </div>
 
-                <!-- Stay Sharp - Weekly Maintenance Section -->
-                <div class="dashboard-section" style="margin-bottom: 32px;">
-                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Stay Sharp - Weekly Maintenance</h2>
-
-                    <div style="background: rgba(0,0,0,0.3); padding: 24px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.2);">
-                        <div id="maintenance-checklist">
-                            <div class="maintenance-item">
-                                <input type="checkbox" id="rescan" />
-                                <label for="rescan">
-                                    <strong>Re-scan your domain</strong>
-                                    <span>Recommended weekly to track changes</span>
-                                </label>
-                            </div>
-
-                            <div class="maintenance-item">
-                                <input type="checkbox" id="breach-check" />
-                                <label for="breach-check">
-                                    <strong>Check for new breaches</strong>
-                                    <span>Run Global Search for your domain</span>
-                                </label>
-                            </div>
-
-                            <div class="maintenance-item">
-                                <input type="checkbox" id="adversary-review" />
-                                <label for="adversary-review">
-                                    <strong>Review threat landscape</strong>
-                                    <span>Check Adversary Matcher for new threats</span>
-                                </label>
-                            </div>
-
-                            <div class="maintenance-item">
-                                <input type="checkbox" id="lightbox-test" />
-                                <label for="lightbox-test">
-                                    <strong>Test one fix with Lightbox</strong>
-                                    <span>Verify remediation worked</span>
-                                </label>
+                <!-- Security Roadmap Widget -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Security Roadmap</h2>
+                        <a href="ghost-roadmap.html" class="btn btn-primary">View Full Roadmap</a>
+                    </div>
+                    <div class="roadmap-widget">
+                        <div class="score-ring-container">
+                            <div class="score-ring">
+                                <svg viewBox="0 0 150 150">
+                                    <defs>
+                                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" style="stop-color:#F4D03F"/>
+                                            <stop offset="100%" style="stop-color:#B8860B"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="score-ring-bg" cx="75" cy="75" r="65"/>
+                                    <circle class="score-ring-fill" id="roadmap-score-ring" cx="75" cy="75" r="65"/>
+                                </svg>
+                                <div class="score-value-wrap">
+                                    <div class="score-value" id="roadmap-score">--</div>
+                                    <div class="score-label">Score</div>
+                                </div>
                             </div>
                         </div>
-
-                        <div style="margin-top: 20px; padding: 16px; background: rgba(255,215,0,0.1); border-radius: 8px; text-align: center;">
-                            <div style="color: #ffd700; font-weight: 600;">Next Recommended Scan</div>
-                            <div id="next-scan-date" style="color: #fff; font-size: 18px; margin-top: 8px;">--</div>
+                        <div class="roadmap-details">
+                            <div class="progress-section">
+                                <div class="progress-header">
+                                    <span>Progress to Target</span>
+                                    <span id="roadmap-target">85</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="roadmap-progress-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="roadmap-stats">
+                                <div class="roadmap-stat">
+                                    <div class="roadmap-stat-value green" id="roadmap-completed">0</div>
+                                    <div class="roadmap-stat-label">Completed</div>
+                                </div>
+                                <div class="roadmap-stat">
+                                    <div class="roadmap-stat-value cyan" id="roadmap-in-progress">0</div>
+                                    <div class="roadmap-stat-label">In Progress</div>
+                                </div>
+                                <div class="roadmap-stat">
+                                    <div class="roadmap-stat-value red" id="roadmap-remaining">0</div>
+                                    <div class="roadmap-stat-label">Remaining</div>
+                                </div>
+                            </div>
+                            <div class="quick-win-card" id="roadmap-quick-win" style="display: none;">
+                                <div>
+                                    <div class="quick-win-label">Quick Win</div>
+                                    <div class="quick-win-title" id="roadmap-quick-win-title">--</div>
+                                </div>
+                                <div class="quick-win-points" id="roadmap-quick-win-points">+5</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Curated Cybersecurity News Section -->
-                <div class="dashboard-section">
-                    <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 24px;">Curated Cybersecurity News</h2>
-                    <p style="color: #aaa; margin-bottom: 20px;">Latest security news from trusted sources</p>
+                <!-- Weekly Maintenance -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Weekly Maintenance</h2>
+                    </div>
+                    <div class="checklist" id="maintenance-checklist">
+                        <div class="checklist-item" onclick="toggleChecklist(this, 'rescan')">
+                            <div class="checklist-checkbox">&#10003;</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Re-scan your domain</div>
+                                <div class="checklist-desc">Recommended weekly to track changes</div>
+                            </div>
+                        </div>
+                        <div class="checklist-item" onclick="toggleChecklist(this, 'breach-check')">
+                            <div class="checklist-checkbox">&#10003;</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Check for new breaches</div>
+                                <div class="checklist-desc">Run Global Search for your domain</div>
+                            </div>
+                        </div>
+                        <div class="checklist-item" onclick="toggleChecklist(this, 'adversary-review')">
+                            <div class="checklist-checkbox">&#10003;</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Review threat landscape</div>
+                                <div class="checklist-desc">Check Adversary Matcher for new threats</div>
+                            </div>
+                        </div>
+                        <div class="checklist-item" onclick="toggleChecklist(this, 'lightbox-test')">
+                            <div class="checklist-checkbox">&#10003;</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Test one fix with Lightbox</div>
+                                <div class="checklist-desc">Verify remediation worked</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="next-scan-banner">
+                        <div class="next-scan-label">Next Recommended Scan</div>
+                        <div class="next-scan-date" id="next-scan-date">--</div>
+                    </div>
+                </div>
 
-                    <div id="curated-news-feed" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-                        <p style="color: #888; grid-column: 1/-1; text-align: center;">Loading latest security news...</p>
+                <!-- Curated News -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Curated Security News</h2>
+                    </div>
+                    <div id="curated-news-feed" class="news-grid">
+                        <p class="loading-text">Loading latest security news...</p>
                     </div>
                 </div>
             </div>
@@ -814,7 +1248,7 @@
     <div class="modal-overlay" id="infoModal" onclick="closeInfoModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h2 class="modal-title">About GHOST - Credential Intelligence Module</h2>
+                <h2 class="modal-title">About GHOST</h2>
                 <button class="modal-close" onclick="closeInfoModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -827,7 +1261,8 @@
                 <ul>
                     <li>Search across multiple breach databases and dark web sources</li>
                     <li>Match threat actors targeting your organization</li>
-                    <li>Deploy honeytokens to detect active reconnaissance</li>
+                    <li>Scan and analyze your external attack surface</li>
+                    <li>Create personalized security improvement roadmaps</li>
                 </ul>
 
                 <h3>Who It's For</h3>
@@ -838,9 +1273,6 @@
                     <li>Small to enterprise organizations</li>
                 </ul>
 
-                <h3>Pricing Philosophy</h3>
-                <p>In the full release, GHOST will offer tiered pricing to ensure accessibility - from free tiers for researchers to enterprise plans for organizations. Intelligence shouldn't be locked behind unaffordable paywalls.</p>
-
                 <h3>Current Status</h3>
                 <p><strong>Beta</strong> - We're actively developing and improving based on user feedback.</p>
             </div>
@@ -849,426 +1281,288 @@
 
     <script>
         const API_URL = 'http://localhost:5000';
-        let securityScoreChart = null;
+        let securityChart = null;
 
-        async function loadSecurityScoreHistory() {
-            try {
-                // Fetch scan history from backend
-                const response = await fetch(`${API_URL}/api/ghost/scan-history`);
-                const history = await response.json();
-
-                if (!history || history.length === 0) {
-                    // No scan history yet - show placeholder
-                    document.getElementById('current-score').textContent = 'N/A';
-                    document.getElementById('score-change').textContent = '+0';
-                    document.getElementById('critical-count').textContent = '0';
-                    document.getElementById('total-findings').textContent = '0';
-
-                    // Show empty state message
-                    const canvas = document.getElementById('security-score-chart');
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#888';
-                    ctx.font = '16px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('No scan history yet. Run your first XASM scan!', canvas.width/2, canvas.height/2);
-                    return;
-                }
-
-                // Sort by date
-                history.sort((a, b) => new Date(a.scan_date) - new Date(b.scan_date));
-
-                // Extract data for chart
-                const dates = history.map(scan => {
-                    const date = new Date(scan.scan_date);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                });
-                const scores = history.map(scan => scan.risk_score || 0);
-                const criticalCounts = history.map(scan => scan.critical_count || 0);
-
-                // Update current stats
-                const latestScan = history[history.length - 1];
-                document.getElementById('current-score').textContent = `${latestScan.risk_score}/100`;
-                document.getElementById('critical-count').textContent = latestScan.critical_count || 0;
-                document.getElementById('total-findings').textContent = latestScan.total_findings || 0;
-
-                // Calculate score change (last 30 days)
-                if (history.length > 1) {
-                    const oldScore = history[0].risk_score || 0;
-                    const newScore = latestScan.risk_score || 0;
-                    const change = newScore - oldScore;
-                    document.getElementById('score-change').textContent = (change >= 0 ? '+' : '') + change;
-                    document.getElementById('score-change').style.color = change >= 0 ? '#22c55e' : '#dc3545';
-                }
-
-                // Create chart
-                const ctx = document.getElementById('security-score-chart').getContext('2d');
-
-                if (securityScoreChart) {
-                    securityScoreChart.destroy();
-                }
-
-                securityScoreChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: dates,
-                        datasets: [{
-                            label: 'Security Score',
-                            data: scores,
-                            borderColor: '#ffd700',
-                            backgroundColor: 'rgba(255,215,0,0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            pointBackgroundColor: '#ffd700',
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    color: '#aaa'
-                                },
-                                grid: {
-                                    color: 'rgba(255,255,255,0.1)'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    color: '#aaa'
-                                },
-                                grid: {
-                                    color: 'rgba(255,255,255,0.1)'
-                                }
-                            }
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error('[GHOST] Error loading security score history:', error);
-            }
-        }
-
-        function exportSecurityReport() {
-            alert('Export functionality coming soon!');
-        }
-
-        function scheduleNextScan() {
-            alert('Scan scheduling coming soon!');
-        }
-
-        function refreshDashboard() {
-            loadSecurityScoreHistory();
-            loadScanHistory();
-            loadCuratedNews();
-        }
-
-        // ========================================================================
-        // Scan History Functions
-        // ========================================================================
-
-        async function loadScanHistory() {
-            const container = document.getElementById('scan-history-container');
-
-            try {
-                const response = await fetch(`${API_URL}/api/ghost/scan-history`);
-                const history = await response.json();
-
-                if (!history || history.length === 0) {
-                    container.innerHTML = `
-                        <p style="color: #888; text-align: center; padding: 40px;">
-                            No scan history yet. Run your first XASM scan to start tracking your security progress!
-                        </p>
-                    `;
-                    return;
-                }
-
-                // Sort by most recent first
-                history.sort((a, b) => new Date(b.scan_date) - new Date(a.scan_date));
-
-                // Calculate trend
-                let trendIcon = '➡️';
-                let trendText = 'Stable';
-                let trendColor = '#888';
-
-                if (history.length >= 2) {
-                    const latest = history[0];
-                    const previous = history[1];
-                    const scoreDiff = (latest.risk_score || 0) - (previous.risk_score || 0);
-
-                    if (scoreDiff > 5) {
-                        trendIcon = '✅';
-                        trendText = 'Improving';
-                        trendColor = '#22c55e';
-                    } else if (scoreDiff < -5) {
-                        trendIcon = '⚠️';
-                        trendText = 'Declining';
-                        trendColor = '#dc3545';
-                    }
-                }
-
-                container.innerHTML = `
-                    ${history.slice(0, 5).map((scan, index) => {
-                        const date = new Date(scan.scan_date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                        });
-
-                        return `
-                            <div style="
-                                padding: 16px;
-                                background: ${index === 0 ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.05)'};
-                                border-left: 4px solid ${index === 0 ? '#ffd700' : 'rgba(255,255,255,0.2)'};
-                                border-radius: 8px;
-                                margin-bottom: 12px;
-                                display: grid;
-                                grid-template-columns: 2fr 1fr 1fr 1fr auto;
-                                gap: 16px;
-                                align-items: center;
-                            ">
-                                <div>
-                                    <div style="color: #ffd700; font-weight: 600;">${date}: ${scan.domain}</div>
-                                    <div style="color: #888; font-size: 13px; margin-top: 4px;">${index === 0 ? 'Latest Scan' : `${index + 1} scans ago`}</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 20px; font-weight: 700; color: #ffd700;">${scan.risk_score}/100</div>
-                                    <div style="color: #888; font-size: 12px;">Score</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 20px; font-weight: 700; color: #dc3545;">${scan.critical_count || 0}</div>
-                                    <div style="color: #888; font-size: 12px;">Critical</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 20px; font-weight: 700; color: #3b82f6;">${scan.total_findings || 0}</div>
-                                    <div style="color: #888; font-size: 12px;">Total</div>
-                                </div>
-                                <button onclick="viewScanDetails('${scan.scan_id}')" style="
-                                    background: rgba(255,215,0,0.2);
-                                    border: 1px solid #ffd700;
-                                    color: #ffd700;
-                                    padding: 8px 16px;
-                                    border-radius: 6px;
-                                    cursor: pointer;
-                                    font-size: 13px;
-                                ">View</button>
-                            </div>
-                        `;
-                    }).join('')}
-
-                    <div style="margin-top: 20px; padding: 16px; background: rgba(${trendColor === '#22c55e' ? '34,197,94' : trendColor === '#dc3545' ? '220,53,69' : '136,136,136'},0.1); border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; margin-bottom: 8px;">${trendIcon}</div>
-                        <div style="color: ${trendColor}; font-weight: 600; font-size: 16px;">${trendText}</div>
-                        <div style="color: #aaa; font-size: 13px; margin-top: 4px;">
-                            ${history.length >= 2 ? `Fixed ${Math.abs((history[0].critical_count || 0) - (history[1].critical_count || 0))} critical issues in last scan` : 'Run more scans to track progress'}
-                        </div>
-                    </div>
-
-                    ${history.length > 5 ? `
-                        <div style="margin-top: 16px; text-align: center;">
-                            <button onclick="viewFullHistory()" style="
-                                background: none;
-                                border: 1px solid rgba(255,215,0,0.5);
-                                color: #ffd700;
-                                padding: 10px 20px;
-                                border-radius: 6px;
-                                cursor: pointer;
-                            ">View Full History (${history.length} scans)</button>
-                        </div>
-                    ` : ''}
-                `;
-
-            } catch (error) {
-                console.error('[GHOST] Error loading scan history:', error);
-                container.innerHTML = '<p style="color: #dc3545; text-align: center;">Error loading scan history</p>';
-            }
-        }
-
-        function viewScanDetails(scanId) {
-            // Navigate to scan details
-            window.location.href = `ghost-asm.html?scan_id=${scanId}`;
-        }
-
-        function viewFullHistory() {
-            alert('Full history view coming soon!');
-        }
-
-        // ========================================================================
-        // Next Scan Date Calculation
-        // ========================================================================
-
-        async function calculateNextScanDate() {
-            try {
-                const response = await fetch(`${API_URL}/api/ghost/scan-history`);
-                const history = await response.json();
-
-                if (history && history.length > 0) {
-                    const lastScan = new Date(history[0].scan_date);
-                    const nextScan = new Date(lastScan);
-                    nextScan.setDate(nextScan.getDate() + 7);
-
-                    const today = new Date();
-                    const daysUntil = Math.ceil((nextScan - today) / (1000 * 60 * 60 * 24));
-
-                    if (daysUntil <= 0) {
-                        document.getElementById('next-scan-date').textContent = 'Overdue - Scan Now!';
-                        document.getElementById('next-scan-date').style.color = '#dc3545';
-                    } else {
-                        document.getElementById('next-scan-date').textContent = nextScan.toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                        }) + ` (in ${daysUntil} days)`;
-                    }
-                } else {
-                    document.getElementById('next-scan-date').textContent = 'Run your first scan!';
-                }
-            } catch (error) {
-                console.error('[GHOST] Error calculating next scan date:', error);
-            }
-        }
-
-        // ========================================================================
-        // Curated News Feed
-        // ========================================================================
-
-        // Curated RSS feeds (controlled by platform, not users)
-        const CURATED_FEEDS = [
-            'https://krebsonsecurity.com/feed/',
-            'https://www.bleepingcomputer.com/feed/',
-            'https://www.darkreading.com/rss.xml',
-            'https://threatpost.com/feed/',
-            'https://www.cisa.gov/cybersecurity-advisories/all.xml'
-        ];
-
-        async function loadCuratedNews() {
-            const container = document.getElementById('curated-news-feed');
-
-            try {
-                const response = await fetch(`${API_URL}/api/rss/fetch`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({feeds: CURATED_FEEDS})
-                });
-
-                const data = await response.json();
-
-                if (data.articles && data.articles.length > 0) {
-                    container.innerHTML = data.articles.slice(0, 12).map(article => `
-                        <div style="
-                            background: rgba(0,0,0,0.3);
-                            border: 1px solid rgba(255,215,0,0.2);
-                            border-radius: 12px;
-                            padding: 20px;
-                            transition: all 0.3s;
-                            cursor: pointer;
-                        " onmouseover="this.style.borderColor='#ffd700'" onmouseout="this.style.borderColor='rgba(255,215,0,0.2)'">
-                            <h4 style="color: #ffd700; margin: 0 0 12px 0; font-size: 16px; line-height: 1.4;">
-                                ${article.title}
-                            </h4>
-                            <p style="color: #aaa; font-size: 13px; margin: 0 0 12px 0; line-height: 1.6;">
-                                ${article.description || 'No description available'}
-                            </p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-                                <span style="color: #888;">${article.source}</span>
-                                <a href="${article.link}" target="_blank" style="color: #ffd700; text-decoration: none;">Read More →</a>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">No news articles available</p>';
-                }
-            } catch (error) {
-                console.error('[GHOST] Error loading curated news:', error);
-                container.innerHTML = '<p style="color: #dc3545; grid-column: 1/-1; text-align: center;">Error loading news feed</p>';
-            }
-        }
-
-        // ========================================================================
-        // Maintenance Checklist Persistence
-        // ========================================================================
-
-        // Load checkbox states from localStorage
-        function loadMaintenanceState() {
-            const checkboxes = ['rescan', 'breach-check', 'adversary-review', 'lightbox-test'];
-
-            checkboxes.forEach(id => {
-                const checkbox = document.getElementById(id);
-                if (checkbox) {
-                    const saved = localStorage.getItem(`maintenance_${id}`);
-                    if (saved === 'true') {
-                        checkbox.checked = true;
-                    }
-
-                    // Add change listener to save state
-                    checkbox.addEventListener('change', () => {
-                        localStorage.setItem(`maintenance_${id}`, checkbox.checked);
-                        console.log(`[GHOST] Maintenance task '${id}' ${checkbox.checked ? 'checked' : 'unchecked'}`);
-                    });
-                }
-            });
-        }
-
-        // Reset checkboxes weekly (every Monday)
-        function checkWeeklyReset() {
-            const lastReset = localStorage.getItem('maintenance_last_reset');
-            const today = new Date();
-            const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday
-
-            if (dayOfWeek === 1) { // Monday
-                const todayStr = today.toDateString();
-
-                if (lastReset !== todayStr) {
-                    // Reset all checkboxes
-                    ['rescan', 'breach-check', 'adversary-review', 'lightbox-test'].forEach(id => {
-                        localStorage.removeItem(`maintenance_${id}`);
-                        const checkbox = document.getElementById(id);
-                        if (checkbox) checkbox.checked = false;
-                    });
-
-                    localStorage.setItem('maintenance_last_reset', todayStr);
-                    console.log('[GHOST] Weekly maintenance checklist reset (Monday)');
-                }
-            }
-        }
-
-        // Load chart on page load
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadSecurityScoreHistory();
             loadScanHistory();
             calculateNextScanDate();
             loadCuratedNews();
-            checkWeeklyReset();
             loadMaintenanceState();
+            loadRoadmapWidget();
+            checkWeeklyReset();
         });
 
-        // Modal functions
+        // Modal
         function openInfoModal() {
             document.getElementById('infoModal').classList.add('active');
         }
 
         function closeInfoModal(event) {
-            if (!event || event.target.id === 'infoModal' || event.target.className === 'modal-close') {
+            if (!event || event.target.id === 'infoModal') {
                 document.getElementById('infoModal').classList.remove('active');
             }
         }
 
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeInfoModal();
+        // Refresh Dashboard
+        function refreshDashboard() {
+            loadSecurityScoreHistory();
+            loadScanHistory();
+            loadCuratedNews();
+            loadRoadmapWidget();
+        }
+
+        // Security Score Chart
+        async function loadSecurityScoreHistory() {
+            try {
+                const response = await fetch(`${API_URL}/api/xasm/security-score-history`);
+                const data = await response.json();
+
+                if (data.history && data.history.length > 0) {
+                    const labels = data.history.map(h => {
+                        const date = new Date(h.date);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    });
+                    const scores = data.history.map(h => h.security_score);
+
+                    renderSecurityChart(labels, scores, data);
+                    updateScoreStats(data);
+                }
+            } catch (error) {
+                console.log('[GHOST] Security score history not available');
             }
+        }
+
+        function renderSecurityChart(labels, scores, data) {
+            const ctx = document.getElementById('security-score-chart').getContext('2d');
+
+            if (securityChart) securityChart.destroy();
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, 'rgba(212, 175, 55, 0.3)');
+            gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
+
+            securityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Security Score',
+                        data: scores,
+                        borderColor: '#D4AF37',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#D4AF37',
+                        pointBorderColor: '#030305',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: '#5A5D66', font: { family: 'JetBrains Mono' } },
+                            grid: { color: 'rgba(255,255,255,0.03)' }
+                        },
+                        x: {
+                            ticks: { color: '#5A5D66', font: { family: 'JetBrains Mono' } },
+                            grid: { color: 'rgba(255,255,255,0.03)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateScoreStats(data) {
+            document.getElementById('current-score').textContent = data.current_score || '--';
+            document.getElementById('score-change').textContent = (data.score_change >= 0 ? '+' : '') + (data.score_change || 0);
+            document.getElementById('critical-count').textContent = data.critical_count || 0;
+            document.getElementById('total-findings').textContent = data.total_findings || 0;
+        }
+
+        // Scan History
+        async function loadScanHistory() {
+            const container = document.getElementById('scan-history-container');
+            try {
+                const response = await fetch(`${API_URL}/api/xasm/scan-history?limit=5`);
+                const data = await response.json();
+
+                if (data.scans && data.scans.length > 0) {
+                    container.innerHTML = data.scans.map(scan => `
+                        <div class="scan-item">
+                            <div class="scan-domain">${scan.domain}</div>
+                            <div class="scan-date">${new Date(scan.scan_date).toLocaleDateString()}</div>
+                            <div class="scan-findings">${scan.findings_count || 0} findings</div>
+                            <button class="scan-action" onclick="viewScanDetails(${scan.id})">View</button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="loading-text">No scans yet. Run your first XASM scan!</p>';
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="loading-text">Unable to load scan history</p>';
+            }
+        }
+
+        function viewScanDetails(scanId) {
+            window.location.href = `ghost-asm.html?scan=${scanId}`;
+        }
+
+        // Roadmap Widget
+        async function loadRoadmapWidget() {
+            try {
+                const response = await fetch(`${API_URL}/api/roadmap/stats`);
+                const stats = await response.json();
+
+                const score = stats.security_score || 0;
+                const target = stats.target_score || 85;
+
+                document.getElementById('roadmap-score').textContent = score;
+                document.getElementById('roadmap-target').textContent = target;
+
+                // Animate ring (circumference = 2 * PI * 65 = 408)
+                const ring = document.getElementById('roadmap-score-ring');
+                if (ring) {
+                    const offset = 408 - (408 * score / 100);
+                    setTimeout(() => ring.style.strokeDashoffset = offset, 100);
+                }
+
+                // Progress bar
+                const progressBar = document.getElementById('roadmap-progress-bar');
+                if (progressBar) {
+                    const progress = Math.min((score / target) * 100, 100);
+                    setTimeout(() => progressBar.style.width = `${progress}%`, 100);
+                }
+
+                // Stats
+                const completed = stats.tasks_completed || 0;
+                const inProgress = stats.tasks_in_progress || 0;
+                const total = stats.tasks_total || 0;
+
+                document.getElementById('roadmap-completed').textContent = completed;
+                document.getElementById('roadmap-in-progress').textContent = inProgress;
+                document.getElementById('roadmap-remaining').textContent = total - completed - inProgress;
+
+                // Quick win
+                if (stats.next_quick_win) {
+                    document.getElementById('roadmap-quick-win').style.display = 'flex';
+                    document.getElementById('roadmap-quick-win-title').textContent = stats.next_quick_win.task_name;
+                    document.getElementById('roadmap-quick-win-points').textContent = `+${stats.next_quick_win.score_impact || 5}`;
+                }
+            } catch (error) {
+                console.log('[GHOST] Roadmap data not available');
+            }
+        }
+
+        // Next Scan Date
+        function calculateNextScanDate() {
+            const lastScan = localStorage.getItem('last_xasm_scan');
+            const nextDate = new Date();
+
+            if (lastScan) {
+                const last = new Date(lastScan);
+                nextDate.setTime(last.getTime() + 7 * 24 * 60 * 60 * 1000);
+            } else {
+                nextDate.setDate(nextDate.getDate() + 7);
+            }
+
+            document.getElementById('next-scan-date').textContent = nextDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Maintenance Checklist
+        function toggleChecklist(item, id) {
+            item.classList.toggle('checked');
+            saveMaintenanceState();
+        }
+
+        function saveMaintenanceState() {
+            const items = document.querySelectorAll('.checklist-item');
+            const state = {};
+            items.forEach((item, i) => {
+                state[`item_${i}`] = item.classList.contains('checked');
+            });
+            localStorage.setItem('ghost_maintenance_state', JSON.stringify(state));
+        }
+
+        function loadMaintenanceState() {
+            const state = JSON.parse(localStorage.getItem('ghost_maintenance_state') || '{}');
+            const items = document.querySelectorAll('.checklist-item');
+            items.forEach((item, i) => {
+                if (state[`item_${i}`]) {
+                    item.classList.add('checked');
+                }
+            });
+        }
+
+        function checkWeeklyReset() {
+            const lastReset = localStorage.getItem('maintenance_last_reset');
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+
+            if (dayOfWeek === 1) { // Monday
+                const todayStr = today.toDateString();
+                if (lastReset !== todayStr) {
+                    localStorage.removeItem('ghost_maintenance_state');
+                    document.querySelectorAll('.checklist-item').forEach(item => {
+                        item.classList.remove('checked');
+                    });
+                    localStorage.setItem('maintenance_last_reset', todayStr);
+                }
+            }
+        }
+
+        // Curated News
+        async function loadCuratedNews() {
+            const container = document.getElementById('curated-news-feed');
+            try {
+                const response = await fetch(`${API_URL}/api/cti/feed`);
+                const data = await response.json();
+
+                if (data.articles && data.articles.length > 0) {
+                    container.innerHTML = data.articles.slice(0, 6).map(article => `
+                        <div class="news-card">
+                            <div class="news-source">${article.source || 'Security News'}</div>
+                            <h4 class="news-title">${article.title}</h4>
+                            <p class="news-desc">${article.summary || article.description || ''}</p>
+                            <a href="${article.link}" target="_blank" class="news-link">Read More &#8594;</a>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="loading-text">No news available</p>';
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="loading-text">Unable to load news feed</p>';
+            }
+        }
+
+        // Export Report
+        function exportSecurityReport() {
+            alert('Export functionality coming soon!');
+        }
+
+        // Schedule Scan
+        function scheduleNextScan() {
+            window.location.href = 'ghost-asm.html';
+        }
+
+        // Close modal on Escape
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeInfoModal();
         });
     </script>
 </body>

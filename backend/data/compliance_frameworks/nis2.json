@@ -1,0 +1,310 @@
+{
+  "standard": "Network and Information Systems Directive 2 (NIS2)",
+  "directive": "Directive (EU) 2022/2555",
+  "version": "2022",
+  "effectiveDate": "2024-10-17",
+  "transpositionDeadline": "2024-10-17",
+  "jurisdiction": "European Union",
+  "officialSource": "https://eur-lex.europa.eu/eli/dir/2022/2555/oj",
+  "domains": [
+    {
+      "title": "Chapter I - General Provisions",
+      "articles": [
+        {
+          "ref": "Article 1",
+          "title": "Subject matter and scope",
+          "summary": "This Directive lays down measures to achieve high common level of cybersecurity across the Union.",
+          "requirements": [
+            "Apply to essential and important entities",
+            "Apply to public administration entities",
+            "Cover cybersecurity risk management and reporting obligations"
+          ]
+        },
+        {
+          "ref": "Article 2",
+          "title": "Scope",
+          "summary": "This Directive applies to public and private entities of a type listed in Annex I or II.",
+          "requirements": [
+            "Apply to essential entities (Annex I)",
+            "Apply to important entities (Annex II)",
+            "Member States may include additional sectors"
+          ]
+        },
+        {
+          "ref": "Article 3",
+          "title": "Sectors and entities",
+          "summary": "Essential entities include: energy, transport, banking, financial market infrastructures, health, drinking water, waste water, digital infrastructure, ICT service management, public administration, space.",
+          "requirements": [
+            "Identify entities in Annex I sectors (essential)",
+            "Identify entities in Annex II sectors (important)"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter II - National Cybersecurity Strategies",
+      "articles": [
+        {
+          "ref": "Article 7",
+          "title": "National cybersecurity strategies",
+          "summary": "Member States shall adopt national cybersecurity strategy defining strategic objectives, governance framework, and measures.",
+          "requirements": [
+            "Define strategic objectives and priorities",
+            "Establish governance framework",
+            "Identify measures relating to preparedness, response and recovery",
+            "Promote cybersecurity culture and cyber hygiene",
+            "Address security of supply chains",
+            "Foster coordinated vulnerability disclosure",
+            "Review strategy at least every five years"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter III - Governance Framework",
+      "articles": [
+        {
+          "ref": "Article 8",
+          "title": "National competent authorities",
+          "summary": "Member States shall designate one or more national competent authorities on NIS.",
+          "requirements": [
+            "Designate at least one competent authority",
+            "Notify Commission of designated authorities",
+            "Ensure authorities have adequate resources and expertise"
+          ]
+        },
+        {
+          "ref": "Article 10",
+          "title": "Computer Security Incident Response Teams (CSIRTs)",
+          "summary": "Member States shall designate one or more CSIRTs.",
+          "requirements": [
+            "Designate at least one CSIRT",
+            "Ensure CSIRT has adequate resources, premises, infrastructure",
+            "Ensure CSIRT operates under clear legal mandate",
+            "CSIRT tasks: monitor incidents, issue early warnings, respond to incidents, participate in CSIRT network"
+          ],
+          "isCore": true
+        }
+      ]
+    },
+    {
+      "title": "Chapter IV - Cybersecurity Risk Management and Reporting Obligations",
+      "articles": [
+        {
+          "ref": "Article 21",
+          "title": "Cybersecurity risk-management measures",
+          "summary": "Essential and important entities shall take appropriate and proportionate technical, operational and organisational measures to manage cybersecurity risks.",
+          "requirements": [
+            "Implement policies on risk analysis and information system security",
+            "Implement incident handling procedures",
+            "Implement business continuity and crisis management",
+            "Implement supply chain security (including security-related aspects of supplier relationships)",
+            "Implement security in network and information systems acquisition, development and maintenance",
+            "Implement policies and procedures to assess effectiveness of cybersecurity risk-management measures",
+            "Implement basic cyber hygiene practices and cybersecurity training",
+            "Implement policies and procedures regarding use of cryptography and encryption",
+            "Implement human resources security, access control policies and asset management",
+            "Implement multi-factor authentication or continuous authentication, secured voice, video and text communications, and secured emergency communication systems"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 23",
+          "title": "Reporting obligations",
+          "summary": "Essential and important entities shall notify CSIRT or competent authority of significant incidents without undue delay and within 24 hours of becoming aware.",
+          "requirements": [
+            "Early warning notification: within 24 hours of becoming aware (if applicable)",
+            "Incident notification: within 72 hours, including initial assessment (severity, impact, indicators of compromise)",
+            "Intermediate report: upon request, to update initial notification",
+            "Final report: within one month of incident notification, including detailed description, severity, impact, type of threat, applied and ongoing mitigation measures, cross-border impact",
+            "Report significant incidents affecting network and information systems",
+            "No reporting required if incident below significance threshold set by Member State"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 24",
+          "title": "Use of European vulnerability databases",
+          "summary": "Member States and entities may use European vulnerability databases established at Union level.",
+          "requirements": [
+            "Encourage use of EU vulnerability databases",
+            "Contribute vulnerability information where appropriate"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter V - Information Sharing",
+      "articles": [
+        {
+          "ref": "Article 25",
+          "title": "Coordinated vulnerability disclosure",
+          "summary": "Member States shall establish coordinated vulnerability disclosure policies and ensure publication.",
+          "requirements": [
+            "Establish vulnerability disclosure policy",
+            "Publish disclosure policy",
+            "Ensure policy addresses how vulnerabilities can be reported",
+            "Ensure timely remediation of reported vulnerabilities"
+          ]
+        },
+        {
+          "ref": "Article 26",
+          "title": "Responsible disclosure of vulnerabilities",
+          "summary": "Member States shall ensure that natural and legal persons can report vulnerabilities to manufacturer without facing legal consequences.",
+          "requirements": [
+            "Protect security researchers who report vulnerabilities in good faith",
+            "Ensure no legal liability for good faith vulnerability disclosure"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter VI - Jurisdiction, Penalties and Enforcement",
+      "articles": [
+        {
+          "ref": "Article 31",
+          "title": "Jurisdiction",
+          "summary": "Member States shall ensure that essential and important entities providing services in the Union are subject to jurisdiction.",
+          "requirements": [
+            "Establish jurisdiction over entities established in Member State",
+            "Establish jurisdiction over entities offering services in Member State",
+            "Designate representative for entities not established in EU"
+          ]
+        },
+        {
+          "ref": "Article 32",
+          "title": "Ex-post supervision by competent authorities",
+          "summary": "Competent authorities shall conduct ex-post supervision including on-site inspections and off-site supervision.",
+          "requirements": [
+            "Conduct regular on-site inspections",
+            "Conduct off-site supervision activities",
+            "Request information and documentation",
+            "Require entities to undergo security audits",
+            "Issue binding instructions"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 34",
+          "title": "Administrative penalties",
+          "summary": "Member States shall lay down rules on penalties for infringements, including administrative fines.",
+          "requirements": [
+            "Essential entities - maximum fines: at least €10,000,000 or 2% of total worldwide annual turnover (whichever higher)",
+            "Important entities - maximum fines: at least €7,000,000 or 1.4% of total worldwide annual turnover (whichever higher)",
+            "Consider: nature, gravity, duration of infringement, intentional or negligent character, actions to mitigate damage, degree of cooperation",
+            "Ensure penalties are effective, proportionate and dissuasive"
+          ],
+          "isCore": true
+        },
+        {
+          "ref": "Article 35",
+          "title": "Penalties for infringement by management",
+          "summary": "Member States shall ensure management body may be held liable for infringements.",
+          "requirements": [
+            "Hold management body liable for breaching obligations",
+            "Temporarily ban management from performing duties in case of serious infringement"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter VII - Union Cooperation",
+      "articles": [
+        {
+          "ref": "Article 14",
+          "title": "Cooperation Group",
+          "summary": "Cooperation Group composed of representatives of Member States, Commission and ENISA to support and facilitate strategic cooperation and exchange of information.",
+          "requirements": [
+            "Participate in Cooperation Group",
+            "Exchange information on implementation of Directive",
+            "Share best practices on cybersecurity"
+          ]
+        },
+        {
+          "ref": "Article 15",
+          "title": "CSIRTs network",
+          "summary": "CSIRTs network to contribute to development of confidence and trust, ensure effective cooperation, support rapid and effective operational cooperation.",
+          "requirements": [
+            "Participate in CSIRTs network",
+            "Exchange information on incidents",
+            "Share situational awareness information",
+            "Coordinate responses to cross-border incidents"
+          ]
+        },
+        {
+          "ref": "Article 16",
+          "title": "European cyber crises liaison organisation network (EU-CyCLONe)",
+          "summary": "EU-CyCLONe to support coordinated management of large-scale cybersecurity incidents and crises.",
+          "requirements": [
+            "Participate in EU-CyCLONe",
+            "Share information during large-scale incidents",
+            "Coordinate crisis response at Union level"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chapter VIII - Security Requirements for Supply Chain",
+      "articles": [
+        {
+          "ref": "Article 21.2(d)",
+          "title": "Supply chain security",
+          "summary": "Entities shall address security in supply chain including security-related aspects of relationships with suppliers and service providers.",
+          "requirements": [
+            "Assess cybersecurity risks in supply chain",
+            "Include cybersecurity requirements in supplier contracts",
+            "Monitor supplier compliance with cybersecurity requirements",
+            "Address vulnerabilities in supply chain",
+            "Ensure supplier incident reporting obligations",
+            "Implement measures to ensure continuity of service delivery"
+          ],
+          "isCore": true
+        }
+      ]
+    },
+    {
+      "title": "Chapter IX - Information and Experience Sharing",
+      "articles": [
+        {
+          "ref": "Article 26",
+          "title": "Information sharing arrangements",
+          "summary": "Member States shall encourage essential and important entities to voluntarily notify relevant information sharing and analysis centres.",
+          "requirements": [
+            "Encourage voluntary participation in information sharing",
+            "Facilitate sharing of technical details about cybersecurity threats and incidents",
+            "Protect confidentiality of shared information"
+          ]
+        }
+      ]
+    }
+  ],
+  "annexes": {
+    "annexI": {
+      "title": "Essential Entities",
+      "sectors": [
+        "Energy (electricity, district heating and cooling, oil, gas, hydrogen)",
+        "Transport (air, rail, water, road)",
+        "Banking",
+        "Financial market infrastructures",
+        "Health sector (healthcare providers, EU reference laboratories, entities manufacturing medical devices/in vitro diagnostic medical devices, pharmaceutical manufacturers, entities researching and developing pharmaceuticals)",
+        "Drinking water",
+        "Waste water",
+        "Digital infrastructure (internet exchange points, DNS service providers, TLD name registries, cloud computing service providers, data centre service providers, content delivery networks, trust service providers, public electronic communications networks, publicly available electronic communications services)",
+        "ICT service management (managed service providers, managed security service providers)",
+        "Public administration (central government, regional/local authorities)",
+        "Space (ground-based infrastructure operated by space sector entities)"
+      ]
+    },
+    "annexII": {
+      "title": "Important Entities",
+      "sectors": [
+        "Postal and courier services",
+        "Waste management",
+        "Manufacture, production and distribution of chemicals",
+        "Food production, processing and distribution",
+        "Manufacturing (medical devices, in vitro diagnostic medical devices, computer and electronics, machinery and equipment, motor vehicles and transport equipment, other manufacturing)",
+        "Digital providers (online marketplaces, online search engines, social networking service platforms)"
+      ]
+    }
+  }
+}

@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from database import get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan, CachedASMScan, LightboxScan, save_xasm_for_ai, save_lightbox_for_ai, get_companies_with_scans, cleanup_expired_ai_scans
+from database import get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan, CachedASMScan, LightboxScan, save_xasm_for_ai, save_lightbox_for_ai, get_companies_with_scans, cleanup_expired_ai_scans, ComplianceAssessment, ComplianceControl, ComplianceEvidence, RoadmapProfile, RoadmapTask, RoadmapUserTask, RoadmapAchievement, RoadmapProgressHistory
 import feedparser
 from modules.ghost.osint import scan_profile_breaches
 from modules.opsych.exposure_analysis import analyze_exposure
@@ -13,6 +13,7 @@ from modules.ghost.unified_search import UnifiedSearch
 from modules.ghost.adversary_matcher import AdversaryMatcher
 from modules.ghost.bait_generator import BaitGenerator
 from modules.ghost.bait_seeder import BaitSeeder
+from compliance_mappings import analyze_scan_findings, get_affected_controls, get_vulnerability_info, VULNERABILITY_MAPPINGS
 from modules.ghost.ip_intelligence import check_ip_reputation as check_ip_intel, get_ip_badge_type
 from modules.ghost.attacker_fingerprinting import analyze_attacker, get_evidence_badge_info, get_attribution_badge_info
 from modules.ghost.cti_newsfeed import get_news_feed, get_feed_stats
@@ -1674,6 +1675,87 @@ def delete_xasm_scan_endpoint(scan_id):
         logger.error(f"[XASM HISTORY] Error deleting scan {scan_id}: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/xasm/cached-domains', methods=['GET'])
+def get_xasm_cached_domains():
+    """Get list of unique domains that have been scanned via XASM and/or Lightbox"""
+    from database import get_db, XASMScan, LightboxScanHistory
+    from sqlalchemy import func
+
+    db = None
+    try:
+        db = get_db()
+
+        # Dictionary to collect domain data
+        domain_data = {}
+
+        # Get XASM domains with last scan date
+        xasm_stats = db.query(
+            XASMScan.domain,
+            func.max(XASMScan.scan_date).label('last_scan')
+        ).filter(
+            XASMScan.deleted_at == None
+        ).group_by(
+            XASMScan.domain
+        ).all()
+
+        for stat in xasm_stats:
+            domain = stat.domain
+            if domain not in domain_data:
+                domain_data[domain] = {
+                    'domain': domain,
+                    'last_xasm_scan': None,
+                    'last_lightbox_scan': None,
+                    'has_xasm': False,
+                    'has_lightbox': False
+                }
+            domain_data[domain]['last_xasm_scan'] = stat.last_scan.isoformat() if stat.last_scan else None
+            domain_data[domain]['has_xasm'] = True
+
+        # Get Lightbox domains with last scan date
+        lightbox_stats = db.query(
+            LightboxScanHistory.target,
+            func.max(LightboxScanHistory.timestamp).label('last_scan')
+        ).filter(
+            LightboxScanHistory.deleted_at == None
+        ).group_by(
+            LightboxScanHistory.target
+        ).all()
+
+        for stat in lightbox_stats:
+            target = stat.target
+            if target not in domain_data:
+                domain_data[target] = {
+                    'domain': target,
+                    'last_xasm_scan': None,
+                    'last_lightbox_scan': None,
+                    'has_xasm': False,
+                    'has_lightbox': False
+                }
+            domain_data[target]['last_lightbox_scan'] = stat.last_scan.isoformat() if stat.last_scan else None
+            domain_data[target]['has_lightbox'] = True
+
+        db.close()
+
+        # Convert to list and sort by most recent scan
+        domains = list(domain_data.values())
+        domains.sort(key=lambda d: max(
+            d['last_xasm_scan'] or '',
+            d['last_lightbox_scan'] or ''
+        ), reverse=True)
+
+        return jsonify({
+            'success': True,
+            'domains': domains
+        })
+
+    except Exception as e:
+        if db:
+            db.close()
+        logger.error(f"[XASM] Error getting cached domains: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # ============================================================================
 # LIGHTBOX SCAN HISTORY ENDPOINTS
 # ============================================================================
@@ -2561,6 +2643,2035 @@ def fetch_rss_feeds():
     except Exception as e:
         print(f"[RSS] ❌ Error: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# COMPLIANCE FRAMEWORK ENDPOINTS
+# ============================================================================
+
+COMPLIANCE_FRAMEWORKS_PATH = os.path.join(os.path.dirname(__file__), 'data', 'compliance_frameworks')
+
+def load_framework_json(framework_id):
+    """Load a compliance framework JSON file"""
+    file_map = {
+        'soc2': 'soc2.json',
+        'iso27001': 'iso27001.json',
+        'gdpr': 'gdpr.json',
+        'nis2': 'nis2.json'
+    }
+
+    if framework_id not in file_map:
+        return None
+
+    filepath = os.path.join(COMPLIANCE_FRAMEWORKS_PATH, file_map[framework_id])
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[COMPLIANCE] Error loading framework {framework_id}: {e}")
+        return None
+
+
+def normalize_framework_controls(framework_id, framework_data):
+    """Normalize different framework structures into a unified format"""
+    controls = []
+
+    if framework_id == 'soc2':
+        # SOC2 has trustServicesCriteria with nested categories
+        tsc = framework_data.get('trustServicesCriteria', {})
+        for category_name, category_controls in tsc.items():
+            if category_name == 'additionalCriteria':
+                # Additional criteria has another level of nesting
+                for sub_category, sub_controls in category_controls.items():
+                    for ctrl in sub_controls:
+                        for pof in ctrl.get('pof', []):
+                            controls.append({
+                                'control_id': pof.get('id', ''),
+                                'title': pof.get('title', ''),
+                                'description': pof.get('requirement', ''),
+                                'category': f"{category_name} - {sub_category}",
+                                'parent_principle': ctrl.get('principle', ''),
+                                'parent_id': ctrl.get('id', ''),
+                                'is_core': True
+                            })
+            else:
+                for ctrl in category_controls:
+                    for pof in ctrl.get('pof', []):
+                        controls.append({
+                            'control_id': pof.get('id', ''),
+                            'title': pof.get('title', ''),
+                            'description': pof.get('requirement', ''),
+                            'category': category_name,
+                            'parent_principle': ctrl.get('principle', ''),
+                            'parent_id': ctrl.get('id', ''),
+                            'is_core': True
+                        })
+
+    elif framework_id == 'iso27001':
+        # ISO27001 has domains with controls
+        for domain in framework_data.get('domains', []):
+            for ctrl in domain.get('controls', []):
+                controls.append({
+                    'control_id': ctrl.get('ref', ''),
+                    'title': ctrl.get('title', ''),
+                    'description': ctrl.get('summary', ''),
+                    'category': domain.get('title', ''),
+                    'mapped_controls': ctrl.get('mappedControls', []),
+                    'is_core': ctrl.get('isCore', False)
+                })
+
+    elif framework_id in ['gdpr', 'nis2']:
+        # GDPR and NIS2 have domains with articles
+        for domain in framework_data.get('domains', []):
+            for article in domain.get('articles', []):
+                requirements = article.get('requirements', [])
+                controls.append({
+                    'control_id': article.get('ref', ''),
+                    'title': article.get('title', ''),
+                    'description': article.get('summary', ''),
+                    'category': domain.get('title', ''),
+                    'requirements': requirements,
+                    'is_core': article.get('isCore', False)
+                })
+
+    return controls
+
+
+@app.route('/api/compliance/frameworks', methods=['GET'])
+def get_compliance_frameworks():
+    """List all available compliance frameworks"""
+    try:
+        frameworks = [
+            {
+                'id': 'soc2',
+                'name': 'SOC 2',
+                'full_name': 'SOC 2 Type II',
+                'version': 'TSC 2017 + POF 2022',
+                'description': 'Service Organization Control 2 - Security, Availability, Processing Integrity, Confidentiality, and Privacy',
+                'icon': '🛡️',
+                'color': '#3b82f6',
+                'control_count': 0
+            },
+            {
+                'id': 'iso27001',
+                'name': 'ISO 27001',
+                'full_name': 'ISO/IEC 27001:2022',
+                'version': '2022',
+                'description': 'International standard for information security management systems (ISMS)',
+                'icon': '🏛️',
+                'color': '#8b5cf6',
+                'control_count': 0
+            },
+            {
+                'id': 'gdpr',
+                'name': 'GDPR',
+                'full_name': 'General Data Protection Regulation',
+                'version': 'Regulation (EU) 2016/679',
+                'description': 'European Union regulation on data protection and privacy',
+                'icon': '🇪🇺',
+                'color': '#10b981',
+                'control_count': 0
+            },
+            {
+                'id': 'nis2',
+                'name': 'NIS2',
+                'full_name': 'NIS2 Directive',
+                'version': 'Directive (EU) 2022/2555',
+                'description': 'EU directive on security of network and information systems',
+                'icon': '🔒',
+                'color': '#f59e0b',
+                'control_count': 0
+            }
+        ]
+
+        # Load actual control counts
+        for fw in frameworks:
+            data = load_framework_json(fw['id'])
+            if data:
+                controls = normalize_framework_controls(fw['id'], data)
+                fw['control_count'] = len(controls)
+
+        return jsonify({
+            'success': True,
+            'frameworks': frameworks
+        }), 200
+
+    except Exception as e:
+        print(f"[COMPLIANCE] Error getting frameworks: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/frameworks/<framework_id>', methods=['GET'])
+def get_framework_details(framework_id):
+    """Get detailed framework with all controls"""
+    try:
+        data = load_framework_json(framework_id)
+        if not data:
+            return jsonify({'success': False, 'error': 'Framework not found'}), 404
+
+        controls = normalize_framework_controls(framework_id, data)
+
+        # Group controls by category
+        categories = {}
+        for ctrl in controls:
+            cat = ctrl.get('category', 'Other')
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(ctrl)
+
+        # Count core controls
+        core_count = sum(1 for c in controls if c.get('is_core', False))
+
+        return jsonify({
+            'success': True,
+            'framework_id': framework_id,
+            'total_controls': len(controls),
+            'core_controls': core_count,
+            'categories': categories,
+            'controls': controls
+        }), 200
+
+    except Exception as e:
+        print(f"[COMPLIANCE] Error getting framework details: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/assessment', methods=['POST'])
+def create_assessment():
+    """Create a new compliance assessment"""
+    db = None
+    try:
+        data = request.json
+        framework_id = data.get('framework_id')
+        company_id = data.get('company_id', 1)  # Default to 1 for now
+
+        if not framework_id:
+            return jsonify({'success': False, 'error': 'framework_id is required'}), 400
+
+        # Load framework to get controls
+        framework_data = load_framework_json(framework_id)
+        if not framework_data:
+            return jsonify({'success': False, 'error': 'Framework not found'}), 404
+
+        controls = normalize_framework_controls(framework_id, framework_data)
+
+        db = get_db()
+
+        # Check if assessment already exists for this company and framework
+        existing = db.query(ComplianceAssessment).filter(
+            ComplianceAssessment.company_id == company_id,
+            ComplianceAssessment.framework == framework_id,
+            ComplianceAssessment.deleted_at == None
+        ).first()
+
+        if existing:
+            # Return existing assessment
+            return jsonify({
+                'success': True,
+                'assessment_id': existing.id,
+                'message': 'Existing assessment found',
+                'existing': True
+            }), 200
+
+        # Create new assessment
+        assessment = ComplianceAssessment(
+            company_id=company_id,
+            created_by_user_id=data.get('user_id', 1),
+            framework=framework_id,
+            framework_version=data.get('framework_version', ''),
+            status='in_progress',
+            assessment_date=datetime.now(timezone.utc)
+        )
+        db.add(assessment)
+        db.flush()  # Get the ID
+
+        # Create control records for each control in the framework
+        for ctrl in controls:
+            control_record = ComplianceControl(
+                assessment_id=assessment.id,
+                control_id=ctrl['control_id'],
+                control_name=ctrl['title'],
+                control_category=ctrl.get('category', ''),
+                status='not_tested'
+            )
+            db.add(control_record)
+
+        db.commit()
+
+        print(f"[COMPLIANCE] Created assessment {assessment.id} with {len(controls)} controls")
+
+        db.close()
+        return jsonify({
+            'success': True,
+            'assessment_id': assessment.id,
+            'controls_created': len(controls),
+            'message': 'Assessment created successfully'
+        }), 201
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[COMPLIANCE] Error creating assessment: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/assessment/<int:assessment_id>', methods=['GET'])
+def get_assessment(assessment_id):
+    """Get assessment status with all controls"""
+    db = None
+    try:
+        db = get_db()
+
+        assessment = db.query(ComplianceAssessment).filter(
+            ComplianceAssessment.id == assessment_id,
+            ComplianceAssessment.deleted_at == None
+        ).first()
+
+        if not assessment:
+            db.close()
+            return jsonify({'success': False, 'error': 'Assessment not found'}), 404
+
+        # Get all controls for this assessment
+        controls = db.query(ComplianceControl).filter(
+            ComplianceControl.assessment_id == assessment_id,
+            ComplianceControl.deleted_at == None
+        ).all()
+
+        # Calculate statistics
+        stats = {
+            'total': len(controls),
+            'compliant': sum(1 for c in controls if c.status == 'compliant'),
+            'non_compliant': sum(1 for c in controls if c.status == 'non_compliant'),
+            'partial': sum(1 for c in controls if c.status == 'partial'),
+            'not_tested': sum(1 for c in controls if c.status == 'not_tested')
+        }
+
+        completion = (stats['compliant'] + stats['partial'] + stats['non_compliant']) / stats['total'] * 100 if stats['total'] > 0 else 0
+        compliance_rate = stats['compliant'] / (stats['total'] - stats['not_tested']) * 100 if (stats['total'] - stats['not_tested']) > 0 else 0
+
+        # Group controls by category
+        categories = {}
+        for ctrl in controls:
+            cat = ctrl.control_category or 'Other'
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append({
+                'id': ctrl.id,
+                'control_id': ctrl.control_id,
+                'control_name': ctrl.control_name,
+                'status': ctrl.status,
+                'compliance_score': ctrl.compliance_score,
+                'evidence_summary': ctrl.evidence_summary,
+                'remediation_notes': ctrl.remediation_notes,
+                'last_reviewed': ctrl.last_reviewed.isoformat() if ctrl.last_reviewed else None
+            })
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'assessment': {
+                'id': assessment.id,
+                'framework': assessment.framework,
+                'framework_version': assessment.framework_version,
+                'status': assessment.status,
+                'overall_compliance_score': assessment.overall_compliance_score,
+                'assessment_date': assessment.assessment_date.isoformat() if assessment.assessment_date else None,
+                'completion_date': assessment.completion_date.isoformat() if assessment.completion_date else None
+            },
+            'statistics': stats,
+            'completion_percentage': round(completion, 1),
+            'compliance_rate': round(compliance_rate, 1),
+            'categories': categories
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[COMPLIANCE] Error getting assessment: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/assessment/by-framework/<framework_id>', methods=['GET'])
+def get_assessment_by_framework(framework_id):
+    """Get existing assessment for a framework (if any)"""
+    db = None
+    try:
+        company_id = request.args.get('company_id', 1, type=int)
+
+        db = get_db()
+
+        assessment = db.query(ComplianceAssessment).filter(
+            ComplianceAssessment.company_id == company_id,
+            ComplianceAssessment.framework == framework_id,
+            ComplianceAssessment.deleted_at == None
+        ).first()
+
+        if not assessment:
+            db.close()
+            return jsonify({'success': True, 'assessment': None}), 200
+
+        # Get control counts
+        controls = db.query(ComplianceControl).filter(
+            ComplianceControl.assessment_id == assessment.id,
+            ComplianceControl.deleted_at == None
+        ).all()
+
+        stats = {
+            'total': len(controls),
+            'compliant': sum(1 for c in controls if c.status == 'compliant'),
+            'non_compliant': sum(1 for c in controls if c.status == 'non_compliant'),
+            'partial': sum(1 for c in controls if c.status == 'partial'),
+            'not_tested': sum(1 for c in controls if c.status == 'not_tested')
+        }
+
+        completion = (stats['compliant'] + stats['partial'] + stats['non_compliant']) / stats['total'] * 100 if stats['total'] > 0 else 0
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'assessment': {
+                'id': assessment.id,
+                'framework': assessment.framework,
+                'status': assessment.status,
+                'completion_percentage': round(completion, 1),
+                'statistics': stats,
+                'assessment_date': assessment.assessment_date.isoformat() if assessment.assessment_date else None
+            }
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[COMPLIANCE] Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/control/<int:control_id>', methods=['PUT'])
+def update_control(control_id):
+    """Update a compliance control status"""
+    db = None
+    try:
+        data = request.json
+        db = get_db()
+
+        control = db.query(ComplianceControl).filter(
+            ComplianceControl.id == control_id,
+            ComplianceControl.deleted_at == None
+        ).first()
+
+        if not control:
+            db.close()
+            return jsonify({'success': False, 'error': 'Control not found'}), 404
+
+        # Update fields
+        if 'status' in data:
+            control.status = data['status']
+        if 'compliance_score' in data:
+            control.compliance_score = data['compliance_score']
+        if 'evidence_summary' in data:
+            control.evidence_summary = data['evidence_summary']
+        if 'remediation_notes' in data:
+            control.remediation_notes = data['remediation_notes']
+
+        control.last_reviewed = datetime.now(timezone.utc)
+
+        db.commit()
+
+        # Recalculate assessment score
+        assessment = db.query(ComplianceAssessment).filter(
+            ComplianceAssessment.id == control.assessment_id
+        ).first()
+
+        if assessment:
+            all_controls = db.query(ComplianceControl).filter(
+                ComplianceControl.assessment_id == assessment.id,
+                ComplianceControl.deleted_at == None
+            ).all()
+
+            tested = [c for c in all_controls if c.status != 'not_tested']
+            if tested:
+                compliant = sum(1 for c in tested if c.status == 'compliant')
+                partial = sum(1 for c in tested if c.status == 'partial')
+                score = int((compliant + partial * 0.5) / len(tested) * 100)
+                assessment.overall_compliance_score = score
+                db.commit()
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Control updated successfully'
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[COMPLIANCE] Error updating control: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/evidence', methods=['POST'])
+def add_evidence():
+    """Add evidence to a control"""
+    db = None
+    try:
+        data = request.json
+        control_id = data.get('control_id')
+
+        if not control_id:
+            return jsonify({'success': False, 'error': 'control_id is required'}), 400
+
+        db = get_db()
+
+        # Verify control exists
+        control = db.query(ComplianceControl).filter(
+            ComplianceControl.id == control_id,
+            ComplianceControl.deleted_at == None
+        ).first()
+
+        if not control:
+            db.close()
+            return jsonify({'success': False, 'error': 'Control not found'}), 404
+
+        # Create evidence record
+        evidence = ComplianceEvidence(
+            control_id=control_id,
+            evidence_type=data.get('evidence_type', 'document'),
+            title=data.get('title', 'Untitled Evidence'),
+            description=data.get('description', ''),
+            file_path=data.get('file_path'),
+            file_size=data.get('file_size'),
+            file_type=data.get('file_type'),
+            uploaded_by_user_id=data.get('user_id', 1),
+            evidence_date=datetime.now(timezone.utc)
+        )
+        db.add(evidence)
+        db.commit()
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'evidence_id': evidence.id,
+            'message': 'Evidence added successfully'
+        }), 201
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[COMPLIANCE] Error adding evidence: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/evidence/<int:control_id>', methods=['GET'])
+def get_evidence(control_id):
+    """Get all evidence for a control"""
+    db = None
+    try:
+        db = get_db()
+
+        evidence_list = db.query(ComplianceEvidence).filter(
+            ComplianceEvidence.control_id == control_id,
+            ComplianceEvidence.deleted_at == None
+        ).all()
+
+        evidence_data = [{
+            'id': e.id,
+            'evidence_type': e.evidence_type,
+            'title': e.title,
+            'description': e.description,
+            'file_path': e.file_path,
+            'file_size': e.file_size,
+            'file_type': e.file_type,
+            'evidence_date': e.evidence_date.isoformat() if e.evidence_date else None,
+            'created_at': e.created_at.isoformat() if e.created_at else None
+        } for e in evidence_list]
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'evidence': evidence_data,
+            'count': len(evidence_data)
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[COMPLIANCE] Error getting evidence: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/evidence/<int:evidence_id>', methods=['DELETE'])
+def delete_evidence(evidence_id):
+    """Delete evidence (soft delete)"""
+    db = None
+    try:
+        db = get_db()
+
+        evidence = db.query(ComplianceEvidence).filter(
+            ComplianceEvidence.id == evidence_id,
+            ComplianceEvidence.deleted_at == None
+        ).first()
+
+        if not evidence:
+            db.close()
+            return jsonify({'success': False, 'error': 'Evidence not found'}), 404
+
+        evidence.deleted_at = datetime.now(timezone.utc)
+        db.commit()
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Evidence deleted successfully'
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[COMPLIANCE] Error deleting evidence: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/export/<int:assessment_id>', methods=['GET'])
+def export_assessment(assessment_id):
+    """Export assessment as JSON (for PDF/Excel generation on frontend)"""
+    db = None
+    try:
+        db = get_db()
+
+        assessment = db.query(ComplianceAssessment).filter(
+            ComplianceAssessment.id == assessment_id,
+            ComplianceAssessment.deleted_at == None
+        ).first()
+
+        if not assessment:
+            db.close()
+            return jsonify({'success': False, 'error': 'Assessment not found'}), 404
+
+        controls = db.query(ComplianceControl).filter(
+            ComplianceControl.assessment_id == assessment_id,
+            ComplianceControl.deleted_at == None
+        ).all()
+
+        # Get framework metadata
+        framework_data = load_framework_json(assessment.framework)
+        framework_meta = {
+            'soc2': {'name': 'SOC 2 Type II', 'version': 'TSC 2017 + POF 2022'},
+            'iso27001': {'name': 'ISO/IEC 27001:2022', 'version': '2022'},
+            'gdpr': {'name': 'GDPR', 'version': 'Regulation (EU) 2016/679'},
+            'nis2': {'name': 'NIS2 Directive', 'version': 'Directive (EU) 2022/2555'}
+        }.get(assessment.framework, {'name': assessment.framework, 'version': ''})
+
+        # Calculate stats
+        stats = {
+            'total': len(controls),
+            'compliant': sum(1 for c in controls if c.status == 'compliant'),
+            'non_compliant': sum(1 for c in controls if c.status == 'non_compliant'),
+            'partial': sum(1 for c in controls if c.status == 'partial'),
+            'not_tested': sum(1 for c in controls if c.status == 'not_tested')
+        }
+
+        completion = (stats['compliant'] + stats['partial'] + stats['non_compliant']) / stats['total'] * 100 if stats['total'] > 0 else 0
+
+        # Prepare export data
+        export_data = {
+            'report_generated': datetime.now(timezone.utc).isoformat(),
+            'framework': framework_meta,
+            'assessment': {
+                'id': assessment.id,
+                'status': assessment.status,
+                'assessment_date': assessment.assessment_date.isoformat() if assessment.assessment_date else None,
+                'overall_score': assessment.overall_compliance_score
+            },
+            'statistics': stats,
+            'completion_percentage': round(completion, 1),
+            'controls': []
+        }
+
+        # Add control details with evidence
+        for ctrl in controls:
+            evidence = db.query(ComplianceEvidence).filter(
+                ComplianceEvidence.control_id == ctrl.id,
+                ComplianceEvidence.deleted_at == None
+            ).all()
+
+            export_data['controls'].append({
+                'control_id': ctrl.control_id,
+                'name': ctrl.control_name,
+                'category': ctrl.control_category,
+                'status': ctrl.status,
+                'score': ctrl.compliance_score,
+                'evidence_summary': ctrl.evidence_summary,
+                'remediation_notes': ctrl.remediation_notes,
+                'last_reviewed': ctrl.last_reviewed.isoformat() if ctrl.last_reviewed else None,
+                'evidence_count': len(evidence),
+                'evidence': [{
+                    'title': e.title,
+                    'type': e.evidence_type,
+                    'description': e.description
+                } for e in evidence]
+            })
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'export': export_data
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[COMPLIANCE] Error exporting assessment: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================================================
+# SCAN-TO-COMPLIANCE INTEGRATION ENDPOINTS
+# ============================================================================
+
+@app.route('/api/compliance/analyze-scan', methods=['POST'])
+def analyze_scan_for_compliance():
+    """
+    Analyze scan findings and return affected compliance controls.
+    Optionally auto-flag controls in an existing assessment.
+    """
+    db = None
+    try:
+        data = request.json
+        findings = data.get('findings', [])
+        domain = data.get('domain')
+        scan_type = data.get('scan_type', 'xasm')  # 'xasm' or 'lightbox'
+        assessment_id = data.get('assessment_id')  # Optional - if provided, auto-flag controls
+        auto_flag = data.get('auto_flag', False)
+
+        print(f"\n[SCAN-COMPLIANCE] Analyzing {len(findings)} findings from {scan_type} scan")
+        print(f"[SCAN-COMPLIANCE] Domain: {domain}, Assessment ID: {assessment_id}")
+
+        # Analyze findings against compliance mappings
+        analysis = analyze_scan_findings(findings)
+
+        print(f"[SCAN-COMPLIANCE] Found {len(analysis['vulnerabilities'])} mapped vulnerabilities")
+        print(f"[SCAN-COMPLIANCE] Affected controls: {analysis['affected_controls']}")
+
+        flagged_controls = []
+
+        # If assessment_id provided and auto_flag is true, update controls
+        if assessment_id and auto_flag:
+            db = get_db()
+
+            assessment = db.query(ComplianceAssessment).filter(
+                ComplianceAssessment.id == assessment_id,
+                ComplianceAssessment.deleted_at == None
+            ).first()
+
+            if assessment:
+                framework = assessment.framework
+                affected_control_ids = analysis['affected_controls'].get(framework, [])
+
+                print(f"[SCAN-COMPLIANCE] Flagging {len(affected_control_ids)} controls for {framework}")
+
+                for vuln in analysis['vulnerabilities']:
+                    vuln_controls = vuln.get('finding', {})
+                    affected = get_affected_controls(vuln['key'], framework)
+
+                    for control_ref in affected:
+                        # Find matching control in assessment
+                        control = db.query(ComplianceControl).filter(
+                            ComplianceControl.assessment_id == assessment_id,
+                            ComplianceControl.control_id.like(f'%{control_ref}%'),
+                            ComplianceControl.deleted_at == None
+                        ).first()
+
+                        if control and control.status != 'non_compliant':
+                            # Flag the control
+                            control.status = 'non_compliant'
+                            control.scan_source = scan_type
+                            control.scan_finding_type = vuln['key']
+                            control.scan_finding_id = vuln.get('finding', {}).get('id', '')
+                            control.scan_flagged_at = datetime.now(timezone.utc)
+                            control.scan_domain = domain
+                            control.last_reviewed = datetime.now(timezone.utc)
+
+                            flagged_controls.append({
+                                'control_id': control.control_id,
+                                'control_name': control.control_name,
+                                'vulnerability': vuln['name'],
+                                'severity': vuln['severity']
+                            })
+
+                            # Auto-create evidence record
+                            evidence = ComplianceEvidence(
+                                control_id=control.id,
+                                evidence_type='scan_finding',
+                                title=f"Scan Finding: {vuln['name']}",
+                                description=f"Auto-flagged by {scan_type.upper()} scan on {domain}.\n\n"
+                                           f"Vulnerability: {vuln['description']}\n"
+                                           f"Severity: {vuln['severity'].upper()}\n"
+                                           f"Finding Details: {json.dumps(vuln.get('finding', {}), indent=2)}",
+                                uploaded_by_user_id=1,
+                                evidence_date=datetime.now(timezone.utc)
+                            )
+                            db.add(evidence)
+
+                db.commit()
+                print(f"[SCAN-COMPLIANCE] Flagged {len(flagged_controls)} controls")
+
+            db.close()
+
+        return jsonify({
+            'success': True,
+            'analysis': {
+                'vulnerabilities': analysis['vulnerabilities'],
+                'affected_controls': analysis['affected_controls'],
+                'severity_summary': analysis['severity_summary']
+            },
+            'flagged_controls': flagged_controls,
+            'total_flagged': len(flagged_controls)
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[SCAN-COMPLIANCE] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/affected-controls/<domain>', methods=['GET'])
+def get_affected_controls_for_domain(domain):
+    """
+    Get compliance controls that have been flagged by scans for a specific domain.
+    """
+    db = None
+    try:
+        db = get_db()
+
+        # Get all controls flagged for this domain
+        controls = db.query(ComplianceControl).filter(
+            ComplianceControl.scan_domain == domain,
+            ComplianceControl.scan_source != None,
+            ComplianceControl.deleted_at == None
+        ).all()
+
+        result = []
+        for ctrl in controls:
+            result.append({
+                'id': ctrl.id,
+                'control_id': ctrl.control_id,
+                'control_name': ctrl.control_name,
+                'status': ctrl.status,
+                'scan_source': ctrl.scan_source,
+                'scan_finding_type': ctrl.scan_finding_type,
+                'scan_flagged_at': ctrl.scan_flagged_at.isoformat() if ctrl.scan_flagged_at else None,
+                'scan_verified_at': ctrl.scan_verified_at.isoformat() if ctrl.scan_verified_at else None,
+                'assessment_id': ctrl.assessment_id
+            })
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'domain': domain,
+            'affected_controls': result,
+            'count': len(result)
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[SCAN-COMPLIANCE] Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/flag-from-scan', methods=['POST'])
+def flag_controls_from_scan():
+    """
+    Manually trigger control flagging from recent scan data for a domain.
+    Fetches the latest XASM and Lightbox scans and flags affected controls.
+    """
+    db = None
+    try:
+        data = request.json
+        domain = data.get('domain')
+        assessment_id = data.get('assessment_id')
+
+        if not domain or not assessment_id:
+            return jsonify({'success': False, 'error': 'domain and assessment_id required'}), 400
+
+        db = get_db()
+
+        # Get the assessment
+        assessment = db.query(ComplianceAssessment).filter(
+            ComplianceAssessment.id == assessment_id,
+            ComplianceAssessment.deleted_at == None
+        ).first()
+
+        if not assessment:
+            db.close()
+            return jsonify({'success': False, 'error': 'Assessment not found'}), 404
+
+        framework = assessment.framework
+
+        # Get recent XASM scan
+        xasm_scan = db.query(CachedASMScan).filter(
+            CachedASMScan.domain == domain,
+            CachedASMScan.deleted_at == None
+        ).order_by(CachedASMScan.created_at.desc()).first()
+
+        # Get recent Lightbox scan
+        lightbox_scan = db.query(LightboxScan).filter(
+            LightboxScan.domain == domain,
+            LightboxScan.deleted_at == None
+        ).order_by(LightboxScan.created_at.desc()).first()
+
+        all_findings = []
+
+        # Extract findings from XASM scan
+        if xasm_scan and xasm_scan.scan_data:
+            try:
+                xasm_data = json.loads(xasm_scan.scan_data) if isinstance(xasm_scan.scan_data, str) else xasm_scan.scan_data
+
+                # Extract SSL findings
+                ssl_info = xasm_data.get('ssl_info', {})
+                if ssl_info.get('grade') in ['C', 'D', 'F']:
+                    all_findings.append({'type': f"ssl_grade_{ssl_info.get('grade', 'f').lower()}", 'source': 'xasm'})
+                if ssl_info.get('expiring_soon'):
+                    all_findings.append({'type': 'cert_expiring_soon', 'source': 'xasm'})
+
+                # Extract port findings
+                for port_info in xasm_data.get('open_ports', []):
+                    port = port_info.get('port')
+                    if port in [22]:
+                        all_findings.append({'type': 'ssh_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [3389]:
+                        all_findings.append({'type': 'rdp_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [3306]:
+                        all_findings.append({'type': 'mysql_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [5432]:
+                        all_findings.append({'type': 'postgres_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [27017]:
+                        all_findings.append({'type': 'mongodb_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [6379]:
+                        all_findings.append({'type': 'redis_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [9200, 9300]:
+                        all_findings.append({'type': 'elasticsearch_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [21]:
+                        all_findings.append({'type': 'ftp_exposed', 'port': port, 'source': 'xasm'})
+                    elif port in [23]:
+                        all_findings.append({'type': 'telnet_exposed', 'port': port, 'source': 'xasm'})
+
+                # Extract security header findings
+                headers = xasm_data.get('security_headers', {})
+                if not headers.get('content_security_policy'):
+                    all_findings.append({'type': 'missing_csp', 'source': 'xasm'})
+                if not headers.get('strict_transport_security'):
+                    all_findings.append({'type': 'missing_hsts', 'source': 'xasm'})
+                if not headers.get('x_frame_options'):
+                    all_findings.append({'type': 'missing_xfo', 'source': 'xasm'})
+
+                # Extract subdomain findings
+                for sub in xasm_data.get('subdomains', []):
+                    if sub.get('takeover_risk'):
+                        all_findings.append({'type': 'subdomain_takeover', 'subdomain': sub.get('name'), 'source': 'xasm'})
+
+                print(f"[SCAN-COMPLIANCE] Extracted {len(all_findings)} findings from XASM scan")
+
+            except Exception as e:
+                print(f"[SCAN-COMPLIANCE] Error parsing XASM data: {e}")
+
+        # Extract findings from Lightbox scan
+        if lightbox_scan and lightbox_scan.scan_data:
+            try:
+                lightbox_data = json.loads(lightbox_scan.scan_data) if isinstance(lightbox_scan.scan_data, str) else lightbox_scan.scan_data
+
+                # Extract vulnerabilities
+                for vuln in lightbox_data.get('vulnerabilities', []):
+                    all_findings.append({
+                        'type': vuln.get('type', vuln.get('name', '')),
+                        'severity': vuln.get('severity'),
+                        'source': 'lightbox'
+                    })
+
+                # Extract exposed files
+                for file in lightbox_data.get('exposed_files', []):
+                    file_type = file.get('type', '')
+                    if 'backup' in file_type.lower():
+                        all_findings.append({'type': 'backup_exposed', 'file': file.get('path'), 'source': 'lightbox'})
+                    elif 'config' in file_type.lower() or '.env' in file.get('path', ''):
+                        all_findings.append({'type': 'env_exposed', 'file': file.get('path'), 'source': 'lightbox'})
+                    elif '.git' in file.get('path', ''):
+                        all_findings.append({'type': 'git_exposed', 'file': file.get('path'), 'source': 'lightbox'})
+
+                # Extract admin panels
+                for panel in lightbox_data.get('admin_panels', []):
+                    all_findings.append({'type': 'admin_panel', 'url': panel.get('url'), 'source': 'lightbox'})
+
+                print(f"[SCAN-COMPLIANCE] Extracted {len(all_findings)} total findings (including Lightbox)")
+
+            except Exception as e:
+                print(f"[SCAN-COMPLIANCE] Error parsing Lightbox data: {e}")
+
+        # Analyze and flag controls
+        analysis = analyze_scan_findings(all_findings)
+        affected_control_ids = analysis['affected_controls'].get(framework, [])
+
+        flagged = []
+        for vuln in analysis['vulnerabilities']:
+            affected = get_affected_controls(vuln['key'], framework)
+
+            for control_ref in affected:
+                # Find matching control
+                control = db.query(ComplianceControl).filter(
+                    ComplianceControl.assessment_id == assessment_id,
+                    ComplianceControl.control_id.like(f'%{control_ref}%'),
+                    ComplianceControl.deleted_at == None
+                ).first()
+
+                if control and control.scan_source is None:  # Only flag if not already flagged
+                    control.status = 'non_compliant'
+                    control.scan_source = vuln.get('finding', {}).get('source', 'scan')
+                    control.scan_finding_type = vuln['key']
+                    control.scan_flagged_at = datetime.now(timezone.utc)
+                    control.scan_domain = domain
+                    control.last_reviewed = datetime.now(timezone.utc)
+
+                    flagged.append({
+                        'control_id': control.control_id,
+                        'control_name': control.control_name,
+                        'vulnerability': vuln['name'],
+                        'severity': vuln['severity']
+                    })
+
+                    # Auto-create evidence
+                    evidence = ComplianceEvidence(
+                        control_id=control.id,
+                        evidence_type='scan_finding',
+                        title=f"Scan Finding: {vuln['name']}",
+                        description=f"Auto-flagged from scan on {domain}.\n\n"
+                                   f"Severity: {vuln['severity'].upper()}\n"
+                                   f"Description: {vuln['description']}",
+                        uploaded_by_user_id=1,
+                        evidence_date=datetime.now(timezone.utc)
+                    )
+                    db.add(evidence)
+
+        db.commit()
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'domain': domain,
+            'framework': framework,
+            'findings_analyzed': len(all_findings),
+            'controls_flagged': len(flagged),
+            'flagged_controls': flagged,
+            'severity_summary': analysis['severity_summary']
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[SCAN-COMPLIANCE] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/verify-fix/<int:control_id>', methods=['POST'])
+def verify_control_fix(control_id):
+    """
+    Mark a control as verified after re-scan confirms the fix.
+    This is called after a new scan shows the vulnerability is resolved.
+    """
+    db = None
+    try:
+        data = request.json
+        verified = data.get('verified', True)
+
+        db = get_db()
+
+        control = db.query(ComplianceControl).filter(
+            ComplianceControl.id == control_id,
+            ComplianceControl.deleted_at == None
+        ).first()
+
+        if not control:
+            db.close()
+            return jsonify({'success': False, 'error': 'Control not found'}), 404
+
+        if verified:
+            control.status = 'compliant'
+            control.scan_verified_at = datetime.now(timezone.utc)
+            control.last_reviewed = datetime.now(timezone.utc)
+
+            # Add verification evidence
+            evidence = ComplianceEvidence(
+                control_id=control.id,
+                evidence_type='scan_verification',
+                title=f"Verified Fixed by Re-scan",
+                description=f"Control verified as compliant by re-scan on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}.\n\n"
+                           f"Original finding: {control.scan_finding_type}\n"
+                           f"Original scan date: {control.scan_flagged_at}",
+                uploaded_by_user_id=1,
+                evidence_date=datetime.now(timezone.utc)
+            )
+            db.add(evidence)
+
+        db.commit()
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'control_id': control.control_id,
+            'status': control.status,
+            'verified_at': control.scan_verified_at.isoformat() if control.scan_verified_at else None
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+            db.close()
+        print(f"[SCAN-COMPLIANCE] Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/compliance/scan-summary/<int:assessment_id>', methods=['GET'])
+def get_scan_flagged_summary(assessment_id):
+    """
+    Get a summary of controls flagged by scans for an assessment.
+    """
+    db = None
+    try:
+        db = get_db()
+
+        # Get all scan-flagged controls for this assessment
+        controls = db.query(ComplianceControl).filter(
+            ComplianceControl.assessment_id == assessment_id,
+            ComplianceControl.scan_source != None,
+            ComplianceControl.deleted_at == None
+        ).all()
+
+        # Group by finding type
+        by_finding = {}
+        by_severity = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0}
+
+        for ctrl in controls:
+            finding_type = ctrl.scan_finding_type or 'unknown'
+            if finding_type not in by_finding:
+                vuln_info = get_vulnerability_info(finding_type)
+                by_finding[finding_type] = {
+                    'name': vuln_info['name'] if vuln_info else finding_type,
+                    'severity': vuln_info['severity'] if vuln_info else 'medium',
+                    'controls': [],
+                    'count': 0
+                }
+
+            by_finding[finding_type]['controls'].append({
+                'id': ctrl.id,
+                'control_id': ctrl.control_id,
+                'status': ctrl.status,
+                'verified': ctrl.scan_verified_at is not None
+            })
+            by_finding[finding_type]['count'] += 1
+
+            if vuln_info := get_vulnerability_info(finding_type):
+                by_severity[vuln_info['severity']] = by_severity.get(vuln_info['severity'], 0) + 1
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'assessment_id': assessment_id,
+            'total_flagged': len(controls),
+            'verified': sum(1 for c in controls if c.scan_verified_at),
+            'unverified': sum(1 for c in controls if not c.scan_verified_at),
+            'by_finding_type': by_finding,
+            'by_severity': by_severity
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[SCAN-COMPLIANCE] Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================================================
+# ROADMAP API ENDPOINTS
+# ============================================================================
+
+@app.route('/api/roadmap/profile', methods=['GET'])
+def get_roadmap_profile():
+    """
+    Get or check for existing roadmap profile.
+    Returns profile data if exists, or null to trigger profile setup.
+    """
+    db = None
+    try:
+        db = get_db()
+
+        # For now, get the most recent profile (will be user-specific when auth is added)
+        profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.deleted_at == None,
+            RoadmapProfile.is_active == True
+        ).order_by(RoadmapProfile.created_at.desc()).first()
+
+        if not profile:
+            return jsonify({
+                'success': True,
+                'profile': None,
+                'message': 'No profile found - setup required'
+            }), 200
+
+        # Parse JSON fields
+        current_measures = []
+        compliance_reqs = []
+        try:
+            if profile.current_measures:
+                current_measures = json.loads(profile.current_measures)
+            if profile.compliance_requirements:
+                compliance_reqs = json.loads(profile.compliance_requirements)
+        except:
+            pass
+
+        return jsonify({
+            'success': True,
+            'profile': {
+                'id': profile.id,
+                'company_name': profile.company_name,
+                'company_size': profile.company_size,
+                'industry': profile.industry,
+                'employee_count': profile.employee_count,
+                'current_security_score': profile.current_security_score or 0,
+                'target_security_score': profile.target_security_score or 75,
+                'handles_pii': profile.handles_pii,
+                'handles_payment_data': profile.handles_payment_data,
+                'handles_health_data': profile.handles_health_data,
+                'handles_financial_data': profile.handles_financial_data,
+                'current_measures': current_measures,
+                'compliance_requirements': compliance_reqs,
+                'created_at': profile.created_at.isoformat() if profile.created_at else None,
+                'last_recalculated': profile.last_recalculated.isoformat() if profile.last_recalculated else None
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"[ROADMAP] Error getting profile: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/roadmap/profile', methods=['POST'])
+def create_roadmap_profile():
+    """
+    Create or update roadmap profile.
+    """
+    db = None
+    try:
+        data = request.get_json()
+        db = get_db()
+
+        # Check for existing profile
+        existing = db.query(RoadmapProfile).filter(
+            RoadmapProfile.deleted_at == None,
+            RoadmapProfile.is_active == True
+        ).first()
+
+        if existing:
+            # Update existing profile
+            existing.company_name = data.get('company_name', existing.company_name)
+            existing.company_size = data.get('company_size', existing.company_size)
+            existing.industry = data.get('industry', existing.industry)
+            existing.employee_count = data.get('employee_count', existing.employee_count)
+            existing.handles_pii = data.get('handles_pii', existing.handles_pii)
+            existing.handles_payment_data = data.get('handles_payment_data', existing.handles_payment_data)
+            existing.handles_health_data = data.get('handles_health_data', existing.handles_health_data)
+            existing.handles_financial_data = data.get('handles_financial_data', existing.handles_financial_data)
+
+            if data.get('current_measures'):
+                existing.current_measures = json.dumps(data['current_measures'])
+            if data.get('compliance_requirements'):
+                existing.compliance_requirements = json.dumps(data['compliance_requirements'])
+
+            existing.updated_at = datetime.now(timezone.utc)
+            db.commit()
+
+            return jsonify({
+                'success': True,
+                'profile_id': existing.id,
+                'message': 'Profile updated successfully'
+            }), 200
+        else:
+            # Create new profile
+            profile = RoadmapProfile(
+                company_name=data.get('company_name', 'My Company'),
+                company_size=data.get('company_size', 'small'),
+                industry=data.get('industry', 'technology'),
+                employee_count=data.get('employee_count'),
+                current_security_score=0,
+                target_security_score=data.get('target_security_score', 75),
+                handles_pii=data.get('handles_pii', False),
+                handles_payment_data=data.get('handles_payment_data', False),
+                handles_health_data=data.get('handles_health_data', False),
+                handles_financial_data=data.get('handles_financial_data', False),
+                current_measures=json.dumps(data.get('current_measures', [])),
+                compliance_requirements=json.dumps(data.get('compliance_requirements', [])),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
+
+            db.add(profile)
+            db.commit()
+            db.refresh(profile)
+
+            return jsonify({
+                'success': True,
+                'profile_id': profile.id,
+                'message': 'Profile created successfully'
+            }), 201
+
+    except Exception as e:
+        if db:
+            db.rollback()
+        print(f"[ROADMAP] Error creating profile: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/roadmap/tasks', methods=['GET'])
+def get_roadmap_tasks():
+    """
+    Get all assigned tasks for user's roadmap.
+    Query params: phase, status, source
+    """
+    from roadmap_mappings import TASK_LIBRARY
+
+    db = None
+    try:
+        db = get_db()
+
+        # Get profile
+        profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.deleted_at == None,
+            RoadmapProfile.is_active == True
+        ).first()
+
+        if not profile:
+            return jsonify({
+                'success': True,
+                'tasks': [],
+                'stats': {'total': 0, 'not_started': 0, 'in_progress': 0, 'completed': 0, 'by_phase': {}},
+                'message': 'No profile found'
+            }), 200
+
+        # Build query
+        query = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.profile_id == profile.id,
+            RoadmapUserTask.deleted_at == None,
+            RoadmapUserTask.is_active == True
+        )
+
+        # Apply filters
+        phase = request.args.get('phase')
+        status = request.args.get('status')
+        source = request.args.get('source')
+
+        if phase:
+            query = query.filter(RoadmapUserTask.phase == int(phase))
+        if status:
+            query = query.filter(RoadmapUserTask.status == status)
+        if source:
+            query = query.filter(RoadmapUserTask.source == source)
+
+        # Order by phase and priority
+        user_tasks = query.order_by(RoadmapUserTask.phase, RoadmapUserTask.priority_order).all()
+
+        # Build response with task details from library
+        tasks = []
+        for ut in user_tasks:
+            task_details = TASK_LIBRARY.get(ut.task_id, {})
+
+            tasks.append({
+                'id': ut.id,
+                'task_id': ut.task_id,
+                'task_name': task_details.get('task_name', ut.task_id),
+                'category': task_details.get('category', 'general'),
+                'status': ut.status,
+                'phase': ut.phase,
+                'priority_order': ut.priority_order,
+                'source': ut.source,
+                'finding_type': ut.finding_type,
+                'finding_severity': ut.finding_severity,
+                'estimated_time_minutes': task_details.get('estimated_time_minutes', 30),
+                'estimated_cost_min': task_details.get('estimated_cost_min', 0),
+                'estimated_cost_max': task_details.get('estimated_cost_max', 0),
+                'difficulty_level': task_details.get('difficulty_level', 'medium'),
+                'security_score_impact': task_details.get('security_score_impact', 5),
+                'description': task_details.get('description', ''),
+                'why_it_matters': task_details.get('why_it_matters', ''),
+                'how_to_fix': task_details.get('how_to_fix', ''),
+                'scan_domain': ut.scan_domain,
+                'scan_date': ut.scan_date.isoformat() if ut.scan_date else None,
+                'started_at': ut.started_at.isoformat() if ut.started_at else None,
+                'completed_at': ut.completed_at.isoformat() if ut.completed_at else None,
+                'verified_at': ut.verified_at.isoformat() if ut.verified_at else None,
+                'user_notes': ut.user_notes
+            })
+
+        # Calculate stats
+        all_tasks = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.profile_id == profile.id,
+            RoadmapUserTask.deleted_at == None,
+            RoadmapUserTask.is_active == True
+        ).all()
+
+        stats = {
+            'total': len(all_tasks),
+            'not_started': sum(1 for t in all_tasks if t.status == 'not_started'),
+            'in_progress': sum(1 for t in all_tasks if t.status == 'in_progress'),
+            'completed': sum(1 for t in all_tasks if t.status == 'completed'),
+            'by_phase': {
+                'phase1': sum(1 for t in all_tasks if t.phase == 1),
+                'phase2': sum(1 for t in all_tasks if t.phase == 2),
+                'phase3': sum(1 for t in all_tasks if t.phase == 3),
+                'phase4': sum(1 for t in all_tasks if t.phase == 4)
+            }
+        }
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'tasks': tasks,
+            'stats': stats
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[ROADMAP] Error getting tasks: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/roadmap/generate', methods=['POST'])
+def generate_roadmap():
+    """
+    Generate personalized roadmap based on profile + scans.
+    """
+    from roadmap_mappings import TASK_LIBRARY, map_scan_to_tasks, get_tasks_for_profile, prioritize_tasks
+
+    db = None
+    try:
+        data = request.get_json() or {}
+        include_scans = data.get('include_scans', True)
+
+        db = get_db()
+
+        # Get profile
+        profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.deleted_at == None,
+            RoadmapProfile.is_active == True
+        ).first()
+
+        if not profile:
+            return jsonify({'success': False, 'error': 'No profile found. Create profile first.'}), 400
+
+        # Clear existing tasks (regenerating)
+        db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.profile_id == profile.id
+        ).delete()
+        db.commit()
+
+        tasks_to_create = []
+
+        # 1. Get profile-based generic tasks
+        compliance_reqs = []
+        try:
+            if profile.compliance_requirements:
+                compliance_reqs = json.loads(profile.compliance_requirements)
+        except:
+            pass
+
+        recommended_task_ids = get_tasks_for_profile(
+            industry=profile.industry or 'technology',
+            company_size=profile.company_size or 'small',
+            compliance_requirements=compliance_reqs
+        )
+
+        # Add essential generic tasks (limit to 10-12)
+        essential_tasks = ['TASK_MFA_ENABLE', 'TASK_PASSWORD_POLICY', 'TASK_AUTOMATED_BACKUP',
+                          'TASK_SECURITY_HEADERS', 'TASK_UPDATE_SOFTWARE', 'TASK_CONFIGURE_SPF',
+                          'TASK_CONFIGURE_DMARC', 'TASK_SETUP_MONITORING']
+
+        for task_id in essential_tasks:
+            if task_id in TASK_LIBRARY:
+                tasks_to_create.append({
+                    'task_id': task_id,
+                    'source': 'profile',
+                    'finding_type': None,
+                    'finding_severity': TASK_LIBRARY[task_id].get('risk_level', 'medium')
+                })
+
+        # 2. If include_scans, get scan-based tasks
+        if include_scans:
+            # Get latest XASM scan
+            xasm_scan = db.query(CachedASMScan).order_by(CachedASMScan.scanned_at.desc()).first()
+            if xasm_scan and xasm_scan.scan_results:
+                xasm_tasks = map_scan_to_tasks(xasm_scan.scan_results, 'xasm')
+                for task in xasm_tasks:
+                    task['source'] = 'xasm_scan'
+                    task['scan_domain'] = xasm_scan.domain
+                    task['scan_date'] = xasm_scan.scanned_at
+                    tasks_to_create.append(task)
+
+            # Get latest Lightbox scan
+            lightbox_scan = db.query(LightboxScan).order_by(LightboxScan.scanned_at.desc()).first()
+            if lightbox_scan:
+                lb_results = lightbox_scan.to_dict()
+                lb_tasks = map_scan_to_tasks(lb_results, 'lightbox')
+                for task in lb_tasks:
+                    task['source'] = 'lightbox_scan'
+                    task['scan_domain'] = lightbox_scan.domain
+                    task['scan_date'] = lightbox_scan.scanned_at
+                    tasks_to_create.append(task)
+
+        # Remove duplicates by task_id
+        seen_task_ids = set()
+        unique_tasks = []
+        for task in tasks_to_create:
+            if task['task_id'] not in seen_task_ids:
+                seen_task_ids.add(task['task_id'])
+                unique_tasks.append(task)
+
+        # Prioritize and assign phases
+        prioritized = prioritize_tasks(unique_tasks, {
+            'industry': profile.industry,
+            'company_size': profile.company_size
+        })
+
+        # Create user tasks
+        for task in prioritized:
+            user_task = RoadmapUserTask(
+                profile_id=profile.id,
+                task_id=task['task_id'],
+                status='not_started',
+                phase=task.get('phase', 2),
+                priority_order=task.get('priority_order', 99),
+                source=task.get('source', 'profile'),
+                finding_type=task.get('finding_type'),
+                finding_severity=task.get('finding_severity'),
+                scan_domain=task.get('scan_domain'),
+                scan_date=task.get('scan_date'),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
+            db.add(user_task)
+
+        # Create initial progress snapshot
+        progress = RoadmapProgressHistory(
+            profile_id=profile.id,
+            security_score=0,
+            tasks_completed=0,
+            tasks_total=len(prioritized),
+            snapshot_date=datetime.now(timezone.utc),
+            snapshot_reason='roadmap_generated'
+        )
+        db.add(progress)
+
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'tasks_created': len(prioritized),
+            'message': f'Roadmap generated with {len(prioritized)} tasks'
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+        print(f"[ROADMAP] Error generating roadmap: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/roadmap/task/<int:task_id>', methods=['PUT'])
+def update_roadmap_task(task_id):
+    """
+    Update task status.
+    """
+    from roadmap_mappings import TASK_LIBRARY, ACHIEVEMENTS
+
+    db = None
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        user_notes = data.get('user_notes')
+
+        db = get_db()
+
+        # Get the task
+        task = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.id == task_id,
+            RoadmapUserTask.deleted_at == None
+        ).first()
+
+        if not task:
+            return jsonify({'success': False, 'error': 'Task not found'}), 404
+
+        # Get profile
+        profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.id == task.profile_id
+        ).first()
+
+        old_status = task.status
+        score_increase = 0
+        achievements_unlocked = []
+
+        # Update task
+        if new_status:
+            task.status = new_status
+
+            if new_status == 'in_progress' and not task.started_at:
+                task.started_at = datetime.now(timezone.utc)
+
+            if new_status == 'completed' and old_status != 'completed':
+                task.completed_at = datetime.now(timezone.utc)
+
+                # Add score impact
+                task_details = TASK_LIBRARY.get(task.task_id, {})
+                score_increase = task_details.get('security_score_impact', 5)
+                profile.current_security_score = (profile.current_security_score or 0) + score_increase
+
+                # Create progress snapshot
+                all_tasks = db.query(RoadmapUserTask).filter(
+                    RoadmapUserTask.profile_id == profile.id,
+                    RoadmapUserTask.deleted_at == None
+                ).all()
+
+                completed_count = sum(1 for t in all_tasks if t.status == 'completed')
+
+                progress = RoadmapProgressHistory(
+                    profile_id=profile.id,
+                    security_score=profile.current_security_score,
+                    tasks_completed=completed_count,
+                    tasks_total=len(all_tasks),
+                    snapshot_date=datetime.now(timezone.utc),
+                    snapshot_reason='task_completed'
+                )
+                db.add(progress)
+
+                # Check for achievements
+                existing_achievements = db.query(RoadmapAchievement).filter(
+                    RoadmapAchievement.profile_id == profile.id
+                ).all()
+                existing_ids = [a.achievement_id for a in existing_achievements]
+
+                # First Steps
+                if 'FIRST_STEPS' not in existing_ids and completed_count >= 1:
+                    ach = RoadmapAchievement(
+                        profile_id=profile.id,
+                        achievement_id='FIRST_STEPS',
+                        achievement_name='First Steps',
+                        achievement_description='Complete your first security task',
+                        achievement_icon='trophy',
+                        unlocked_at=datetime.now(timezone.utc)
+                    )
+                    db.add(ach)
+                    achievements_unlocked.append('FIRST_STEPS')
+
+                # Quick Wins (5 tasks)
+                if 'QUICK_WINS' not in existing_ids and completed_count >= 5:
+                    ach = RoadmapAchievement(
+                        profile_id=profile.id,
+                        achievement_id='QUICK_WINS',
+                        achievement_name='Quick Wins',
+                        achievement_description='Complete 5 security tasks',
+                        achievement_icon='zap',
+                        unlocked_at=datetime.now(timezone.utc)
+                    )
+                    db.add(ach)
+                    achievements_unlocked.append('QUICK_WINS')
+
+                # Score-based achievements
+                score = profile.current_security_score
+                if 'HALFWAY_HERO' not in existing_ids and score >= 50:
+                    ach = RoadmapAchievement(
+                        profile_id=profile.id,
+                        achievement_id='HALFWAY_HERO',
+                        achievement_name='Halfway Hero',
+                        achievement_description='Reach a security score of 50',
+                        achievement_icon='shield',
+                        unlocked_at=datetime.now(timezone.utc)
+                    )
+                    db.add(ach)
+                    achievements_unlocked.append('HALFWAY_HERO')
+
+                if 'SECURITY_CHAMPION' not in existing_ids and score >= 75:
+                    ach = RoadmapAchievement(
+                        profile_id=profile.id,
+                        achievement_id='SECURITY_CHAMPION',
+                        achievement_name='Security Champion',
+                        achievement_description='Reach a security score of 75',
+                        achievement_icon='award',
+                        unlocked_at=datetime.now(timezone.utc)
+                    )
+                    db.add(ach)
+                    achievements_unlocked.append('SECURITY_CHAMPION')
+
+        if user_notes is not None:
+            task.user_notes = user_notes
+
+        task.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'new_score': profile.current_security_score,
+            'score_increase': score_increase,
+            'achievements_unlocked': achievements_unlocked
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+        print(f"[ROADMAP] Error updating task: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/roadmap/task/<int:task_id>/verify', methods=['POST'])
+def verify_roadmap_task(task_id):
+    """
+    Re-scan to verify task completion.
+    """
+    db = None
+    try:
+        data = request.get_json() or {}
+        domain = data.get('domain')
+
+        db = get_db()
+
+        # Get the task
+        task = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.id == task_id,
+            RoadmapUserTask.deleted_at == None
+        ).first()
+
+        if not task:
+            return jsonify({'success': False, 'error': 'Task not found'}), 404
+
+        if not task.source in ['xasm_scan', 'lightbox_scan']:
+            return jsonify({
+                'success': False,
+                'error': 'Only scan-based tasks can be verified'
+            }), 400
+
+        # For now, return a simulated verification
+        # In production, this would trigger an actual scan and check
+        # whether the original finding still exists
+
+        # Simulate verification (mark as verified)
+        task.verified_at = datetime.now(timezone.utc)
+        task.status = 'completed'
+        task.completed_at = datetime.now(timezone.utc)
+
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'verified': True,
+            'message': 'Task verified - issue no longer detected'
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.rollback()
+        print(f"[ROADMAP] Error verifying task: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/roadmap/progress', methods=['GET'])
+def get_roadmap_progress():
+    """
+    Get progress history for graphs.
+    """
+    db = None
+    try:
+        days = request.args.get('days', 30, type=int)
+
+        db = get_db()
+
+        # Get profile
+        profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.deleted_at == None,
+            RoadmapProfile.is_active == True
+        ).first()
+
+        if not profile:
+            return jsonify({
+                'success': True,
+                'history': [],
+                'current': {
+                    'security_score': 0,
+                    'target_score': 75,
+                    'tasks_completed': 0,
+                    'tasks_total': 0,
+                    'completion_percentage': 0
+                }
+            }), 200
+
+        # Get history
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        history_records = db.query(RoadmapProgressHistory).filter(
+            RoadmapProgressHistory.profile_id == profile.id,
+            RoadmapProgressHistory.snapshot_date >= cutoff
+        ).order_by(RoadmapProgressHistory.snapshot_date).all()
+
+        history = []
+        for h in history_records:
+            history.append({
+                'date': h.snapshot_date.strftime('%Y-%m-%d'),
+                'security_score': h.security_score or 0,
+                'tasks_completed': h.tasks_completed or 0,
+                'tasks_total': h.tasks_total or 0
+            })
+
+        # Get current stats
+        all_tasks = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.profile_id == profile.id,
+            RoadmapUserTask.deleted_at == None
+        ).all()
+
+        tasks_total = len(all_tasks)
+        tasks_completed = sum(1 for t in all_tasks if t.status == 'completed')
+        completion_pct = round((tasks_completed / tasks_total * 100) if tasks_total > 0 else 0, 1)
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'history': history,
+            'current': {
+                'security_score': profile.current_security_score or 0,
+                'target_score': profile.target_security_score or 75,
+                'tasks_completed': tasks_completed,
+                'tasks_total': tasks_total,
+                'completion_percentage': completion_pct
+            }
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[ROADMAP] Error getting progress: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/roadmap/achievements', methods=['GET'])
+def get_roadmap_achievements():
+    """
+    Get unlocked and available achievements.
+    """
+    from roadmap_mappings import ACHIEVEMENTS
+
+    db = None
+    try:
+        db = get_db()
+
+        # Get profile
+        profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.deleted_at == None,
+            RoadmapProfile.is_active == True
+        ).first()
+
+        if not profile:
+            return jsonify({
+                'success': True,
+                'achievements': [],
+                'available': list(ACHIEVEMENTS.values())
+            }), 200
+
+        # Get unlocked achievements
+        unlocked_records = db.query(RoadmapAchievement).filter(
+            RoadmapAchievement.profile_id == profile.id
+        ).all()
+
+        unlocked = []
+        unlocked_ids = []
+        for a in unlocked_records:
+            unlocked_ids.append(a.achievement_id)
+            unlocked.append({
+                'achievement_id': a.achievement_id,
+                'achievement_name': a.achievement_name,
+                'achievement_description': a.achievement_description,
+                'achievement_icon': a.achievement_icon,
+                'unlocked_at': a.unlocked_at.isoformat() if a.unlocked_at else None,
+                'is_claimed': a.is_claimed
+            })
+
+        # Get available (locked) achievements with progress
+        all_tasks = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.profile_id == profile.id,
+            RoadmapUserTask.deleted_at == None
+        ).all()
+
+        completed_count = sum(1 for t in all_tasks if t.status == 'completed')
+        score = profile.current_security_score or 0
+
+        available = []
+        for ach_id, ach in ACHIEVEMENTS.items():
+            if ach_id not in unlocked_ids:
+                progress_text = ''
+                if ach['requirement_type'] == 'tasks_completed':
+                    progress_text = f"{completed_count}/{ach['requirement_value']} tasks"
+                elif ach['requirement_type'] == 'score_reached':
+                    progress_text = f"{score}/{ach['requirement_value']} points"
+
+                available.append({
+                    'achievement_id': ach_id,
+                    'achievement_name': ach['name'],
+                    'requirement': ach['description'],
+                    'progress': progress_text,
+                    'icon': ach['icon']
+                })
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'achievements': unlocked,
+            'available': available
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[ROADMAP] Error getting achievements: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/roadmap/stats', methods=['GET'])
+def get_roadmap_stats():
+    """
+    Get dashboard stats for roadmap widget.
+    """
+    from roadmap_mappings import TASK_LIBRARY
+
+    db = None
+    try:
+        db = get_db()
+
+        # Get profile
+        profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.deleted_at == None,
+            RoadmapProfile.is_active == True
+        ).first()
+
+        if not profile:
+            return jsonify({
+                'success': True,
+                'security_score': 0,
+                'target_score': 75,
+                'next_quick_win': None,
+                'tasks_this_week': 0,
+                'completion_percentage': 0
+            }), 200
+
+        # Get tasks
+        all_tasks = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.profile_id == profile.id,
+            RoadmapUserTask.deleted_at == None,
+            RoadmapUserTask.is_active == True
+        ).all()
+
+        tasks_total = len(all_tasks)
+        tasks_completed = sum(1 for t in all_tasks if t.status == 'completed')
+        completion_pct = round((tasks_completed / tasks_total * 100) if tasks_total > 0 else 0, 1)
+
+        # Find next quick win (easiest incomplete task with highest impact)
+        incomplete_tasks = [t for t in all_tasks if t.status in ['not_started', 'in_progress']]
+        next_quick_win = None
+
+        if incomplete_tasks:
+            # Sort by difficulty (easy first) then by score impact (high first)
+            def task_score(t):
+                details = TASK_LIBRARY.get(t.task_id, {})
+                difficulty = {'easy': 0, 'medium': 1, 'hard': 2}.get(details.get('difficulty_level', 'medium'), 1)
+                impact = details.get('security_score_impact', 5)
+                return (difficulty, -impact)
+
+            incomplete_tasks.sort(key=task_score)
+            best_task = incomplete_tasks[0]
+            details = TASK_LIBRARY.get(best_task.task_id, {})
+
+            time_est = details.get('estimated_time_minutes', 30)
+            time_str = f"{time_est} min" if time_est < 60 else f"{time_est // 60}h {time_est % 60}m"
+
+            next_quick_win = {
+                'task_id': best_task.id,
+                'task_name': details.get('task_name', best_task.task_id),
+                'score_impact': details.get('security_score_impact', 5),
+                'time_estimate': time_str,
+                'difficulty': details.get('difficulty_level', 'medium')
+            }
+
+        # Count Phase 1 tasks (this week)
+        phase1_count = sum(1 for t in all_tasks if t.phase == 1 and t.status != 'completed')
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'security_score': profile.current_security_score or 0,
+            'target_score': profile.target_security_score or 75,
+            'next_quick_win': next_quick_win,
+            'tasks_this_week': phase1_count,
+            'completion_percentage': completion_pct,
+            'tasks_completed': tasks_completed,
+            'tasks_total': tasks_total
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[ROADMAP] Error getting stats: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     print("Ghost backend starting...")

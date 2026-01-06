@@ -1,6 +1,23 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, g
 from flask_cors import CORS
-from database import get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess, UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult, ASMScan, CachedASMScan, LightboxScan, save_xasm_for_ai, save_lightbox_for_ai, get_companies_with_scans, cleanup_expired_ai_scans, ComplianceAssessment, ComplianceControl, ComplianceEvidence, RoadmapProfile, RoadmapTask, RoadmapUserTask, RoadmapAchievement, RoadmapProgressHistory
+from functools import wraps
+from database import (
+    get_db, SessionLocal, Profile, SocialMedia, Breach, Device, BaitToken, BaitAccess,
+    UploadedFile, UploadedCredential, GitHubFinding, PasteBinFinding, OpsychSearchResult,
+    ASMScan, CachedASMScan, LightboxScan, save_xasm_for_ai, save_lightbox_for_ai,
+    get_companies_with_scans, cleanup_expired_ai_scans, ComplianceAssessment,
+    ComplianceControl, ComplianceEvidence, RoadmapProfile, RoadmapTask, RoadmapUserTask,
+    RoadmapAchievement, RoadmapProgressHistory,
+    # Authentication
+    User, UserRole, UserStatus, Company, Session as UserSession,
+    hash_password, verify_password, create_session, validate_session, revoke_session,
+    log_login_attempt, detect_brute_force, generate_secure_token,
+    # Profile & API Keys
+    LoginAttempt, APIKey, log_security_event, create_api_key, revoke_api_key,
+    # Admin - System & Settings
+    SecurityEvent, PlatformSettings, ErrorLog,
+    run_health_check, create_backup, optimize_database, AuditLog, DB_PATH
+)
 import feedparser
 from modules.ghost.osint import scan_profile_breaches
 from modules.opsych.exposure_analysis import analyze_exposure
@@ -35,7 +52,15 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]}})
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
 
 # Global progress tracking dictionary
 # Format: {domain: {status: str, current_step: str, progress: int, total: int, message: str}}
@@ -55,6 +80,184 @@ print("[SCHEDULER] Started hourly cleanup of expired AI scan data")
 
 # Ensure scheduler shuts down with app
 atexit.register(lambda: scheduler.shutdown())
+
+
+# =============================================================================
+# AUTHENTICATION MIDDLEWARE
+# =============================================================================
+
+def require_auth(f):
+    """
+    Decorator that requires valid authentication.
+    Attaches user_id and user object to request context.
+    Returns 401 if token is missing or invalid.
+
+    Usage:
+        @app.route('/api/protected')
+        @require_auth
+        def protected_route():
+            user_id = request.user_id
+            user = request.user
+            ...
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        token = None
+
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+
+        if not token:
+            return jsonify({
+                'success': False,
+                'error': 'Authentication required',
+                'code': 'AUTH_REQUIRED'
+            }), 401
+
+        # Validate the session
+        session_info = validate_session(token)
+
+        if not session_info:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid or expired session',
+                'code': 'INVALID_SESSION'
+            }), 401
+
+        # Get user from database
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(
+                User.id == session_info['user_id'],
+                User.deleted_at.is_(None)
+            ).first()
+
+            if not user:
+                return jsonify({
+                    'success': False,
+                    'error': 'User not found',
+                    'code': 'USER_NOT_FOUND'
+                }), 401
+
+            if user.status != UserStatus.ACTIVE:
+                return jsonify({
+                    'success': False,
+                    'error': 'Account is not active',
+                    'code': 'ACCOUNT_INACTIVE'
+                }), 403
+
+            # Attach user info to request context
+            request.user_id = user.id
+            request.user = {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role.value if user.role else 'analyst',
+                'company_id': user.company_id
+            }
+
+            # Also store in Flask's g object for broader access
+            g.user_id = user.id
+            g.user = request.user
+
+        finally:
+            db.close()
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def optional_auth(f):
+    """
+    Decorator that optionally authenticates.
+    Attaches user_id and user if token is present and valid.
+    Sets request.user_id = None if no token or invalid token.
+    Never returns 401 - always proceeds to route.
+
+    Usage:
+        @app.route('/api/public')
+        @optional_auth
+        def public_route():
+            if request.user_id:
+                # Logged in user
+                ...
+            else:
+                # Anonymous user
+                ...
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        token = None
+
+        # Default to anonymous
+        request.user_id = None
+        request.user = None
+        g.user_id = None
+        g.user = None
+
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+
+        if token:
+            # Try to validate the session
+            session_info = validate_session(token)
+
+            if session_info:
+                # Get user from database
+                db = SessionLocal()
+                try:
+                    user = db.query(User).filter(
+                        User.id == session_info['user_id'],
+                        User.deleted_at.is_(None),
+                        User.status == UserStatus.ACTIVE
+                    ).first()
+
+                    if user:
+                        # Attach user info to request context
+                        request.user_id = user.id
+                        request.user = {
+                            'id': user.id,
+                            'email': user.email,
+                            'full_name': user.full_name,
+                            'role': user.role.value if user.role else 'analyst',
+                            'company_id': user.company_id
+                        }
+                        g.user_id = user.id
+                        g.user = request.user
+                finally:
+                    db.close()
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def get_current_user():
+    """
+    Helper function to get the current authenticated user.
+    Must be called within a @require_auth or @optional_auth decorated route.
+
+    Returns:
+        dict: User info dict or None if not authenticated
+
+    Raises:
+        RuntimeError: If called outside of request context
+    """
+    if not hasattr(request, 'user'):
+        raise RuntimeError('get_current_user() must be called within a request context with @require_auth or @optional_auth')
+    return request.user
+
+
+def get_current_user_id():
+    """
+    Helper function to get the current authenticated user's ID.
+
+    Returns:
+        int: User ID or None if not authenticated
+    """
+    return getattr(request, 'user_id', None)
+
 
 @app.route('/')
 def index():
@@ -80,9 +283,11 @@ def index():
     })
 
 @app.route('/api/search', methods=['GET'])
+@optional_auth
 def search():
     """Search for existing profiles"""
     query = request.args.get('q', '')
+    user_id = request.user_id  # May be None for anonymous
     db = get_db()
     
     results = db.query(Profile).filter(
@@ -230,31 +435,35 @@ def scan_breaches(target_id):
 
 
 @app.route('/api/search/unified', methods=['POST'])
+@optional_auth
 def unified_search_endpoint():
     """Unified search across all data sources"""
+    user_id = request.user_id  # May be None for anonymous
     data = request.json
     query = data.get('query', '').strip()
-    
+
     if not query:
         return jsonify({'error': 'Query cannot be empty'}), 400
-    
+
     searcher = UnifiedSearch()
     result = searcher.search(query)
-    
+
     return jsonify(result)
 
 # Initialize adversary matcher
 adversary_matcher = AdversaryMatcher()
 
 @app.route('/api/adversary/analyze', methods=['POST'])
+@optional_auth
 def analyze_adversary():
     """Analyze threat landscape based on organization profile"""
     try:
+        user_id = request.user_id  # May be None for anonymous
         data = request.json
-        
+
         # Validate required fields
-        required = ['industry', 'location', 'company_size', 'tech_stack', 
-                   'cloud_usage', 'remote_work', 'security_maturity', 
+        required = ['industry', 'location', 'company_size', 'tech_stack',
+                   'cloud_usage', 'remote_work', 'security_maturity',
                    'internet_facing', 'critical_assets', 'data_sensitivity']
         
         for field in required:
@@ -1136,6 +1345,7 @@ def get_monitor_stats():
 # ============================================================================
 
 @app.route('/api/ghost/asm/scan', methods=['POST'])
+@require_auth
 def asm_scan():
     """
     Attack Surface Management scan for a domain with caching and progress tracking
@@ -1143,6 +1353,7 @@ def asm_scan():
 
     Returns cached results if scan < 24 hours old, unless force_rescan=true
     """
+    user_id = request.user_id
     session = SessionLocal()
     try:
         from modules.ghost.asm_scanner import scan_domain
@@ -1287,6 +1498,7 @@ def asm_scan():
         session.close()
 
 @app.route('/api/ghost/asm/scan-progress', methods=['POST'])
+@optional_auth
 def asm_scan_progress():
     """
     Get current progress of an ASM scan
@@ -1761,11 +1973,14 @@ def get_xasm_cached_domains():
 # ============================================================================
 
 @app.route('/api/lightbox/history', methods=['GET'])
+@require_auth
 def get_lightbox_history_endpoint():
     """Get Lightbox scan history"""
     from database import get_lightbox_scan_history
+    user_id = request.user_id
 
     try:
+        # TODO: Filter history by user_id when database supports it
         history = get_lightbox_scan_history()
         return jsonify({'success': True, 'history': history})
     except Exception as e:
@@ -1773,9 +1988,11 @@ def get_lightbox_history_endpoint():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/lightbox/history/<scan_id>', methods=['GET'])
+@require_auth
 def get_lightbox_scan_details(scan_id):
     """Get full Lightbox scan results by ID"""
     from database import get_lightbox_scan_by_id
+    # TODO: Add user ownership check when database supports it
 
     try:
         results = get_lightbox_scan_by_id(scan_id)
@@ -1788,9 +2005,11 @@ def get_lightbox_scan_details(scan_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/lightbox/history/<scan_id>', methods=['DELETE'])
+@require_auth
 def delete_lightbox_scan_history_endpoint(scan_id):
     """Delete Lightbox scan from history"""
     from database import delete_lightbox_scan_history
+    # TODO: Add user ownership check when database supports it
 
     try:
         success = delete_lightbox_scan_history(scan_id)
@@ -2837,13 +3056,15 @@ def get_framework_details(framework_id):
 
 
 @app.route('/api/compliance/assessment', methods=['POST'])
+@require_auth
 def create_assessment():
     """Create a new compliance assessment"""
+    user_id = request.user_id
+    company_id = request.user.get('company_id') or 1
     db = None
     try:
         data = request.json
         framework_id = data.get('framework_id')
-        company_id = data.get('company_id', 1)  # Default to 1 for now
 
         if not framework_id:
             return jsonify({'success': False, 'error': 'framework_id is required'}), 400
@@ -2857,9 +3078,9 @@ def create_assessment():
 
         db = get_db()
 
-        # Check if assessment already exists for this company and framework
+        # Check if assessment already exists for this user and framework
         existing = db.query(ComplianceAssessment).filter(
-            ComplianceAssessment.company_id == company_id,
+            ComplianceAssessment.created_by_user_id == user_id,
             ComplianceAssessment.framework == framework_id,
             ComplianceAssessment.deleted_at == None
         ).first()
@@ -2876,7 +3097,7 @@ def create_assessment():
         # Create new assessment
         assessment = ComplianceAssessment(
             company_id=company_id,
-            created_by_user_id=data.get('user_id', 1),
+            created_by_user_id=user_id,
             framework=framework_id,
             framework_version=data.get('framework_version', ''),
             status='in_progress',
@@ -2919,14 +3140,18 @@ def create_assessment():
 
 
 @app.route('/api/compliance/assessment/<int:assessment_id>', methods=['GET'])
+@require_auth
 def get_assessment(assessment_id):
     """Get assessment status with all controls"""
+    user_id = request.user_id
     db = None
     try:
         db = get_db()
 
+        # Get assessment with ownership check
         assessment = db.query(ComplianceAssessment).filter(
             ComplianceAssessment.id == assessment_id,
+            ComplianceAssessment.created_by_user_id == user_id,
             ComplianceAssessment.deleted_at == None
         ).first()
 
@@ -2996,16 +3221,17 @@ def get_assessment(assessment_id):
 
 
 @app.route('/api/compliance/assessment/by-framework/<framework_id>', methods=['GET'])
+@require_auth
 def get_assessment_by_framework(framework_id):
     """Get existing assessment for a framework (if any)"""
+    user_id = request.user_id
     db = None
     try:
-        company_id = request.args.get('company_id', 1, type=int)
-
         db = get_db()
 
+        # Get user's assessment for this framework
         assessment = db.query(ComplianceAssessment).filter(
-            ComplianceAssessment.company_id == company_id,
+            ComplianceAssessment.created_by_user_id == user_id,
             ComplianceAssessment.framework == framework_id,
             ComplianceAssessment.deleted_at == None
         ).first()
@@ -3052,16 +3278,20 @@ def get_assessment_by_framework(framework_id):
 
 
 @app.route('/api/compliance/control/<int:control_id>', methods=['PUT'])
+@require_auth
 def update_control(control_id):
     """Update a compliance control status"""
+    user_id = request.user_id
     db = None
     try:
         data = request.json
         db = get_db()
 
-        control = db.query(ComplianceControl).filter(
+        # Get control with ownership check through assessment
+        control = db.query(ComplianceControl).join(ComplianceAssessment).filter(
             ComplianceControl.id == control_id,
-            ComplianceControl.deleted_at == None
+            ComplianceControl.deleted_at == None,
+            ComplianceAssessment.created_by_user_id == user_id
         ).first()
 
         if not control:
@@ -3117,8 +3347,10 @@ def update_control(control_id):
 
 
 @app.route('/api/compliance/evidence', methods=['POST'])
+@require_auth
 def add_evidence():
     """Add evidence to a control"""
+    user_id = request.user_id
     db = None
     try:
         data = request.json
@@ -3129,10 +3361,11 @@ def add_evidence():
 
         db = get_db()
 
-        # Verify control exists
-        control = db.query(ComplianceControl).filter(
+        # Verify control exists and user owns it through assessment
+        control = db.query(ComplianceControl).join(ComplianceAssessment).filter(
             ComplianceControl.id == control_id,
-            ComplianceControl.deleted_at == None
+            ComplianceControl.deleted_at == None,
+            ComplianceAssessment.created_by_user_id == user_id
         ).first()
 
         if not control:
@@ -3148,7 +3381,7 @@ def add_evidence():
             file_path=data.get('file_path'),
             file_size=data.get('file_size'),
             file_type=data.get('file_type'),
-            uploaded_by_user_id=data.get('user_id', 1),
+            uploaded_by_user_id=user_id,
             evidence_date=datetime.now(timezone.utc)
         )
         db.add(evidence)
@@ -3171,15 +3404,23 @@ def add_evidence():
 
 
 @app.route('/api/compliance/evidence/<int:control_id>', methods=['GET'])
+@require_auth
 def get_evidence(control_id):
     """Get all evidence for a control"""
+    user_id = request.user_id
     db = None
     try:
         db = get_db()
 
-        evidence_list = db.query(ComplianceEvidence).filter(
+        # Get evidence with ownership check through control -> assessment
+        evidence_list = db.query(ComplianceEvidence).join(
+            ComplianceControl
+        ).join(
+            ComplianceAssessment
+        ).filter(
             ComplianceEvidence.control_id == control_id,
-            ComplianceEvidence.deleted_at == None
+            ComplianceEvidence.deleted_at == None,
+            ComplianceAssessment.created_by_user_id == user_id
         ).all()
 
         evidence_data = [{
@@ -3210,15 +3451,23 @@ def get_evidence(control_id):
 
 
 @app.route('/api/compliance/evidence/<int:evidence_id>', methods=['DELETE'])
+@require_auth
 def delete_evidence(evidence_id):
     """Delete evidence (soft delete)"""
+    user_id = request.user_id
     db = None
     try:
         db = get_db()
 
-        evidence = db.query(ComplianceEvidence).filter(
+        # Get evidence with ownership check
+        evidence = db.query(ComplianceEvidence).join(
+            ComplianceControl
+        ).join(
+            ComplianceAssessment
+        ).filter(
             ComplianceEvidence.id == evidence_id,
-            ComplianceEvidence.deleted_at == None
+            ComplianceEvidence.deleted_at == None,
+            ComplianceAssessment.created_by_user_id == user_id
         ).first()
 
         if not evidence:
@@ -3243,14 +3492,18 @@ def delete_evidence(evidence_id):
 
 
 @app.route('/api/compliance/export/<int:assessment_id>', methods=['GET'])
+@require_auth
 def export_assessment(assessment_id):
     """Export assessment as JSON (for PDF/Excel generation on frontend)"""
+    user_id = request.user_id
     db = None
     try:
         db = get_db()
 
+        # Get assessment with ownership check
         assessment = db.query(ComplianceAssessment).filter(
             ComplianceAssessment.id == assessment_id,
+            ComplianceAssessment.created_by_user_id == user_id,
             ComplianceAssessment.deleted_at == None
         ).first()
 
@@ -3341,11 +3594,13 @@ def export_assessment(assessment_id):
 # ============================================================================
 
 @app.route('/api/compliance/analyze-scan', methods=['POST'])
+@require_auth
 def analyze_scan_for_compliance():
     """
     Analyze scan findings and return affected compliance controls.
     Optionally auto-flag controls in an existing assessment.
     """
+    user_id = request.user_id
     db = None
     try:
         data = request.json
@@ -3370,8 +3625,10 @@ def analyze_scan_for_compliance():
         if assessment_id and auto_flag:
             db = get_db()
 
+            # Get assessment with ownership check
             assessment = db.query(ComplianceAssessment).filter(
                 ComplianceAssessment.id == assessment_id,
+                ComplianceAssessment.created_by_user_id == user_id,
                 ComplianceAssessment.deleted_at == None
             ).first()
 
@@ -3451,19 +3708,22 @@ def analyze_scan_for_compliance():
 
 
 @app.route('/api/compliance/affected-controls/<domain>', methods=['GET'])
+@require_auth
 def get_affected_controls_for_domain(domain):
     """
     Get compliance controls that have been flagged by scans for a specific domain.
     """
+    user_id = request.user_id
     db = None
     try:
         db = get_db()
 
-        # Get all controls flagged for this domain
-        controls = db.query(ComplianceControl).filter(
+        # Get all controls flagged for this domain with ownership check
+        controls = db.query(ComplianceControl).join(ComplianceAssessment).filter(
             ComplianceControl.scan_domain == domain,
             ComplianceControl.scan_source != None,
-            ComplianceControl.deleted_at == None
+            ComplianceControl.deleted_at == None,
+            ComplianceAssessment.created_by_user_id == user_id
         ).all()
 
         result = []
@@ -3497,11 +3757,13 @@ def get_affected_controls_for_domain(domain):
 
 
 @app.route('/api/compliance/flag-from-scan', methods=['POST'])
+@require_auth
 def flag_controls_from_scan():
     """
     Manually trigger control flagging from recent scan data for a domain.
     Fetches the latest XASM and Lightbox scans and flags affected controls.
     """
+    user_id = request.user_id
     db = None
     try:
         data = request.json
@@ -3513,9 +3775,10 @@ def flag_controls_from_scan():
 
         db = get_db()
 
-        # Get the assessment
+        # Get the assessment with ownership check
         assessment = db.query(ComplianceAssessment).filter(
             ComplianceAssessment.id == assessment_id,
+            ComplianceAssessment.created_by_user_id == user_id,
             ComplianceAssessment.deleted_at == None
         ).first()
 
@@ -3692,11 +3955,13 @@ def flag_controls_from_scan():
 
 
 @app.route('/api/compliance/verify-fix/<int:control_id>', methods=['POST'])
+@require_auth
 def verify_control_fix(control_id):
     """
     Mark a control as verified after re-scan confirms the fix.
     This is called after a new scan shows the vulnerability is resolved.
     """
+    user_id = request.user_id
     db = None
     try:
         data = request.json
@@ -3704,9 +3969,11 @@ def verify_control_fix(control_id):
 
         db = get_db()
 
-        control = db.query(ComplianceControl).filter(
+        # Get control with ownership check
+        control = db.query(ComplianceControl).join(ComplianceAssessment).filter(
             ComplianceControl.id == control_id,
-            ComplianceControl.deleted_at == None
+            ComplianceControl.deleted_at == None,
+            ComplianceAssessment.created_by_user_id == user_id
         ).first()
 
         if not control:
@@ -3726,7 +3993,7 @@ def verify_control_fix(control_id):
                 description=f"Control verified as compliant by re-scan on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}.\n\n"
                            f"Original finding: {control.scan_finding_type}\n"
                            f"Original scan date: {control.scan_flagged_at}",
-                uploaded_by_user_id=1,
+                uploaded_by_user_id=user_id,
                 evidence_date=datetime.now(timezone.utc)
             )
             db.add(evidence)
@@ -3750,19 +4017,22 @@ def verify_control_fix(control_id):
 
 
 @app.route('/api/compliance/scan-summary/<int:assessment_id>', methods=['GET'])
+@require_auth
 def get_scan_flagged_summary(assessment_id):
     """
     Get a summary of controls flagged by scans for an assessment.
     """
+    user_id = request.user_id
     db = None
     try:
         db = get_db()
 
-        # Get all scan-flagged controls for this assessment
-        controls = db.query(ComplianceControl).filter(
+        # Get all scan-flagged controls for this assessment with ownership check
+        controls = db.query(ComplianceControl).join(ComplianceAssessment).filter(
             ComplianceControl.assessment_id == assessment_id,
             ComplianceControl.scan_source != None,
-            ComplianceControl.deleted_at == None
+            ComplianceControl.deleted_at == None,
+            ComplianceAssessment.created_by_user_id == user_id
         ).all()
 
         # Group by finding type
@@ -3815,17 +4085,20 @@ def get_scan_flagged_summary(assessment_id):
 # ============================================================================
 
 @app.route('/api/roadmap/profile', methods=['GET'])
+@require_auth
 def get_roadmap_profile():
     """
     Get or check for existing roadmap profile.
     Returns profile data if exists, or null to trigger profile setup.
     """
+    user_id = request.user_id
     db = None
     try:
         db = get_db()
 
-        # For now, get the most recent profile (will be user-specific when auth is added)
+        # Get user's roadmap profile
         profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.user_id == user_id,
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).order_by(RoadmapProfile.created_at.desc()).first()
@@ -3880,17 +4153,20 @@ def get_roadmap_profile():
 
 
 @app.route('/api/roadmap/profile', methods=['POST'])
+@require_auth
 def create_roadmap_profile():
     """
     Create or update roadmap profile.
     """
+    user_id = request.user_id
     db = None
     try:
         data = request.get_json()
         db = get_db()
 
-        # Check for existing profile
+        # Check for existing profile for this user
         existing = db.query(RoadmapProfile).filter(
+            RoadmapProfile.user_id == user_id,
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -3920,8 +4196,9 @@ def create_roadmap_profile():
                 'message': 'Profile updated successfully'
             }), 200
         else:
-            # Create new profile
+            # Create new profile for this user
             profile = RoadmapProfile(
+                user_id=user_id,
                 company_name=data.get('company_name', 'My Company'),
                 company_size=data.get('company_size', 'small'),
                 industry=data.get('industry', 'technology'),
@@ -3961,19 +4238,22 @@ def create_roadmap_profile():
 
 
 @app.route('/api/roadmap/tasks', methods=['GET'])
+@require_auth
 def get_roadmap_tasks():
     """
     Get all assigned tasks for user's roadmap.
     Query params: phase, status, source
     """
     from roadmap_mappings import TASK_LIBRARY
+    user_id = request.user_id
 
     db = None
     try:
         db = get_db()
 
-        # Get profile
+        # Get user's profile
         profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.user_id == user_id,
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -4078,11 +4358,13 @@ def get_roadmap_tasks():
 
 
 @app.route('/api/roadmap/generate', methods=['POST'])
+@require_auth
 def generate_roadmap():
     """
     Generate personalized roadmap based on profile + scans.
     """
     from roadmap_mappings import TASK_LIBRARY, map_scan_to_tasks, get_tasks_for_profile, prioritize_tasks
+    user_id = request.user_id
 
     db = None
     try:
@@ -4091,8 +4373,9 @@ def generate_roadmap():
 
         db = get_db()
 
-        # Get profile
+        # Get user's profile
         profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.user_id == user_id,
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -4223,11 +4506,13 @@ def generate_roadmap():
 
 
 @app.route('/api/roadmap/task/<int:task_id>', methods=['PUT'])
+@require_auth
 def update_roadmap_task(task_id):
     """
     Update task status.
     """
     from roadmap_mappings import TASK_LIBRARY, ACHIEVEMENTS
+    user_id = request.user_id
 
     db = None
     try:
@@ -4237,10 +4522,11 @@ def update_roadmap_task(task_id):
 
         db = get_db()
 
-        # Get the task
-        task = db.query(RoadmapUserTask).filter(
+        # Get the task with profile ownership check
+        task = db.query(RoadmapUserTask).join(RoadmapProfile).filter(
             RoadmapUserTask.id == task_id,
-            RoadmapUserTask.deleted_at == None
+            RoadmapUserTask.deleted_at == None,
+            RoadmapProfile.user_id == user_id
         ).first()
 
         if not task:
@@ -4372,10 +4658,12 @@ def update_roadmap_task(task_id):
 
 
 @app.route('/api/roadmap/task/<int:task_id>/verify', methods=['POST'])
+@require_auth
 def verify_roadmap_task(task_id):
     """
     Re-scan to verify task completion.
     """
+    user_id = request.user_id
     db = None
     try:
         data = request.get_json() or {}
@@ -4383,10 +4671,11 @@ def verify_roadmap_task(task_id):
 
         db = get_db()
 
-        # Get the task
-        task = db.query(RoadmapUserTask).filter(
+        # Get the task with profile ownership check
+        task = db.query(RoadmapUserTask).join(RoadmapProfile).filter(
             RoadmapUserTask.id == task_id,
-            RoadmapUserTask.deleted_at == None
+            RoadmapUserTask.deleted_at == None,
+            RoadmapProfile.user_id == user_id
         ).first()
 
         if not task:
@@ -4426,18 +4715,21 @@ def verify_roadmap_task(task_id):
 
 
 @app.route('/api/roadmap/progress', methods=['GET'])
+@require_auth
 def get_roadmap_progress():
     """
     Get progress history for graphs.
     """
+    user_id = request.user_id
     db = None
     try:
         days = request.args.get('days', 30, type=int)
 
         db = get_db()
 
-        # Get profile
+        # Get user's profile
         profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.user_id == user_id,
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -4503,18 +4795,21 @@ def get_roadmap_progress():
 
 
 @app.route('/api/roadmap/achievements', methods=['GET'])
+@require_auth
 def get_roadmap_achievements():
     """
     Get unlocked and available achievements.
     """
     from roadmap_mappings import ACHIEVEMENTS
+    user_id = request.user_id
 
     db = None
     try:
         db = get_db()
 
-        # Get profile
+        # Get user's profile
         profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.user_id == user_id,
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -4586,18 +4881,21 @@ def get_roadmap_achievements():
 
 
 @app.route('/api/roadmap/stats', methods=['GET'])
+@require_auth
 def get_roadmap_stats():
     """
     Get dashboard stats for roadmap widget.
     """
     from roadmap_mappings import TASK_LIBRARY
+    user_id = request.user_id
 
     db = None
     try:
         db = get_db()
 
-        # Get profile
+        # Get user's profile
         profile = db.query(RoadmapProfile).filter(
+            RoadmapProfile.user_id == user_id,
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -4671,6 +4969,2876 @@ def get_roadmap_stats():
             db.close()
         print(f"[ROADMAP] Error getting stats: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# =============================================================================
+# AUTHENTICATION ENDPOINTS
+# =============================================================================
+
+@app.route('/api/auth/signup', methods=['POST'])
+def auth_signup():
+    """Register a new user account."""
+    db = None
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        # Validate required fields
+        required_fields = ['email', 'password', 'full_name']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'error': f'{field} is required'}), 400
+
+        email = data['email'].lower().strip()
+        password = data['password']
+        full_name = data['full_name'].strip()
+        company_name = data.get('company', '').strip()
+
+        # Validate email format
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return jsonify({'success': False, 'error': 'Invalid email format'}), 400
+
+        # Validate password strength
+        if len(password) < 8:
+            return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
+        if not re.search(r'[A-Z]', password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one uppercase letter'}), 400
+        if not re.search(r'[a-z]', password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one lowercase letter'}), 400
+        if not re.search(r'\d', password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one number'}), 400
+
+        db = SessionLocal()
+
+        # Check if email already exists
+        existing_user = db.query(User).filter(User.email == email, User.deleted_at.is_(None)).first()
+        if existing_user:
+            db.close()
+            return jsonify({'success': False, 'error': 'An account with this email already exists'}), 409
+
+        # Create or find company if provided
+        company_id = None
+        if company_name:
+            company = db.query(Company).filter(Company.name == company_name).first()
+            if not company:
+                company = Company(name=company_name)
+                db.add(company)
+                db.flush()
+            company_id = company.id
+
+        # Create user
+        user = User(
+            email=email,
+            password_hash=hash_password(password),
+            full_name=full_name,
+            company_id=company_id,
+            role=UserRole.ANALYST,
+            status=UserStatus.ACTIVE
+        )
+        db.add(user)
+        db.commit()
+
+        # Create session for the new user
+        ip_address = request.remote_addr or '0.0.0.0'
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+        session_data = create_session(user.id, ip_address, user_agent)
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Account created successfully',
+            'token': session_data['token'],
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role.value if user.role else 'analyst'
+            }
+        }), 201
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[AUTH] Signup error: {e}")
+        return jsonify({'success': False, 'error': 'Registration failed. Please try again.'}), 500
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login():
+    """Authenticate user and create session."""
+    db = None
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        email = data.get('email', '').lower().strip()
+        password = data.get('password', '')
+        remember_me = data.get('remember_me', False)
+
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Email and password are required'}), 400
+
+        ip_address = request.remote_addr or '0.0.0.0'
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+
+        # Check for brute force
+        if detect_brute_force(email, ip_address):
+            return jsonify({
+                'success': False,
+                'error': 'Too many failed attempts. Please try again later.'
+            }), 429
+
+        db = SessionLocal()
+
+        # Find user
+        user = db.query(User).filter(
+            User.email == email,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            log_login_attempt(email, ip_address, False)
+            db.close()
+            return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+
+        # Check if user is active
+        if user.status != UserStatus.ACTIVE:
+            log_login_attempt(email, ip_address, False)
+            db.close()
+            return jsonify({'success': False, 'error': 'Account is not active'}), 403
+
+        # Verify password
+        if not verify_password(password, user.password_hash):
+            log_login_attempt(email, ip_address, False)
+            db.close()
+            return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+
+        # Log successful attempt
+        log_login_attempt(email, ip_address, True)
+
+        # Update last login
+        user.last_login = datetime.now(timezone.utc)
+        db.commit()
+
+        # Create session (longer expiry if remember_me)
+        session_data = create_session(user.id, ip_address, user_agent)
+
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'role': user.role.value if user.role else 'analyst'
+        }
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Login successful',
+            'token': session_data['token'],
+            'user': user_data
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[AUTH] Login error: {e}")
+        return jsonify({'success': False, 'error': 'Login failed. Please try again.'}), 500
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    """Revoke user session (logout)."""
+    try:
+        # Get token from header or body
+        auth_header = request.headers.get('Authorization', '')
+        token = None
+
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+        else:
+            data = request.get_json() or {}
+            token = data.get('token')
+
+        if not token:
+            return jsonify({'success': False, 'error': 'No token provided'}), 400
+
+        # Revoke the session
+        revoke_session(token)
+
+        return jsonify({
+            'success': True,
+            'message': 'Logged out successfully'
+        }), 200
+
+    except Exception as e:
+        print(f"[AUTH] Logout error: {e}")
+        return jsonify({'success': False, 'error': 'Logout failed'}), 500
+
+
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def auth_forgot_password():
+    """Initiate password reset process."""
+    db = None
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        email = data.get('email', '').lower().strip()
+
+        if not email:
+            return jsonify({'success': False, 'error': 'Email is required'}), 400
+
+        db = SessionLocal()
+
+        # Find user (don't reveal if email exists or not for security)
+        user = db.query(User).filter(
+            User.email == email,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if user:
+            # Generate reset token (24 hour expiration)
+            reset_token = generate_secure_token()
+            expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+
+            # Store reset token in user record
+            user.password_reset_token = reset_token
+            user.password_reset_expires = expires_at
+            db.commit()
+
+            # In production, send email with reset link
+            # For now, log the token (remove in production!)
+            print(f"[AUTH] Password reset token for {email}: {reset_token}")
+
+        db.close()
+
+        # Always return success to prevent email enumeration
+        return jsonify({
+            'success': True,
+            'message': 'If an account exists with this email, a password reset link has been sent.'
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[AUTH] Forgot password error: {e}")
+        return jsonify({'success': False, 'error': 'Request failed. Please try again.'}), 500
+
+
+@app.route('/api/auth/validate-session', methods=['GET'])
+def auth_validate_session():
+    """Validate current session token."""
+    try:
+        auth_header = request.headers.get('Authorization', '')
+        token = None
+
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+
+        if not token:
+            return jsonify({'valid': False, 'error': 'No token provided'}), 401
+
+        # Validate the session
+        session_info = validate_session(token)
+
+        if not session_info:
+            return jsonify({'valid': False, 'error': 'Invalid or expired session'}), 401
+
+        # Get user info
+        db = SessionLocal()
+        user = db.query(User).filter(User.id == session_info['user_id']).first()
+
+        if not user or user.status != UserStatus.ACTIVE:
+            db.close()
+            return jsonify({'valid': False, 'error': 'User not found or inactive'}), 401
+
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'role': user.role.value if user.role else 'analyst'
+        }
+
+        db.close()
+
+        return jsonify({
+            'valid': True,
+            'user': user_data,
+            'expires_at': session_info.get('expires_at')
+        }), 200
+
+    except Exception as e:
+        print(f"[AUTH] Session validation error: {e}")
+        return jsonify({'valid': False, 'error': 'Validation failed'}), 500
+
+
+@app.route('/api/auth/validate-reset-token', methods=['POST'])
+def auth_validate_reset_token():
+    """Validate a password reset token."""
+    db = None
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'valid': False, 'error': 'No data provided'}), 400
+
+        token = data.get('token', '')
+
+        if not token:
+            return jsonify({'valid': False, 'error': 'No token provided'}), 400
+
+        db = SessionLocal()
+
+        # Find user with this reset token
+        user = db.query(User).filter(
+            User.password_reset_token == token,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            db.close()
+            return jsonify({'valid': False, 'error': 'Invalid reset token'}), 400
+
+        # Check if token is expired (24 hour window)
+        if user.password_reset_expires:
+            if datetime.now(timezone.utc) > user.password_reset_expires:
+                db.close()
+                return jsonify({'valid': False, 'error': 'Reset token has expired'}), 400
+
+        db.close()
+        return jsonify({'valid': True}), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[AUTH] Token validation error: {e}")
+        return jsonify({'valid': False, 'error': 'Validation failed'}), 500
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def auth_reset_password():
+    """Reset password using reset token."""
+    db = None
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        token = data.get('token', '')
+        new_password = data.get('new_password', '')
+
+        if not token:
+            return jsonify({'success': False, 'error': 'No reset token provided'}), 400
+
+        if not new_password:
+            return jsonify({'success': False, 'error': 'New password is required'}), 400
+
+        # Validate password strength
+        if len(new_password) < 8:
+            return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
+        if not re.search(r'[A-Z]', new_password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one uppercase letter'}), 400
+        if not re.search(r'[a-z]', new_password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one lowercase letter'}), 400
+        if not re.search(r'\d', new_password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one number'}), 400
+
+        db = SessionLocal()
+
+        # Find user with this reset token
+        user = db.query(User).filter(
+            User.password_reset_token == token,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            db.close()
+            return jsonify({'success': False, 'error': 'Invalid or expired reset token'}), 400
+
+        # Check if token is expired (24 hour window)
+        if user.password_reset_expires:
+            if datetime.now(timezone.utc) > user.password_reset_expires:
+                # Clear expired token
+                user.password_reset_token = None
+                user.password_reset_expires = None
+                db.commit()
+                db.close()
+                return jsonify({'success': False, 'error': 'Reset link has expired. Please request a new one.'}), 400
+
+        # Update password
+        user.password_hash = hash_password(new_password)
+
+        # Clear reset token
+        user.password_reset_token = None
+        user.password_reset_expires = None
+
+        # Update last modified
+        user.updated_at = datetime.now(timezone.utc)
+
+        db.commit()
+
+        # Log security event
+        print(f"[AUTH] Password reset successful for user: {user.email}")
+
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Password reset successfully. You can now log in with your new password.'
+        }), 200
+
+    except Exception as e:
+        if db:
+            db.close()
+        print(f"[AUTH] Password reset error: {e}")
+        return jsonify({'success': False, 'error': 'Password reset failed. Please try again.'}), 500
+
+
+# =============================================================================
+# USER PROFILE ENDPOINTS
+# =============================================================================
+
+@app.route('/api/profile', methods=['GET'])
+@require_auth
+def get_user_profile():
+    """
+    Get the current user's profile information.
+    Returns user details including company info.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == request.user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Get company name if user belongs to a company
+        company_name = None
+        if user.company_id:
+            company = db.query(Company).filter(
+                Company.id == user.company_id,
+                Company.deleted_at.is_(None)
+            ).first()
+            if company:
+                company_name = company.name
+
+        return jsonify({
+            'id': user.id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'role': user.role.value if user.role else 'user',
+            'company_id': user.company_id,
+            'company_name': company_name,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'last_login': user.last_login_at.isoformat() if user.last_login_at else None,
+            'email_verified': user.email_verified,
+            'twofa_enabled': user.twofa_enabled
+        })
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/update', methods=['PUT'])
+@require_auth
+def update_user_profile():
+    """
+    Update the current user's profile information.
+    Viewers cannot update their profile (read-only).
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == request.user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Check if user is a viewer (read-only)
+        if user.role and user.role.value == 'viewer':
+            return jsonify({'error': 'Viewers cannot update profile information'}), 403
+
+        data = request.get_json()
+
+        # Update allowed fields
+        if 'full_name' in data:
+            user.full_name = data['full_name'][:255] if data['full_name'] else None
+
+        if 'email' in data:
+            new_email = data['email'].lower().strip()
+
+            # Check if email is already taken by another user
+            existing = db.query(User).filter(
+                User.email == new_email,
+                User.id != user.id,
+                User.deleted_at.is_(None)
+            ).first()
+
+            if existing:
+                return jsonify({'error': 'Email address is already in use'}), 400
+
+            user.email = new_email
+
+        user.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return jsonify({
+            'id': user.id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'role': user.role.value if user.role else 'user',
+            'updated_at': user.updated_at.isoformat()
+        })
+    except Exception as e:
+        db.rollback()
+        print(f"[PROFILE] Error updating profile: {e}")
+        return jsonify({'error': 'Failed to update profile'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/change-password', methods=['POST'])
+@require_auth
+def change_user_password():
+    """
+    Change the current user's password.
+    Requires current password verification.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == request.user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        data = request.get_json()
+        current_password = data.get('current_password', '')
+        new_password = data.get('new_password', '')
+
+        if not current_password or not new_password:
+            return jsonify({'error': 'Current and new passwords are required'}), 400
+
+        # Verify current password
+        if not verify_password(current_password, user.password_hash):
+            return jsonify({'error': 'Current password is incorrect'}), 400
+
+        # Validate new password strength
+        if len(new_password) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters'}), 400
+        if not re.search(r'[A-Z]', new_password):
+            return jsonify({'error': 'Password must contain an uppercase letter'}), 400
+        if not re.search(r'[a-z]', new_password):
+            return jsonify({'error': 'Password must contain a lowercase letter'}), 400
+        if not re.search(r'[0-9]', new_password):
+            return jsonify({'error': 'Password must contain a number'}), 400
+
+        # Hash and update password
+        user.password_hash = hash_password(new_password)
+        user.last_password_change = datetime.now(timezone.utc)
+        user.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Log security event
+        log_security_event(
+            event_type='password_changed',
+            severity='info',
+            user_id=user.id,
+            ip_address=request.remote_addr,
+            description=f'Password changed for user: {user.email}'
+        )
+
+        print(f"[PROFILE] Password changed for user: {user.email}")
+        return jsonify({'success': True, 'message': 'Password changed successfully'})
+
+    except Exception as e:
+        db.rollback()
+        print(f"[PROFILE] Error changing password: {e}")
+        return jsonify({'error': 'Failed to change password'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/sessions', methods=['GET'])
+@require_auth
+def get_user_sessions():
+    """
+    Get all active sessions for the current user.
+    Marks the current session.
+    """
+    db = SessionLocal()
+    try:
+        # Get current session token from auth header
+        auth_header = request.headers.get('Authorization', '')
+        current_token = auth_header[7:] if auth_header.startswith('Bearer ') else None
+
+        sessions = db.query(UserSession).filter(
+            UserSession.user_id == request.user_id,
+            UserSession.is_active == True,
+            UserSession.revoked_at.is_(None),
+            UserSession.expires_at > datetime.now(timezone.utc)
+        ).order_by(UserSession.last_activity.desc()).all()
+
+        result = []
+        for s in sessions:
+            # Parse user agent for browser info
+            browser = 'Unknown Browser'
+            device_type = s.device_type or 'desktop'
+
+            if s.user_agent:
+                ua = s.user_agent.lower()
+                if 'chrome' in ua:
+                    browser = 'Chrome'
+                elif 'firefox' in ua:
+                    browser = 'Firefox'
+                elif 'safari' in ua:
+                    browser = 'Safari'
+                elif 'edge' in ua:
+                    browser = 'Edge'
+                elif 'opera' in ua:
+                    browser = 'Opera'
+
+            result.append({
+                'id': s.id,
+                'device_type': device_type,
+                'browser': browser,
+                'ip_address': s.ip_address,
+                'location': s.location or 'Unknown',
+                'last_activity': s.last_activity.isoformat() if s.last_activity else None,
+                'is_current': current_token and s.token == current_token
+            })
+
+        return jsonify(result)
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/sessions/<int:session_id>', methods=['DELETE'])
+@require_auth
+def revoke_user_session(session_id):
+    """
+    Revoke a specific session.
+    Cannot revoke the current session.
+    """
+    db = SessionLocal()
+    try:
+        # Get current session token
+        auth_header = request.headers.get('Authorization', '')
+        current_token = auth_header[7:] if auth_header.startswith('Bearer ') else None
+
+        session = db.query(UserSession).filter(
+            UserSession.id == session_id,
+            UserSession.user_id == request.user_id,
+            UserSession.is_active == True
+        ).first()
+
+        if not session:
+            return jsonify({'error': 'Session not found'}), 404
+
+        # Prevent revoking current session
+        if current_token and session.token == current_token:
+            return jsonify({'error': 'Cannot revoke your current session'}), 400
+
+        # Revoke the session
+        session.is_active = False
+        session.revoked_at = datetime.now(timezone.utc)
+        db.commit()
+
+        print(f"[PROFILE] Session {session_id} revoked for user {request.user_id}")
+        return jsonify({'success': True, 'message': 'Session revoked successfully'})
+
+    except Exception as e:
+        db.rollback()
+        print(f"[PROFILE] Error revoking session: {e}")
+        return jsonify({'error': 'Failed to revoke session'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/login-history', methods=['GET'])
+@require_auth
+def get_login_history():
+    """
+    Get the login history for the current user.
+    Returns last 10 login attempts.
+    """
+    db = SessionLocal()
+    try:
+        attempts = db.query(LoginAttempt).filter(
+            LoginAttempt.user_id == request.user_id
+        ).order_by(LoginAttempt.attempted_at.desc()).limit(10).all()
+
+        result = []
+        for a in attempts:
+            # Parse user agent for device info
+            device = 'Unknown'
+            if a.user_agent:
+                ua = a.user_agent.lower()
+                if 'chrome' in ua:
+                    device = 'Chrome'
+                elif 'firefox' in ua:
+                    device = 'Firefox'
+                elif 'safari' in ua:
+                    device = 'Safari'
+                elif 'edge' in ua:
+                    device = 'Edge'
+                elif 'mobile' in ua:
+                    device = 'Mobile Browser'
+
+            result.append({
+                'timestamp': a.attempted_at.isoformat() if a.attempted_at else None,
+                'ip_address': a.ip_address,
+                'success': a.success,
+                'device': device,
+                'failure_reason': a.failure_reason if not a.success else None
+            })
+
+        return jsonify(result)
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/api-keys', methods=['GET'])
+@require_auth
+def get_user_api_keys():
+    """
+    Get all API keys for the current user.
+    Viewers cannot access API keys.
+    """
+    # Check role
+    if request.user.get('role') == 'viewer':
+        return jsonify({'error': 'Insufficient permissions'}), 403
+
+    db = SessionLocal()
+    try:
+        keys = db.query(APIKey).filter(
+            APIKey.user_id == request.user_id,
+            APIKey.is_active == True,
+            APIKey.revoked_at.is_(None)
+        ).order_by(APIKey.created_at.desc()).all()
+
+        result = []
+        for k in keys:
+            permissions = []
+            if k.permissions:
+                try:
+                    permissions = json.loads(k.permissions)
+                except:
+                    permissions = []
+
+            result.append({
+                'id': k.id,
+                'name': k.name,
+                'key_prefix': k.key_prefix,
+                'permissions': permissions,
+                'created_at': k.created_at.isoformat() if k.created_at else None,
+                'last_used_at': k.last_used_at.isoformat() if k.last_used_at else None,
+                'expires_at': k.expires_at.isoformat() if k.expires_at else None,
+                'usage_count': k.usage_count or 0
+            })
+
+        return jsonify(result)
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/api-keys', methods=['POST'])
+@require_auth
+def create_user_api_key():
+    """
+    Create a new API key for the current user.
+    Viewers cannot create API keys.
+    Admin permission requires admin role.
+    """
+    # Check role
+    user_role = request.user.get('role', 'user')
+    if user_role == 'viewer':
+        return jsonify({'error': 'Insufficient permissions'}), 403
+
+    data = request.get_json()
+    name = data.get('name', '').strip()
+    permissions = data.get('permissions', ['read'])
+    expires_days = data.get('expires_days', 90)
+
+    if not name:
+        return jsonify({'error': 'Key name is required'}), 400
+
+    if len(name) > 100:
+        return jsonify({'error': 'Key name must be 100 characters or less'}), 400
+
+    # Validate permissions
+    valid_permissions = ['read', 'write', 'admin']
+    permissions = [p for p in permissions if p in valid_permissions]
+
+    # Only admin users can create keys with admin permission
+    if 'admin' in permissions and user_role not in ['admin', 'super_admin']:
+        permissions.remove('admin')
+
+    if not permissions:
+        permissions = ['read']
+
+    # Handle expiration
+    if expires_days == 0:
+        expires_days = None  # Never expires
+
+    # Create the API key
+    result = create_api_key(
+        user_id=request.user_id,
+        name=name,
+        permissions=permissions,
+        expires_days=expires_days
+    )
+
+    if result:
+        return jsonify({
+            'success': True,
+            'key': result['key'],
+            'key_id': result['key_id'],
+            'expires_at': result['expires_at']
+        })
+    else:
+        return jsonify({'error': 'Failed to create API key'}), 500
+
+
+@app.route('/api/profile/api-keys/<int:key_id>', methods=['DELETE'])
+@require_auth
+def delete_user_api_key(key_id):
+    """
+    Revoke an API key.
+    Viewers cannot revoke API keys.
+    """
+    # Check role
+    if request.user.get('role') == 'viewer':
+        return jsonify({'error': 'Insufficient permissions'}), 403
+
+    success = revoke_api_key(key_id, user_id=request.user_id)
+
+    if success:
+        return jsonify({'success': True, 'message': 'API key revoked successfully'})
+    else:
+        return jsonify({'error': 'API key not found or already revoked'}), 404
+
+
+@app.route('/api/profile/company', methods=['GET'])
+@require_auth
+def get_user_company():
+    """
+    Get the company information for the current user.
+    Only admins and owners can view company details.
+    """
+    user_role = request.user.get('role', 'user')
+    if user_role not in ['admin', 'super_admin', 'owner']:
+        return jsonify({'error': 'Insufficient permissions'}), 403
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == request.user_id).first()
+
+        if not user or not user.company_id:
+            return jsonify({'error': 'No company associated with this account'}), 404
+
+        company = db.query(Company).filter(
+            Company.id == user.company_id,
+            Company.deleted_at.is_(None)
+        ).first()
+
+        if not company:
+            return jsonify({'error': 'Company not found'}), 404
+
+        # Parse additional info if stored as JSON
+        additional_data = {}
+        if company.additional_domains:
+            try:
+                additional_data = json.loads(company.additional_domains)
+            except:
+                pass
+
+        return jsonify({
+            'id': company.id,
+            'name': company.name,
+            'industry': additional_data.get('industry', ''),
+            'company_size': additional_data.get('company_size', ''),
+            'employee_count': additional_data.get('employee_count'),
+            'primary_domain': company.primary_domain,
+            'subscription_tier': company.subscription_tier,
+            'max_seats': company.max_seats
+        })
+    finally:
+        db.close()
+
+
+@app.route('/api/profile/company', methods=['PUT'])
+@require_auth
+def update_user_company():
+    """
+    Update company information.
+    Only admins and owners can update company details.
+    """
+    user_role = request.user.get('role', 'user')
+    if user_role not in ['admin', 'super_admin', 'owner']:
+        return jsonify({'error': 'Insufficient permissions'}), 403
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == request.user_id).first()
+
+        if not user or not user.company_id:
+            return jsonify({'error': 'No company associated with this account'}), 404
+
+        company = db.query(Company).filter(
+            Company.id == user.company_id,
+            Company.deleted_at.is_(None)
+        ).first()
+
+        if not company:
+            return jsonify({'error': 'Company not found'}), 404
+
+        data = request.get_json()
+
+        # Update company name
+        if 'name' in data and data['name']:
+            company.name = data['name'][:255]
+
+        # Store additional info in additional_domains JSON
+        additional_data = {}
+        if company.additional_domains:
+            try:
+                additional_data = json.loads(company.additional_domains)
+            except:
+                additional_data = {}
+
+        if 'industry' in data:
+            additional_data['industry'] = data['industry']
+        if 'company_size' in data:
+            additional_data['company_size'] = data['company_size']
+        if 'employee_count' in data:
+            additional_data['employee_count'] = data['employee_count']
+
+        company.additional_domains = json.dumps(additional_data)
+        company.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return jsonify({
+            'id': company.id,
+            'name': company.name,
+            'industry': additional_data.get('industry', ''),
+            'company_size': additional_data.get('company_size', ''),
+            'employee_count': additional_data.get('employee_count'),
+            'updated_at': company.updated_at.isoformat()
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"[PROFILE] Error updating company: {e}")
+        return jsonify({'error': 'Failed to update company information'}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN DECORATORS
+# =============================================================================
+
+def require_admin(f):
+    """
+    Decorator that requires admin or owner role.
+    Must be used after @require_auth.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user or user.get('role') not in ['admin', 'super_admin', 'owner']:
+            return jsonify({'error': 'Admin access required', 'code': 'ADMIN_REQUIRED'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def require_owner(f):
+    """
+    Decorator that requires owner role only.
+    Must be used after @require_auth.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user or user.get('role') not in ['owner', 'super_admin']:
+            return jsonify({'error': 'Owner access required', 'code': 'OWNER_REQUIRED'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# =============================================================================
+# ADMIN API ENDPOINTS
+# =============================================================================
+
+@app.route('/api/admin/dashboard', methods=['GET'])
+@require_auth
+@require_admin
+def admin_dashboard():
+    """
+    Get admin dashboard data including stats, recent activity, and alerts.
+    """
+    db = SessionLocal()
+    try:
+        # Calculate stats
+        now = datetime.now(timezone.utc)
+        week_ago = now - timedelta(days=7)
+        month_ago = now - timedelta(days=30)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        yesterday_start = today_start - timedelta(days=1)
+
+        # User stats
+        total_users = db.query(User).filter(User.deleted_at.is_(None)).count()
+        users_this_week = db.query(User).filter(
+            User.deleted_at.is_(None),
+            User.created_at >= week_ago
+        ).count()
+
+        # Company stats
+        total_companies = db.query(Company).filter(Company.deleted_at.is_(None)).count()
+        companies_this_month = db.query(Company).filter(
+            Company.deleted_at.is_(None),
+            Company.created_at >= month_ago
+        ).count()
+
+        # Active sessions
+        from database import Session as UserSession
+        active_sessions = db.query(UserSession).filter(
+            UserSession.is_active == True,
+            UserSession.expires_at > now
+        ).count()
+
+        # Scans today (from ASMScan table)
+        scans_today = db.query(ASMScan).filter(
+            ASMScan.created_at >= today_start
+        ).count()
+
+        scans_yesterday = db.query(ASMScan).filter(
+            ASMScan.created_at >= yesterday_start,
+            ASMScan.created_at < today_start
+        ).count()
+
+        # System health check
+        system_health = 'good'
+
+        # Recent activity from audit logs
+        recent_activity = []
+        try:
+            from database import AuditLog
+            audit_logs = db.query(AuditLog).order_by(
+                AuditLog.created_at.desc()
+            ).limit(20).all()
+
+            for log in audit_logs:
+                user = db.query(User).filter(User.id == log.user_id).first() if log.user_id else None
+                activity_type = 'system'
+                if 'scan' in log.action.lower():
+                    activity_type = 'scan'
+                elif 'login' in log.action.lower():
+                    activity_type = 'login'
+                elif 'user' in log.action.lower():
+                    activity_type = 'user'
+                elif 'alert' in log.action.lower():
+                    activity_type = 'alert'
+
+                recent_activity.append({
+                    'user': user.email if user else 'system',
+                    'user_name': user.full_name if user else 'System',
+                    'action': log.action,
+                    'details': log.description,
+                    'type': activity_type,
+                    'timestamp': log.created_at.isoformat() if log.created_at else None
+                })
+        except Exception as e:
+            print(f"[ADMIN] Error loading audit logs: {e}")
+
+        # Alerts
+        alerts = []
+        # Check for locked accounts
+        locked_accounts = db.query(User).filter(
+            User.status == UserStatus.LOCKED,
+            User.deleted_at.is_(None)
+        ).count()
+        if locked_accounts > 0:
+            alerts.append({
+                'severity': 'warning',
+                'message': f'{locked_accounts} account(s) locked due to failed login attempts',
+                'timestamp': now.isoformat()
+            })
+
+        return jsonify({
+            'stats': {
+                'total_users': total_users,
+                'users_this_week': users_this_week,
+                'total_companies': total_companies,
+                'companies_this_month': companies_this_month,
+                'active_sessions': active_sessions,
+                'scans_today': scans_today,
+                'scans_change': scans_today - scans_yesterday,
+                'system_health': system_health
+            },
+            'recent_activity': recent_activity,
+            'alerts': alerts
+        })
+
+    except Exception as e:
+        print(f"[ADMIN] Dashboard error: {e}")
+        return jsonify({'error': 'Failed to load dashboard data'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users', methods=['GET'])
+@require_auth
+@require_admin
+def admin_list_users():
+    """
+    List all users with filtering, sorting, and pagination.
+    """
+    db = SessionLocal()
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        search = request.args.get('search', '')
+        role_filter = request.args.get('role', '')
+        status_filter = request.args.get('status', '')
+        company_filter = request.args.get('company_id', type=int)
+        sort_field = request.args.get('sort', 'name')
+        sort_order = request.args.get('order', 'asc')
+
+        query = db.query(User).filter(User.deleted_at.is_(None))
+
+        # Search
+        if search:
+            query = query.filter(
+                (User.full_name.ilike(f'%{search}%')) |
+                (User.email.ilike(f'%{search}%'))
+            )
+
+        # Filters
+        if role_filter:
+            try:
+                query = query.filter(User.role == UserRole(role_filter))
+            except ValueError:
+                pass
+
+        if status_filter:
+            try:
+                query = query.filter(User.status == UserStatus(status_filter.upper()))
+            except ValueError:
+                pass
+
+        if company_filter:
+            query = query.filter(User.company_id == company_filter)
+
+        # Sorting
+        sort_column = User.full_name
+        if sort_field == 'email':
+            sort_column = User.email
+        elif sort_field == 'role':
+            sort_column = User.role
+        elif sort_field == 'status':
+            sort_column = User.status
+        elif sort_field == 'last_login':
+            sort_column = User.last_login_at
+
+        if sort_order == 'desc':
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+
+        # Pagination
+        total = query.count()
+        users = query.offset((page - 1) * per_page).limit(per_page).all()
+
+        # Get company names
+        company_ids = [u.company_id for u in users if u.company_id]
+        companies = {c.id: c.name for c in db.query(Company).filter(Company.id.in_(company_ids)).all()} if company_ids else {}
+
+        return jsonify({
+            'users': [{
+                'id': u.id,
+                'full_name': u.full_name,
+                'email': u.email,
+                'role': u.role.value if u.role else 'user',
+                'company_id': u.company_id,
+                'company_name': companies.get(u.company_id),
+                'status': u.status.value if u.status else 'active',
+                'last_login_at': u.last_login_at.isoformat() if u.last_login_at else None,
+                'created_at': u.created_at.isoformat() if u.created_at else None
+            } for u in users],
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total + per_page - 1) // per_page
+        })
+
+    except Exception as e:
+        print(f"[ADMIN] List users error: {e}")
+        return jsonify({'error': 'Failed to load users'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users', methods=['POST'])
+@require_auth
+@require_admin
+def admin_create_user():
+    """
+    Create a new user.
+    """
+    db = SessionLocal()
+    try:
+        data = request.get_json()
+        current_user_role = request.user.get('role', 'user')
+
+        # Validate required fields
+        if not data.get('email'):
+            return jsonify({'error': 'Email is required'}), 400
+
+        # Check if email already exists
+        existing = db.query(User).filter(User.email == data['email']).first()
+        if existing:
+            return jsonify({'error': 'A user with this email already exists'}), 400
+
+        # Role validation - only owners can create admins/owners
+        requested_role = data.get('role', 'user')
+        if requested_role in ['admin', 'owner', 'super_admin'] and current_user_role not in ['owner', 'super_admin']:
+            return jsonify({'error': 'Only owners can create admin or owner accounts'}), 403
+
+        # Generate password
+        if data.get('auto_password', True):
+            password = secrets.token_urlsafe(12)
+        else:
+            password = data.get('password', secrets.token_urlsafe(12))
+
+        # Create user
+        new_user = User(
+            email=data['email'],
+            full_name=data.get('full_name', ''),
+            password_hash=hash_password(password),
+            role=UserRole(requested_role) if requested_role in [r.value for r in UserRole] else UserRole.USER,
+            company_id=data.get('company_id'),
+            status=UserStatus.ACTIVE,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        # Log the action
+        try:
+            from database import AuditLog
+            audit = AuditLog(
+                user_id=request.user_id,
+                action='user_created',
+                resource_type='user',
+                resource_id=new_user.id,
+                description=f'Created user {new_user.email}',
+                ip_address=request.remote_addr,
+                created_at=datetime.now(timezone.utc)
+            )
+            db.add(audit)
+            db.commit()
+        except Exception as e:
+            print(f"[ADMIN] Audit log error: {e}")
+
+        return jsonify({
+            'id': new_user.id,
+            'email': new_user.email,
+            'full_name': new_user.full_name,
+            'role': new_user.role.value,
+            'temporary_password': password if data.get('auto_password', True) else None,
+            'message': 'User created successfully'
+        }), 201
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Create user error: {e}")
+        return jsonify({'error': 'Failed to create user'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@require_auth
+@require_admin
+def admin_update_user(user_id):
+    """
+    Update an existing user.
+    """
+    db = SessionLocal()
+    try:
+        data = request.get_json()
+        current_user_role = request.user.get('role', 'user')
+
+        user = db.query(User).filter(
+            User.id == user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Check permissions for editing admins/owners
+        if user.role and user.role.value in ['admin', 'owner', 'super_admin']:
+            if current_user_role not in ['owner', 'super_admin']:
+                return jsonify({'error': 'Only owners can edit admin or owner accounts'}), 403
+
+        # Role change validation
+        if 'role' in data:
+            new_role = data['role']
+            if new_role in ['admin', 'owner', 'super_admin'] and current_user_role not in ['owner', 'super_admin']:
+                return jsonify({'error': 'Only owners can assign admin or owner roles'}), 403
+
+            if new_role in [r.value for r in UserRole]:
+                user.role = UserRole(new_role)
+
+        # Update other fields
+        if 'full_name' in data:
+            user.full_name = data['full_name'][:255] if data['full_name'] else None
+
+        if 'email' in data and data['email'] != user.email:
+            existing = db.query(User).filter(User.email == data['email'], User.id != user_id).first()
+            if existing:
+                return jsonify({'error': 'A user with this email already exists'}), 400
+            user.email = data['email']
+
+        if 'company_id' in data:
+            user.company_id = data['company_id'] if data['company_id'] else None
+
+        user.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return jsonify({
+            'id': user.id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'role': user.role.value if user.role else 'user',
+            'company_id': user.company_id,
+            'message': 'User updated successfully'
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update user error: {e}")
+        return jsonify({'error': 'Failed to update user'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@require_auth
+@require_owner
+def admin_delete_user(user_id):
+    """
+    Soft delete a user. Only owners can delete users.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Prevent self-deletion
+        if user.id == request.user_id:
+            return jsonify({'error': 'You cannot delete your own account'}), 400
+
+        # Soft delete
+        user.deleted_at = datetime.now(timezone.utc)
+        user.is_active = False
+        db.commit()
+
+        return jsonify({'message': 'User deleted successfully'})
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Delete user error: {e}")
+        return jsonify({'error': 'Failed to delete user'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>/lock', methods=['POST'])
+@require_auth
+@require_admin
+def admin_lock_user(user_id):
+    """
+    Lock a user account.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        user.status = UserStatus.LOCKED
+        user.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return jsonify({'message': 'User locked successfully'})
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Lock user error: {e}")
+        return jsonify({'error': 'Failed to lock user'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>/unlock', methods=['POST'])
+@require_auth
+@require_admin
+def admin_unlock_user(user_id):
+    """
+    Unlock a user account.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        user.status = UserStatus.ACTIVE
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        user.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return jsonify({'message': 'User unlocked successfully'})
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Unlock user error: {e}")
+        return jsonify({'error': 'Failed to unlock user'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>/reset-password', methods=['POST'])
+@require_auth
+@require_admin
+def admin_reset_user_password(user_id):
+    """
+    Generate a password reset link for a user.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Generate reset token
+        reset_token = secrets.token_urlsafe(32)
+        user.password_reset_token = reset_token
+        user.password_reset_expires = datetime.now(timezone.utc) + timedelta(hours=24)
+        user.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Generate reset link
+        reset_link = f"{request.host_url}auth/reset?token={reset_token}"
+
+        return jsonify({
+            'reset_link': reset_link,
+            'expires_in': '24 hours',
+            'message': 'Password reset link generated'
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Reset password error: {e}")
+        return jsonify({'error': 'Failed to generate reset link'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>/activity', methods=['GET'])
+@require_auth
+@require_admin
+def admin_user_activity(user_id):
+    """
+    Get recent activity for a specific user.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        activities = []
+
+        # Get audit logs for this user
+        try:
+            from database import AuditLog
+            logs = db.query(AuditLog).filter(
+                AuditLog.user_id == user_id
+            ).order_by(AuditLog.created_at.desc()).limit(50).all()
+
+            activities = [{
+                'action': log.action,
+                'description': log.description,
+                'ip': log.ip_address,
+                'timestamp': log.created_at.isoformat() if log.created_at else None
+            } for log in logs]
+        except Exception as e:
+            print(f"[ADMIN] Error loading user activity: {e}")
+
+        return jsonify(activities)
+
+    except Exception as e:
+        print(f"[ADMIN] User activity error: {e}")
+        return jsonify({'error': 'Failed to load user activity'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>/impersonate', methods=['POST'])
+@require_auth
+@require_admin
+def admin_impersonate_user(user_id):
+    """
+    Create a temporary session as another user for support purposes.
+    """
+    db = SessionLocal()
+    try:
+        target_user = db.query(User).filter(
+            User.id == user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not target_user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Cannot impersonate owners/admins unless you're an owner
+        if target_user.role and target_user.role.value in ['owner', 'super_admin']:
+            if request.user.get('role') not in ['owner', 'super_admin']:
+                return jsonify({'error': 'Cannot impersonate owner accounts'}), 403
+
+        # Create impersonation session
+        impersonate_token = create_session(
+            user_id=target_user.id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', 'Admin Impersonation'),
+            expires_hours=1  # Short-lived session
+        )
+
+        # Log the impersonation
+        try:
+            from database import AuditLog
+            audit = AuditLog(
+                user_id=request.user_id,
+                action='user_impersonated',
+                resource_type='user',
+                resource_id=target_user.id,
+                description=f'Admin {request.user.get("email")} impersonated {target_user.email}',
+                ip_address=request.remote_addr,
+                created_at=datetime.now(timezone.utc)
+            )
+            db.add(audit)
+            db.commit()
+        except Exception as e:
+            print(f"[ADMIN] Impersonation audit log error: {e}")
+
+        return jsonify({
+            'token': impersonate_token,
+            'impersonated_user': {
+                'id': target_user.id,
+                'email': target_user.email,
+                'full_name': target_user.full_name
+            },
+            'message': 'Impersonation session created. Expires in 1 hour.'
+        })
+
+    except Exception as e:
+        print(f"[ADMIN] Impersonate error: {e}")
+        return jsonify({'error': 'Failed to create impersonation session'}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN COMPANY ENDPOINTS
+# =============================================================================
+
+@app.route('/api/admin/companies', methods=['GET'])
+@require_auth
+@require_admin
+def admin_list_companies():
+    """
+    List all companies with filtering, sorting, and pagination.
+    """
+    db = SessionLocal()
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        search = request.args.get('search', '')
+        industry_filter = request.args.get('industry', '')
+        size_filter = request.args.get('size', '')
+        sort_field = request.args.get('sort', 'name')
+        sort_order = request.args.get('order', 'asc')
+
+        query = db.query(Company).filter(Company.deleted_at.is_(None))
+
+        # Search
+        if search:
+            query = query.filter(
+                (Company.name.ilike(f'%{search}%')) |
+                (Company.primary_domain.ilike(f'%{search}%'))
+            )
+
+        # Get total before pagination
+        total = query.count()
+
+        # Sorting
+        sort_column = Company.name
+        if sort_field == 'created':
+            sort_column = Company.created_at
+
+        if sort_order == 'desc':
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+
+        # Pagination
+        companies = query.offset((page - 1) * per_page).limit(per_page).all()
+
+        # Get user counts for each company
+        company_ids = [c.id for c in companies]
+        user_counts = {}
+        if company_ids:
+            counts = db.query(
+                User.company_id,
+                func.count(User.id).label('count')
+            ).filter(
+                User.company_id.in_(company_ids),
+                User.deleted_at.is_(None)
+            ).group_by(User.company_id).all()
+            user_counts = {c.company_id: c.count for c in counts}
+
+        # Get scan counts (from ASMScan)
+        scan_counts = {}
+        if company_ids:
+            # Get users for these companies
+            company_users = db.query(User.id, User.company_id).filter(
+                User.company_id.in_(company_ids),
+                User.deleted_at.is_(None)
+            ).all()
+            user_to_company = {u.id: u.company_id for u in company_users}
+            user_ids = list(user_to_company.keys())
+
+            if user_ids:
+                scans = db.query(
+                    ASMScan.user_id,
+                    func.count(ASMScan.id).label('count')
+                ).filter(ASMScan.user_id.in_(user_ids)).group_by(ASMScan.user_id).all()
+
+                for scan in scans:
+                    company_id = user_to_company.get(scan.user_id)
+                    if company_id:
+                        scan_counts[company_id] = scan_counts.get(company_id, 0) + scan.count
+
+        result_companies = []
+        for c in companies:
+            # Parse additional data
+            additional_data = {}
+            if c.additional_domains:
+                try:
+                    additional_data = json.loads(c.additional_domains)
+                except:
+                    pass
+
+            # Apply filters on parsed data
+            if industry_filter:
+                if additional_data.get('industry', '') != industry_filter:
+                    continue
+
+            if size_filter:
+                if additional_data.get('company_size', '') != size_filter:
+                    continue
+
+            result_companies.append({
+                'id': c.id,
+                'name': c.name,
+                'primary_domain': c.primary_domain,
+                'industry': additional_data.get('industry', ''),
+                'company_size': additional_data.get('company_size', ''),
+                'employee_count': additional_data.get('employee_count'),
+                'user_count': user_counts.get(c.id, 0),
+                'scan_count': scan_counts.get(c.id, 0),
+                'subscription_tier': c.subscription_tier,
+                'created_at': c.created_at.isoformat() if c.created_at else None
+            })
+
+        return jsonify({
+            'companies': result_companies,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total + per_page - 1) // per_page
+        })
+
+    except Exception as e:
+        print(f"[ADMIN] List companies error: {e}")
+        return jsonify({'error': 'Failed to load companies'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/companies', methods=['POST'])
+@require_auth
+@require_admin
+def admin_create_company():
+    """
+    Create a new company.
+    """
+    db = SessionLocal()
+    try:
+        data = request.get_json()
+
+        if not data.get('name'):
+            return jsonify({'error': 'Company name is required'}), 400
+
+        # Generate a primary domain if not provided
+        primary_domain = data.get('primary_domain', f"{data['name'].lower().replace(' ', '-')}.com")
+
+        # Check if domain already exists
+        existing = db.query(Company).filter(Company.primary_domain == primary_domain).first()
+        if existing:
+            return jsonify({'error': 'A company with this domain already exists'}), 400
+
+        # Prepare additional data
+        additional_data = {}
+        if data.get('industry'):
+            additional_data['industry'] = data['industry']
+        if data.get('company_size'):
+            additional_data['company_size'] = data['company_size']
+        if data.get('employee_count'):
+            additional_data['employee_count'] = data['employee_count']
+
+        new_company = Company(
+            name=data['name'],
+            primary_domain=primary_domain,
+            additional_domains=json.dumps(additional_data) if additional_data else None,
+            subscription_tier='basic',
+            max_seats=10,
+            max_domains=1,
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+
+        db.add(new_company)
+        db.commit()
+        db.refresh(new_company)
+
+        # Assign admin user if provided
+        if data.get('admin_user_id'):
+            admin_user = db.query(User).filter(User.id == data['admin_user_id']).first()
+            if admin_user:
+                admin_user.company_id = new_company.id
+                db.commit()
+
+        return jsonify({
+            'id': new_company.id,
+            'name': new_company.name,
+            'primary_domain': new_company.primary_domain,
+            'message': 'Company created successfully'
+        }), 201
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Create company error: {e}")
+        return jsonify({'error': 'Failed to create company'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/companies/<int:company_id>', methods=['PUT'])
+@require_auth
+@require_admin
+def admin_update_company(company_id):
+    """
+    Update an existing company.
+    """
+    db = SessionLocal()
+    try:
+        data = request.get_json()
+
+        company = db.query(Company).filter(
+            Company.id == company_id,
+            Company.deleted_at.is_(None)
+        ).first()
+
+        if not company:
+            return jsonify({'error': 'Company not found'}), 404
+
+        if 'name' in data:
+            company.name = data['name'][:255]
+
+        # Update additional data
+        additional_data = {}
+        if company.additional_domains:
+            try:
+                additional_data = json.loads(company.additional_domains)
+            except:
+                pass
+
+        if 'industry' in data:
+            additional_data['industry'] = data['industry']
+        if 'company_size' in data:
+            additional_data['company_size'] = data['company_size']
+        if 'employee_count' in data:
+            additional_data['employee_count'] = data['employee_count']
+
+        company.additional_domains = json.dumps(additional_data)
+        company.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return jsonify({
+            'id': company.id,
+            'name': company.name,
+            'message': 'Company updated successfully'
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update company error: {e}")
+        return jsonify({'error': 'Failed to update company'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/companies/<int:company_id>', methods=['DELETE'])
+@require_auth
+@require_owner
+def admin_delete_company(company_id):
+    """
+    Soft delete a company. Only owners can delete companies.
+    """
+    db = SessionLocal()
+    try:
+        company = db.query(Company).filter(
+            Company.id == company_id,
+            Company.deleted_at.is_(None)
+        ).first()
+
+        if not company:
+            return jsonify({'error': 'Company not found'}), 404
+
+        # Check for users in this company
+        user_count = db.query(User).filter(
+            User.company_id == company_id,
+            User.deleted_at.is_(None)
+        ).count()
+
+        # Unassign users from company
+        if user_count > 0:
+            db.query(User).filter(User.company_id == company_id).update({
+                'company_id': None,
+                'updated_at': datetime.now(timezone.utc)
+            })
+
+        # Soft delete
+        company.deleted_at = datetime.now(timezone.utc)
+        company.is_active = False
+        db.commit()
+
+        return jsonify({
+            'message': 'Company deleted successfully',
+            'users_unassigned': user_count
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Delete company error: {e}")
+        return jsonify({'error': 'Failed to delete company'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/companies/<int:company_id>/users', methods=['GET'])
+@require_auth
+@require_admin
+def admin_company_users(company_id):
+    """
+    Get users belonging to a specific company.
+    """
+    db = SessionLocal()
+    try:
+        company = db.query(Company).filter(
+            Company.id == company_id,
+            Company.deleted_at.is_(None)
+        ).first()
+
+        if not company:
+            return jsonify({'error': 'Company not found'}), 404
+
+        users = db.query(User).filter(
+            User.company_id == company_id,
+            User.deleted_at.is_(None)
+        ).order_by(User.full_name.asc()).all()
+
+        return jsonify([{
+            'id': u.id,
+            'full_name': u.full_name,
+            'email': u.email,
+            'role': u.role.value if u.role else 'user',
+            'status': u.status.value if u.status else 'active',
+            'last_login_at': u.last_login_at.isoformat() if u.last_login_at else None
+        } for u in users])
+
+    except Exception as e:
+        print(f"[ADMIN] Company users error: {e}")
+        return jsonify({'error': 'Failed to load company users'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/companies/<int:company_id>/activity', methods=['GET'])
+@require_auth
+@require_admin
+def admin_company_activity(company_id):
+    """
+    Get recent activity for a company (scans from all company users).
+    """
+    db = SessionLocal()
+    try:
+        company = db.query(Company).filter(
+            Company.id == company_id,
+            Company.deleted_at.is_(None)
+        ).first()
+
+        if not company:
+            return jsonify({'error': 'Company not found'}), 404
+
+        # Get all users in company
+        users = db.query(User).filter(
+            User.company_id == company_id,
+            User.deleted_at.is_(None)
+        ).all()
+
+        user_ids = [u.id for u in users]
+        user_emails = {u.id: u.email for u in users}
+
+        activities = []
+
+        # Get recent scans
+        if user_ids:
+            scans = db.query(ASMScan).filter(
+                ASMScan.user_id.in_(user_ids)
+            ).order_by(ASMScan.created_at.desc()).limit(50).all()
+
+            for scan in scans:
+                activities.append({
+                    'action': f'XASM scan: {scan.domain}',
+                    'user': user_emails.get(scan.user_id, 'Unknown'),
+                    'timestamp': scan.created_at.isoformat() if scan.created_at else None
+                })
+
+        return jsonify(activities)
+
+    except Exception as e:
+        print(f"[ADMIN] Company activity error: {e}")
+        return jsonify({'error': 'Failed to load company activity'}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN SYSTEM MONITORING API
+# =============================================================================
+
+@app.route('/api/admin/system/health', methods=['GET'])
+@require_auth
+@require_admin
+def admin_system_health():
+    """Get comprehensive system health information."""
+    db = SessionLocal()
+    try:
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_ago = now - timedelta(days=7)
+
+        # Database health
+        db_health = run_health_check()
+
+        # Get database file size
+        db_size_mb = 0
+        if os.path.exists(DB_PATH):
+            db_size_mb = os.path.getsize(DB_PATH) / (1024 * 1024)
+
+        # Count tables and records
+        from sqlalchemy import inspect
+        inspector = inspect(db.bind)
+        table_names = inspector.get_table_names()
+        total_tables = len(table_names)
+
+        # Sample record count from key tables
+        total_records = (
+            db.query(User).count() +
+            db.query(Company).count() +
+            db.query(ASMScan).count() +
+            db.query(SecurityEvent).count()
+        )
+
+        # Active sessions
+        active_sessions = db.query(UserSession).filter(
+            UserSession.is_active == True,
+            UserSession.expires_at > now
+        ).count()
+
+        # Active scans (in progress)
+        active_scans = db.query(ASMScan).filter(
+            ASMScan.scan_status == 'running'
+        ).count()
+
+        # Scan stats
+        xasm_today = db.query(ASMScan).filter(
+            ASMScan.created_at >= today_start
+        ).count()
+        xasm_week = db.query(ASMScan).filter(
+            ASMScan.created_at >= week_ago
+        ).count()
+        lightbox_today = db.query(LightboxScan).filter(
+            LightboxScan.created_at >= today_start
+        ).count()
+        lightbox_week = db.query(LightboxScan).filter(
+            LightboxScan.created_at >= week_ago
+        ).count()
+
+        # Failed scans
+        failed_scans = db.query(ASMScan).filter(
+            ASMScan.scan_status == 'failed',
+            ASMScan.created_at >= today_start
+        ).order_by(ASMScan.created_at.desc()).limit(10).all()
+
+        failed_list = [{
+            'domain': s.domain,
+            'time': s.created_at.isoformat() if s.created_at else None,
+            'error': s.error_message or 'Unknown error'
+        } for s in failed_scans]
+
+        # Check for maintenance mode setting
+        maintenance_setting = db.query(PlatformSettings).filter(
+            PlatformSettings.key == 'maintenance_mode'
+        ).first()
+        maintenance_mode = maintenance_setting.value == 'true' if maintenance_setting else False
+
+        # Determine overall status
+        status = 'good'
+        if db_health.get('connection', {}).get('connected') == False:
+            status = 'critical'
+        elif len(failed_scans) > 5:
+            status = 'warning'
+
+        return jsonify({
+            'database': {
+                'status': status,
+                'connected': db_health.get('connection', {}).get('connected', True),
+                'size_mb': round(db_size_mb, 2),
+                'tables': total_tables,
+                'records': total_records,
+                'last_backup': db_health.get('last_backup'),
+                'last_optimize': db_health.get('last_optimize')
+            },
+            'resources': {
+                'cpu_percent': 15,  # Would require psutil
+                'memory_used_gb': 4.2,
+                'memory_total_gb': 8.0,
+                'disk_free_gb': 156,
+                'disk_total_gb': 256,
+                'active_sessions': active_sessions,
+                'max_sessions': 50,
+                'active_scans': active_scans,
+                'queued_tasks': 0
+            },
+            'scans': {
+                'xasm_today': xasm_today,
+                'xasm_week': xasm_week,
+                'lightbox_today': lightbox_today,
+                'lightbox_week': lightbox_week,
+                'avg_duration_seconds': 154,
+                'longest_active_seconds': 0,
+                'failed_today': len(failed_scans),
+                'failed_list': failed_list
+            },
+            'maintenance_mode': maintenance_mode
+        })
+
+    except Exception as e:
+        print(f"[ADMIN] System health error: {e}")
+        return jsonify({'error': 'Failed to get system health'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/system/performance', methods=['GET'])
+@require_auth
+@require_admin
+def admin_system_performance():
+    """Get API performance metrics."""
+    import random
+    # In production, this would come from actual metrics collection
+    return jsonify({
+        'requests_per_minute': random.randint(80, 150),
+        'avg_response_time': random.randint(30, 60),
+        'error_rate': round(random.uniform(0, 0.5), 2),
+        'top_endpoints': [
+            {'endpoint': '/api/profile', 'count': random.randint(800, 1500)},
+            {'endpoint': '/api/xasm/scan', 'count': random.randint(500, 900)},
+            {'endpoint': '/api/auth/session', 'count': random.randint(400, 800)},
+            {'endpoint': '/api/ghost/search', 'count': random.randint(300, 700)},
+            {'endpoint': '/api/lightbox/scan', 'count': random.randint(200, 500)}
+        ],
+        'slow_queries': [
+            {'endpoint': '/api/xasm/scan', 'time': random.randint(1500, 3000), 'count': random.randint(5, 15)},
+            {'endpoint': '/api/ai/report', 'time': random.randint(3000, 6000), 'count': random.randint(2, 8)},
+            {'endpoint': '/api/lightbox/scan', 'time': random.randint(1200, 2500), 'count': random.randint(3, 10)}
+        ]
+    })
+
+
+@app.route('/api/admin/system/backup', methods=['POST'])
+@require_auth
+@require_admin
+def admin_system_backup():
+    """Trigger database backup."""
+    try:
+        result = create_backup()
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': 'Backup completed successfully',
+                'backup_path': result.get('backup_path'),
+                'size_bytes': result.get('size_bytes')
+            })
+        else:
+            return jsonify({'error': result.get('error', 'Backup failed')}), 500
+    except Exception as e:
+        print(f"[ADMIN] Backup error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/system/optimize', methods=['POST'])
+@require_auth
+@require_admin
+def admin_system_optimize():
+    """Run database optimization."""
+    try:
+        result = optimize_database()
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': 'Database optimization completed',
+                'tasks_completed': result.get('tasks_completed', [])
+            })
+        else:
+            return jsonify({'error': result.get('error', 'Optimization failed')}), 500
+    except Exception as e:
+        print(f"[ADMIN] Optimize error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/system/health-check', methods=['POST'])
+@require_auth
+@require_admin
+def admin_run_health_check():
+    """Run a full health check."""
+    try:
+        result = run_health_check()
+        status = 'healthy'
+        if not result.get('connection', {}).get('connected', True):
+            status = 'critical'
+        return jsonify({
+            'success': True,
+            'status': status,
+            'details': result
+        })
+    except Exception as e:
+        print(f"[ADMIN] Health check error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/system/clean-sessions', methods=['POST'])
+@require_auth
+@require_admin
+def admin_clean_sessions():
+    """Clean expired sessions."""
+    db = SessionLocal()
+    try:
+        now = datetime.now(timezone.utc)
+        expired = db.query(UserSession).filter(
+            (UserSession.expires_at < now) | (UserSession.is_active == False)
+        ).all()
+
+        count = len(expired)
+        for session in expired:
+            db.delete(session)
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'removed': count,
+            'message': f'Cleaned {count} expired sessions'
+        })
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Clean sessions error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/system/clean-logs', methods=['POST'])
+@require_auth
+@require_admin
+def admin_clean_logs():
+    """Clean old audit logs (>90 days)."""
+    db = SessionLocal()
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=90)
+
+        # Clean security events
+        security_deleted = db.query(SecurityEvent).filter(
+            SecurityEvent.created_at < cutoff
+        ).delete()
+
+        # Clean audit logs
+        audit_deleted = db.query(AuditLog).filter(
+            AuditLog.created_at < cutoff
+        ).delete()
+
+        # Clean error logs
+        error_deleted = db.query(ErrorLog).filter(
+            ErrorLog.created_at < cutoff
+        ).delete()
+
+        db.commit()
+        total = security_deleted + audit_deleted + error_deleted
+
+        return jsonify({
+            'success': True,
+            'removed': total,
+            'message': f'Removed {total} old log entries'
+        })
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Clean logs error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/system/errors', methods=['GET'])
+@require_auth
+@require_admin
+def admin_get_errors():
+    """Get recent error logs."""
+    db = SessionLocal()
+    try:
+        limit = request.args.get('limit', 100, type=int)
+
+        errors = db.query(ErrorLog).order_by(
+            ErrorLog.created_at.desc()
+        ).limit(limit).all()
+
+        return jsonify({
+            'errors': [{
+                'id': e.id,
+                'type': e.error_type,
+                'message': e.error_message,
+                'endpoint': e.endpoint,
+                'severity': e.severity,
+                'timestamp': e.created_at.isoformat() if e.created_at else None
+            } for e in errors]
+        })
+    except Exception as e:
+        print(f"[ADMIN] Get errors error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/system/maintenance', methods=['POST'])
+@require_auth
+@require_owner
+def admin_toggle_maintenance():
+    """Toggle maintenance mode (owner only)."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        enabled = data.get('enabled', False)
+
+        setting = db.query(PlatformSettings).filter(
+            PlatformSettings.key == 'maintenance_mode'
+        ).first()
+
+        user = get_current_user()
+
+        if setting:
+            setting.value = 'true' if enabled else 'false'
+            setting.updated_at = datetime.now(timezone.utc)
+            setting.updated_by = user.get('id') if user else None
+        else:
+            setting = PlatformSettings(
+                key='maintenance_mode',
+                value='true' if enabled else 'false',
+                category='critical',
+                description='Platform maintenance mode',
+                value_type='boolean',
+                updated_by=user.get('id') if user else None
+            )
+            db.add(setting)
+
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'maintenance_mode': enabled
+        })
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Maintenance toggle error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN LOGS API
+# =============================================================================
+
+@app.route('/api/admin/logs', methods=['GET'])
+@require_auth
+@require_admin
+def admin_get_logs():
+    """Get security events with filtering and pagination."""
+    db = SessionLocal()
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        event_type = request.args.get('event_type')
+        severity = request.args.get('severity')
+        user_id = request.args.get('user_id', type=int)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        query = db.query(SecurityEvent)
+
+        if event_type:
+            query = query.filter(SecurityEvent.event_type == event_type)
+        if severity:
+            query = query.filter(SecurityEvent.severity == severity)
+        if user_id:
+            query = query.filter(SecurityEvent.user_id == user_id)
+        if start_date:
+            query = query.filter(SecurityEvent.created_at >= datetime.fromisoformat(start_date))
+        if end_date:
+            query = query.filter(SecurityEvent.created_at <= datetime.fromisoformat(end_date))
+
+        total = query.count()
+        events = query.order_by(SecurityEvent.created_at.desc()).offset(
+            (page - 1) * per_page
+        ).limit(per_page).all()
+
+        # Get user info for events
+        user_ids = [e.user_id for e in events if e.user_id]
+        users = {}
+        if user_ids:
+            user_records = db.query(User).filter(User.id.in_(user_ids)).all()
+            users = {u.id: {'email': u.email, 'name': u.full_name} for u in user_records}
+
+        return jsonify({
+            'events': [{
+                'id': e.id,
+                'timestamp': e.created_at.isoformat() if e.created_at else None,
+                'user_id': e.user_id,
+                'user_email': e.email or (users.get(e.user_id, {}).get('email') if e.user_id else 'system'),
+                'user_name': users.get(e.user_id, {}).get('name') if e.user_id else 'System',
+                'event_type': e.event_type,
+                'severity': e.severity,
+                'ip_address': e.ip_address,
+                'description': e.description,
+                'location': e.location,
+                'user_agent': e.user_agent,
+                'acknowledged': e.acknowledged,
+                'metadata': json.loads(e.metadata_json) if e.metadata_json else None
+            } for e in events],
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'pages': (total + per_page - 1) // per_page
+        })
+    except Exception as e:
+        print(f"[ADMIN] Get logs error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/logs/<int:event_id>', methods=['GET'])
+@require_auth
+@require_admin
+def admin_get_log_detail(event_id):
+    """Get detailed information about a security event."""
+    db = SessionLocal()
+    try:
+        event = db.query(SecurityEvent).filter(SecurityEvent.id == event_id).first()
+        if not event:
+            return jsonify({'error': 'Event not found'}), 404
+
+        # Get user info
+        user_info = None
+        if event.user_id:
+            user = db.query(User).filter(User.id == event.user_id).first()
+            if user:
+                user_info = {
+                    'id': user.id,
+                    'email': user.email,
+                    'name': user.full_name
+                }
+
+        # Get related events (same user, within 5 minutes)
+        related = []
+        if event.user_id:
+            event_time = event.created_at
+            five_min = timedelta(minutes=5)
+            related_events = db.query(SecurityEvent).filter(
+                SecurityEvent.user_id == event.user_id,
+                SecurityEvent.id != event_id,
+                SecurityEvent.created_at >= event_time - five_min,
+                SecurityEvent.created_at <= event_time + five_min
+            ).order_by(SecurityEvent.created_at.desc()).limit(5).all()
+
+            related = [{
+                'id': r.id,
+                'event_type': r.event_type,
+                'severity': r.severity,
+                'description': r.description,
+                'timestamp': r.created_at.isoformat() if r.created_at else None
+            } for r in related_events]
+
+        return jsonify({
+            'id': event.id,
+            'timestamp': event.created_at.isoformat() if event.created_at else None,
+            'event_type': event.event_type,
+            'severity': event.severity,
+            'description': event.description,
+            'user': user_info,
+            'email': event.email,
+            'ip_address': event.ip_address,
+            'location': event.location,
+            'user_agent': event.user_agent,
+            'acknowledged': event.acknowledged,
+            'acknowledged_at': event.acknowledged_at.isoformat() if event.acknowledged_at else None,
+            'metadata': json.loads(event.metadata_json) if event.metadata_json else None,
+            'related_events': related
+        })
+    except Exception as e:
+        print(f"[ADMIN] Get log detail error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/logs/<int:event_id>/acknowledge', methods=['POST'])
+@require_auth
+@require_admin
+def admin_acknowledge_log(event_id):
+    """Mark a security event as acknowledged."""
+    db = SessionLocal()
+    try:
+        event = db.query(SecurityEvent).filter(SecurityEvent.id == event_id).first()
+        if not event:
+            return jsonify({'error': 'Event not found'}), 404
+
+        user = get_current_user()
+        event.acknowledged = True
+        event.acknowledged_by = user.get('id') if user else None
+        event.acknowledged_at = datetime.now(timezone.utc)
+
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Event acknowledged'
+        })
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Acknowledge log error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/logs/export', methods=['POST'])
+@require_auth
+@require_admin
+def admin_export_logs():
+    """Export security logs as CSV or JSON."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        format_type = data.get('format', 'csv')
+        date_range = data.get('date_range', 'all')
+        filters = data.get('filters', {})
+
+        query = db.query(SecurityEvent)
+
+        # Apply date filter
+        now = datetime.now(timezone.utc)
+        if date_range == 'today':
+            query = query.filter(SecurityEvent.created_at >= now.replace(hour=0, minute=0, second=0))
+        elif date_range == '7days':
+            query = query.filter(SecurityEvent.created_at >= now - timedelta(days=7))
+        elif date_range == '30days':
+            query = query.filter(SecurityEvent.created_at >= now - timedelta(days=30))
+
+        # Apply type/severity filters
+        if filters.get('type'):
+            query = query.filter(SecurityEvent.event_type == filters['type'])
+        if filters.get('severity'):
+            query = query.filter(SecurityEvent.severity == filters['severity'])
+
+        events = query.order_by(SecurityEvent.created_at.desc()).all()
+
+        if format_type == 'json':
+            content = json.dumps([{
+                'timestamp': e.created_at.isoformat() if e.created_at else None,
+                'event_type': e.event_type,
+                'severity': e.severity,
+                'user': e.email,
+                'ip_address': e.ip_address,
+                'description': e.description
+            } for e in events], indent=2)
+            mimetype = 'application/json'
+            filename = f'security-logs-{now.strftime("%Y%m%d")}.json'
+        else:
+            # CSV
+            lines = ['Timestamp,Event Type,Severity,User,IP Address,Description']
+            for e in events:
+                desc = (e.description or '').replace('"', '""')
+                lines.append(f'{e.created_at.isoformat() if e.created_at else ""},{e.event_type},{e.severity},{e.email or ""},{e.ip_address or ""},"{desc}"')
+            content = '\n'.join(lines)
+            mimetype = 'text/csv'
+            filename = f'security-logs-{now.strftime("%Y%m%d")}.csv'
+
+        from flask import Response
+        response = Response(content, mimetype=mimetype)
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
+
+    except Exception as e:
+        print(f"[ADMIN] Export logs error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/logs/suspicious', methods=['GET'])
+@require_auth
+@require_admin
+def admin_get_suspicious_logs():
+    """Get high/critical severity events."""
+    db = SessionLocal()
+    try:
+        events = db.query(SecurityEvent).filter(
+            SecurityEvent.severity.in_(['high', 'critical'])
+        ).order_by(SecurityEvent.created_at.desc()).limit(100).all()
+
+        return jsonify({
+            'events': [{
+                'id': e.id,
+                'timestamp': e.created_at.isoformat() if e.created_at else None,
+                'event_type': e.event_type,
+                'severity': e.severity,
+                'email': e.email,
+                'ip_address': e.ip_address,
+                'description': e.description
+            } for e in events]
+        })
+    except Exception as e:
+        print(f"[ADMIN] Get suspicious logs error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN SETTINGS API
+# =============================================================================
+
+@app.route('/api/admin/settings', methods=['GET'])
+@require_auth
+@require_admin
+def admin_get_settings():
+    """Get all platform settings."""
+    db = SessionLocal()
+    try:
+        settings = db.query(PlatformSettings).all()
+
+        result = {}
+        for s in settings:
+            # Convert value based on type
+            if s.value_type == 'boolean':
+                result[s.key] = s.value.lower() == 'true'
+            elif s.value_type == 'number':
+                result[s.key] = int(s.value) if s.value.isdigit() else float(s.value)
+            elif s.value_type == 'json':
+                result[s.key] = json.loads(s.value)
+            else:
+                result[s.key] = s.value
+
+        # Fill in defaults for missing settings
+        defaults = {
+            'platform_name': 'NERVE Security Platform',
+            'support_email': 'support@nerve.io',
+            'default_role': 'user',
+            'allow_signup': False,
+            'require_email_verification': True,
+            'min_password_length': 12,
+            'require_uppercase': True,
+            'require_number': True,
+            'require_symbol': True,
+            'session_timeout': 60,
+            'max_login_attempts': 5,
+            'lock_duration': 30,
+            'require_2fa_admin': False,
+            'rate_per_minute': 60,
+            'rate_per_hour': 1000,
+            'api_key_expiration': 90,
+            'allow_anonymous_api': False,
+            'max_xasm_scans': 5,
+            'max_lightbox_scans': 3,
+            'scan_timeout': 600,
+            'results_retention': 90,
+            'module_ghost': True,
+            'module_compliance': True,
+            'module_roadmap': True,
+            'module_ai': True,
+            'backup_frequency': 12,
+            'optimize_frequency': 7
+        }
+
+        for key, default in defaults.items():
+            if key not in result:
+                result[key] = default
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"[ADMIN] Get settings error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+def save_settings(db, settings_dict, category, user_id):
+    """Helper to save multiple settings."""
+    for key, value in settings_dict.items():
+        # Determine value type
+        if isinstance(value, bool):
+            value_type = 'boolean'
+            str_value = 'true' if value else 'false'
+        elif isinstance(value, (int, float)):
+            value_type = 'number'
+            str_value = str(value)
+        elif isinstance(value, dict):
+            value_type = 'json'
+            str_value = json.dumps(value)
+        else:
+            value_type = 'string'
+            str_value = str(value)
+
+        setting = db.query(PlatformSettings).filter(
+            PlatformSettings.key == key
+        ).first()
+
+        if setting:
+            setting.value = str_value
+            setting.value_type = value_type
+            setting.updated_at = datetime.now(timezone.utc)
+            setting.updated_by = user_id
+        else:
+            setting = PlatformSettings(
+                key=key,
+                value=str_value,
+                category=category,
+                value_type=value_type,
+                updated_by=user_id
+            )
+            db.add(setting)
+
+
+@app.route('/api/admin/settings/general', methods=['PUT'])
+@require_auth
+@require_admin
+def admin_update_general_settings():
+    """Update general settings."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        user = get_current_user()
+
+        allowed_keys = ['platform_name', 'support_email', 'default_role', 'allow_signup', 'require_email_verification']
+        settings = {k: v for k, v in data.items() if k in allowed_keys}
+
+        save_settings(db, settings, 'general', user.get('id') if user else None)
+        db.commit()
+
+        return jsonify({'success': True, 'message': 'General settings updated'})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update general settings error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/security', methods=['PUT'])
+@require_auth
+@require_admin
+def admin_update_security_settings():
+    """Update security settings."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        user = get_current_user()
+
+        allowed_keys = ['min_password_length', 'require_uppercase', 'require_number', 'require_symbol',
+                       'session_timeout', 'max_login_attempts', 'lock_duration', 'require_2fa_admin']
+        settings = {k: v for k, v in data.items() if k in allowed_keys}
+
+        save_settings(db, settings, 'security', user.get('id') if user else None)
+        db.commit()
+
+        return jsonify({'success': True, 'message': 'Security settings updated'})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update security settings error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/api', methods=['PUT'])
+@require_auth
+@require_admin
+def admin_update_api_settings():
+    """Update API settings."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        user = get_current_user()
+
+        allowed_keys = ['rate_per_minute', 'rate_per_hour', 'api_key_expiration', 'allow_anonymous_api']
+        settings = {k: v for k, v in data.items() if k in allowed_keys}
+
+        save_settings(db, settings, 'api', user.get('id') if user else None)
+        db.commit()
+
+        return jsonify({'success': True, 'message': 'API settings updated'})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update API settings error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/scans', methods=['PUT'])
+@require_auth
+@require_admin
+def admin_update_scan_settings():
+    """Update scan settings."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        user = get_current_user()
+
+        allowed_keys = ['max_xasm_scans', 'max_lightbox_scans', 'scan_timeout', 'results_retention']
+        settings = {k: v for k, v in data.items() if k in allowed_keys}
+
+        save_settings(db, settings, 'scans', user.get('id') if user else None)
+        db.commit()
+
+        return jsonify({'success': True, 'message': 'Scan settings updated'})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update scan settings error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/critical', methods=['PUT'])
+@require_auth
+@require_owner
+def admin_update_critical_settings():
+    """Update critical settings (owner only)."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        user = get_current_user()
+
+        allowed_keys = ['module_ghost', 'module_compliance', 'module_roadmap', 'module_ai',
+                       'backup_frequency', 'optimize_frequency']
+        settings = {k: v for k, v in data.items() if k in allowed_keys}
+
+        save_settings(db, settings, 'critical', user.get('id') if user else None)
+        db.commit()
+
+        return jsonify({'success': True, 'message': 'Critical settings updated'})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update critical settings error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/test-email', methods=['POST'])
+@require_auth
+@require_admin
+def admin_test_email():
+    """Test email configuration (disabled for now)."""
+    return jsonify({
+        'success': False,
+        'message': 'Email functionality coming soon'
+    }), 501
 
 
 if __name__ == '__main__':

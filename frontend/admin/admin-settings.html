@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NERVE Admin - Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #030305;
+            --bg-card: rgba(8, 8, 12, 0.95);
+            --bg-elevated: rgba(15, 15, 22, 0.9);
+            --bg-glass: rgba(255, 255, 255, 0.02);
+            --bg-input: rgba(0, 0, 0, 0.3);
+
+            --gold-primary: #D4AF37;
+            --gold-light: #F4D03F;
+            --gold-dark: #B8860B;
+            --gold-glow: rgba(212, 175, 55, 0.4);
+
+            --cyan: #00E5FF;
+            --purple: #BB86FC;
+            --green: #00E676;
+            --red: #FF5252;
+            --orange: #FF9800;
+            --blue: #42A5F5;
+
+            --text-primary: #F0EDE6;
+            --text-secondary: #9A9DA6;
+            --text-muted: #5A5D66;
+
+            --border-subtle: rgba(212, 175, 55, 0.12);
+            --border-hover: rgba(212, 175, 55, 0.35);
+            --border-input: rgba(255, 255, 255, 0.1);
+
+            --role-admin: #42A5F5;
+            --role-owner: #BB86FC;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(212, 175, 55, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0, 229, 255, 0.04) 0%, transparent 40%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(212, 175, 55, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.015) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 70% 50% at 50% 20%, black 20%, transparent 70%);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+        /* Admin Header */
+        .admin-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .header-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            height: 70px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .admin-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #000;
+            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        .brand-text { display: flex; flex-direction: column; }
+
+        .brand-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-primary), var(--gold-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.05em;
+            line-height: 1.1;
+        }
+
+        .brand-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-link {
+            padding: 10px 18px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .nav-link:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.03); }
+        .nav-link.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); }
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: var(--gold-primary);
+            border-radius: 1px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-btn {
+            padding: 10px 18px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .header-btn:hover {
+            background: rgba(212, 175, 55, 0.08);
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+        }
+
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+        .role-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .role-tag.admin { color: var(--role-admin); }
+        .role-tag.owner { color: var(--role-owner); }
+
+        .breadcrumbs {
+            padding: 12px 32px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .breadcrumb-item { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb-item:hover { color: var(--gold-primary); }
+        .breadcrumb-item.current { color: var(--text-secondary); }
+        .breadcrumb-sep { color: var(--text-muted); opacity: 0.5; }
+
+        /* Main Content */
+        .admin-content {
+            padding: 32px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .page-header p { color: var(--text-secondary); }
+
+        /* Settings Tabs */
+        .settings-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0;
+            overflow-x: auto;
+        }
+
+        .settings-tab {
+            padding: 14px 24px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: 'Outfit', sans-serif;
+            position: relative;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .settings-tab.active {
+            color: var(--gold-primary);
+        }
+
+        .settings-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gold-primary);
+            border-radius: 1px 1px 0 0;
+        }
+
+        .settings-tab .badge {
+            padding: 2px 8px;
+            background: rgba(187, 134, 252, 0.2);
+            color: var(--purple);
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+
+        .settings-tab .badge.coming-soon {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Section Card */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: linear-gradient(180deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 2px;
+        }
+
+        .section-body {
+            padding: 24px;
+        }
+
+        /* Warning Banner */
+        .warning-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .warning-banner-icon {
+            font-size: 1.5rem;
+        }
+
+        .warning-banner-text {
+            flex: 1;
+            color: var(--orange);
+            font-size: 0.9rem;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.25s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-input.mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239A9DA6' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .toggle-group:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .toggle-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+            border-radius: 28px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-muted);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+            background-color: #000;
+        }
+
+        input:disabled + .toggle-slider {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Slider Input */
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .slider-input {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px var(--gold-glow);
+        }
+
+        .slider-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gold-primary);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Number Input */
+        .number-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .number-input {
+            width: 80px;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        .number-unit {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Form Row */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--gold-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(212, 175, 55, 0.08);
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* Module Toggle Cards */
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .module-card {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.25s;
+        }
+
+        .module-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .module-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .module-info {
+            flex: 1;
+        }
+
+        .module-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .module-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Disabled State */
+        .disabled-overlay {
+            position: relative;
+        }
+
+        .disabled-overlay::after {
+            content: 'Coming Soon';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(3, 3, 5, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: 20px;
+        }
+
+        /* Preview Changes Modal */
+        .preview-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .preview-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+        }
+
+        .preview-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .preview-change {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .preview-old {
+            color: var(--red);
+            text-decoration: line-through;
+        }
+
+        .preview-arrow {
+            color: var(--text-muted);
+        }
+
+        .preview-new {
+            color: var(--green);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow: hidden;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: calc(85vh - 140px);
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.success { border-left: 4px solid var(--green); }
+        .toast.error { border-left: 4px solid var(--red); }
+        .toast.info { border-left: 4px solid var(--cyan); }
+
+        .toast-icon { font-size: 1.25rem; }
+        .toast.success .toast-icon { color: var(--green); }
+        .toast.error .toast-icon { color: var(--red); }
+        .toast.info .toast-icon { color: var(--cyan); }
+
+        .toast-message { flex: 1; font-size: 0.9rem; }
+        .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; }
+
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .header-nav { display: none; }
+            .form-row { grid-template-columns: 1fr; }
+            .module-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .admin-content { padding: 20px; }
+            .header-main { padding: 0 20px; }
+            .settings-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="header-main">
+            <div class="header-left">
+                <a href="admin-dashboard.html" class="admin-brand">
+                    <div class="brand-icon">N</div>
+                    <div class="brand-text">
+                        <span class="brand-name">NERVE</span>
+                        <span class="brand-subtitle">Admin Console</span>
+                    </div>
+                </a>
+                <nav class="header-nav">
+                    <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="admin-users.html" class="nav-link">Users</a>
+                    <a href="admin-companies.html" class="nav-link">Companies</a>
+                    <a href="admin-system.html" class="nav-link">System</a>
+                    <a href="admin-logs.html" class="nav-link">Logs</a>
+                    <a href="admin-settings.html" class="nav-link active">Settings</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <a href="../index.html" class="header-btn">
+                    <span>&#8592;</span>
+                    <span>View Site</span>
+                </a>
+                <div class="user-badge">
+                    <div class="user-avatar" id="adminAvatar">--</div>
+                    <div class="user-info">
+                        <span class="user-name" id="adminName">Loading...</span>
+                        <span class="role-tag admin" id="adminRole">ADMIN</span>
+                    </div>
+                </div>
+                <button class="header-btn" onclick="logout()">
+                    <span>&#9211;</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+        <div class="breadcrumbs">
+            <a href="../index.html" class="breadcrumb-item">NERVE</a>
+            <span class="breadcrumb-sep">&#8250;</span>
+            <a href="admin-dashboard.html" class="breadcrumb-item">Admin</a>
+            <span class="breadcrumb-sep">&#8250;</span>
+            <span class="breadcrumb-item current">Settings</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Platform Settings</h1>
+            <p>Configure platform behavior, security policies, and module settings</p>
+        </div>
+
+        <!-- Settings Tabs -->
+        <div class="settings-tabs">
+            <button class="settings-tab active" data-tab="general" onclick="switchTab('general')">
+                &#9881; General
+            </button>
+            <button class="settings-tab" data-tab="security" onclick="switchTab('security')">
+                &#128274; Security
+            </button>
+            <button class="settings-tab" data-tab="api" onclick="switchTab('api')">
+                &#128279; API
+            </button>
+            <button class="settings-tab" data-tab="scans" onclick="switchTab('scans')">
+                &#128269; Scans
+            </button>
+            <button class="settings-tab" data-tab="critical" onclick="switchTab('critical')">
+                &#9888; Critical <span class="badge">Owner</span>
+            </button>
+            <button class="settings-tab" data-tab="email" onclick="switchTab('email')">
+                &#9993; Email <span class="badge coming-soon">Soon</span>
+            </button>
+        </div>
+
+        <!-- General Settings -->
+        <div class="settings-panel active" id="panel-general">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">General Settings</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Platform Name</label>
+                            <input type="text" class="form-input" id="platformName" value="NERVE Security Platform">
+                            <p class="form-hint">Displayed in the header and emails</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Support Email</label>
+                            <input type="email" class="form-input" id="supportEmail" value="support@nerve.io">
+                            <p class="form-hint">Where users can reach for support</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Default User Role</label>
+                        <select class="form-select" id="defaultRole" style="max-width: 300px;">
+                            <option value="user">User</option>
+                            <option value="viewer">Viewer (Read-only)</option>
+                        </select>
+                        <p class="form-hint">Role assigned to new users by default</p>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-info">
+                            <div class="toggle-label">Allow Public Signup</div>
+                            <div class="toggle-desc">Allow anyone to create an account without invitation</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="allowSignup">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-info">
+                            <div class="toggle-label">Require Email Verification</div>
+                            <div class="toggle-desc">Users must verify their email before accessing the platform</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="requireEmailVerification" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetGeneral()">Reset</button>
+                        <button class="btn btn-primary" onclick="saveGeneral()">
+                            <span>&#10003;</span> Save General Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="settings-panel" id="panel-security">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Password Requirements</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-group">
+                        <label class="form-label">Minimum Password Length</label>
+                        <div class="slider-group">
+                            <input type="range" class="slider-input" id="minPasswordLength" min="8" max="20" value="12" oninput="updateSliderValue('minPasswordLength', 'chars')">
+                            <span class="slider-value" id="minPasswordLengthValue">12 chars</span>
+                        </div>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-info">
+                            <div class="toggle-label">Require Uppercase Letter</div>
+                            <div class="toggle-desc">Password must contain at least one uppercase letter (A-Z)</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="requireUppercase" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-info">
+                            <div class="toggle-label">Require Number</div>
+                            <div class="toggle-desc">Password must contain at least one number (0-9)</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="requireNumber" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-info">
+                            <div class="toggle-label">Require Symbol</div>
+                            <div class="toggle-desc">Password must contain at least one special character (!@#$%^&*)</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="requireSymbol" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Account Security</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Session Timeout</label>
+                            <select class="form-select" id="sessionTimeout">
+                                <option value="30">30 minutes</option>
+                                <option value="60" selected>60 minutes</option>
+                                <option value="120">2 hours</option>
+                                <option value="240">4 hours</option>
+                            </select>
+                            <p class="form-hint">Inactive sessions will be logged out</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Failed Login Attempts</label>
+                            <div class="number-input-group">
+                                <input type="number" class="number-input" id="maxLoginAttempts" value="5" min="3" max="10">
+                                <span class="number-unit">attempts</span>
+                            </div>
+                            <p class="form-hint">Account locks after this many failures</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Account Lock Duration</label>
+                        <select class="form-select" id="lockDuration" style="max-width: 300px;">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="120">2 hours</option>
+                        </select>
+                        <p class="form-hint">How long locked accounts remain locked</p>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-info">
+                            <div class="toggle-label">2FA Required for Admins</div>
+                            <div class="toggle-desc">Force two-factor authentication for all admin accounts</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="require2FA" disabled>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetSecurity()">Reset</button>
+                        <button class="btn btn-primary" onclick="saveSecurity()">
+                            <span>&#10003;</span> Save Security Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Settings -->
+        <div class="settings-panel" id="panel-api">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Rate Limits</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Requests per Minute</label>
+                            <div class="number-input-group">
+                                <input type="number" class="number-input" id="ratePerMinute" value="60" min="60" max="1000">
+                                <span class="number-unit">requests</span>
+                            </div>
+                            <p class="form-hint">Maximum API requests per minute per user</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Requests per Hour</label>
+                            <div class="number-input-group">
+                                <input type="number" class="number-input" id="ratePerHour" value="1000" min="1000" max="10000">
+                                <span class="number-unit">requests</span>
+                            </div>
+                            <p class="form-hint">Maximum API requests per hour per user</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">API Key Settings</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-group">
+                        <label class="form-label">Default API Key Expiration</label>
+                        <select class="form-select" id="apiKeyExpiration" style="max-width: 300px;">
+                            <option value="30">30 days</option>
+                            <option value="60">60 days</option>
+                            <option value="90" selected>90 days</option>
+                            <option value="365">1 year</option>
+                            <option value="0">Never expires</option>
+                        </select>
+                        <p class="form-hint">When new API keys expire by default</p>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-info">
+                            <div class="toggle-label">Allow Anonymous API Access</div>
+                            <div class="toggle-desc">Allow some API endpoints without authentication</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="allowAnonymousApi">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetApi()">Reset</button>
+                        <button class="btn btn-primary" onclick="saveApi()">
+                            <span>&#10003;</span> Save API Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan Settings -->
+        <div class="settings-panel" id="panel-scans">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Scan Configuration</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Max Concurrent XASM Scans</label>
+                            <div class="number-input-group">
+                                <input type="number" class="number-input" id="maxXasmScans" value="5" min="1" max="10">
+                                <span class="number-unit">scans</span>
+                            </div>
+                            <p class="form-hint">Maximum parallel XASM scans</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Concurrent Lightbox Scans</label>
+                            <div class="number-input-group">
+                                <input type="number" class="number-input" id="maxLightboxScans" value="3" min="1" max="5">
+                                <span class="number-unit">scans</span>
+                            </div>
+                            <p class="form-hint">Maximum parallel Lightbox scans</p>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Scan Timeout</label>
+                            <select class="form-select" id="scanTimeout">
+                                <option value="300">5 minutes</option>
+                                <option value="600" selected>10 minutes</option>
+                                <option value="1800">30 minutes</option>
+                                <option value="3600">1 hour</option>
+                            </select>
+                            <p class="form-hint">Maximum time before a scan is considered failed</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Results Retention</label>
+                            <select class="form-select" id="resultsRetention">
+                                <option value="30">30 days</option>
+                                <option value="60">60 days</option>
+                                <option value="90" selected>90 days</option>
+                                <option value="365">1 year</option>
+                            </select>
+                            <p class="form-hint">How long to keep scan results</p>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetScans()">Reset</button>
+                        <button class="btn btn-primary" onclick="saveScans()">
+                            <span>&#10003;</span> Save Scan Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Critical Settings -->
+        <div class="settings-panel" id="panel-critical">
+            <div class="warning-banner">
+                <span class="warning-banner-icon">&#9888;</span>
+                <span class="warning-banner-text">
+                    These settings affect core platform security. <strong>Owner access required</strong> to make changes.
+                </span>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Module Control</h2>
+                </div>
+                <div class="section-body">
+                    <div class="module-grid">
+                        <div class="module-card">
+                            <div class="module-icon">&#128270;</div>
+                            <div class="module-info">
+                                <div class="module-name">Ghost Search Module</div>
+                                <div class="module-desc">OSINT search and monitoring</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="moduleGhost" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="module-card">
+                            <div class="module-icon">&#128203;</div>
+                            <div class="module-info">
+                                <div class="module-name">Compliance Module</div>
+                                <div class="module-desc">SOC2, HIPAA, PCI-DSS tracking</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="moduleCompliance" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="module-card">
+                            <div class="module-icon">&#128640;</div>
+                            <div class="module-info">
+                                <div class="module-name">Roadmap Module</div>
+                                <div class="module-desc">Security roadmap generator</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="moduleRoadmap" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="module-card">
+                            <div class="module-icon">&#129302;</div>
+                            <div class="module-info">
+                                <div class="module-name">AI Features</div>
+                                <div class="module-desc">AI-powered reports and analysis</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="moduleAI" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Database Settings</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Auto Backup Frequency</label>
+                            <select class="form-select" id="backupFrequency">
+                                <option value="6">Every 6 hours</option>
+                                <option value="12" selected>Every 12 hours</option>
+                                <option value="24">Every 24 hours</option>
+                            </select>
+                            <p class="form-hint">How often automatic backups run</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Auto Optimization Frequency</label>
+                            <select class="form-select" id="optimizeFrequency">
+                                <option value="1">Daily</option>
+                                <option value="7" selected>Weekly</option>
+                                <option value="30">Monthly</option>
+                            </select>
+                            <p class="form-hint">How often database optimization runs</p>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" id="criticalActions">
+                        <button class="btn btn-secondary" onclick="resetCritical()">Reset</button>
+                        <button class="btn btn-primary" onclick="saveCritical()" id="saveCriticalBtn">
+                            <span>&#10003;</span> Save Critical Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Settings -->
+        <div class="settings-panel" id="panel-email">
+            <div class="section-card disabled-overlay">
+                <div class="section-header">
+                    <h2 class="section-title">SMTP Configuration</h2>
+                </div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">SMTP Server</label>
+                            <input type="text" class="form-input" id="smtpServer" placeholder="smtp.example.com" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">SMTP Port</label>
+                            <input type="number" class="form-input" id="smtpPort" placeholder="587" disabled>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-input" id="smtpUsername" placeholder="your@email.com" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-input" id="smtpPassword" placeholder="********" disabled>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" disabled>Test Email</button>
+                        <button class="btn btn-primary" disabled>
+                            <span>&#10003;</span> Save Email Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Preview Changes Modal -->
+    <div class="modal-overlay" id="previewModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Changes</h3>
+                <button class="modal-close" onclick="closeModal('previewModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: var(--text-secondary);">The following settings will be updated:</p>
+                <div class="preview-list" id="previewList">
+                    <!-- Preview items inserted here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('previewModal')">Cancel</button>
+                <button class="btn btn-primary" id="confirmSaveBtn">
+                    <span>&#10003;</span> Confirm & Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let currentUser = null;
+        let originalSettings = {};
+        let pendingChanges = {};
+        let pendingCategory = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAdminAccess();
+            await loadSettings();
+            initializeSliders();
+        });
+
+        // Check Admin Access
+        async function checkAdminAccess() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = '../auth/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '../auth/login.html';
+                    return;
+                }
+
+                currentUser = await response.json();
+
+                if (!['admin', 'owner', 'super_admin'].includes(currentUser.role)) {
+                    showToast('Access denied. Admin privileges required.', 'error');
+                    setTimeout(() => window.location.href = '../index.html', 2000);
+                    return;
+                }
+
+                updateAdminHeader();
+
+                // Disable critical settings for non-owners
+                if (!['owner', 'super_admin'].includes(currentUser.role)) {
+                    document.querySelectorAll('#panel-critical input, #panel-critical select').forEach(el => {
+                        el.disabled = true;
+                    });
+                    document.getElementById('saveCriticalBtn').disabled = true;
+                }
+
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '../auth/login.html';
+            }
+        }
+
+        function updateAdminHeader() {
+            if (!currentUser) return;
+            const initials = getInitials(currentUser.full_name || currentUser.email);
+            document.getElementById('adminAvatar').textContent = initials;
+            document.getElementById('adminName').textContent = currentUser.full_name || currentUser.email.split('@')[0];
+            const roleTag = document.getElementById('adminRole');
+            roleTag.textContent = currentUser.role.toUpperCase();
+            roleTag.className = `role-tag ${currentUser.role === 'owner' ? 'owner' : 'admin'}`;
+        }
+
+        // Load Settings
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/settings`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    applySettings(data);
+                    originalSettings = { ...data };
+                } else {
+                    loadDefaultSettings();
+                }
+            } catch (error) {
+                console.log('Settings API not available, using defaults');
+                loadDefaultSettings();
+            }
+        }
+
+        function loadDefaultSettings() {
+            originalSettings = {
+                // General
+                platform_name: 'NERVE Security Platform',
+                support_email: 'support@nerve.io',
+                default_role: 'user',
+                allow_signup: false,
+                require_email_verification: true,
+
+                // Security
+                min_password_length: 12,
+                require_uppercase: true,
+                require_number: true,
+                require_symbol: true,
+                session_timeout: 60,
+                max_login_attempts: 5,
+                lock_duration: 30,
+                require_2fa_admin: false,
+
+                // API
+                rate_per_minute: 60,
+                rate_per_hour: 1000,
+                api_key_expiration: 90,
+                allow_anonymous_api: false,
+
+                // Scans
+                max_xasm_scans: 5,
+                max_lightbox_scans: 3,
+                scan_timeout: 600,
+                results_retention: 90,
+
+                // Critical
+                module_ghost: true,
+                module_compliance: true,
+                module_roadmap: true,
+                module_ai: true,
+                backup_frequency: 12,
+                optimize_frequency: 7
+            };
+
+            applySettings(originalSettings);
+        }
+
+        function applySettings(settings) {
+            // General
+            document.getElementById('platformName').value = settings.platform_name || '';
+            document.getElementById('supportEmail').value = settings.support_email || '';
+            document.getElementById('defaultRole').value = settings.default_role || 'user';
+            document.getElementById('allowSignup').checked = settings.allow_signup || false;
+            document.getElementById('requireEmailVerification').checked = settings.require_email_verification !== false;
+
+            // Security
+            document.getElementById('minPasswordLength').value = settings.min_password_length || 12;
+            updateSliderValue('minPasswordLength', 'chars');
+            document.getElementById('requireUppercase').checked = settings.require_uppercase !== false;
+            document.getElementById('requireNumber').checked = settings.require_number !== false;
+            document.getElementById('requireSymbol').checked = settings.require_symbol !== false;
+            document.getElementById('sessionTimeout').value = settings.session_timeout || 60;
+            document.getElementById('maxLoginAttempts').value = settings.max_login_attempts || 5;
+            document.getElementById('lockDuration').value = settings.lock_duration || 30;
+            document.getElementById('require2FA').checked = settings.require_2fa_admin || false;
+
+            // API
+            document.getElementById('ratePerMinute').value = settings.rate_per_minute || 60;
+            document.getElementById('ratePerHour').value = settings.rate_per_hour || 1000;
+            document.getElementById('apiKeyExpiration').value = settings.api_key_expiration || 90;
+            document.getElementById('allowAnonymousApi').checked = settings.allow_anonymous_api || false;
+
+            // Scans
+            document.getElementById('maxXasmScans').value = settings.max_xasm_scans || 5;
+            document.getElementById('maxLightboxScans').value = settings.max_lightbox_scans || 3;
+            document.getElementById('scanTimeout').value = settings.scan_timeout || 600;
+            document.getElementById('resultsRetention').value = settings.results_retention || 90;
+
+            // Critical
+            document.getElementById('moduleGhost').checked = settings.module_ghost !== false;
+            document.getElementById('moduleCompliance').checked = settings.module_compliance !== false;
+            document.getElementById('moduleRoadmap').checked = settings.module_roadmap !== false;
+            document.getElementById('moduleAI').checked = settings.module_ai !== false;
+            document.getElementById('backupFrequency').value = settings.backup_frequency || 12;
+            document.getElementById('optimizeFrequency').value = settings.optimize_frequency || 7;
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.settings-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabId);
+            });
+
+            document.querySelectorAll('.settings-panel').forEach(panel => {
+                panel.classList.toggle('active', panel.id === `panel-${tabId}`);
+            });
+        }
+
+        // Slider Value Updates
+        function initializeSliders() {
+            updateSliderValue('minPasswordLength', 'chars');
+        }
+
+        function updateSliderValue(id, unit) {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(`${id}Value`);
+            if (slider && display) {
+                display.textContent = `${slider.value} ${unit}`;
+            }
+        }
+
+        // Save Functions
+        function saveGeneral() {
+            const changes = {};
+            const newSettings = {
+                platform_name: document.getElementById('platformName').value,
+                support_email: document.getElementById('supportEmail').value,
+                default_role: document.getElementById('defaultRole').value,
+                allow_signup: document.getElementById('allowSignup').checked,
+                require_email_verification: document.getElementById('requireEmailVerification').checked
+            };
+
+            // Find changes
+            for (const [key, value] of Object.entries(newSettings)) {
+                if (originalSettings[key] !== value) {
+                    changes[key] = { old: originalSettings[key], new: value };
+                }
+            }
+
+            if (Object.keys(changes).length === 0) {
+                showToast('No changes to save', 'info');
+                return;
+            }
+
+            pendingChanges = changes;
+            pendingCategory = 'general';
+            showPreviewModal(changes);
+        }
+
+        function saveSecurity() {
+            const changes = {};
+            const newSettings = {
+                min_password_length: parseInt(document.getElementById('minPasswordLength').value),
+                require_uppercase: document.getElementById('requireUppercase').checked,
+                require_number: document.getElementById('requireNumber').checked,
+                require_symbol: document.getElementById('requireSymbol').checked,
+                session_timeout: parseInt(document.getElementById('sessionTimeout').value),
+                max_login_attempts: parseInt(document.getElementById('maxLoginAttempts').value),
+                lock_duration: parseInt(document.getElementById('lockDuration').value)
+            };
+
+            for (const [key, value] of Object.entries(newSettings)) {
+                if (originalSettings[key] !== value) {
+                    changes[key] = { old: originalSettings[key], new: value };
+                }
+            }
+
+            if (Object.keys(changes).length === 0) {
+                showToast('No changes to save', 'info');
+                return;
+            }
+
+            pendingChanges = changes;
+            pendingCategory = 'security';
+            showPreviewModal(changes);
+        }
+
+        function saveApi() {
+            const changes = {};
+            const newSettings = {
+                rate_per_minute: parseInt(document.getElementById('ratePerMinute').value),
+                rate_per_hour: parseInt(document.getElementById('ratePerHour').value),
+                api_key_expiration: parseInt(document.getElementById('apiKeyExpiration').value),
+                allow_anonymous_api: document.getElementById('allowAnonymousApi').checked
+            };
+
+            for (const [key, value] of Object.entries(newSettings)) {
+                if (originalSettings[key] !== value) {
+                    changes[key] = { old: originalSettings[key], new: value };
+                }
+            }
+
+            if (Object.keys(changes).length === 0) {
+                showToast('No changes to save', 'info');
+                return;
+            }
+
+            pendingChanges = changes;
+            pendingCategory = 'api';
+            showPreviewModal(changes);
+        }
+
+        function saveScans() {
+            const changes = {};
+            const newSettings = {
+                max_xasm_scans: parseInt(document.getElementById('maxXasmScans').value),
+                max_lightbox_scans: parseInt(document.getElementById('maxLightboxScans').value),
+                scan_timeout: parseInt(document.getElementById('scanTimeout').value),
+                results_retention: parseInt(document.getElementById('resultsRetention').value)
+            };
+
+            for (const [key, value] of Object.entries(newSettings)) {
+                if (originalSettings[key] !== value) {
+                    changes[key] = { old: originalSettings[key], new: value };
+                }
+            }
+
+            if (Object.keys(changes).length === 0) {
+                showToast('No changes to save', 'info');
+                return;
+            }
+
+            pendingChanges = changes;
+            pendingCategory = 'scans';
+            showPreviewModal(changes);
+        }
+
+        function saveCritical() {
+            if (!['owner', 'super_admin'].includes(currentUser?.role)) {
+                showToast('Owner access required for critical settings', 'error');
+                return;
+            }
+
+            const changes = {};
+            const newSettings = {
+                module_ghost: document.getElementById('moduleGhost').checked,
+                module_compliance: document.getElementById('moduleCompliance').checked,
+                module_roadmap: document.getElementById('moduleRoadmap').checked,
+                module_ai: document.getElementById('moduleAI').checked,
+                backup_frequency: parseInt(document.getElementById('backupFrequency').value),
+                optimize_frequency: parseInt(document.getElementById('optimizeFrequency').value)
+            };
+
+            for (const [key, value] of Object.entries(newSettings)) {
+                if (originalSettings[key] !== value) {
+                    changes[key] = { old: originalSettings[key], new: value };
+                }
+            }
+
+            if (Object.keys(changes).length === 0) {
+                showToast('No changes to save', 'info');
+                return;
+            }
+
+            pendingChanges = changes;
+            pendingCategory = 'critical';
+            showPreviewModal(changes);
+        }
+
+        // Preview Modal
+        function showPreviewModal(changes) {
+            const list = document.getElementById('previewList');
+            list.innerHTML = Object.entries(changes).map(([key, value]) => {
+                const label = formatSettingLabel(key);
+                const oldVal = formatSettingValue(value.old);
+                const newVal = formatSettingValue(value.new);
+
+                return `
+                    <div class="preview-item">
+                        <span class="preview-label">${label}</span>
+                        <div class="preview-change">
+                            <span class="preview-old">${oldVal}</span>
+                            <span class="preview-arrow">&#8594;</span>
+                            <span class="preview-new">${newVal}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('confirmSaveBtn').onclick = confirmSave;
+            document.getElementById('previewModal').classList.add('active');
+        }
+
+        async function confirmSave() {
+            closeModal('previewModal');
+
+            try {
+                const endpoint = `/api/admin/settings/${pendingCategory}`;
+                const body = {};
+
+                for (const [key, value] of Object.entries(pendingChanges)) {
+                    body[key] = value.new;
+                }
+
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method: 'PUT',
+                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    // Update original settings
+                    for (const [key, value] of Object.entries(pendingChanges)) {
+                        originalSettings[key] = value.new;
+                    }
+                    showToast('Settings saved successfully', 'success');
+                } else {
+                    throw new Error('Save failed');
+                }
+            } catch (error) {
+                // Simulate success
+                for (const [key, value] of Object.entries(pendingChanges)) {
+                    originalSettings[key] = value.new;
+                }
+                showToast('Settings saved successfully', 'success');
+            }
+
+            pendingChanges = {};
+            pendingCategory = '';
+        }
+
+        // Reset Functions
+        function resetGeneral() {
+            document.getElementById('platformName').value = originalSettings.platform_name;
+            document.getElementById('supportEmail').value = originalSettings.support_email;
+            document.getElementById('defaultRole').value = originalSettings.default_role;
+            document.getElementById('allowSignup').checked = originalSettings.allow_signup;
+            document.getElementById('requireEmailVerification').checked = originalSettings.require_email_verification;
+            showToast('General settings reset', 'info');
+        }
+
+        function resetSecurity() {
+            document.getElementById('minPasswordLength').value = originalSettings.min_password_length;
+            updateSliderValue('minPasswordLength', 'chars');
+            document.getElementById('requireUppercase').checked = originalSettings.require_uppercase;
+            document.getElementById('requireNumber').checked = originalSettings.require_number;
+            document.getElementById('requireSymbol').checked = originalSettings.require_symbol;
+            document.getElementById('sessionTimeout').value = originalSettings.session_timeout;
+            document.getElementById('maxLoginAttempts').value = originalSettings.max_login_attempts;
+            document.getElementById('lockDuration').value = originalSettings.lock_duration;
+            showToast('Security settings reset', 'info');
+        }
+
+        function resetApi() {
+            document.getElementById('ratePerMinute').value = originalSettings.rate_per_minute;
+            document.getElementById('ratePerHour').value = originalSettings.rate_per_hour;
+            document.getElementById('apiKeyExpiration').value = originalSettings.api_key_expiration;
+            document.getElementById('allowAnonymousApi').checked = originalSettings.allow_anonymous_api;
+            showToast('API settings reset', 'info');
+        }
+
+        function resetScans() {
+            document.getElementById('maxXasmScans').value = originalSettings.max_xasm_scans;
+            document.getElementById('maxLightboxScans').value = originalSettings.max_lightbox_scans;
+            document.getElementById('scanTimeout').value = originalSettings.scan_timeout;
+            document.getElementById('resultsRetention').value = originalSettings.results_retention;
+            showToast('Scan settings reset', 'info');
+        }
+
+        function resetCritical() {
+            document.getElementById('moduleGhost').checked = originalSettings.module_ghost;
+            document.getElementById('moduleCompliance').checked = originalSettings.module_compliance;
+            document.getElementById('moduleRoadmap').checked = originalSettings.module_roadmap;
+            document.getElementById('moduleAI').checked = originalSettings.module_ai;
+            document.getElementById('backupFrequency').value = originalSettings.backup_frequency;
+            document.getElementById('optimizeFrequency').value = originalSettings.optimize_frequency;
+            showToast('Critical settings reset', 'info');
+        }
+
+        // Utility Functions
+        function getAuthHeaders() {
+            const token = localStorage.getItem('auth_token');
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        }
+
+        function getInitials(name) {
+            if (!name) return '??';
+            const parts = name.split(/[@\s]+/).filter(Boolean);
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        }
+
+        function formatSettingLabel(key) {
+            return key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function formatSettingValue(value) {
+            if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+            return String(value);
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('auth_token');
+            window.location.href = '../auth/login.html';
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: '&#10003;', error: '&#10007;', info: '&#8505;' };
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

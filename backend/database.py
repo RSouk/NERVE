@@ -392,6 +392,62 @@ class SecurityEvent(Base):
         return f'<SecurityEvent {self.event_type} - {self.severity}>'
 
 
+class PlatformSettings(Base):
+    """Platform-wide configuration settings"""
+    __tablename__ = 'platform_settings'
+
+    # Primary Key (setting key is the identifier)
+    key = Column(String(100), primary_key=True)
+
+    # Value (stored as JSON for complex values)
+    value = Column(Text, nullable=False)
+
+    # Category for organization
+    category = Column(String(50), nullable=False, index=True)
+    # Categories: general, security, api, scans, critical, email
+
+    # Metadata
+    description = Column(Text)  # Human-readable description of the setting
+    value_type = Column(String(20), default='string')  # string, number, boolean, json
+
+    # Audit trail
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+
+    def __repr__(self):
+        return f'<PlatformSettings {self.key}={self.value}>'
+
+
+class ErrorLog(Base):
+    """Application error logs for monitoring and debugging"""
+    __tablename__ = 'error_logs'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Error Info
+    error_type = Column(String(100), nullable=False, index=True)  # Exception class name
+    error_message = Column(Text, nullable=False)
+    stack_trace = Column(Text)
+
+    # Context
+    endpoint = Column(String(255), index=True)  # API endpoint that caused the error
+    method = Column(String(10))  # HTTP method
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    ip_address = Column(String(45))
+    user_agent = Column(Text)
+    request_data = Column(Text)  # JSON of request body (sanitized)
+
+    # Severity
+    severity = Column(String(20), nullable=False, default='error', index=True)  # warning, error, critical
+
+    # Timestamp
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def __repr__(self):
+        return f'<ErrorLog {self.error_type} at {self.endpoint}>'
+
+
 # ============================================================================
 # GHOST SEARCH MODELS
 # ============================================================================

@@ -1026,6 +1026,7 @@
             </div>
             <div class="header-right">
                 <button class="header-btn" onclick="refreshDashboard()">Refresh</button>
+                <a href="../../profile.html" class="header-btn" id="profileBtn" title="Profile">&#128100;</a>
                 <a href="../../index.html" class="header-btn">Back to NERVE</a>
             </div>
         </header>
@@ -1051,6 +1052,10 @@
                     <span class="nav-icon">&#128739;</span>
                     <span>Security Roadmap</span>
                     <span class="nav-badge new">New</span>
+                </a>
+                <a href="../../admin/admin-dashboard.html" class="nav-item" id="adminNavLink" style="display: none;">
+                    <span class="nav-icon">&#128736;</span>
+                    <span>Admin Panel</span>
                 </a>
                 <div class="sidebar-footer">
                     <button class="sidebar-info-btn" onclick="openInfoModal()">About GHOST</button>
@@ -1292,7 +1297,29 @@
             loadMaintenanceState();
             loadRoadmapWidget();
             checkWeeklyReset();
+            checkAdminAccess();
         });
+
+        // Check if user has admin access
+        async function checkAdminAccess() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const user = await response.json();
+                    if (['admin', 'owner', 'super_admin'].includes(user.role)) {
+                        const adminLink = document.getElementById('adminNavLink');
+                        if (adminLink) adminLink.style.display = 'flex';
+                    }
+                }
+            } catch (error) {
+                console.log('[GHOST] Could not check admin access');
+            }
+        }
 
         // Modal
         function openInfoModal() {

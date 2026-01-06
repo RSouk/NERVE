@@ -256,6 +256,73 @@
         .sidebar-footer {
             padding: 20px 24px;
             border-top: 1px solid var(--border-subtle);
+            margin-top: auto;
+        }
+
+        .user-profile-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .user-profile-section:hover {
+            background: rgba(212, 175, 55, 0.08);
+            border-color: var(--border-hover);
+        }
+
+        .user-avatar-small {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #000;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        .profile-arrow {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: transform 0.2s;
+        }
+
+        .user-profile-section:hover .profile-arrow {
+            transform: translateX(3px);
+            color: var(--gold-primary);
         }
 
         .sidebar-status {
@@ -1034,6 +1101,11 @@
 
                 <div class="nav-group">
                     <p class="nav-label">System</p>
+                    <a href="admin/admin-dashboard.html" class="nav-item" id="adminNavLink" style="display: none;">
+                        <span class="nav-icon">&#128736;</span>
+                        <span>Admin</span>
+                        <span class="nav-badge active">Admin</span>
+                    </a>
                     <div class="nav-item disabled">
                         <span class="nav-icon">&#9881;</span>
                         <span>Settings</span>
@@ -1042,6 +1114,14 @@
             </nav>
 
             <div class="sidebar-footer">
+                <a href="profile.html" class="user-profile-section" id="userProfileLink">
+                    <div class="user-avatar-small" id="sidebarAvatar">--</div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebarUserName">Loading...</div>
+                        <div class="user-role" id="sidebarUserRole">User</div>
+                    </div>
+                    <span class="profile-arrow">&#8594;</span>
+                </a>
                 <div class="sidebar-status">
                     <span class="status-dot"></span>
                     <span>All systems operational</span>
@@ -1463,11 +1543,79 @@
             }
         }
 
+        // Load User Profile for Sidebar
+        async function loadSidebarProfile() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                // Hide profile section if not logged in
+                const profileLink = document.getElementById('userProfileLink');
+                if (profileLink) {
+                    profileLink.style.display = 'none';
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+
+                    // Update avatar
+                    const avatar = document.getElementById('sidebarAvatar');
+                    if (avatar) {
+                        const initials = getInitials(user.full_name || user.email);
+                        avatar.textContent = initials;
+                    }
+
+                    // Update name
+                    const userName = document.getElementById('sidebarUserName');
+                    if (userName) {
+                        userName.textContent = user.full_name || user.email.split('@')[0];
+                    }
+
+                    // Update role
+                    const userRole = document.getElementById('sidebarUserRole');
+                    if (userRole) {
+                        userRole.textContent = user.role || 'User';
+                    }
+
+                    // Show admin link for admin/owner roles
+                    const adminLink = document.getElementById('adminNavLink');
+                    if (adminLink && ['admin', 'owner', 'super_admin'].includes(user.role)) {
+                        adminLink.style.display = 'flex';
+                    }
+                } else if (response.status === 401) {
+                    // Token invalid, hide profile
+                    const profileLink = document.getElementById('userProfileLink');
+                    if (profileLink) {
+                        profileLink.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.log('[NERVE] Could not load user profile');
+            }
+        }
+
+        function getInitials(name) {
+            if (!name) return '??';
+            const parts = name.split(' ').filter(Boolean);
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            }
+            return name.substring(0, 2).toUpperCase();
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             displayConfiguredFeeds();
             loadFeedArticles();
             loadPlatformStats();
+            loadSidebarProfile();
         });
     </script>
 </body>

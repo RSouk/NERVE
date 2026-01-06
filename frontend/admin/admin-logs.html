@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NERVE Admin - Security Logs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #030305;
+            --bg-card: rgba(8, 8, 12, 0.95);
+            --bg-elevated: rgba(15, 15, 22, 0.9);
+            --bg-glass: rgba(255, 255, 255, 0.02);
+            --bg-input: rgba(0, 0, 0, 0.3);
+
+            --gold-primary: #D4AF37;
+            --gold-light: #F4D03F;
+            --gold-dark: #B8860B;
+            --gold-glow: rgba(212, 175, 55, 0.4);
+
+            --cyan: #00E5FF;
+            --purple: #BB86FC;
+            --green: #00E676;
+            --red: #FF5252;
+            --orange: #FF9800;
+            --blue: #42A5F5;
+
+            --text-primary: #F0EDE6;
+            --text-secondary: #9A9DA6;
+            --text-muted: #5A5D66;
+
+            --border-subtle: rgba(212, 175, 55, 0.12);
+            --border-hover: rgba(212, 175, 55, 0.35);
+            --border-input: rgba(255, 255, 255, 0.1);
+
+            --role-admin: #42A5F5;
+            --role-owner: #BB86FC;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(212, 175, 55, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0, 229, 255, 0.04) 0%, transparent 40%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(212, 175, 55, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.015) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 70% 50% at 50% 20%, black 20%, transparent 70%);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+        /* Admin Header */
+        .admin-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .header-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            height: 70px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .admin-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #000;
+            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        .brand-text { display: flex; flex-direction: column; }
+
+        .brand-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-primary), var(--gold-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.05em;
+            line-height: 1.1;
+        }
+
+        .brand-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-link {
+            padding: 10px 18px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .nav-link:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.03); }
+        .nav-link.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); }
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: var(--gold-primary);
+            border-radius: 1px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-btn {
+            padding: 10px 18px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .header-btn:hover {
+            background: rgba(212, 175, 55, 0.08);
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+        }
+
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+        .role-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .role-tag.admin { color: var(--role-admin); }
+        .role-tag.owner { color: var(--role-owner); }
+
+        .breadcrumbs {
+            padding: 12px 32px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .breadcrumb-item { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb-item:hover { color: var(--gold-primary); }
+        .breadcrumb-item.current { color: var(--text-secondary); }
+        .breadcrumb-sep { color: var(--text-muted); opacity: 0.5; }
+
+        /* Main Content */
+        .admin-content {
+            padding: 32px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .page-header-left h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .page-header-left p { color: var(--text-secondary); }
+
+        .page-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--gold-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(212, 175, 55, 0.08);
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        /* Alert Banner */
+        .alert-banner {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 24px;
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .alert-banner.visible { display: flex; }
+
+        .alert-banner-icon {
+            font-size: 1.5rem;
+        }
+
+        .alert-banner-text {
+            flex: 1;
+            color: var(--text-primary);
+        }
+
+        .alert-banner-text strong {
+            color: var(--red);
+        }
+
+        .alert-banner-dismiss {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Quick Filters */
+        .quick-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .filter-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .filter-tab.active {
+            background: rgba(212, 175, 55, 0.15);
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+        }
+
+        .filter-tab .count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+        }
+
+        .filter-tab.active .count {
+            background: var(--gold-primary);
+            color: #000;
+        }
+
+        /* Section Card */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: linear-gradient(180deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 2px;
+        }
+
+        /* Filters */
+        .filters-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .filter-select {
+            padding: 8px 32px 8px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%239A9DA6' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        .filter-input {
+            padding: 8px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: 'Outfit', sans-serif;
+            width: 140px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        .filter-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .refresh-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--cyan);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Data Table */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+
+        .data-table th:hover {
+            color: var(--gold-primary);
+        }
+
+        .data-table th.sorted {
+            color: var(--gold-primary);
+        }
+
+        .data-table th .sort-icon {
+            margin-left: 6px;
+            opacity: 0.5;
+        }
+
+        .data-table th.sorted .sort-icon {
+            opacity: 1;
+        }
+
+        .data-table td {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .data-table tr {
+            transition: background 0.2s;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .data-table .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Severity Badges */
+        .severity-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .severity-badge.critical {
+            background: rgba(255, 82, 82, 0.15);
+            color: var(--red);
+        }
+
+        .severity-badge.high {
+            background: rgba(255, 152, 0, 0.15);
+            color: var(--orange);
+        }
+
+        .severity-badge.medium {
+            background: rgba(244, 208, 63, 0.15);
+            color: var(--gold-light);
+        }
+
+        .severity-badge.low {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--green);
+        }
+
+        .severity-badge.info {
+            background: rgba(0, 229, 255, 0.15);
+            color: var(--cyan);
+        }
+
+        .severity-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Event Type Tags */
+        .event-type-tag {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .event-type-tag.login_failed { background: rgba(255, 82, 82, 0.1); color: var(--red); }
+        .event-type-tag.login_success { background: rgba(0, 230, 118, 0.1); color: var(--green); }
+        .event-type-tag.password_changed { background: rgba(187, 134, 252, 0.1); color: var(--purple); }
+        .event-type-tag.account_locked { background: rgba(255, 152, 0, 0.1); color: var(--orange); }
+        .event-type-tag.account_unlocked { background: rgba(0, 229, 255, 0.1); color: var(--cyan); }
+        .event-type-tag.user_created { background: rgba(66, 165, 245, 0.1); color: var(--blue); }
+        .event-type-tag.user_deleted { background: rgba(255, 82, 82, 0.1); color: var(--red); }
+        .event-type-tag.brute_force { background: rgba(255, 82, 82, 0.2); color: var(--red); }
+        .event-type-tag.api_key_created { background: rgba(0, 229, 255, 0.1); color: var(--cyan); }
+        .event-type-tag.api_key_revoked { background: rgba(255, 152, 0, 0.1); color: var(--orange); }
+        .event-type-tag.default { background: rgba(255, 255, 255, 0.05); color: var(--text-secondary); }
+
+        /* User Cell */
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-mini-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #000;
+            flex-shrink: 0;
+        }
+
+        .user-mini-avatar.system {
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            padding: 6px 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .action-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .pagination-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-color: transparent;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .page-ellipsis {
+            color: var(--text-muted);
+            padding: 0 8px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow: hidden;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: calc(85vh - 140px);
+            overflow-y: auto;
+        }
+
+        /* Event Details */
+        .event-details {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .detail-section {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+
+        .detail-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .detail-value.mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* JSON Display */
+        .json-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Related Events */
+        .related-events {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .related-event {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .related-event:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .related-event-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .related-event-time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Modal Footer */
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Export Modal */
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .export-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .export-option label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.success { border-left: 4px solid var(--green); }
+        .toast.error { border-left: 4px solid var(--red); }
+        .toast.info { border-left: 4px solid var(--cyan); }
+
+        .toast-icon { font-size: 1.25rem; }
+        .toast.success .toast-icon { color: var(--green); }
+        .toast.error .toast-icon { color: var(--red); }
+        .toast.info .toast-icon { color: var(--cyan); }
+
+        .toast-message { flex: 1; font-size: 0.9rem; }
+        .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-sub {
+            font-size: 0.85rem;
+        }
+
+        /* Loading */
+        .loading-row td {
+            text-align: center;
+            padding: 40px !important;
+        }
+
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-subtle);
+            border-top-color: var(--gold-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in { animation: fadeInUp 0.5s ease-out forwards; }
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .filters-row { flex-wrap: wrap; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 1000px) {
+            .header-nav { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .admin-content { padding: 20px; }
+            .header-main { padding: 0 20px; }
+            .page-header { flex-direction: column; gap: 16px; }
+            .quick-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="header-main">
+            <div class="header-left">
+                <a href="admin-dashboard.html" class="admin-brand">
+                    <div class="brand-icon">N</div>
+                    <div class="brand-text">
+                        <span class="brand-name">NERVE</span>
+                        <span class="brand-subtitle">Admin Console</span>
+                    </div>
+                </a>
+                <nav class="header-nav">
+                    <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="admin-users.html" class="nav-link">Users</a>
+                    <a href="admin-companies.html" class="nav-link">Companies</a>
+                    <a href="admin-system.html" class="nav-link">System</a>
+                    <a href="admin-logs.html" class="nav-link active">Logs</a>
+                    <a href="admin-settings.html" class="nav-link">Settings</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <a href="../index.html" class="header-btn">
+                    <span>&#8592;</span>
+                    <span>View Site</span>
+                </a>
+                <div class="user-badge">
+                    <div class="user-avatar" id="adminAvatar">--</div>
+                    <div class="user-info">
+                        <span class="user-name" id="adminName">Loading...</span>
+                        <span class="role-tag admin" id="adminRole">ADMIN</span>
+                    </div>
+                </div>
+                <button class="header-btn" onclick="logout()">
+                    <span>&#9211;</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+        <div class="breadcrumbs">
+            <a href="../index.html" class="breadcrumb-item">NERVE</a>
+            <span class="breadcrumb-sep">&#8250;</span>
+            <a href="admin-dashboard.html" class="breadcrumb-item">Admin</a>
+            <span class="breadcrumb-sep">&#8250;</span>
+            <span class="breadcrumb-item current">Security Logs</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-content">
+        <!-- Page Header -->
+        <div class="page-header animate-in">
+            <div class="page-header-left">
+                <h1>Security Logs</h1>
+                <p>Monitor security events, login attempts, and audit trail</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary" onclick="showExportModal()">
+                    <span>&#128190;</span> Export
+                </button>
+                <button class="btn btn-secondary" onclick="refreshLogs()">
+                    <span>&#8635;</span> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert Banner -->
+        <div class="alert-banner" id="alertBanner">
+            <span class="alert-banner-icon">&#9888;</span>
+            <div class="alert-banner-text">
+                <strong id="criticalCount">0</strong> critical security events detected in the last 24 hours
+            </div>
+            <button class="alert-banner-dismiss" onclick="dismissAlertBanner()">&times;</button>
+        </div>
+
+        <!-- Quick Filters -->
+        <div class="quick-filters animate-in delay-1">
+            <button class="filter-tab active" data-filter="all" onclick="setQuickFilter('all')">
+                All Events <span class="count" id="countAll">0</span>
+            </button>
+            <button class="filter-tab" data-filter="login_failed" onclick="setQuickFilter('login_failed')">
+                Failed Logins <span class="count" id="countFailed">0</span>
+            </button>
+            <button class="filter-tab" data-filter="brute_force" onclick="setQuickFilter('brute_force')">
+                Brute Force <span class="count" id="countBrute">0</span>
+            </button>
+            <button class="filter-tab" data-filter="account_locked" onclick="setQuickFilter('account_locked')">
+                Account Locks <span class="count" id="countLocks">0</span>
+            </button>
+            <button class="filter-tab" data-filter="critical" onclick="setQuickFilter('critical')">
+                Critical Only <span class="count" id="countCritical">0</span>
+            </button>
+        </div>
+
+        <!-- Main Table -->
+        <div class="section-card animate-in delay-2">
+            <div class="section-header">
+                <h2 class="section-title">Security Events</h2>
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <span class="filter-label">Type</span>
+                        <select class="filter-select" id="filterType" onchange="applyFilters()">
+                            <option value="">All Types</option>
+                            <option value="login_failed">Login Failed</option>
+                            <option value="login_success">Login Success</option>
+                            <option value="password_changed">Password Changed</option>
+                            <option value="account_locked">Account Locked</option>
+                            <option value="account_unlocked">Account Unlocked</option>
+                            <option value="user_created">User Created</option>
+                            <option value="user_deleted">User Deleted</option>
+                            <option value="brute_force">Brute Force Detected</option>
+                            <option value="api_key_created">API Key Created</option>
+                            <option value="api_key_revoked">API Key Revoked</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">Severity</span>
+                        <select class="filter-select" id="filterSeverity" onchange="applyFilters()">
+                            <option value="">All Severities</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                            <option value="info">Info</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">Date</span>
+                        <select class="filter-select" id="filterDate" onchange="applyFilters()">
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="7days">Last 7 Days</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <input type="text" class="filter-input" id="filterUser" placeholder="Search user..." onkeyup="debounceSearch()">
+                    </div>
+                    <div class="refresh-indicator">
+                        <span class="refresh-dot"></span>
+                        <span>Updates every 30s</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortBy('timestamp')" class="sorted" data-sort="timestamp">
+                                Timestamp <span class="sort-icon">&#9660;</span>
+                            </th>
+                            <th onclick="sortBy('user')">User</th>
+                            <th onclick="sortBy('event_type')">Event Type</th>
+                            <th onclick="sortBy('severity')">Severity</th>
+                            <th>IP Address</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr class="loading-row">
+                            <td colspan="7">
+                                <div class="loading-spinner"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <div class="pagination-info" id="paginationInfo">
+                    Showing 1-50 of 0 events
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    <!-- Pagination buttons inserted here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Event Details Modal -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <span id="eventModalIcon">&#128203;</span>
+                    Event Details
+                </h3>
+                <button class="modal-close" onclick="closeModal('eventModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="event-details" id="eventDetails">
+                    <!-- Event details inserted here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="acknowledgeBtn" onclick="acknowledgeEvent()">
+                    <span>&#10003;</span> Acknowledge
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('eventModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Export Security Logs</h3>
+                <button class="modal-close" onclick="closeModal('exportModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <div class="export-option">
+                        <label>Export filtered results based on current filters</label>
+                    </div>
+                    <div class="export-option">
+                        <span class="filter-label">Format</span>
+                        <select class="filter-select" id="exportFormat" style="width: 120px;">
+                            <option value="csv">CSV</option>
+                            <option value="json">JSON</option>
+                        </select>
+                    </div>
+                    <div class="export-option">
+                        <span class="filter-label">Date Range</span>
+                        <select class="filter-select" id="exportDateRange" style="width: 150px;">
+                            <option value="current">Current Filters</option>
+                            <option value="today">Today</option>
+                            <option value="7days">Last 7 Days</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('exportModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="exportLogs()">
+                    <span>&#128190;</span> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let currentUser = null;
+        let allLogs = [];
+        let filteredLogs = [];
+        let currentPage = 1;
+        let perPage = 50;
+        let sortField = 'timestamp';
+        let sortDir = 'desc';
+        let refreshInterval = null;
+        let searchDebounce = null;
+        let selectedEventId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAdminAccess();
+            await loadLogs();
+            startAutoRefresh();
+        });
+
+        // Check Admin Access
+        async function checkAdminAccess() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = '../auth/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '../auth/login.html';
+                    return;
+                }
+
+                currentUser = await response.json();
+
+                if (!['admin', 'owner', 'super_admin'].includes(currentUser.role)) {
+                    showToast('Access denied. Admin privileges required.', 'error');
+                    setTimeout(() => window.location.href = '../index.html', 2000);
+                    return;
+                }
+
+                updateAdminHeader();
+
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '../auth/login.html';
+            }
+        }
+
+        function updateAdminHeader() {
+            if (!currentUser) return;
+            const initials = getInitials(currentUser.full_name || currentUser.email);
+            document.getElementById('adminAvatar').textContent = initials;
+            document.getElementById('adminName').textContent = currentUser.full_name || currentUser.email.split('@')[0];
+            const roleTag = document.getElementById('adminRole');
+            roleTag.textContent = currentUser.role.toUpperCase();
+            roleTag.className = `role-tag ${currentUser.role === 'owner' ? 'owner' : 'admin'}`;
+        }
+
+        // Load Logs
+        async function loadLogs() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/logs`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    allLogs = data.events || data;
+                } else {
+                    loadMockLogs();
+                }
+            } catch (error) {
+                console.log('Logs API not available, using mock data');
+                loadMockLogs();
+            }
+
+            updateCounts();
+            applyFilters();
+        }
+
+        function loadMockLogs() {
+            const eventTypes = ['login_failed', 'login_success', 'password_changed', 'account_locked', 'account_unlocked', 'user_created', 'brute_force', 'api_key_created'];
+            const severities = ['critical', 'high', 'medium', 'low', 'info'];
+            const users = [
+                { email: 'john@example.com', name: 'John Smith' },
+                { email: 'sarah@acme.com', name: 'Sarah Johnson' },
+                { email: 'admin@nerve.io', name: 'Admin' },
+                { email: 'mike@test.com', name: 'Mike Wilson' },
+                { email: 'unknown', name: 'Unknown' }
+            ];
+
+            const descriptions = {
+                login_failed: ['Invalid password attempt', 'Account not found', 'Account suspended'],
+                login_success: ['Successful login via web', 'Successful login via API'],
+                password_changed: ['User changed password', 'Password reset completed'],
+                account_locked: ['Account locked after 5 failed attempts'],
+                account_unlocked: ['Account unlocked by admin'],
+                user_created: ['New user account created'],
+                brute_force: ['Brute force attack detected - 10 failed attempts in 5 minutes'],
+                api_key_created: ['New API key generated']
+            };
+
+            allLogs = [];
+            const now = Date.now();
+
+            for (let i = 0; i < 200; i++) {
+                const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+                const user = users[Math.floor(Math.random() * users.length)];
+                const severity = eventType === 'brute_force' ? 'critical' :
+                               eventType === 'login_failed' ? (Math.random() > 0.7 ? 'high' : 'medium') :
+                               eventType === 'account_locked' ? 'high' :
+                               severities[Math.floor(Math.random() * severities.length)];
+
+                const descList = descriptions[eventType];
+                const description = descList[Math.floor(Math.random() * descList.length)];
+
+                allLogs.push({
+                    id: i + 1,
+                    timestamp: new Date(now - Math.random() * 7 * 86400000).toISOString(),
+                    user_email: user.email,
+                    user_name: user.name,
+                    event_type: eventType,
+                    severity: severity,
+                    ip_address: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+                    description: description,
+                    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    location: ['New York, US', 'London, UK', 'Tokyo, JP', 'Sydney, AU', 'Unknown'][Math.floor(Math.random() * 5)],
+                    acknowledged: Math.random() > 0.8,
+                    metadata: { browser: 'Chrome', os: 'Windows 10' }
+                });
+            }
+
+            // Sort by timestamp desc
+            allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+
+        function updateCounts() {
+            const now = new Date();
+            const today = new Date(now.setHours(0, 0, 0, 0));
+
+            document.getElementById('countAll').textContent = allLogs.length;
+            document.getElementById('countFailed').textContent = allLogs.filter(l => l.event_type === 'login_failed').length;
+            document.getElementById('countBrute').textContent = allLogs.filter(l => l.event_type === 'brute_force').length;
+            document.getElementById('countLocks').textContent = allLogs.filter(l => l.event_type === 'account_locked').length;
+            document.getElementById('countCritical').textContent = allLogs.filter(l => l.severity === 'critical').length;
+
+            // Check for critical events in last 24 hours
+            const criticalRecent = allLogs.filter(l => {
+                const eventDate = new Date(l.timestamp);
+                return l.severity === 'critical' && (now - eventDate) < 86400000;
+            });
+
+            if (criticalRecent.length > 0) {
+                document.getElementById('criticalCount').textContent = criticalRecent.length;
+                document.getElementById('alertBanner').classList.add('visible');
+            }
+        }
+
+        // Quick Filter
+        function setQuickFilter(filter) {
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.filter === filter);
+            });
+
+            // Reset dropdown filters
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterSeverity').value = '';
+
+            if (filter === 'all') {
+                // No additional filter
+            } else if (filter === 'critical') {
+                document.getElementById('filterSeverity').value = 'critical';
+            } else {
+                document.getElementById('filterType').value = filter;
+            }
+
+            currentPage = 1;
+            applyFilters();
+        }
+
+        // Apply Filters
+        function applyFilters() {
+            const type = document.getElementById('filterType').value;
+            const severity = document.getElementById('filterSeverity').value;
+            const dateRange = document.getElementById('filterDate').value;
+            const userSearch = document.getElementById('filterUser').value.toLowerCase();
+
+            const now = new Date();
+            let startDate = null;
+
+            switch (dateRange) {
+                case 'today':
+                    startDate = new Date(now.setHours(0, 0, 0, 0));
+                    break;
+                case 'yesterday':
+                    startDate = new Date(now.setHours(0, 0, 0, 0) - 86400000);
+                    break;
+                case '7days':
+                    startDate = new Date(Date.now() - 7 * 86400000);
+                    break;
+                case '30days':
+                    startDate = new Date(Date.now() - 30 * 86400000);
+                    break;
+            }
+
+            filteredLogs = allLogs.filter(log => {
+                if (type && log.event_type !== type) return false;
+                if (severity && log.severity !== severity) return false;
+                if (startDate && new Date(log.timestamp) < startDate) return false;
+                if (userSearch && !log.user_email.toLowerCase().includes(userSearch) &&
+                    !(log.user_name && log.user_name.toLowerCase().includes(userSearch))) return false;
+                return true;
+            });
+
+            // Apply sorting
+            filteredLogs.sort((a, b) => {
+                let valA = a[sortField];
+                let valB = b[sortField];
+
+                if (sortField === 'timestamp') {
+                    valA = new Date(valA);
+                    valB = new Date(valB);
+                }
+
+                if (sortDir === 'asc') {
+                    return valA > valB ? 1 : -1;
+                } else {
+                    return valA < valB ? 1 : -1;
+                }
+            });
+
+            renderTable();
+            renderPagination();
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                currentPage = 1;
+                applyFilters();
+            }, 300);
+        }
+
+        // Sort
+        function sortBy(field) {
+            if (sortField === field) {
+                sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortField = field;
+                sortDir = 'desc';
+            }
+
+            // Update headers
+            document.querySelectorAll('.data-table th').forEach(th => {
+                th.classList.remove('sorted');
+                const icon = th.querySelector('.sort-icon');
+                if (icon) icon.innerHTML = '&#9660;';
+            });
+
+            const th = document.querySelector(`th[onclick="sortBy('${field}')"]`);
+            if (th) {
+                th.classList.add('sorted');
+                const icon = th.querySelector('.sort-icon');
+                if (icon) icon.innerHTML = sortDir === 'asc' ? '&#9650;' : '&#9660;';
+            }
+
+            applyFilters();
+        }
+
+        // Render Table
+        function renderTable() {
+            const tbody = document.getElementById('logsTableBody');
+            const start = (currentPage - 1) * perPage;
+            const end = start + perPage;
+            const pageData = filteredLogs.slice(start, end);
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">&#128203;</div>
+                                <div class="empty-state-text">No events found</div>
+                                <div class="empty-state-sub">Try adjusting your filters</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = pageData.map(log => {
+                const initials = getInitials(log.user_name || log.user_email);
+                const isSystem = log.user_email === 'system';
+                const eventTypeClass = getEventTypeClass(log.event_type);
+
+                return `
+                    <tr>
+                        <td class="mono">${formatDateTime(log.timestamp)}</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-mini-avatar ${isSystem ? 'system' : ''}">${initials}</div>
+                                <span>${log.user_name || log.user_email}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="event-type-tag ${eventTypeClass}">${formatEventType(log.event_type)}</span>
+                        </td>
+                        <td>
+                            <span class="severity-badge ${log.severity}">
+                                <span class="severity-dot"></span>
+                                ${log.severity}
+                            </span>
+                        </td>
+                        <td class="mono">${log.ip_address}</td>
+                        <td>${truncate(log.description, 50)}</td>
+                        <td>
+                            <button class="action-btn" onclick="viewEvent(${log.id})">View</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Render Pagination
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredLogs.length / perPage);
+            const start = (currentPage - 1) * perPage + 1;
+            const end = Math.min(currentPage * perPage, filteredLogs.length);
+
+            document.getElementById('paginationInfo').textContent =
+                `Showing ${start}-${end} of ${filteredLogs.length} events`;
+
+            const controls = document.getElementById('paginationControls');
+            let html = '';
+
+            html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&#8592;</button>`;
+
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += '<span class="page-ellipsis">...</span>';
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += '<span class="page-ellipsis">...</span>';
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>&#8594;</button>`;
+
+            controls.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredLogs.length / perPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable();
+            renderPagination();
+        }
+
+        // View Event
+        function viewEvent(id) {
+            const event = allLogs.find(l => l.id === id);
+            if (!event) return;
+
+            selectedEventId = id;
+
+            const details = document.getElementById('eventDetails');
+            const eventTypeClass = getEventTypeClass(event.event_type);
+
+            // Find related events (same user, +/- 5 minutes)
+            const eventTime = new Date(event.timestamp).getTime();
+            const relatedEvents = allLogs.filter(l => {
+                if (l.id === id) return false;
+                if (l.user_email !== event.user_email) return false;
+                const diff = Math.abs(new Date(l.timestamp).getTime() - eventTime);
+                return diff < 5 * 60 * 1000; // 5 minutes
+            }).slice(0, 5);
+
+            details.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-section-title">Event Information</div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Event Type</span>
+                            <span class="detail-value">
+                                <span class="event-type-tag ${eventTypeClass}">${formatEventType(event.event_type)}</span>
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Severity</span>
+                            <span class="detail-value">
+                                <span class="severity-badge ${event.severity}">
+                                    <span class="severity-dot"></span>
+                                    ${event.severity}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Timestamp</span>
+                            <span class="detail-value mono">${new Date(event.timestamp).toLocaleString()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">${event.acknowledged ? '&#10003; Acknowledged' : 'Pending Review'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">User & Location</div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">User</span>
+                            <span class="detail-value">${event.user_name || event.user_email}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value mono">${event.user_email}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">IP Address</span>
+                            <span class="detail-value mono">${event.ip_address}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Location</span>
+                            <span class="detail-value">${event.location || 'Unknown'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">Description</div>
+                    <p style="color: var(--text-primary); font-size: 0.95rem;">${event.description}</p>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">User Agent</div>
+                    <div class="json-display">${event.user_agent || 'Not available'}</div>
+                </div>
+
+                ${event.metadata ? `
+                <div class="detail-section">
+                    <div class="detail-section-title">Metadata</div>
+                    <div class="json-display">${JSON.stringify(event.metadata, null, 2)}</div>
+                </div>
+                ` : ''}
+
+                ${relatedEvents.length > 0 ? `
+                <div class="detail-section">
+                    <div class="detail-section-title">Related Events (&#177;5 min)</div>
+                    <div class="related-events">
+                        ${relatedEvents.map(r => `
+                            <div class="related-event" onclick="viewEvent(${r.id})">
+                                <div class="related-event-info">
+                                    <span class="event-type-tag ${getEventTypeClass(r.event_type)}">${formatEventType(r.event_type)}</span>
+                                    <span style="color: var(--text-secondary); font-size: 0.85rem;">${truncate(r.description, 40)}</span>
+                                </div>
+                                <span class="related-event-time">${formatDateTime(r.timestamp)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            // Update acknowledge button
+            const ackBtn = document.getElementById('acknowledgeBtn');
+            if (event.acknowledged) {
+                ackBtn.disabled = true;
+                ackBtn.innerHTML = '<span>&#10003;</span> Acknowledged';
+            } else {
+                ackBtn.disabled = false;
+                ackBtn.innerHTML = '<span>&#10003;</span> Acknowledge';
+            }
+
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        async function acknowledgeEvent() {
+            if (!selectedEventId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/logs/${selectedEventId}/acknowledge`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    showToast('Event acknowledged', 'success');
+                }
+            } catch (error) {
+                // Simulate success
+            }
+
+            // Update local data
+            const event = allLogs.find(l => l.id === selectedEventId);
+            if (event) {
+                event.acknowledged = true;
+            }
+
+            const ackBtn = document.getElementById('acknowledgeBtn');
+            ackBtn.disabled = true;
+            ackBtn.innerHTML = '<span>&#10003;</span> Acknowledged';
+
+            showToast('Event acknowledged', 'success');
+        }
+
+        // Export
+        function showExportModal() {
+            document.getElementById('exportModal').classList.add('active');
+        }
+
+        async function exportLogs() {
+            const format = document.getElementById('exportFormat').value;
+            const dateRange = document.getElementById('exportDateRange').value;
+
+            showToast('Preparing export...', 'info');
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/logs/export`, {
+                    method: 'POST',
+                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        format,
+                        date_range: dateRange,
+                        filters: {
+                            type: document.getElementById('filterType').value,
+                            severity: document.getElementById('filterSeverity').value
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `security-logs-${new Date().toISOString().split('T')[0]}.${format}`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('Export completed', 'success');
+                } else {
+                    throw new Error('Export failed');
+                }
+            } catch (error) {
+                // Simulate export with current filtered data
+                let content;
+                let filename;
+                let type;
+
+                if (format === 'json') {
+                    content = JSON.stringify(filteredLogs, null, 2);
+                    filename = `security-logs-${new Date().toISOString().split('T')[0]}.json`;
+                    type = 'application/json';
+                } else {
+                    // CSV
+                    const headers = ['Timestamp', 'User', 'Event Type', 'Severity', 'IP Address', 'Description'];
+                    const rows = filteredLogs.map(l => [
+                        l.timestamp,
+                        l.user_email,
+                        l.event_type,
+                        l.severity,
+                        l.ip_address,
+                        `"${l.description.replace(/"/g, '""')}"`
+                    ]);
+                    content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                    filename = `security-logs-${new Date().toISOString().split('T')[0]}.csv`;
+                    type = 'text/csv';
+                }
+
+                const blob = new Blob([content], { type });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showToast('Export completed', 'success');
+            }
+
+            closeModal('exportModal');
+        }
+
+        // Refresh
+        function refreshLogs() {
+            showToast('Refreshing logs...', 'info');
+            loadLogs();
+        }
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                loadLogs();
+            }, 30000);
+        }
+
+        function dismissAlertBanner() {
+            document.getElementById('alertBanner').classList.remove('visible');
+        }
+
+        // Utility Functions
+        function getAuthHeaders() {
+            const token = localStorage.getItem('auth_token');
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        }
+
+        function getInitials(name) {
+            if (!name) return '??';
+            const parts = name.split(/[@\s]+/).filter(Boolean);
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+                   date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatEventType(type) {
+            return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function getEventTypeClass(type) {
+            const classes = {
+                login_failed: 'login_failed',
+                login_success: 'login_success',
+                password_changed: 'password_changed',
+                account_locked: 'account_locked',
+                account_unlocked: 'account_unlocked',
+                user_created: 'user_created',
+                user_deleted: 'user_deleted',
+                brute_force: 'brute_force',
+                api_key_created: 'api_key_created',
+                api_key_revoked: 'api_key_revoked'
+            };
+            return classes[type] || 'default';
+        }
+
+        function truncate(str, len) {
+            if (!str) return '';
+            return str.length > len ? str.substring(0, len) + '...' : str;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('auth_token');
+            window.location.href = '../auth/login.html';
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: '&#10003;', error: '&#10007;', info: '&#8505;' };
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+</html>

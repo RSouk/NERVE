@@ -1,15 +1,91 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON, Boolean, Enum
+"""
+NERVE Database Module
+=====================
+
+Central database module for the NERVE security platform. Provides:
+
+- SQLAlchemy ORM models for all 40+ tables
+- Authentication and session management
+- API key management
+- Security event logging and audit trails
+- Scan data storage (XASM, Lightbox)
+- Compliance tracking
+- Health monitoring and backup/restore
+
+Usage:
+    from database import (
+        init_db, SessionLocal, User, Company,
+        hash_password, verify_password,
+        create_session, validate_session,
+        run_health_check, create_backup
+    )
+
+Documentation:
+    See README_DATABASE.md for overview
+    See DATABASE_SCHEMA.md for table details
+    See DATABASE_API.md for function reference
+    See DATABASE_MAINTENANCE.md for operations
+
+Schema Version: 1.0.0
+Last Updated: January 2026
+
+TODO (Phase 7 - PostgreSQL Migration):
+    - Replace sqlite3 direct connections with SQLAlchemy
+    - Update JSON columns to use JSONB
+    - Add connection pooling support
+    - Update backup/restore for pg_dump/pg_restore
+    - Add GIN indexes for JSONB columns
+"""
+
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON, Boolean, Enum, text, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError
 from datetime import datetime, timedelta, timezone
+from functools import wraps
+from contextlib import contextmanager
 import os
 import json
 import enum
+import secrets
+import hashlib
+import logging
+import re
+import shutil
+import time
+import sqlite3
+import traceback
 
-# Create database in the data folder
+# Type hints for better IDE support
+from typing import Dict, List, Optional, Any, Union
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('nerve.database')
+
+# Try to import bcrypt, fall back to hashlib if not available
+try:
+    import bcrypt
+    BCRYPT_AVAILABLE = True
+except ImportError:
+    BCRYPT_AVAILABLE = False
+    logger.warning("bcrypt not installed. Using fallback password hashing.")
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+# Performance tracking (stores recent query metrics for monitoring)
+_query_performance_log: List[Dict] = []
+_schema_version = "1.0.0"
+
+# Database path configuration
+# TODO (Phase 7): Support PostgreSQL connection string via environment variable
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'ghost.db')
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
+# SQLAlchemy engine and session factory
+# TODO (Phase 7): Add connection pooling configuration for PostgreSQL
 engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
@@ -242,6 +318,78 @@ class LoginAttempt(Base):
 
     def __repr__(self):
         return f'<LoginAttempt {self.email} at {self.attempted_at}>'
+
+
+
+class APIKey(Base):
+    """API Keys for programmatic access"""
+    __tablename__ = 'api_keys'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # User Link
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    # Key Info
+    key_hash = Column(String(255), nullable=False, unique=True, index=True)  # SHA256 hash of the key
+    key_prefix = Column(String(8), nullable=False)  # First 8 chars for identification (e.g., "nrv_xxxx")
+    name = Column(String(100), nullable=False)  # User-friendly name
+
+    # Permissions
+    permissions = Column(Text)  # JSON array of allowed endpoints/actions
+
+    # Usage Tracking
+    last_used_at = Column(DateTime)
+    last_used_ip = Column(String(45))
+    usage_count = Column(Integer, nullable=False, default=0)
+
+    # Lifecycle
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime)  # Optional expiry
+    revoked_at = Column(DateTime)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return f'<APIKey {self.key_prefix}... for user {self.user_id}>'
+
+
+class SecurityEvent(Base):
+    """Security events for audit and threat detection"""
+    __tablename__ = 'security_events'
+
+    # Primary Key
+    id = Column(Integer, primary_key=True)
+
+    # Event Info
+    event_type = Column(String(50), nullable=False, index=True)
+    # Types: login_failed, login_success, brute_force_detected, session_revoked,
+    #        password_changed, 2fa_enabled, 2fa_disabled, api_key_created,
+    #        api_key_revoked, suspicious_activity, account_locked
+
+    severity = Column(String(20), nullable=False, index=True)  # info, low, medium, high, critical
+
+    # Context
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    email = Column(String(255), index=True)  # For failed logins where user may not exist
+    ip_address = Column(String(45), index=True)
+    user_agent = Column(Text)
+    location = Column(String(255))  # GeoIP location if available
+
+    # Details
+    description = Column(Text, nullable=False)
+    metadata_json = Column(Text)  # Additional context as JSON
+
+    # Flags
+    acknowledged = Column(Boolean, nullable=False, default=False)
+    acknowledged_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'))
+    acknowledged_at = Column(DateTime)
+
+    # Timestamp
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def __repr__(self):
+        return f'<SecurityEvent {self.event_type} - {self.severity}>'
 
 
 # ============================================================================
@@ -1290,13 +1438,40 @@ class ScanResultsLightbox(Base):
     is_active = Column(Boolean, nullable=False, default=True)
 
 
-def init_db():
-    """Initialize the database and create all tables"""
+def init_db() -> None:
+    """
+    Initialize the database and create all tables.
+
+    This function is called automatically on module import. It's safe to call
+    multiple times as SQLAlchemy's create_all() is idempotent.
+
+    Example:
+        >>> from database import init_db
+        >>> init_db()
+        Database initialized at: /path/to/ghost.db
+    """
     Base.metadata.create_all(engine)
     print(f"Database initialized at: {DB_PATH}")
 
+
 def get_db():
-    """Get database session"""
+    """
+    Get a database session.
+
+    Returns:
+        Session: SQLAlchemy session object
+
+    Warning:
+        Remember to close the session when done to avoid connection leaks.
+        Prefer using safe_db_session() context manager for automatic cleanup.
+
+    Example:
+        >>> session = get_db()
+        >>> try:
+        ...     user = session.query(User).first()
+        ... finally:
+        ...     session.close()
+    """
     db = SessionLocal()
     try:
         return db
@@ -1796,6 +1971,1744 @@ def cleanup_expired_ai_scans():
         print(f"[DB] Error during cleanup: {e}")
     finally:
         session.close()
+
+
+
+
+# ============================================================================
+# PASSWORD HASHING UTILITIES
+# ============================================================================
+
+def hash_password(plain_password: str) -> str:
+    """
+    Hash a password using bcrypt (or fallback to PBKDF2).
+
+    Args:
+        plain_password: The plaintext password to hash
+
+    Returns:
+        The hashed password string
+    """
+    if BCRYPT_AVAILABLE:
+        # Use bcrypt with salt
+        salt = bcrypt.gensalt(rounds=12)
+        hashed = bcrypt.hashpw(plain_password.encode('utf-8'), salt)
+        return hashed.decode('utf-8')
+    else:
+        # Fallback: PBKDF2 with SHA256
+        salt = secrets.token_hex(16)
+        key = hashlib.pbkdf2_hmac(
+            'sha256',
+            plain_password.encode('utf-8'),
+            salt.encode('utf-8'),
+            100000  # iterations
+        )
+        return f"pbkdf2${salt}${key.hex()}"
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verify a password against its hash.
+
+    Args:
+        plain_password: The plaintext password to verify
+        hashed_password: The stored hash to compare against
+
+    Returns:
+        True if password matches, False otherwise
+    """
+    if not plain_password or not hashed_password:
+        return False
+
+    try:
+        if hashed_password.startswith('pbkdf2$'):
+            # Fallback format: pbkdf2$salt$hash
+            parts = hashed_password.split('$')
+            if len(parts) != 3:
+                return False
+            _, salt, stored_hash = parts
+            key = hashlib.pbkdf2_hmac(
+                'sha256',
+                plain_password.encode('utf-8'),
+                salt.encode('utf-8'),
+                100000
+            )
+            return secrets.compare_digest(key.hex(), stored_hash)
+        else:
+            # bcrypt format
+            if BCRYPT_AVAILABLE:
+                return bcrypt.checkpw(
+                    plain_password.encode('utf-8'),
+                    hashed_password.encode('utf-8')
+                )
+            return False
+    except Exception as e:
+        print(f"[AUTH] Password verification error: {e}")
+        return False
+
+
+def generate_secure_token(length: int = 32) -> str:
+    """Generate a cryptographically secure random token."""
+    return secrets.token_urlsafe(length)
+
+
+# ============================================================================
+# SESSION MANAGEMENT FUNCTIONS
+# ============================================================================
+
+def create_session(user_id: int, ip_address: str, user_agent: str = None,
+                   device_type: str = 'web', expires_hours: int = 24) -> dict:
+    """
+    Create a new session for a user.
+
+    Args:
+        user_id: The user's ID
+        ip_address: Client IP address
+        user_agent: Client user agent string
+        device_type: Type of device (web, mobile, api)
+        expires_hours: Session expiry in hours
+
+    Returns:
+        Dict with session token and refresh token
+    """
+    session = SessionLocal()
+
+    try:
+        # Generate tokens
+        token = generate_secure_token(32)
+        refresh_token = generate_secure_token(48)
+
+        # Create session record
+        new_session = Session(
+            user_id=user_id,
+            token=token,
+            refresh_token=refresh_token,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            device_type=device_type,
+            created_at=datetime.now(timezone.utc),
+            last_activity=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=expires_hours),
+            is_active=True
+        )
+
+        session.add(new_session)
+
+        # Update user's last login
+        user = session.query(User).filter_by(id=user_id).first()
+        if user:
+            user.last_login_at = datetime.now(timezone.utc)
+            user.last_login_ip = ip_address
+
+        session.commit()
+
+        print(f"[AUTH] Session created for user {user_id}")
+        return {
+            'session_id': new_session.id,
+            'token': token,
+            'refresh_token': refresh_token,
+            'expires_at': new_session.expires_at.isoformat()
+        }
+
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error creating session: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def validate_session(token: str, update_activity: bool = True) -> dict:
+    """
+    Validate a session token and return session info.
+
+    Args:
+        token: The session token to validate
+        update_activity: Whether to update last_activity timestamp
+
+    Returns:
+        Dict with session info if valid, None if invalid
+    """
+    session = SessionLocal()
+
+    try:
+        db_session = session.query(Session).filter_by(
+            token=token,
+            is_active=True
+        ).first()
+
+        if not db_session:
+            return None
+
+        # Check expiry
+        if db_session.expires_at < datetime.now(timezone.utc):
+            db_session.is_active = False
+            session.commit()
+            return None
+
+        # Check if revoked
+        if db_session.revoked_at:
+            return None
+
+        # Update activity
+        if update_activity:
+            db_session.last_activity = datetime.now(timezone.utc)
+            session.commit()
+
+        return {
+            'session_id': db_session.id,
+            'user_id': db_session.user_id,
+            'device_type': db_session.device_type,
+            'created_at': db_session.created_at.isoformat(),
+            'expires_at': db_session.expires_at.isoformat(),
+            'last_activity': db_session.last_activity.isoformat()
+        }
+
+    except Exception as e:
+        print(f"[AUTH] Session validation error: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def revoke_session(token: str) -> bool:
+    """Revoke a session by token."""
+    session = SessionLocal()
+
+    try:
+        db_session = session.query(Session).filter_by(token=token).first()
+        if db_session:
+            db_session.is_active = False
+            db_session.revoked_at = datetime.now(timezone.utc)
+            session.commit()
+            print(f"[AUTH] Session revoked: {db_session.id}")
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error revoking session: {e}")
+        return False
+    finally:
+        session.close()
+
+
+def revoke_all_user_sessions(user_id: int, except_token: str = None) -> int:
+    """Revoke all sessions for a user (optionally except current)."""
+    session = SessionLocal()
+
+    try:
+        query = session.query(Session).filter(
+            Session.user_id == user_id,
+            Session.is_active == True
+        )
+
+        if except_token:
+            query = query.filter(Session.token != except_token)
+
+        now = datetime.now(timezone.utc)
+        count = 0
+        for s in query.all():
+            s.is_active = False
+            s.revoked_at = now
+            count += 1
+
+        session.commit()
+        print(f"[AUTH] Revoked {count} sessions for user {user_id}")
+        return count
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error revoking user sessions: {e}")
+        return 0
+    finally:
+        session.close()
+
+
+def cleanup_expired_sessions() -> int:
+    """Clean up all expired sessions."""
+    session = SessionLocal()
+
+    try:
+        now = datetime.now(timezone.utc)
+        count = session.query(Session).filter(
+            Session.expires_at < now,
+            Session.is_active == True
+        ).update({
+            Session.is_active: False
+        })
+        session.commit()
+
+        if count > 0:
+            print(f"[AUTH] Cleaned up {count} expired sessions")
+        return count
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error cleaning up sessions: {e}")
+        return 0
+    finally:
+        session.close()
+
+
+# ============================================================================
+# API KEY MANAGEMENT FUNCTIONS
+# ============================================================================
+
+def create_api_key(user_id: int, name: str, permissions: list = None,
+                   expires_days: int = None) -> dict:
+    """
+    Create a new API key for a user.
+
+    Args:
+        user_id: The user's ID
+        name: User-friendly name for the key
+        permissions: List of allowed actions/endpoints
+        expires_days: Optional expiry in days
+
+    Returns:
+        Dict with key (only returned once!) and metadata
+    """
+    session = SessionLocal()
+
+    try:
+        # Generate key: nrv_<random>
+        raw_key = f"nrv_{secrets.token_urlsafe(32)}"
+        key_prefix = raw_key[:12]  # nrv_xxxxxxxx
+
+        # Hash the key for storage
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+
+        # Calculate expiry
+        expires_at = None
+        if expires_days:
+            expires_at = datetime.now(timezone.utc) + timedelta(days=expires_days)
+
+        new_key = APIKey(
+            user_id=user_id,
+            key_hash=key_hash,
+            key_prefix=key_prefix,
+            name=name,
+            permissions=json.dumps(permissions) if permissions else None,
+            created_at=datetime.now(timezone.utc),
+            expires_at=expires_at,
+            is_active=True
+        )
+
+        session.add(new_key)
+        session.commit()
+
+        # Log security event
+        log_security_event(
+            event_type='api_key_created',
+            severity='info',
+            user_id=user_id,
+            description=f'API key created: {name} ({key_prefix}...)'
+        )
+
+        print(f"[AUTH] API key created for user {user_id}: {key_prefix}...")
+        return {
+            'key': raw_key,  # Only returned this once!
+            'key_id': new_key.id,
+            'key_prefix': key_prefix,
+            'name': name,
+            'expires_at': expires_at.isoformat() if expires_at else None
+        }
+
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error creating API key: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def validate_api_key(raw_key: str) -> dict:
+    """
+    Validate an API key and return user info.
+
+    Args:
+        raw_key: The full API key string
+
+    Returns:
+        Dict with key info and user_id if valid, None if invalid
+    """
+    session = SessionLocal()
+
+    try:
+        # Hash the provided key
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+
+        api_key = session.query(APIKey).filter_by(
+            key_hash=key_hash,
+            is_active=True
+        ).first()
+
+        if not api_key:
+            return None
+
+        # Check expiry
+        if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
+            return None
+
+        # Check if revoked
+        if api_key.revoked_at:
+            return None
+
+        # Update usage stats
+        api_key.last_used_at = datetime.now(timezone.utc)
+        api_key.usage_count += 1
+        session.commit()
+
+        return {
+            'key_id': api_key.id,
+            'user_id': api_key.user_id,
+            'name': api_key.name,
+            'permissions': json.loads(api_key.permissions) if api_key.permissions else None
+        }
+
+    except Exception as e:
+        print(f"[AUTH] API key validation error: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def revoke_api_key(key_id: int, user_id: int = None) -> bool:
+    """
+    Revoke an API key.
+
+    Args:
+        key_id: The API key ID
+        user_id: Optional user ID for authorization check
+
+    Returns:
+        True if revoked, False otherwise
+    """
+    session = SessionLocal()
+
+    try:
+        query = session.query(APIKey).filter_by(id=key_id)
+        if user_id:
+            query = query.filter_by(user_id=user_id)
+
+        api_key = query.first()
+        if api_key:
+            api_key.is_active = False
+            api_key.revoked_at = datetime.now(timezone.utc)
+            session.commit()
+
+            # Log security event
+            log_security_event(
+                event_type='api_key_revoked',
+                severity='info',
+                user_id=api_key.user_id,
+                description=f'API key revoked: {api_key.name} ({api_key.key_prefix}...)'
+            )
+
+            print(f"[AUTH] API key revoked: {api_key.key_prefix}...")
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error revoking API key: {e}")
+        return False
+    finally:
+        session.close()
+
+
+def list_user_api_keys(user_id: int) -> list:
+    """List all API keys for a user (without exposing the actual keys)."""
+    session = SessionLocal()
+
+    try:
+        keys = session.query(APIKey).filter_by(
+            user_id=user_id,
+            is_active=True
+        ).all()
+
+        return [{
+            'key_id': k.id,
+            'key_prefix': k.key_prefix,
+            'name': k.name,
+            'last_used_at': k.last_used_at.isoformat() if k.last_used_at else None,
+            'usage_count': k.usage_count,
+            'created_at': k.created_at.isoformat(),
+            'expires_at': k.expires_at.isoformat() if k.expires_at else None
+        } for k in keys]
+
+    finally:
+        session.close()
+
+
+# ============================================================================
+# SECURITY AUDIT FUNCTIONS
+# ============================================================================
+
+def log_login_attempt(email: str, success: bool, ip_address: str,
+                      user_agent: str = None, failure_reason: str = None,
+                      user_id: int = None) -> bool:
+    """
+    Log a login attempt.
+
+    Args:
+        email: Email attempted
+        success: Whether login succeeded
+        ip_address: Client IP
+        user_agent: Client user agent
+        failure_reason: Reason for failure if applicable
+        user_id: User ID if known
+
+    Returns:
+        True if logged successfully
+    """
+    session = SessionLocal()
+
+    try:
+        attempt = LoginAttempt(
+            email=email,
+            user_id=user_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=success,
+            failure_reason=failure_reason,
+            attempted_at=datetime.now(timezone.utc)
+        )
+
+        session.add(attempt)
+        session.commit()
+
+        # Also log as security event for failed attempts
+        if not success:
+            log_security_event(
+                event_type='login_failed',
+                severity='low',
+                email=email,
+                user_id=user_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                description=f'Failed login attempt for {email}: {failure_reason}'
+            )
+
+        return True
+
+    except Exception as e:
+        session.rollback()
+        print(f"[AUDIT] Error logging login attempt: {e}")
+        return False
+    finally:
+        session.close()
+
+
+def detect_brute_force(email: str = None, ip_address: str = None,
+                       window_minutes: int = 15, threshold: int = 5) -> dict:
+    """
+    Detect brute force login attempts.
+
+    Args:
+        email: Email to check (optional)
+        ip_address: IP to check (optional)
+        window_minutes: Time window to check
+        threshold: Number of failures to trigger detection
+
+    Returns:
+        Dict with detection results
+    """
+    session = SessionLocal()
+
+    try:
+        window_start = datetime.now(timezone.utc) - timedelta(minutes=window_minutes)
+        results = {
+            'detected': False,
+            'email_attempts': 0,
+            'ip_attempts': 0,
+            'should_lock': False
+        }
+
+        # Check by email
+        if email:
+            email_count = session.query(LoginAttempt).filter(
+                LoginAttempt.email == email,
+                LoginAttempt.success == False,
+                LoginAttempt.attempted_at > window_start
+            ).count()
+            results['email_attempts'] = email_count
+
+        # Check by IP
+        if ip_address:
+            ip_count = session.query(LoginAttempt).filter(
+                LoginAttempt.ip_address == ip_address,
+                LoginAttempt.success == False,
+                LoginAttempt.attempted_at > window_start
+            ).count()
+            results['ip_attempts'] = ip_count
+
+        # Determine if brute force detected
+        if results['email_attempts'] >= threshold or results['ip_attempts'] >= threshold:
+            results['detected'] = True
+            results['should_lock'] = results['email_attempts'] >= threshold
+
+            # Log security event
+            log_security_event(
+                event_type='brute_force_detected',
+                severity='high',
+                email=email,
+                ip_address=ip_address,
+                description=f'Brute force detected: {results["email_attempts"]} email attempts, {results["ip_attempts"]} IP attempts in {window_minutes} minutes'
+            )
+
+        return results
+
+    finally:
+        session.close()
+
+
+def lock_user_account(user_id: int, lock_minutes: int = 30,
+                      reason: str = 'Too many failed login attempts') -> bool:
+    """Lock a user account temporarily."""
+    session = SessionLocal()
+
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
+        if user:
+            user.status = UserStatus.LOCKED
+            user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=lock_minutes)
+            session.commit()
+
+            # Log security event
+            log_security_event(
+                event_type='account_locked',
+                severity='medium',
+                user_id=user_id,
+                description=f'Account locked for {lock_minutes} minutes: {reason}'
+            )
+
+            print(f"[AUTH] User {user_id} locked for {lock_minutes} minutes")
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error locking account: {e}")
+        return False
+    finally:
+        session.close()
+
+
+def check_account_lock(user_id: int) -> dict:
+    """Check if a user account is locked."""
+    session = SessionLocal()
+
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
+        if not user:
+            return {'locked': False, 'exists': False}
+
+        if user.status == UserStatus.LOCKED:
+            if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+                return {
+                    'locked': True,
+                    'exists': True,
+                    'locked_until': user.locked_until.isoformat(),
+                    'remaining_minutes': int((user.locked_until - datetime.now(timezone.utc)).total_seconds() / 60)
+                }
+            else:
+                # Lock expired, unlock
+                user.status = UserStatus.ACTIVE
+                user.locked_until = None
+                session.commit()
+
+        return {'locked': False, 'exists': True}
+
+    finally:
+        session.close()
+
+
+def log_security_event(event_type: str, severity: str, description: str,
+                       user_id: int = None, email: str = None,
+                       ip_address: str = None, user_agent: str = None,
+                       metadata: dict = None) -> bool:
+    """
+    Log a security event.
+
+    Args:
+        event_type: Type of security event
+        severity: Severity level (info, low, medium, high, critical)
+        description: Human-readable description
+        user_id: Related user ID
+        email: Related email
+        ip_address: Client IP
+        user_agent: Client user agent
+        metadata: Additional metadata as dict
+
+    Returns:
+        True if logged successfully
+    """
+    session = SessionLocal()
+
+    try:
+        event = SecurityEvent(
+            event_type=event_type,
+            severity=severity,
+            user_id=user_id,
+            email=email,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            description=description,
+            metadata_json=json.dumps(metadata) if metadata else None,
+            created_at=datetime.now(timezone.utc)
+        )
+
+        session.add(event)
+        session.commit()
+        return True
+
+    except Exception as e:
+        session.rollback()
+        print(f"[AUDIT] Error logging security event: {e}")
+        return False
+    finally:
+        session.close()
+
+
+def get_security_events(user_id: int = None, event_type: str = None,
+                        severity: str = None, hours: int = 24,
+                        limit: int = 100) -> list:
+    """Get security events with filters."""
+    session = SessionLocal()
+
+    try:
+        window_start = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+        query = session.query(SecurityEvent).filter(
+            SecurityEvent.created_at > window_start
+        )
+
+        if user_id:
+            query = query.filter(SecurityEvent.user_id == user_id)
+        if event_type:
+            query = query.filter(SecurityEvent.event_type == event_type)
+        if severity:
+            query = query.filter(SecurityEvent.severity == severity)
+
+        events = query.order_by(SecurityEvent.created_at.desc()).limit(limit).all()
+
+        return [{
+            'id': e.id,
+            'event_type': e.event_type,
+            'severity': e.severity,
+            'description': e.description,
+            'user_id': e.user_id,
+            'email': e.email,
+            'ip_address': e.ip_address,
+            'created_at': e.created_at.isoformat(),
+            'acknowledged': e.acknowledged
+        } for e in events]
+
+    finally:
+        session.close()
+
+
+def get_failed_logins_by_ip(ip_address: str, hours: int = 24) -> list:
+    """Get failed login attempts from a specific IP."""
+    session = SessionLocal()
+
+    try:
+        window_start = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+        attempts = session.query(LoginAttempt).filter(
+            LoginAttempt.ip_address == ip_address,
+            LoginAttempt.success == False,
+            LoginAttempt.attempted_at > window_start
+        ).order_by(LoginAttempt.attempted_at.desc()).all()
+
+        return [{
+            'id': a.id,
+            'email': a.email,
+            'failure_reason': a.failure_reason,
+            'attempted_at': a.attempted_at.isoformat()
+        } for a in attempts]
+
+    finally:
+        session.close()
+
+
+def increment_failed_login_count(user_id: int) -> int:
+    """Increment failed login count for a user and return new count."""
+    session = SessionLocal()
+
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
+        if user:
+            user.failed_login_attempts += 1
+            session.commit()
+            return user.failed_login_attempts
+        return 0
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error incrementing failed login count: {e}")
+        return 0
+    finally:
+        session.close()
+
+
+def reset_failed_login_count(user_id: int) -> bool:
+    """Reset failed login count after successful login."""
+    session = SessionLocal()
+
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
+        if user:
+            user.failed_login_attempts = 0
+            session.commit()
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        print(f"[AUTH] Error resetting failed login count: {e}")
+        return False
+    finally:
+        session.close()
+
+
+
+# ============================================================================
+# ERROR HANDLING & LOGGING
+# ============================================================================
+
+class DatabaseError(Exception):
+    """Base exception for database errors"""
+    pass
+
+class ValidationError(DatabaseError):
+    """Raised when data validation fails"""
+    pass
+
+class DatabaseConnectionError(DatabaseError):
+    """Raised when database connection fails"""
+    pass
+
+class TransactionError(DatabaseError):
+    """Raised when a transaction fails"""
+    pass
+
+
+def handle_db_error(func):
+    """Decorator to handle database errors consistently"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except IntegrityError as e:
+            logger.error(f"[DB] Integrity error in {func.__name__}: {e}")
+            raise DatabaseError(f"Data integrity violation: {str(e)}")
+        except OperationalError as e:
+            logger.error(f"[DB] Operational error in {func.__name__}: {e}")
+            raise DatabaseConnectionError(f"Database operation failed: {str(e)}")
+        except SQLAlchemyError as e:
+            logger.error(f"[DB] SQLAlchemy error in {func.__name__}: {e}")
+            raise DatabaseError(f"Database error: {str(e)}")
+        except Exception as e:
+            logger.error(f"[DB] Unexpected error in {func.__name__}: {e}")
+            raise
+    return wrapper
+
+
+@contextmanager
+def safe_db_session():
+    """Context manager for safe database sessions with auto-rollback."""
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.error(f"[DB] Session error, rolled back: {e}")
+        raise
+    finally:
+        session.close()
+
+
+def log_db_operation(operation: str, table: str, record_id: int = None, details: dict = None):
+    """Log database operation for auditing."""
+    log_entry = {
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'operation': operation,
+        'table': table,
+        'record_id': record_id,
+        'details': details
+    }
+    logger.info(f"[DB] {operation} on {table}" + (f" (id={record_id})" if record_id else ""))
+    return log_entry
+
+
+# ============================================================================
+# DATABASE HEALTH CHECKS
+# ============================================================================
+# These functions provide comprehensive health monitoring for the database.
+# Use run_health_check() for a complete health report.
+# TODO (Phase 7): Update health checks for PostgreSQL-specific metrics
+
+def check_database_connection() -> Dict[str, Any]:
+    """
+    Check if database connection is healthy.
+
+    Performs a simple SELECT 1 query to verify the database is accessible
+    and measures the query latency.
+
+    Returns:
+        dict: Health check result with keys:
+            - healthy (bool): True if connection succeeded
+            - latency_ms (float): Query latency in milliseconds
+            - error (str): Error message if unhealthy
+
+    Example:
+        >>> result = check_database_connection()
+        >>> if result['healthy']:
+        ...     print(f"Connection OK, latency: {result['latency_ms']}ms")
+    """
+    result = {
+        'healthy': False,
+        'latency_ms': None,
+        'error': None
+    }
+
+    start = time.time()
+    try:
+        session = SessionLocal()
+        session.execute(text("SELECT 1"))
+        session.close()
+        result['healthy'] = True
+        result['latency_ms'] = round((time.time() - start) * 1000, 2)
+    except Exception as e:
+        result['error'] = str(e)
+        logger.error(f"[DB] Connection check failed: {e}")
+
+    return result
+
+
+def check_table_integrity() -> dict:
+    """Check integrity of all tables."""
+    result = {
+        'tables_checked': 0,
+        'errors': [],
+        'healthy': True
+    }
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Get all tables
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
+
+        for table in tables:
+            try:
+                cursor.execute(f"PRAGMA table_info({table})")
+                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                result['tables_checked'] += 1
+            except Exception as e:
+                result['errors'].append({'table': table, 'error': str(e)})
+                result['healthy'] = False
+
+        # Run integrity check
+        cursor.execute("PRAGMA integrity_check")
+        integrity = cursor.fetchone()[0]
+        if integrity != 'ok':
+            result['errors'].append({'check': 'integrity', 'error': integrity})
+            result['healthy'] = False
+
+        conn.close()
+    except Exception as e:
+        result['errors'].append({'check': 'connection', 'error': str(e)})
+        result['healthy'] = False
+
+    return result
+
+
+def check_foreign_key_constraints() -> dict:
+    """Check foreign key constraint violations."""
+    result = {
+        'violations': [],
+        'healthy': True
+    }
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute("PRAGMA foreign_key_check")
+        violations = cursor.fetchall()
+
+        if violations:
+            result['healthy'] = False
+            result['violations'] = [
+                {'table': v[0], 'row_id': v[1], 'parent': v[2], 'fk_index': v[3]}
+                for v in violations
+            ]
+
+        conn.close()
+    except Exception as e:
+        result['healthy'] = False
+        result['violations'].append({'error': str(e)})
+
+    return result
+
+
+def get_database_stats() -> dict:
+    """Get database statistics."""
+    stats = {
+        'size_bytes': 0,
+        'size_mb': 0,
+        'table_counts': {},
+        'total_records': 0
+    }
+
+    try:
+        # File size
+        if os.path.exists(DB_PATH):
+            stats['size_bytes'] = os.path.getsize(DB_PATH)
+            stats['size_mb'] = round(stats['size_bytes'] / (1024 * 1024), 2)
+
+        # Table counts
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
+
+        for table in tables:
+            try:
+                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                count = cursor.fetchone()[0]
+                stats['table_counts'][table] = count
+                stats['total_records'] += count
+            except:
+                pass
+
+        conn.close()
+    except Exception as e:
+        logger.error(f"[DB] Failed to get stats: {e}")
+
+    return stats
+
+
+# ============================================================================
+# DATA VALIDATION
+# ============================================================================
+
+def validate_email(email: str) -> bool:
+    """Validate email format."""
+    if not email:
+        return False
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
+
+def validate_domain(domain: str) -> bool:
+    """Validate domain format."""
+    if not domain:
+        return False
+    pattern = r'^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, domain))
+
+
+def validate_ip_address(ip: str) -> bool:
+    """Validate IPv4 address format."""
+    if not ip:
+        return False
+    pattern = r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+    return bool(re.match(pattern, ip))
+
+
+def sanitize_input(value: str, max_length: int = 255, allow_html: bool = False) -> str:
+    """Sanitize string input."""
+    if not value:
+        return ""
+
+    # Convert to string and strip
+    result = str(value).strip()
+
+    # Remove HTML if not allowed
+    if not allow_html:
+        result = re.sub(r'<[^>]+>', '', result)
+
+    # Truncate
+    if len(result) > max_length:
+        result = result[:max_length]
+
+    return result
+
+
+def validate_record(data: dict, rules: dict) -> dict:
+    """
+    Validate a record against rules.
+
+    Args:
+        data: Dictionary of field values
+        rules: Dictionary of field rules, e.g.:
+            {
+                'email': {'type': 'email', 'required': True},
+                'domain': {'type': 'domain', 'required': False},
+                'name': {'type': 'string', 'max_length': 100}
+            }
+
+    Returns:
+        Dictionary with 'valid' boolean and 'errors' list
+    """
+    result = {'valid': True, 'errors': []}
+
+    validators = {
+        'email': validate_email,
+        'domain': validate_domain,
+        'ip': validate_ip_address
+    }
+
+    for field, rule in rules.items():
+        value = data.get(field)
+
+        # Check required
+        if rule.get('required') and not value:
+            result['errors'].append(f"{field} is required")
+            result['valid'] = False
+            continue
+
+        if value:
+            # Type validation
+            field_type = rule.get('type', 'string')
+            if field_type in validators:
+                if not validators[field_type](value):
+                    result['errors'].append(f"{field} is not a valid {field_type}")
+                    result['valid'] = False
+
+            # Length validation
+            max_len = rule.get('max_length')
+            if max_len and len(str(value)) > max_len:
+                result['errors'].append(f"{field} exceeds maximum length of {max_len}")
+                result['valid'] = False
+
+    return result
+
+
+# ============================================================================
+# TRANSACTION HELPERS
+# ============================================================================
+
+def atomic_operation(func):
+    """Decorator for atomic database operations."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        session = SessionLocal()
+        try:
+            # Pass session to function
+            result = func(session, *args, **kwargs)
+            session.commit()
+            return result
+        except Exception as e:
+            session.rollback()
+            logger.error(f"[DB] Atomic operation {func.__name__} failed, rolled back: {e}")
+            raise TransactionError(f"Transaction failed: {str(e)}")
+        finally:
+            session.close()
+    return wrapper
+
+
+def batch_insert(model_class, records: list, batch_size: int = 100) -> dict:
+    """
+    Insert records in batches for better performance.
+
+    Args:
+        model_class: SQLAlchemy model class
+        records: List of dictionaries with record data
+        batch_size: Number of records per batch
+
+    Returns:
+        Dictionary with insert statistics
+    """
+    result = {
+        'total': len(records),
+        'inserted': 0,
+        'failed': 0,
+        'errors': []
+    }
+
+    session = SessionLocal()
+
+    try:
+        for i in range(0, len(records), batch_size):
+            batch = records[i:i + batch_size]
+
+            try:
+                for record_data in batch:
+                    record = model_class(**record_data)
+                    session.add(record)
+
+                session.commit()
+                result['inserted'] += len(batch)
+            except Exception as e:
+                session.rollback()
+                result['failed'] += len(batch)
+                result['errors'].append({
+                    'batch_start': i,
+                    'error': str(e)
+                })
+
+        logger.info(f"[DB] Batch insert complete: {result['inserted']}/{result['total']} records")
+    finally:
+        session.close()
+
+    return result
+
+
+def safe_update(model_class, record_id: int, updates: dict, user_id: int = None) -> dict:
+    """
+    Safely update a record with validation and logging.
+
+    Args:
+        model_class: SQLAlchemy model class
+        record_id: ID of record to update
+        updates: Dictionary of field updates
+        user_id: Optional user ID for audit trail
+
+    Returns:
+        Dictionary with update result
+    """
+    result = {
+        'success': False,
+        'record_id': record_id,
+        'changes': {},
+        'error': None
+    }
+
+    session = SessionLocal()
+
+    try:
+        record = session.query(model_class).filter_by(id=record_id).first()
+
+        if not record:
+            result['error'] = "Record not found"
+            return result
+
+        # Track changes
+        for field, new_value in updates.items():
+            if hasattr(record, field):
+                old_value = getattr(record, field)
+                if old_value != new_value:
+                    result['changes'][field] = {'old': old_value, 'new': new_value}
+                    setattr(record, field, new_value)
+
+        # Update timestamp if exists
+        if hasattr(record, 'updated_at'):
+            record.updated_at = datetime.now(timezone.utc)
+
+        # Update modified_by if exists and user provided
+        if user_id and hasattr(record, 'modified_by'):
+            record.modified_by = user_id
+
+        session.commit()
+        result['success'] = True
+
+        logger.info(f"[DB] Updated {model_class.__tablename__} id={record_id}: {list(result['changes'].keys())}")
+
+    except Exception as e:
+        session.rollback()
+        result['error'] = str(e)
+        logger.error(f"[DB] Update failed: {e}")
+    finally:
+        session.close()
+
+    return result
+
+
+# ============================================================================
+# BACKUP & RESTORE
+# ============================================================================
+# These functions provide database backup and restore capabilities.
+# Backups are created using SQLite's backup API for consistency.
+# TODO (Phase 7): Replace with pg_dump/pg_restore for PostgreSQL
+
+def create_backup(backup_dir: str = None) -> Dict[str, Any]:
+    """
+    Create a database backup.
+
+    Uses SQLite's backup API to create an atomic, consistent backup of the
+    database while it's in use. The backup is named with a timestamp for
+    easy identification.
+
+    Args:
+        backup_dir: Directory for backup file. Defaults to data/backups/
+
+    Returns:
+        dict: Backup result with keys:
+            - success (bool): True if backup succeeded
+            - backup_path (str): Full path to backup file
+            - size_bytes (int): Backup file size
+            - timestamp (str): ISO format timestamp
+            - error (str): Error message if failed
+
+    Example:
+        >>> result = create_backup()
+        >>> if result['success']:
+        ...     print(f"Backup: {result['backup_path']}")
+        >>> # Custom backup location
+        >>> result = create_backup("/mnt/backups")
+    """
+    result = {
+        'success': False,
+        'backup_path': None,
+        'size_bytes': 0,
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'error': None
+    }
+
+    if backup_dir is None:
+        backup_dir = os.path.join(os.path.dirname(DB_PATH), 'backups')
+
+    try:
+        # Create backup directory
+        os.makedirs(backup_dir, exist_ok=True)
+
+        # Generate backup filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f"nerve_backup_{timestamp}.db"
+        backup_path = os.path.join(backup_dir, backup_filename)
+
+        # Use SQLite backup API
+        source = sqlite3.connect(DB_PATH)
+        dest = sqlite3.connect(backup_path)
+
+        source.backup(dest)
+
+        source.close()
+        dest.close()
+
+        result['success'] = True
+        result['backup_path'] = backup_path
+        result['size_bytes'] = os.path.getsize(backup_path)
+
+        logger.info(f"[DB] Backup created: {backup_path}")
+
+    except Exception as e:
+        result['error'] = str(e)
+        logger.error(f"[DB] Backup failed: {e}")
+
+    return result
+
+
+def restore_backup(backup_path: str, confirm: bool = False) -> Dict[str, Any]:
+    """
+    Restore database from backup.
+
+    Creates a backup of the current database before restoring, then replaces
+    the database with the backup file contents.
+
+    Args:
+        backup_path: Path to backup file to restore from
+        confirm: Must be True to proceed. This is a safety check to prevent
+                 accidental data loss.
+
+    Returns:
+        dict: Restore result with keys:
+            - success (bool): True if restore succeeded
+            - backup_path (str): Path that was restored from
+            - pre_restore_backup (str): Path to backup of current DB
+            - error (str): Error message if failed
+
+    Warning:
+        This operation will REPLACE ALL DATA in the current database.
+        Always verify the backup before restoring.
+
+    Example:
+        >>> # First verify the backup
+        >>> info = get_backup_info("/path/to/backup.db")
+        >>> # Then restore with confirm=True
+        >>> result = restore_backup("/path/to/backup.db", confirm=True)
+    """
+    result = {
+        'success': False,
+        'backup_path': backup_path,
+        'error': None
+    }
+
+    if not confirm:
+        result['error'] = "Must set confirm=True to restore backup"
+        return result
+
+    if not os.path.exists(backup_path):
+        result['error'] = f"Backup file not found: {backup_path}"
+        return result
+
+    try:
+        # Create a backup of current database first
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        pre_restore_backup = f"{DB_PATH}.pre_restore_{timestamp}"
+        shutil.copy2(DB_PATH, pre_restore_backup)
+
+        # Restore from backup
+        source = sqlite3.connect(backup_path)
+        dest = sqlite3.connect(DB_PATH)
+
+        source.backup(dest)
+
+        source.close()
+        dest.close()
+
+        result['success'] = True
+        result['pre_restore_backup'] = pre_restore_backup
+
+        logger.info(f"[DB] Restored from backup: {backup_path}")
+
+    except Exception as e:
+        result['error'] = str(e)
+        logger.error(f"[DB] Restore failed: {e}")
+
+    return result
+
+
+def get_backup_info(backup_path: str) -> dict:
+    """Get information about a backup file."""
+    if not os.path.exists(backup_path):
+        return {'error': 'Backup file not found'}
+
+    info = {
+        'path': backup_path,
+        'size_bytes': os.path.getsize(backup_path),
+        'size_mb': round(os.path.getsize(backup_path) / (1024 * 1024), 2),
+        'created': datetime.fromtimestamp(os.path.getctime(backup_path)).isoformat(),
+        'tables': {}
+    }
+
+    try:
+        conn = sqlite3.connect(backup_path)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
+
+        for table in tables:
+            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            info['tables'][table] = cursor.fetchone()[0]
+
+        conn.close()
+    except Exception as e:
+        info['error'] = str(e)
+
+    return info
+
+
+def list_backups(backup_dir: str = None) -> list:
+    """List available backups."""
+    if backup_dir is None:
+        backup_dir = os.path.join(os.path.dirname(DB_PATH), 'backups')
+
+    if not os.path.exists(backup_dir):
+        return []
+
+    backups = []
+    for filename in os.listdir(backup_dir):
+        if filename.endswith('.db') and filename.startswith('nerve_backup_'):
+            filepath = os.path.join(backup_dir, filename)
+            backups.append({
+                'filename': filename,
+                'path': filepath,
+                'size_bytes': os.path.getsize(filepath),
+                'created': datetime.fromtimestamp(os.path.getctime(filepath)).isoformat()
+            })
+
+    return sorted(backups, key=lambda x: x['created'], reverse=True)
+
+
+# ============================================================================
+# PERFORMANCE MONITORING
+# ============================================================================
+
+def log_query_performance(query: str, duration_ms: float, rows_affected: int = 0):
+    """Log query performance for analysis."""
+    global _query_performance_log
+
+    entry = {
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'query': query[:500],  # Truncate long queries
+        'duration_ms': duration_ms,
+        'rows_affected': rows_affected
+    }
+
+    _query_performance_log.append(entry)
+
+    # Keep only last 1000 entries
+    if len(_query_performance_log) > 1000:
+        _query_performance_log = _query_performance_log[-1000:]
+
+    # Log slow queries
+    if duration_ms > 1000:
+        logger.warning(f"[DB] Slow query ({duration_ms}ms): {query[:100]}...")
+
+
+def get_performance_stats() -> dict:
+    """Get query performance statistics."""
+    if not _query_performance_log:
+        return {
+            'total_queries': 0,
+            'avg_duration_ms': 0,
+            'max_duration_ms': 0,
+            'slow_queries': 0
+        }
+
+    durations = [q['duration_ms'] for q in _query_performance_log]
+
+    return {
+        'total_queries': len(_query_performance_log),
+        'avg_duration_ms': round(sum(durations) / len(durations), 2),
+        'max_duration_ms': max(durations),
+        'slow_queries': sum(1 for d in durations if d > 1000),
+        'recent_queries': _query_performance_log[-10:]
+    }
+
+
+def get_slow_queries(threshold_ms: float = 1000) -> list:
+    """Get queries that exceeded the threshold."""
+    return [q for q in _query_performance_log if q['duration_ms'] > threshold_ms]
+
+
+def clear_performance_log():
+    """Clear the performance log."""
+    global _query_performance_log
+    _query_performance_log = []
+
+
+def optimize_database() -> dict:
+    """Run database optimization tasks."""
+    result = {
+        'success': False,
+        'tasks_completed': [],
+        'error': None
+    }
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Analyze tables
+        cursor.execute("ANALYZE")
+        result['tasks_completed'].append('analyze')
+
+        # Vacuum database
+        cursor.execute("VACUUM")
+        result['tasks_completed'].append('vacuum')
+
+        # Reindex
+        cursor.execute("REINDEX")
+        result['tasks_completed'].append('reindex')
+
+        conn.close()
+        result['success'] = True
+
+        logger.info("[DB] Database optimization complete")
+
+    except Exception as e:
+        result['error'] = str(e)
+        logger.error(f"[DB] Optimization failed: {e}")
+
+    return result
+
+
+# ============================================================================
+# MIGRATION HELPERS
+# ============================================================================
+
+def get_schema_version() -> str:
+    """Get current schema version."""
+    return _schema_version
+
+
+def set_schema_version(version: str):
+    """Set schema version (internal use)."""
+    global _schema_version
+    _schema_version = version
+
+
+def get_applied_migrations() -> list:
+    """Get list of applied migrations."""
+    session = SessionLocal()
+
+    try:
+        # Check if migrations table exists
+        inspector = inspect(engine)
+        if 'schema_migrations' not in inspector.get_table_names():
+            return []
+
+        result = session.execute(text("SELECT version, applied_at FROM schema_migrations ORDER BY applied_at"))
+        return [{'version': row[0], 'applied_at': row[1]} for row in result]
+    except Exception as e:
+        logger.error(f"[DB] Failed to get migrations: {e}")
+        return []
+    finally:
+        session.close()
+
+
+def apply_migration(migration_sql: str, version: str, description: str = None) -> dict:
+    """
+    Apply a SQL migration.
+
+    Args:
+        migration_sql: SQL statements to execute
+        version: Version identifier for this migration
+        description: Optional description
+
+    Returns:
+        Dict with migration result
+    """
+    result = {
+        'success': False,
+        'version': version,
+        'error': None
+    }
+
+    session = SessionLocal()
+
+    try:
+        # Ensure migrations table exists
+        session.execute(text(
+            "CREATE TABLE IF NOT EXISTS schema_migrations ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "version VARCHAR(50) UNIQUE NOT NULL, "
+            "description TEXT, "
+            "applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
+        ))
+
+        # Check if already applied
+        existing = session.execute(
+            text("SELECT 1 FROM schema_migrations WHERE version = :v"),
+            {'v': version}
+        ).fetchone()
+
+        if existing:
+            result['error'] = f"Migration {version} already applied"
+            return result
+
+        # Execute migration
+        for statement in migration_sql.split(';'):
+            statement = statement.strip()
+            if statement:
+                session.execute(text(statement))
+
+        # Record migration
+        session.execute(
+            text("INSERT INTO schema_migrations (version, description) VALUES (:v, :d)"),
+            {'v': version, 'd': description}
+        )
+
+        session.commit()
+        result['success'] = True
+
+        logger.info(f"[DB] Migration {version} applied successfully")
+
+    except Exception as e:
+        session.rollback()
+        result['error'] = str(e)
+        logger.error(f"[DB] Migration {version} failed: {e}")
+    finally:
+        session.close()
+
+    return result
+
+
+def rollback_migration(version: str) -> dict:
+    """Mark a migration as rolled back (does not undo changes)."""
+    result = {
+        'success': False,
+        'version': version,
+        'error': None
+    }
+
+    session = SessionLocal()
+
+    try:
+        session.execute(
+            text("DELETE FROM schema_migrations WHERE version = :v"),
+            {'v': version}
+        )
+        session.commit()
+        result['success'] = True
+
+        logger.info(f"[DB] Migration {version} marked as rolled back")
+
+    except Exception as e:
+        session.rollback()
+        result['error'] = str(e)
+    finally:
+        session.close()
+
+    return result
+
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def run_health_check() -> Dict[str, Any]:
+    """
+    Run comprehensive health check on database.
+
+    Combines multiple health check functions into a single comprehensive
+    report. Use this for monitoring and diagnostics.
+
+    Returns:
+        dict: Comprehensive health report with keys:
+            - timestamp (str): ISO format timestamp
+            - connection (dict): Connection health from check_database_connection()
+            - tables (dict): Table integrity from check_table_integrity()
+            - foreign_keys (dict): FK constraints from check_foreign_key_constraints()
+            - stats (dict): Database statistics from get_database_stats()
+            - performance (dict): Performance metrics from get_performance_stats()
+
+    Example:
+        >>> health = run_health_check()
+        >>> if health['connection']['healthy'] and health['tables']['healthy']:
+        ...     print("Database is healthy")
+        >>> print(f"Size: {health['stats']['size_mb']} MB")
+
+    See Also:
+        DATABASE_MAINTENANCE.md for monitoring integration examples
+    """
+    return {
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'connection': check_database_connection(),
+        'tables': check_table_integrity(),
+        'foreign_keys': check_foreign_key_constraints(),
+        'stats': get_database_stats(),
+        'performance': get_performance_stats()
+    }
+
+
+def export_schema() -> str:
+    """
+    Export current database schema as SQL.
+
+    Extracts all CREATE TABLE statements from the database. Useful for
+    documentation, migrations, or recreating the schema in another database.
+
+    Returns:
+        str: SQL statements for all tables, separated by newlines
+
+    Example:
+        >>> schema = export_schema()
+        >>> with open('schema_dump.sql', 'w') as f:
+        ...     f.write(schema)
+
+    TODO (Phase 7): Update for PostgreSQL-compatible syntax
+    """
+    # TODO (Phase 7): Replace sqlite3 direct connection with SQLAlchemy
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    schema = []
+    cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' ORDER BY name")
+
+    for (sql,) in cursor.fetchall():
+        if sql:
+            schema.append(sql + ';')
+
+    conn.close()
+    return '\n\n'.join(schema)
+
 
 
 # Initialize database on import

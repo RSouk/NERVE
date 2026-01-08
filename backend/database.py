@@ -2188,27 +2188,18 @@ def validate_session(token: str, update_activity: bool = True) -> dict:
     session = SessionLocal()
 
     try:
-        print(f"[SESSION DEBUG] Looking for token: {token[:20] if token else 'NONE'}...")
-
         db_session = session.query(Session).filter_by(
             token=token,
             is_active=True
         ).first()
 
         if not db_session:
-            # Debug: Check if token exists but is inactive
-            any_session = session.query(Session).filter_by(token=token).first()
-            if any_session:
-                print(f"[SESSION DEBUG] Token found but is_active={any_session.is_active}, revoked_at={any_session.revoked_at}")
-            else:
-                print(f"[SESSION DEBUG] Token NOT found in database at all")
             return None
 
         # Check expiry (use naive datetime for comparison since DB stores naive)
         now_naive = datetime.utcnow()
         expires_naive = db_session.expires_at.replace(tzinfo=None) if db_session.expires_at.tzinfo else db_session.expires_at
         if expires_naive < now_naive:
-            print(f"[SESSION DEBUG] Session expired: {expires_naive} < {now_naive}")
             db_session.is_active = False
             session.commit()
             return None

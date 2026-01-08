@@ -6719,11 +6719,6 @@
                     });
 
                     const data = await response.json();
-                    console.log('[LIGHTBOX PROGRESS] Poll response:', JSON.stringify(data, null, 2));
-                    console.log('[LIGHTBOX PROGRESS] Status:', data?.status);
-                    console.log('[LIGHTBOX PROGRESS] Progress:', data?.progress);
-                    console.log('[LIGHTBOX PROGRESS] Current step:', data?.current_step);
-                    console.log('[LIGHTBOX PROGRESS] Scan ID:', data?.scan_id);
 
                     if (data.progress !== undefined) {
                         // Update progress bar
@@ -6880,22 +6875,17 @@
                             ? JSON.parse(latestScan.scan_metadata)
                             : latestScan.scan_metadata;
 
-                        // FIX: Extract test_results from scan_metadata if not already set
+                        // Extract test_results from scan_metadata if not already set
                         if (!scanData.test_results && scanData.scan_metadata.test_results) {
                             scanData.test_results = scanData.scan_metadata.test_results;
-                            console.log('[RESULTS] Extracted test_results from scan_metadata:', scanData.test_results);
                         }
                     }
                 } catch (e) {
                     console.error('[RESULTS] Error parsing scan data:', e);
                 }
 
-                console.log('[RESULTS] Parsed scan data:', scanData);
-                console.log('[RESULTS] test_results:', scanData.test_results);
-
-                // FIX: Store scan data globally for findings modal
+                // Store scan data globally for findings modal
                 currentScanData = scanData;
-                console.log('[RESULTS] Stored currentScanData globally:', currentScanData);
 
                 // Update the category cards with the data
                 if (scanData.findings || scanData.test_results) {
@@ -9876,14 +9866,6 @@
 
         // Attach click handlers to finding numbers
         function attachCardClickHandlers(findings) {
-            console.log('[CARDS] ===== ATTACHING CLICK HANDLERS =====');
-            console.log('[CARDS] Total findings received:', Array.isArray(findings) ? findings.length : 'NOT ARRAY');
-            console.log('[CARDS] Findings data:', findings);
-            console.log('[CARDS] Global currentScanData:', currentScanData);
-            console.log('[CARDS] Global latestLightboxFindings:', latestLightboxFindings?.length || 0);
-            console.log('[CARDS] window.nucleiFindings:', window.nucleiFindings?.length || 0);
-            console.log('[CARDS] window.apiFindings:', window.apiFindings?.length || 0);
-
             // Categorize findings
             const categories = {
                 http: ['Missing Security Header', 'Insecure Cookie', 'Cookie Accessible to JavaScript', 'Open Redirect'],
@@ -9908,15 +9890,10 @@
                 csrf_session: window.csrfFindings || [] // Use globally stored CSRF/Session findings
             };
 
-            console.log('[CARDS] Categorized findings:', categorizedFindings);
-
             // Get all clickable finding elements
             const clickables = document.querySelectorAll('.findings-clickable');
 
-            console.log(`[CARDS] Found ${clickables.length} clickable elements`);
-
             if (clickables.length === 0) {
-                console.error('[CARDS] ERROR: No .findings-clickable elements found in DOM!');
                 return;
             }
 
@@ -9924,24 +9901,16 @@
                 const category = element.getAttribute('data-category');
                 const categoryFindings = categorizedFindings[category] || [];
 
-                console.log(`[CARDS] Setting up handler ${index + 1} for category: ${category} (${categoryFindings.length} findings)`);
-
                 // Remove old handler by cloning
                 const newElement = element.cloneNode(true);
                 element.parentNode.replaceChild(newElement, element);
 
                 // Add new click handler
                 newElement.addEventListener('click', function(e) {
-                    e.preventDefault();        // CRITICAL: Prevent default action
-                    e.stopPropagation();       // CRITICAL: Stop event bubbling
-
-                    console.log(`[CARDS] ===== CLICK EVENT =====`);
-                    console.log(`[CARDS] Category: ${category}`);
-                    console.log(`[CARDS] Findings count: ${categoryFindings.length}`);
-                    console.log(`[CARDS] Findings:`, categoryFindings);
+                    e.preventDefault();
+                    e.stopPropagation();
 
                     if (categoryFindings.length === 0) {
-                        console.log('[CARDS] No findings to display');
                         showNotification(`No ${category} findings`, 'info');
                         return;
                     }
@@ -9957,52 +9926,28 @@
                         nuclei: 'Advanced Scan Findings'
                     };
 
-                    console.log(`[CARDS] Calling showCategoryFindings with title: ${titles[category]}`);
                     showCategoryFindings(titles[category], categoryFindings);
                 });
-
-                console.log(`[CARDS] Handler attached for ${category}`);
             });
-
-            console.log('[CARDS] Click handlers attached');
         }
 
         // Show findings for a specific category
         function showCategoryFindings(title, findings) {
-            console.log(`[FINDINGS] ===== SHOW CATEGORY FINDINGS =====`);
-            console.log(`[FINDINGS] Title: ${title}`);
-            console.log(`[FINDINGS] Findings count: ${findings.length}`);
-            console.log(`[FINDINGS] Findings:`, findings);
-
             // Get elements
             const dashboard = document.getElementById('lightbox-dashboard');
             const resultsView = document.getElementById('lightbox-results-view');
             const findingsContainer = document.getElementById('lightbox-findings-display');
 
-            console.log(`[FINDINGS] Dashboard element:`, dashboard);
-            console.log(`[FINDINGS] Results view element:`, resultsView);
-            console.log(`[FINDINGS] Findings container element:`, findingsContainer);
-
             if (!dashboard || !resultsView || !findingsContainer) {
-                console.error('[FINDINGS] ERROR: Required DOM elements not found!');
-                console.error('[FINDINGS] Dashboard:', dashboard);
-                console.error('[FINDINGS] ResultsView:', resultsView);
-                console.error('[FINDINGS] FindingsContainer:', findingsContainer);
+                console.error('[FINDINGS] Required DOM elements not found');
                 alert('Error: Cannot display findings. Required elements missing.');
                 return;
             }
 
-            console.log('[FINDINGS] All elements found');
-
-            // FORCE display using style.display directly (bypasses inline styles)
+            // Switch views
             dashboard.style.display = 'none';
             resultsView.style.display = 'block';
             findingsContainer.style.display = 'block';
-
-            console.log('[FINDINGS] Switched views');
-            console.log('[FINDINGS] Dashboard display:', dashboard.style.display);
-            console.log('[FINDINGS] Results view display:', resultsView.style.display);
-            console.log('[FINDINGS] Findings display:', findingsContainer.style.display);
 
             // Build findings HTML
             const findingsHTML = `
@@ -10010,7 +9955,6 @@
                 <p style="margin: 0 0 24px 0; color: #aaa; font-size: 14px;">Showing ${findings.length} finding(s)</p>
                 <div style="display: flex; flex-direction: column; gap: 16px;">
                     ${findings.map((finding, idx) => {
-                        console.log(`[FINDINGS] Rendering finding ${idx + 1}:`, finding);
                         return `
                         <div style="padding: 20px; background: rgba(255,255,255,0.02); border-left: 4px solid ${getSeverityColor(finding.severity)}; border-radius: 8px;">
                             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
@@ -12364,30 +12308,18 @@
                 const lightboxResult = await lightboxResponse.json();
                 console.log('[FULL SURFACE] Lightbox scan complete:', lightboxResult);
 
-                // ═══════════════════════════════════════════════════════════════
-                // FIX: Use the BACKEND's scan_key for polling (ensures key match)
-                // ═══════════════════════════════════════════════════════════════
+                // Use backend's scan_key for polling
                 const scanKey = lightboxResult.scan_key;
 
-                if (!scanKey) {
-                    console.error('[FULL SURFACE] No scan_key in response!');
-                    console.error('[FULL SURFACE] Full response:', lightboxResult);
-                }
-
-                console.log('[FULL SURFACE] Using backend scan_key:', scanKey);
-
-                // Store the scan ID for result loading
                 if (lightboxResult.scan_id) {
                     currentLightboxScanId = lightboxResult.scan_id;
-                    console.log('[FULL SURFACE] Stored lightbox scan_id:', currentLightboxScanId);
                 }
 
-                // Start polling with the BACKEND's key (will see completion status)
+                // Start polling or load results directly
                 if (scanKey) {
+                    console.log('[FULL SURFACE] Scan started, polling for progress');
                     startRealLightboxProgressPolling(scanKey);
                 } else {
-                    // No scan_key, load results directly
-                    console.log('[FULL SURFACE] No scan_key, loading results directly...');
                     await loadLightboxResultsFromHistory();
                 }
 
@@ -12441,8 +12373,6 @@
             try {
                 const token = localStorage.getItem('session_token');
 
-                console.log('[SPECIFIC TARGETS] Starting test for:', targets);
-
                 // Set default test type and depth
                 window.selectedLightboxType = 'vuln';
                 window.selectedLightboxDepth = 2;
@@ -12474,26 +12404,16 @@
                 }
 
                 const result = await response.json();
-                console.log('[SPECIFIC TARGETS] Backend response:', result);
 
-                // ═══════════════════════════════════════════════════════════════
-                // Backend now runs scan in background and returns immediately
-                // Use the backend's scan_key for polling progress
-                // ═══════════════════════════════════════════════════════════════
+                // Backend runs scan in background, use returned scan_key for polling
                 const scanKey = result.scan_key;
 
                 if (!scanKey) {
-                    console.error('[SPECIFIC TARGETS] No scan_key in response!');
-                    console.error('[SPECIFIC TARGETS] Full response:', result);
+                    console.error('[SPECIFIC TARGETS] No scan_key in response');
                     throw new Error('Backend did not return scan_key');
                 }
 
-                console.log('[SPECIFIC TARGETS] Scan started in background');
-                console.log('[SPECIFIC TARGETS] Using scan_key:', scanKey);
-                console.log('[SPECIFIC TARGETS] Targets count:', result.targets_count);
-
-                // Start polling for progress (scan is running in background)
-                console.log('[SPECIFIC TARGETS] Starting progress polling...');
+                console.log('[SPECIFIC TARGETS] Scan started, polling for progress');
                 startRealLightboxProgressPolling(scanKey);
 
                 // Note: scan_id will be available when scan completes (via progress polling)
@@ -12512,39 +12432,23 @@
         }
 
         // Helper function to start Lightbox progress polling
-        // NOTE: This function delegates to the REAL backend polling function at line 6689
-        // DO NOT use simulateLightboxProgress() - it's fake data!
         function startLightboxProgressPollingHelper(scanKey) {
             if (!scanKey) {
-                console.error('[LIGHTBOX] No scan key provided for polling');
                 return;
             }
-
-            console.log('[LIGHTBOX] Starting REAL backend progress polling for:', scanKey);
-
-            // Store the scan key for other functions
             window.currentLightboxScanKey = scanKey;
-
-            // Call the REAL backend polling function (defined earlier in the file)
-            // The real function polls /api/ghost/lightbox/progress and shows actual progress
             startRealLightboxProgressPolling(scanKey);
         }
 
-        // Trigger the actual Lightbox scan (calls the event listener on #run-lightbox-scan)
+        // Trigger the actual Lightbox scan
         function startLightboxScan() {
             const btn = document.getElementById('run-lightbox-scan');
             if (btn) {
-                console.log('[LIGHTBOX] startLightboxScan() - triggering scan button');
                 btn.click();
-            } else {
-                console.error('[LIGHTBOX] Could not find run-lightbox-scan button');
             }
         }
 
         function runLightboxScan() {
-            // This function is no longer needed since we removed onclick,
-            // but keep it for backward compatibility - just trigger the real scan
-            console.log('[LIGHTBOX] runLightboxScan() called - delegating to startLightboxScan()');
             startLightboxScan();
         }
 

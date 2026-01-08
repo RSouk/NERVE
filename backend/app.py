@@ -1789,15 +1789,17 @@ def lightbox_scan():
         else:
             # ═══════════════════════════════════════════════════════════════
             # FULL SURFACE MODE: Test all assets from XASM scan
+            # Runs in BACKGROUND THREAD for non-blocking response
             # ═══════════════════════════════════════════════════════════════
             domain = data.get('domain')
             # Accept both 'scan_id' and 'xasm_scan_id' for backward compatibility
             scan_id = data.get('scan_id') or data.get('xasm_scan_id')
 
-            logger.info(f"[LIGHTBOX API] Starting FULL SURFACE scan for {domain} (XASM scan ID: {scan_id})")
+            if not domain:
+                return jsonify({'error': 'Domain required'}), 400
 
-            if not domain or not scan_id:
-                return jsonify({'error': 'Missing domain or scan_id parameter'}), 400
+            if not scan_id:
+                return jsonify({'error': 'XASM scan_id required'}), 400
 
             # Get XASM scan results from database
             asm_scan = session.query(CachedASMScan).filter_by(id=scan_id).first()
@@ -1806,134 +1808,160 @@ def lightbox_scan():
                 logger.error(f"[LIGHTBOX API] XASM scan {scan_id} not found")
                 return jsonify({'error': 'XASM scan not found. Please run an XASM scan first.'}), 404
 
+            # Calculate assets count from XASM results
+            asm_results = asm_scan.scan_results if isinstance(asm_scan.scan_results, dict) else {}
+            assets_count = len(asm_results.get('subdomains', []))
+
+            if assets_count == 0:
+                return jsonify({'error': 'No assets found in XASM scan'}), 400
+
             # Use frontend's scan_key for progress tracking if provided, otherwise generate one with user isolation
             scan_key = data.get('scan_key') or f"{domain}_{user_id}_{int(time.time())}"
+
+            logger.info(f"[LIGHTBOX API] Starting FULL SURFACE scan for {domain}")
+            logger.info(f"[LIGHTBOX API] XASM scan ID: {scan_id}, Assets to test: {assets_count}")
             logger.info(f"[LIGHTBOX API] Using scan_key: {scan_key} (user_id: {user_id})")
 
-            # Define progress callback function
-            def update_progress(progress_data):
-                """Update global progress dictionary with scan status"""
-                with scan_progress_lock:
-                    scan_progress[scan_key] = progress_data
-                logger.info(f"[LIGHTBOX PROGRESS] {progress_data.get('current_step')} - {progress_data.get('progress')}%")
+            # ═══════════════════════════════════════════════════════════════
+            # Initialize progress immediately so frontend can start polling
+            # ═══════════════════════════════════════════════════════════════
+            with scan_progress_lock:
+                scan_progress[scan_key] = {
+                    'status': 'initializing',
+                    'progress': 0,
+                    'current_step': 'Starting full surface scan...',
+                    'total_steps': 100
+                }
+            logger.info(f"[LIGHTBOX API] Initialized progress for {scan_key}")
 
-            logger.info(f"[LIGHTBOX API] Running Lightbox scan with progress tracking (key: {scan_key})...")
-            scan_results = run_lightbox_scan(asm_scan.scan_results, domain, update_progress)
+            # Store XASM scan results for background thread (avoid passing session objects)
+            asm_scan_results = asm_scan.scan_results
 
-            # Calculate assets tested from XASM results
-            assets_tested = len(asm_scan.scan_results.get('subdomains', []))
+            # ═══════════════════════════════════════════════════════════════
+            # Define background worker function
+            # ═══════════════════════════════════════════════════════════════
+            def run_full_surface_scan_background():
+                """Run the full surface scan in background thread with its own DB session"""
+                # Create new session for this thread
+                bg_session = SessionLocal()
+                try:
+                    # Progress callback
+                    def update_progress(progress_data):
+                        with scan_progress_lock:
+                            scan_progress[scan_key] = progress_data
+                        logger.info(f"[LIGHTBOX PROGRESS] {progress_data.get('current_step')} - {progress_data.get('progress')}%")
 
-        # Extract findings from the dictionary structure
-        # run_lightbox_scan returns: {'critical': [], 'high': [], 'medium': [], 'low': [], 'info': [], ...}
-        if isinstance(scan_results, dict):
-            # Extract severity counts from the dict structure
-            critical_findings = scan_results.get('critical', [])
-            high_findings = scan_results.get('high', [])
-            medium_findings = scan_results.get('medium', [])
-            low_findings = scan_results.get('low', [])
-            info_findings = scan_results.get('info', [])
+                    logger.info(f"[LIGHTBOX BG] Running full surface scan on {assets_count} assets...")
+                    scan_results = run_lightbox_scan(asm_scan_results, domain, update_progress)
 
-            critical = len(critical_findings)
-            high = len(high_findings)
-            medium = len(medium_findings)
-            low = len(low_findings)
+                    # Calculate assets tested from XASM results
+                    assets_tested = len(asm_scan_results.get('subdomains', [])) if isinstance(asm_scan_results, dict) else 0
 
-            # Flatten all findings into a single list for storage
-            all_findings = critical_findings + high_findings + medium_findings + low_findings + info_findings
-            total_findings = len(all_findings)
+                    # Extract findings from the dictionary structure
+                    if isinstance(scan_results, dict):
+                        critical_findings = scan_results.get('critical', [])
+                        high_findings = scan_results.get('high', [])
+                        medium_findings = scan_results.get('medium', [])
+                        low_findings = scan_results.get('low', [])
+                        info_findings = scan_results.get('info', [])
 
-            logger.info(f"[LIGHTBOX API] Scan complete - {total_findings} findings (C:{critical}, H:{high}, M:{medium}, L:{low})")
-        else:
-            logger.error(f"[LIGHTBOX API] ERROR: Expected dict but got {type(scan_results)}")
-            # Fallback: treat as empty results
-            all_findings = []
-            total_findings = 0
-            critical = high = medium = low = 0
+                        critical = len(critical_findings)
+                        high = len(high_findings)
+                        medium = len(medium_findings)
+                        low = len(low_findings)
 
-        # Save to database - Convert to JSON strings for SQLite compatibility
-        # Extract test_results from scan_results (comprehensive tracking structure for frontend cards)
-        test_results = scan_results.get('test_results', {}) if isinstance(scan_results, dict) else {}
+                        all_findings = critical_findings + high_findings + medium_findings + low_findings + info_findings
+                        total_findings = len(all_findings)
+                        test_results = scan_results.get('test_results', {})
 
-        lightbox_record = LightboxScan(
-            domain=domain,
-            total_findings=total_findings,
-            critical_count=critical,
-            high_count=high,
-            medium_count=medium,
-            low_count=low,
-            findings=json.dumps(all_findings),  # Convert list to JSON string
-            scan_metadata=json.dumps({  # Convert dict to JSON string
-                'mode': mode,
-                'asm_scan_id': scan_id,
-                'assets_tested': assets_tested,
-                'checks_run': scan_results.get('total_tests', 915) if isinstance(scan_results, dict) else 915,
-                'templates_used': scan_results.get('templates_used', 1) if isinstance(scan_results, dict) else 1,
-                # FIX: Include full test_results structure for frontend cards
-                'test_results': test_results
-            })
-        )
+                        logger.info(f"[LIGHTBOX BG] Scan complete - {total_findings} findings (C:{critical}, H:{high}, M:{medium}, L:{low})")
+                    else:
+                        logger.error(f"[LIGHTBOX BG] ERROR: Expected dict but got {type(scan_results)}")
+                        all_findings = []
+                        total_findings = critical = high = medium = low = 0
+                        test_results = {}
 
-        session.add(lightbox_record)
-        session.commit()
-        session.refresh(lightbox_record)  # Get the ID
+                    # Save to database
+                    lightbox_record = LightboxScan(
+                        domain=domain,
+                        total_findings=total_findings,
+                        critical_count=critical,
+                        high_count=high,
+                        medium_count=medium,
+                        low_count=low,
+                        findings=json.dumps(all_findings),
+                        scan_metadata=json.dumps({
+                            'mode': 'full_surface',
+                            'asm_scan_id': scan_id,
+                            'assets_tested': assets_tested,
+                            'checks_run': scan_results.get('total_tests', 915) if isinstance(scan_results, dict) else 915,
+                            'templates_used': scan_results.get('templates_used', 1) if isinstance(scan_results, dict) else 1,
+                            'test_results': test_results
+                        }),
+                        user_id=user_id
+                    )
+                    bg_session.add(lightbox_record)
+                    bg_session.commit()
+                    bg_session.refresh(lightbox_record)
 
-        logger.info(f"[LIGHTBOX API] Saved to database with ID {lightbox_record.id}")
+                    logger.info(f"[LIGHTBOX BG] Saved to database with ID {lightbox_record.id}")
 
-        # Save Lightbox results for AI report generation
-        try:
-            save_lightbox_for_ai(domain, scan_results)
-        except Exception as e:
-            logger.warning(f"[LIGHTBOX] Failed to save for AI report: {e}")
-            # Don't fail the scan if storage fails
+                    # Save Lightbox results for AI report generation
+                    try:
+                        save_lightbox_for_ai(domain, scan_results)
+                    except Exception as e:
+                        logger.warning(f"[LIGHTBOX BG] Failed to save for AI report: {e}")
 
-        # ═══════════════════════════════════════════════════════════════
-        # FIX: Set completion status BEFORE cleanup so frontend can see it
-        # ═══════════════════════════════════════════════════════════════
-        with scan_progress_lock:
-            scan_progress[scan_key] = {
-                'status': 'complete',
-                'progress': 100,
-                'current_step': 'Scan complete',
-                'total_steps': 100,
-                'scan_id': lightbox_record.id  # Pass scan ID to frontend for loading results
-            }
-        logger.info(f"[LIGHTBOX API] Set completion status for {scan_key}")
+                    # Set completion status
+                    with scan_progress_lock:
+                        scan_progress[scan_key] = {
+                            'status': 'complete',
+                            'progress': 100,
+                            'current_step': 'Scan complete',
+                            'total_steps': 100,
+                            'scan_id': lightbox_record.id
+                        }
+                    logger.info(f"[LIGHTBOX BG] Set completion status for {scan_key}")
 
-        # Give frontend time to read final status before cleanup
-        import time as time_module
-        time_module.sleep(2)
+                    # Wait for frontend to read status, then cleanup
+                    import time as time_mod
+                    time_mod.sleep(5)
+                    with scan_progress_lock:
+                        if scan_key in scan_progress:
+                            del scan_progress[scan_key]
+                            logger.info(f"[LIGHTBOX BG] Cleaned up progress for {scan_key}")
 
-        # Now clean up progress tracking
-        with scan_progress_lock:
-            if scan_key in scan_progress:
-                del scan_progress[scan_key]
-                logger.info(f"[LIGHTBOX API] Cleaned up progress tracking for {scan_key}")
+                except Exception as e:
+                    logger.error(f"[LIGHTBOX BG] Error: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    # Set error status
+                    with scan_progress_lock:
+                        scan_progress[scan_key] = {
+                            'status': 'error',
+                            'progress': 0,
+                            'current_step': f'Error: {str(e)}',
+                            'total_steps': 100
+                        }
+                finally:
+                    bg_session.close()
 
-        # Extract test_results from scan_results (comprehensive tracking structure for frontend cards)
-        test_results = scan_results.get('test_results', {}) if isinstance(scan_results, dict) else {}
+            # ═══════════════════════════════════════════════════════════════
+            # Start background thread and return immediately
+            # ═══════════════════════════════════════════════════════════════
+            import threading
+            thread = threading.Thread(target=run_full_surface_scan_background, daemon=True)
+            thread.start()
+            logger.info(f"[LIGHTBOX API] Started background thread for full surface scan {scan_key}")
 
-        return jsonify({
-            'success': True,
-            'scan_id': lightbox_record.id,
-            'scan_key': scan_key,  # Return for frontend progress tracking
-            'user_id': user_id,  # Return for user-isolated tracking
-            'mode': mode,  # Return scan mode for frontend
-            'assets_tested': assets_tested,  # Return number of assets tested
-            'findings': all_findings,  # Return as list to frontend
-            'scan_metadata': json.loads(lightbox_record.scan_metadata),  # Parse JSON string for response
-            'test_results': test_results,  # NEW: Include comprehensive test tracking for frontend cards
-            'nuclei_results': {
-                'findings': scan_results.get('info', []),
-                'templates_used': scan_results.get('templates_used', 500)
-            },
-            'summary': {
-                'total': total_findings,
-                'critical': critical,
-                'high': high,
-                'medium': medium,
-                'low': low
-            }
-        }), 200
+            # Return immediately - frontend will poll for progress
+            return jsonify({
+                'success': True,
+                'scan_key': scan_key,
+                'mode': 'full_surface',
+                'assets_count': assets_count,
+                'message': 'Full surface scan started in background'
+            }), 200
 
     except Exception as e:
         session.rollback()

@@ -3439,42 +3439,41 @@
             color: #22c55e;
         }
 
-        /* Test Type Cards */
-        .lightbox-test-types {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
+        /* Testing Mode Selector Styles */
+        .lightbox-mode-selector {
+            max-width: 900px;
+            margin: 0 auto 32px;
         }
 
-        .lightbox-test-type-card {
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
+        .test-mode-card {
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
             padding: 24px;
-            cursor: pointer;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
+            cursor: pointer;
             position: relative;
         }
 
-        .lightbox-test-type-card:hover {
-            border-color: rgba(212, 175, 55, 0.4);
-            transform: translateY(-4px);
+        .test-mode-card:hover {
+            border-color: rgba(212, 175, 55, 0.6);
+            background: rgba(212, 175, 55, 0.08);
         }
 
-        .lightbox-test-type-card.selected {
-            border-color: #ffd700;
-            background: rgba(212, 175, 55, 0.1);
+        .test-mode-card.selected {
+            border-color: rgba(212, 175, 55, 0.8);
+            background: rgba(212, 175, 55, 0.12);
         }
 
-        .lightbox-test-type-card.selected::after {
+        .test-mode-card.selected::before {
             content: '✓';
             position: absolute;
-            top: 12px;
-            right: 12px;
-            width: 24px;
-            height: 24px;
-            background: #ffd700;
+            top: 16px;
+            right: 16px;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #D4AF37, #FFD700);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -3484,105 +3483,114 @@
             font-weight: bold;
         }
 
-        .lightbox-test-type-icon {
-            font-size: 36px;
+        .test-mode-card input[type="radio"] {
+            display: none;
+        }
+
+        .test-mode-card label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .mode-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             margin-bottom: 12px;
         }
 
-        .lightbox-test-type-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
-            margin: 0 0 8px 0;
+        .mode-icon {
+            font-size: 32px;
         }
 
-        .lightbox-test-type-desc {
-            font-size: 13px;
-            color: #888;
-            margin: 0 0 12px 0;
+        .mode-header h4 {
+            margin: 0;
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .mode-description {
+            color: #aaa;
+            margin-bottom: 16px;
+            font-size: 14px;
             line-height: 1.5;
         }
 
-        .lightbox-risk-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .lightbox-risk-badge.low {
-            background: rgba(34, 197, 94, 0.2);
-            color: #22c55e;
-        }
-
-        .lightbox-risk-badge.medium {
-            background: rgba(234, 179, 8, 0.2);
-            color: #eab308;
-        }
-
-        .lightbox-risk-badge.high {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-        }
-
-        /* Scan Depth Slider */
-        .lightbox-depth-section {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 28px;
-        }
-
-        .lightbox-depth-header {
+        .mode-benefits {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .lightbox-depth-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
+        .benefit {
+            background: rgba(212, 175, 55, 0.2);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #D4AF37;
         }
 
-        .lightbox-depth-value {
-            font-size: 14px;
-            color: #ffd700;
-            font-weight: 600;
+        .mode-input {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
         }
 
-        .lightbox-depth-slider {
+        .domain-input {
             width: 100%;
-            height: 8px;
-            -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: white;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .domain-input:focus {
             outline: none;
-            margin-bottom: 12px;
+            border-color: rgba(212, 175, 55, 0.8);
         }
 
-        .lightbox-depth-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            background: linear-gradient(135deg, #ffd700, #D4AF37);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+        .domain-input::placeholder {
+            color: #666;
         }
 
-        .lightbox-depth-labels {
-            display: flex;
-            justify-content: space-between;
+        .targets-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: white;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.2s;
         }
 
-        .lightbox-depth-label {
-            font-size: 12px;
-            color: #888;
+        .targets-textarea:focus {
+            outline: none;
+            border-color: rgba(212, 175, 55, 0.8);
+        }
+
+        .targets-textarea::placeholder {
+            color: #555;
+        }
+
+        .target-count {
+            text-align: right;
+            color: #D4AF37;
+            margin: 10px 0 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .mode-start-btn {
+            width: 100%;
+            margin-top: 8px;
         }
 
         /* Progress State */
@@ -3964,7 +3972,6 @@
 
         @media (max-width: 1200px) {
             .lightbox-results-summary { grid-template-columns: 1fr; }
-            .lightbox-test-types { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 768px) {
@@ -5621,45 +5628,79 @@
                         </button>
                     </div>
 
-                    <!-- Test Type Selection -->
-                    <h3 style="font-size: 16px; color: #fff; margin: 0 0 16px 0;">Select Test Type</h3>
-                    <div class="lightbox-test-types">
-                        <div class="lightbox-test-type-card selected" onclick="selectTestType(this, 'recon')" data-type="recon">
-                            <div class="lightbox-test-type-icon">🔍</div>
-                            <h4 class="lightbox-test-type-name">Reconnaissance</h4>
-                            <p class="lightbox-test-type-desc">Gather information without active probing. Passive analysis of exposed services.</p>
-                            <span class="lightbox-risk-badge low">Low Risk</span>
+                    <!-- Testing Mode Selector -->
+                    <div class="lightbox-mode-selector">
+                        <h3 style="font-size: 18px; color: #fff; margin: 0 0 20px 0;">Select Testing Mode</h3>
+
+                        <!-- Mode 1: Full Attack Surface -->
+                        <div class="test-mode-card selected" id="fullSurfaceMode" onclick="selectTestMode('full')">
+                            <input type="radio" name="testMode" id="modeFullSurface" value="full" checked>
+                            <label for="modeFullSurface">
+                                <div class="mode-header">
+                                    <span class="mode-icon">🌐</span>
+                                    <h4>Test Full Attack Surface</h4>
+                                </div>
+                                <p class="mode-description">
+                                    Run XASM scan first to discover all assets (domains, subdomains, IPs, ports),
+                                    then automatically test everything found.
+                                </p>
+                                <div class="mode-benefits">
+                                    <span class="benefit">✓ Comprehensive coverage</span>
+                                    <span class="benefit">✓ Discovers hidden assets</span>
+                                    <span class="benefit">✓ Complete security posture</span>
+                                </div>
+                            </label>
+
+                            <div class="mode-input" id="fullSurfaceInput">
+                                <label style="color: #888; font-size: 14px; display: block; margin-bottom: 8px;">Target Domain:</label>
+                                <input type="text"
+                                       id="fullSurfaceDomain"
+                                       placeholder="example.com"
+                                       class="domain-input">
+                                <button class="lightbox-run-btn mode-start-btn" onclick="startFullSurfaceTest(event)">
+                                    🚀 Scan Full Surface
+                                </button>
+                            </div>
                         </div>
-                        <div class="lightbox-test-type-card" onclick="selectTestType(this, 'vuln')" data-type="vuln">
-                            <div class="lightbox-test-type-icon">🎯</div>
-                            <h4 class="lightbox-test-type-name">Vulnerability Scan</h4>
-                            <p class="lightbox-test-type-desc">Identify vulnerabilities through active testing. Includes OWASP Top 10.</p>
-                            <span class="lightbox-risk-badge medium">Medium Risk</span>
-                        </div>
-                        <div class="lightbox-test-type-card" onclick="selectTestType(this, 'exploit')" data-type="exploit">
-                            <div class="lightbox-test-type-icon">💥</div>
-                            <h4 class="lightbox-test-type-name">Exploitation Test</h4>
-                            <p class="lightbox-test-type-desc">Attempt to exploit identified vulnerabilities. Most thorough but aggressive.</p>
-                            <span class="lightbox-risk-badge high">High Risk</span>
+
+                        <!-- Mode 2: Specific Targets -->
+                        <div class="test-mode-card" id="specificTargetsMode" onclick="selectTestMode('specific')">
+                            <input type="radio" name="testMode" id="modeSpecific" value="specific">
+                            <label for="modeSpecific">
+                                <div class="mode-header">
+                                    <span class="mode-icon">🎯</span>
+                                    <h4>Test Specific Targets</h4>
+                                </div>
+                                <p class="mode-description">
+                                    Manually specify which assets to test. Skip discovery phase and
+                                    test only the targets you provide.
+                                </p>
+                                <div class="mode-benefits">
+                                    <span class="benefit">✓ Faster testing</span>
+                                    <span class="benefit">✓ Focus on specific apps</span>
+                                    <span class="benefit">✓ Third-party components</span>
+                                </div>
+                            </label>
+
+                            <div class="mode-input" id="specificTargetsInput" style="display: none;">
+                                <label style="color: #888; font-size: 14px; display: block; margin-bottom: 8px;">Enter Targets (one per line):</label>
+                                <textarea
+                                    id="specificTargetsList"
+                                    rows="6"
+                                    placeholder="app.example.com&#10;api.example.com&#10;staging.example.com&#10;192.168.1.100"
+                                    class="targets-textarea"></textarea>
+                                <div class="target-count">
+                                    <span id="targetCount">0</span> targets specified
+                                </div>
+                                <button class="lightbox-run-btn mode-start-btn" onclick="startSpecificTargetsTest(event)">
+                                    🎯 Test Specific Targets
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Scan Depth Slider -->
-                    <div class="lightbox-depth-section">
-                        <div class="lightbox-depth-header">
-                            <span class="lightbox-depth-title">Scan Depth</span>
-                            <span class="lightbox-depth-value" id="depth-value">Standard (15 min)</span>
-                        </div>
-                        <input type="range" class="lightbox-depth-slider" id="scan-depth-slider" min="1" max="3" value="2" oninput="updateDepthValue(this.value)">
-                        <div class="lightbox-depth-labels">
-                            <span class="lightbox-depth-label">Quick (5 min)</span>
-                            <span class="lightbox-depth-label">Standard (15 min)</span>
-                            <span class="lightbox-depth-label">Deep (30 min)</span>
-                        </div>
-                    </div>
-
-                    <!-- Run Button -->
-                    <div style="text-align: center; margin-top: 32px;">
+                    <!-- Hidden Run Button (for programmatic triggering) -->
+                    <div style="display: none;">
                         <button id="run-lightbox-scan" class="lightbox-run-btn">
                             🚀 Run Lightbox Test
                         </button>
@@ -5687,10 +5728,6 @@
                         <div class="lightbox-progress-stat">
                             <div class="lightbox-progress-stat-value" id="time-elapsed">0:00</div>
                             <div class="lightbox-progress-stat-label">Time Elapsed</div>
-                        </div>
-                        <div class="lightbox-progress-stat">
-                            <div class="lightbox-progress-stat-value" id="time-remaining">--:--</div>
-                            <div class="lightbox-progress-stat-label">Est. Remaining</div>
                         </div>
                     </div>
 
@@ -5844,6 +5881,46 @@
                                     <span class="stat-label">Findings</span>
                                     <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="logic">
                                         <span id="logic-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                        <span style="font-size: 18px; opacity: 0.6;">→</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- XSS Vulnerabilities Card -->
+                        <div class="test-category-card">
+                            <div class="test-card-icon" style="font-size: 32px;">⚠️</div>
+                            <h3 class="test-card-title">XSS Vulnerabilities</h3>
+                            <p class="test-card-description">Reflected, stored, DOM-based XSS</p>
+                            <div class="test-card-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Tests Run</span>
+                                    <span id="xss-tests-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Findings</span>
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="xss">
+                                        <span id="xss-findings-count" class="stat-value" style="margin: 0;">--</span>
+                                        <span style="font-size: 18px; opacity: 0.6;">→</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CSRF & Session Security Card -->
+                        <div class="test-category-card">
+                            <div class="test-card-icon" style="font-size: 32px;">🔐</div>
+                            <h3 class="test-card-title">CSRF & Session Security</h3>
+                            <p class="test-card-description">CSRF tokens, CORS, session management</p>
+                            <div class="test-card-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Tests Run</span>
+                                    <span id="csrf-tests-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Findings</span>
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 6px;" class="findings-clickable" data-category="csrf_session">
+                                        <span id="csrf-findings-count" class="stat-value" style="margin: 0;">--</span>
                                         <span style="font-size: 18px; opacity: 0.6;">→</span>
                                     </div>
                                 </div>
@@ -6599,7 +6676,9 @@
         let progressPollInterval = null;
         let currentProgressInterval = null; // Lightbox progress interval
         let currentScanKey = null; // Global scan key for progress tracking
+        let currentLightboxScanId = null; // Database ID of the current Lightbox scan
         let latestLightboxFindings = []; // Store latest findings for card filtering
+        let currentScanData = null; // FIX: Store full scan data globally for findings modal
 
         // Store current scan info globally for Lightbox to use
         let currentScanDomain = null;
@@ -6608,8 +6687,9 @@
         let lightboxScanStartTime = null; // Track scan start time
 
         // Lightbox Progress Polling - polls backend for real-time scan progress
-        function startLightboxProgressPolling(scanKey) {
-            console.log('[LIGHTBOX PROGRESS] Starting polling for scan key:', scanKey);
+        // This is the REAL backend polling function - not simulation
+        function startRealLightboxProgressPolling(scanKey) {
+            console.log('[LIGHTBOX PROGRESS] Starting REAL backend polling for scan key:', scanKey);
             lightboxScanStartTime = Date.now();
 
             // Clear any existing interval
@@ -6622,7 +6702,6 @@
             const currentTest = document.getElementById('current-test-name');
             const testsCompleted = document.getElementById('tests-completed');
             const timeElapsed = document.getElementById('time-elapsed');
-            const timeRemaining = document.getElementById('time-remaining');
             const activityFeed = document.getElementById('activity-feed');
 
             let lastStep = '';
@@ -6640,7 +6719,11 @@
                     });
 
                     const data = await response.json();
-                    console.log('[LIGHTBOX PROGRESS] Poll response:', data);
+                    console.log('[LIGHTBOX PROGRESS] Poll response:', JSON.stringify(data, null, 2));
+                    console.log('[LIGHTBOX PROGRESS] Status:', data?.status);
+                    console.log('[LIGHTBOX PROGRESS] Progress:', data?.progress);
+                    console.log('[LIGHTBOX PROGRESS] Current step:', data?.current_step);
+                    console.log('[LIGHTBOX PROGRESS] Scan ID:', data?.scan_id);
 
                     if (data.progress !== undefined) {
                         // Update progress bar
@@ -6669,16 +6752,6 @@
                             timeElapsed.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
                         }
 
-                        // Estimate time remaining
-                        if (timeRemaining && data.progress > 0 && lightboxScanStartTime) {
-                            const elapsed = (Date.now() - lightboxScanStartTime) / 1000;
-                            const estimatedTotal = elapsed / (data.progress / 100);
-                            const remaining = Math.max(0, Math.floor(estimatedTotal - elapsed));
-                            const mins = Math.floor(remaining / 60);
-                            const secs = remaining % 60;
-                            timeRemaining.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-                        }
-
                         // Add activity feed entry if step changed
                         if (activityFeed && data.current_step && data.current_step !== lastStep) {
                             lastStep = data.current_step;
@@ -6697,10 +6770,17 @@
 
                         // Check if complete
                         if (data.progress >= 100 || data.status === 'complete') {
-                            console.log('[LIGHTBOX PROGRESS] Scan complete, stopping polling');
+                            console.log('[LIGHTBOX PROGRESS] Scan complete! Status:', data.status);
+                            console.log('[LIGHTBOX PROGRESS] Scan ID from progress:', data.scan_id);
                             stopLightboxProgressPolling();
 
-                            // Load and display results from history
+                            // FIX: Store scan_id from progress data for reliable result loading
+                            if (data.scan_id) {
+                                currentLightboxScanId = data.scan_id;
+                                console.log('[LIGHTBOX PROGRESS] Stored scan_id:', currentLightboxScanId);
+                            }
+
+                            // Load and display results
                             console.log('[LIGHTBOX PROGRESS] Loading results...');
                             await loadLightboxResultsFromHistory();
                         }
@@ -6724,107 +6804,145 @@
             const domain = currentScanDomain;
             const token = localStorage.getItem('session_token');
 
-            console.log('[RESULTS] Loading results for domain:', domain);
-
-            if (!domain) {
-                console.error('[RESULTS] No domain available');
-                return;
-            }
+            console.log('[RESULTS] Loading results - scan_id:', currentLightboxScanId, 'domain:', domain);
 
             try {
-                const response = await fetch(`${API_URL}/api/ghost/lightbox/history/${domain}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                let latestScan = null;
 
-                const scans = await response.json();
-                console.log('[RESULTS] Loaded scans:', scans);
-
-                if (scans && scans.length > 0) {
-                    const latestScan = scans[0];
-                    console.log('[RESULTS] Latest scan:', latestScan);
-
-                    // Parse findings from the scan data
-                    let scanData = {};
-                    try {
-                        if (latestScan.findings) {
-                            // If findings is a string, parse it
-                            if (typeof latestScan.findings === 'string') {
-                                scanData.findings = JSON.parse(latestScan.findings);
-                            } else {
-                                scanData.findings = latestScan.findings;
-                            }
+                // PRIORITY 1: If we have a specific scan ID, fetch that exact scan
+                if (currentLightboxScanId) {
+                    console.log('[RESULTS] Fetching by scan_id:', currentLightboxScanId);
+                    const response = await fetch(`${API_URL}/api/ghost/lightbox/scan/${currentLightboxScanId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
                         }
-                        if (latestScan.results_json) {
-                            // Parse full results if available
-                            const resultsObj = typeof latestScan.results_json === 'string'
-                                ? JSON.parse(latestScan.results_json)
-                                : latestScan.results_json;
-                            scanData = { ...scanData, ...resultsObj };
-                        }
-                        if (latestScan.test_results) {
-                            scanData.test_results = typeof latestScan.test_results === 'string'
-                                ? JSON.parse(latestScan.test_results)
-                                : latestScan.test_results;
-                        }
-                        if (latestScan.scan_metadata) {
-                            scanData.scan_metadata = typeof latestScan.scan_metadata === 'string'
-                                ? JSON.parse(latestScan.scan_metadata)
-                                : latestScan.scan_metadata;
-                        }
-                    } catch (e) {
-                        console.error('[RESULTS] Error parsing scan data:', e);
+                    });
+
+                    if (response.ok) {
+                        latestScan = await response.json();
+                        console.log('[RESULTS] Loaded scan by ID:', latestScan);
+                    } else {
+                        console.warn('[RESULTS] Failed to fetch by ID, falling back to domain history');
                     }
-
-                    console.log('[RESULTS] Parsed scan data:', scanData);
-
-                    // Update the category cards with the data
-                    if (scanData.findings || scanData.test_results) {
-                        updateTestCategoryCards(scanData);
-                    }
-
-                    // Hide progress section
-                    const progressContainer = document.getElementById('lightbox-progress-container');
-                    if (progressContainer) {
-                        progressContainer.style.display = 'none';
-                        console.log('[RESULTS] Hid progress container');
-                    }
-
-                    // Hide input section
-                    const inputSection = document.getElementById('lightbox-input-section');
-                    if (inputSection) {
-                        inputSection.style.display = 'none';
-                    }
-
-                    // Show categories grid with results
-                    const categoriesGrid = document.getElementById('lightbox-categories-grid');
-                    if (categoriesGrid) {
-                        categoriesGrid.style.display = 'block';
-                        console.log('[RESULTS] Showed categories grid');
-                    }
-
-                    // Show history section
-                    const historySection = document.getElementById('lightbox-history-section');
-                    if (historySection) {
-                        historySection.style.display = 'block';
-                    }
-
-                    // Restore button
-                    const btn = document.getElementById('run-lightbox-scan');
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.style.display = 'inline-block';
-                        btn.textContent = '▶ Run Lightbox Test';
-                    }
-
-                    // Reload history
-                    if (typeof loadLightboxHistory === 'function') {
-                        await loadLightboxHistory();
-                    }
-
-                    console.log('[RESULTS] UI updated successfully');
                 }
+
+                // FALLBACK: If no scan_id or fetch failed, use domain history
+                if (!latestScan && domain) {
+                    console.log('[RESULTS] Fetching by domain:', domain);
+                    const response = await fetch(`${API_URL}/api/ghost/lightbox/history/${domain}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const historyData = await response.json();
+                    console.log('[RESULTS] Loaded history:', historyData);
+
+                    // Handle both array and object responses
+                    const scans = historyData.scans || historyData;
+                    if (scans && scans.length > 0) {
+                        latestScan = scans[0];
+                    }
+                }
+
+                if (!latestScan) {
+                    console.error('[RESULTS] No scan data found');
+                    return;
+                }
+
+                console.log('[RESULTS] Using scan:', latestScan);
+
+                // Parse findings from the scan data
+                let scanData = {};
+                try {
+                    if (latestScan.findings) {
+                        // If findings is a string, parse it
+                        if (typeof latestScan.findings === 'string') {
+                            scanData.findings = JSON.parse(latestScan.findings);
+                        } else {
+                            scanData.findings = latestScan.findings;
+                        }
+                    }
+                    if (latestScan.results_json) {
+                        // Parse full results if available
+                        const resultsObj = typeof latestScan.results_json === 'string'
+                            ? JSON.parse(latestScan.results_json)
+                            : latestScan.results_json;
+                        scanData = { ...scanData, ...resultsObj };
+                    }
+                    if (latestScan.test_results) {
+                        scanData.test_results = typeof latestScan.test_results === 'string'
+                            ? JSON.parse(latestScan.test_results)
+                            : latestScan.test_results;
+                    }
+                    if (latestScan.scan_metadata) {
+                        scanData.scan_metadata = typeof latestScan.scan_metadata === 'string'
+                            ? JSON.parse(latestScan.scan_metadata)
+                            : latestScan.scan_metadata;
+
+                        // FIX: Extract test_results from scan_metadata if not already set
+                        if (!scanData.test_results && scanData.scan_metadata.test_results) {
+                            scanData.test_results = scanData.scan_metadata.test_results;
+                            console.log('[RESULTS] Extracted test_results from scan_metadata:', scanData.test_results);
+                        }
+                    }
+                } catch (e) {
+                    console.error('[RESULTS] Error parsing scan data:', e);
+                }
+
+                console.log('[RESULTS] Parsed scan data:', scanData);
+                console.log('[RESULTS] test_results:', scanData.test_results);
+
+                // FIX: Store scan data globally for findings modal
+                currentScanData = scanData;
+                console.log('[RESULTS] Stored currentScanData globally:', currentScanData);
+
+                // Update the category cards with the data
+                if (scanData.findings || scanData.test_results) {
+                    updateTestCategoryCards(scanData);
+                }
+
+                // Hide progress section
+                const progressContainer = document.getElementById('lightbox-progress-container');
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                    console.log('[RESULTS] Hid progress container');
+                }
+
+                // Hide input section
+                const inputSection = document.getElementById('lightbox-input-section');
+                if (inputSection) {
+                    inputSection.style.display = 'none';
+                }
+
+                // Show categories grid with results
+                const categoriesGrid = document.getElementById('lightbox-categories-grid');
+                if (categoriesGrid) {
+                    categoriesGrid.style.display = 'block';
+                    console.log('[RESULTS] Showed categories grid');
+                }
+
+                // Show history section
+                const historySection = document.getElementById('lightbox-history-section');
+                if (historySection) {
+                    historySection.style.display = 'block';
+                }
+
+                // Restore button
+                const btn = document.getElementById('run-lightbox-scan');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.display = 'inline-block';
+                    btn.textContent = '▶ Run Lightbox Test';
+                }
+
+                // Reload history
+                if (typeof loadLightboxHistory === 'function') {
+                    await loadLightboxHistory();
+                }
+
+                console.log('[RESULTS] UI updated successfully');
+
             } catch (error) {
                 console.error('[RESULTS] Error loading results:', error);
             }
@@ -9197,7 +9315,7 @@
             }
 
             // Start progress polling BEFORE the fetch (so we can track progress during scan)
-            startLightboxProgressPolling(currentScanKey);
+            startRealLightboxProgressPolling(currentScanKey);
 
             try {
                 // Start the scan (this will run while polling updates progress)
@@ -9224,6 +9342,12 @@
 
                 const data = await response.json();
                 console.log('[LIGHTBOX] Scan complete, data:', data);
+
+                // Store the scan ID for result loading
+                if (data.scan_id) {
+                    currentLightboxScanId = data.scan_id;
+                    console.log('[LIGHTBOX] Stored scan_id:', currentLightboxScanId);
+                }
 
                 // Stop progress polling now that scan is complete
                 stopLightboxProgressPolling();
@@ -9600,6 +9724,14 @@
                 nuclei: {
                     tests_run: test_results.nuclei?.templates_used || nucleiData.templates_used || metadata.templates_used || 500,
                     findings: nucleiData.findings || []
+                },
+                xss: {
+                    tests_run: test_results.xss?.tests_run || metadata.xss_checks || 0,
+                    findings: []
+                },
+                csrf_session: {
+                    tests_run: test_results.csrf_session?.tests_run || metadata.csrf_checks || 0,
+                    findings: []
                 }
             };
 
@@ -9613,7 +9745,9 @@
                 data: ['Sensitive File Exposed', 'Technology Disclosure'],
                 network: ['Database Auth Required (Vulnerable)', 'SSH Password Auth Enabled'],
                 api: ['API', 'GraphQL', 'Swagger', 'REST', 'JWT', 'OAuth'],
-                logic: ['Rate', 'IDOR', 'Bypass', 'Logic', 'Session', 'Privilege']
+                logic: ['Rate', 'IDOR', 'Bypass', 'Logic', 'Session', 'Privilege'],
+                xss: ['XSS', 'Cross-Site Scripting', 'Reflected XSS', 'Stored XSS', 'DOM XSS'],
+                csrf_session: ['CSRF', 'Cross-Site Request Forgery', 'Session', 'CORS', 'Cookie']
             };
 
             // Populate findings arrays
@@ -9624,6 +9758,8 @@
             results.network.findings = findings.filter(f => f && f.type && categories.network.includes(f.type));
             results.api_security.findings = findings.filter(f => f && f.type && categories.api.some(keyword => f.type.includes(keyword)));
             results.business_logic.findings = findings.filter(f => f && f.type && categories.logic.some(keyword => f.type.includes(keyword)));
+            results.xss.findings = findings.filter(f => f && f.type && categories.xss.some(keyword => f.type.includes(keyword)));
+            results.csrf_session.findings = findings.filter(f => f && f.type && categories.csrf_session.some(keyword => f.type.includes(keyword)));
 
             // ================================================================
             // UPDATE CARD COUNTS USING RESULTS OBJECT
@@ -9661,6 +9797,14 @@
             updateTestCount('nuclei-tests-count', results.nuclei.tests_run);
             updateFindingsCount('nuclei-findings-count', results.nuclei.findings.length);
 
+            // XSS Vulnerabilities card
+            updateTestCount('xss-tests-count', results.xss.tests_run);
+            updateFindingsCount('xss-findings-count', results.xss.findings.length);
+
+            // CSRF & Session Security card
+            updateTestCount('csrf-tests-count', results.csrf_session.tests_run);
+            updateFindingsCount('csrf-findings-count', results.csrf_session.findings.length);
+
             // ================================================================
             // DEBUG LOGGING
             // ================================================================
@@ -9675,11 +9819,15 @@
             console.log('  API Security:', results.api_security.tests_run, 'tests,', results.api_security.findings.length, 'findings');
             console.log('  Business Logic:', results.business_logic.tests_run, 'tests,', results.business_logic.findings.length, 'findings');
             console.log('  Nuclei:', results.nuclei.tests_run, 'tests,', results.nuclei.findings.length, 'findings');
+            console.log('  XSS:', results.xss.tests_run, 'tests,', results.xss.findings.length, 'findings');
+            console.log('  CSRF/Session:', results.csrf_session.tests_run, 'tests,', results.csrf_session.findings.length, 'findings');
 
             // Store findings globally for toggle/click functions
             window.nucleiFindings = results.nuclei.findings;
             window.apiFindings = results.api_security.findings;
             window.logicFindings = results.business_logic.findings;
+            window.xssFindings = results.xss.findings;
+            window.csrfFindings = results.csrf_session.findings;
 
             // Make finding numbers clickable
             attachCardClickHandlers(findings);
@@ -9729,8 +9877,12 @@
         // Attach click handlers to finding numbers
         function attachCardClickHandlers(findings) {
             console.log('[CARDS] ===== ATTACHING CLICK HANDLERS =====');
-            console.log('[CARDS] Total findings received:', findings.length);
+            console.log('[CARDS] Total findings received:', Array.isArray(findings) ? findings.length : 'NOT ARRAY');
             console.log('[CARDS] Findings data:', findings);
+            console.log('[CARDS] Global currentScanData:', currentScanData);
+            console.log('[CARDS] Global latestLightboxFindings:', latestLightboxFindings?.length || 0);
+            console.log('[CARDS] window.nucleiFindings:', window.nucleiFindings?.length || 0);
+            console.log('[CARDS] window.apiFindings:', window.apiFindings?.length || 0);
 
             // Categorize findings
             const categories = {
@@ -9738,7 +9890,9 @@
                 auth: ['Default Credentials', 'Admin Panel Accessible'],
                 injection: ['XXE Vulnerability Possible', 'SSRF Vulnerability Possible', 'File Upload Endpoint', 'Directory Traversal Possible'],
                 data: ['Sensitive File Exposed', 'Technology Disclosure'],
-                network: ['Database Auth Required (Vulnerable)', 'SSH Password Auth Enabled']
+                network: ['Database Auth Required (Vulnerable)', 'SSH Password Auth Enabled'],
+                xss: ['XSS', 'Cross-Site Scripting', 'Reflected XSS', 'Stored XSS', 'DOM XSS'],
+                csrf_session: ['CSRF', 'Cross-Site Request Forgery', 'Session', 'CORS', 'Cookie']
             };
 
             const categorizedFindings = {
@@ -9749,7 +9903,9 @@
                 network: findings.filter(f => f && f.type && categories.network.includes(f.type)),
                 api: window.apiFindings || [],      // Use globally stored API findings
                 logic: window.logicFindings || [],  // Use globally stored Business Logic findings
-                nuclei: window.nucleiFindings || [] // Use globally stored nuclei findings
+                nuclei: window.nucleiFindings || [], // Use globally stored nuclei findings
+                xss: window.xssFindings || [],      // Use globally stored XSS findings
+                csrf_session: window.csrfFindings || [] // Use globally stored CSRF/Session findings
             };
 
             console.log('[CARDS] Categorized findings:', categorizedFindings);
@@ -10076,7 +10232,9 @@
                 'network-tests-count', 'network-findings-count',
                 'api-tests-count', 'api-findings-count',
                 'logic-tests-count', 'logic-findings-count',
-                'nuclei-tests-count', 'nuclei-findings-count'
+                'nuclei-tests-count', 'nuclei-findings-count',
+                'xss-tests-count', 'xss-findings-count',
+                'csrf-tests-count', 'csrf-findings-count'
             ];
 
             statIds.forEach(id => {
@@ -10108,7 +10266,11 @@
                 'injection-tests-count', 'injection-findings-count',
                 'data-tests-count', 'data-findings-count',
                 'network-tests-count', 'network-findings-count',
-                'nuclei-tests-count', 'nuclei-findings-count'
+                'api-tests-count', 'api-findings-count',
+                'logic-tests-count', 'logic-findings-count',
+                'nuclei-tests-count', 'nuclei-findings-count',
+                'xss-tests-count', 'xss-findings-count',
+                'csrf-tests-count', 'csrf-findings-count'
             ];
 
             statIds.forEach(id => {
@@ -12019,60 +12181,353 @@
         }
 
         function showLightboxInput() {
-            // Skip selection screens - directly start the test
+            // Show mode selector screen
             const checkbox = document.getElementById('lightbox-auth-checkbox');
             if (!checkbox || !checkbox.checked) {
                 alert('Please confirm authorization before running tests.');
                 return;
             }
 
-            // Check if domain is selected from XASM
-            if (!window.currentDomain && !currentScanDomain) {
-                alert('Please run an XASM scan first to select a target domain.');
-                return;
-            }
-
-            // Set default test type and depth
-            window.selectedLightboxType = 'vuln';  // Default: Vulnerability Scan
-            window.selectedLightboxDepth = 2;      // Default: Standard depth
-
-            // Hide empty state, show progress directly
+            // Hide empty state, show input section with mode selector
             const emptyState = document.getElementById('lightbox-empty-state');
             const inputSection = document.getElementById('lightbox-input-section');
             const progressContainer = document.getElementById('lightbox-progress-container');
             const categoriesGrid = document.getElementById('lightbox-categories-grid');
 
             if (emptyState) emptyState.style.display = 'none';
-            if (inputSection) inputSection.style.display = 'none';
+            if (inputSection) inputSection.style.display = 'block';
             if (categoriesGrid) categoriesGrid.style.display = 'none';
+            if (progressContainer) progressContainer.style.display = 'none';
+
+            // Pre-fill domain if available from XASM scan
+            const domainInput = document.getElementById('fullSurfaceDomain');
+            if (domainInput && (window.currentDomain || currentScanDomain)) {
+                domainInput.value = window.currentDomain || currentScanDomain;
+            }
+
+            // Set default test type and depth
+            window.selectedLightboxType = 'vuln';  // Default: Vulnerability Scan
+            window.selectedLightboxDepth = 2;      // Default: Standard depth
+
+            console.log('[LIGHTBOX] Showing mode selector');
+        }
+
+        // Testing Mode Selection
+        function selectTestMode(mode) {
+            const fullCard = document.getElementById('fullSurfaceMode');
+            const specificCard = document.getElementById('specificTargetsMode');
+            const fullInput = document.getElementById('fullSurfaceInput');
+            const specificInput = document.getElementById('specificTargetsInput');
+            const fullRadio = document.getElementById('modeFullSurface');
+            const specificRadio = document.getElementById('modeSpecific');
+
+            if (mode === 'full') {
+                fullCard.classList.add('selected');
+                specificCard.classList.remove('selected');
+                fullInput.style.display = 'block';
+                specificInput.style.display = 'none';
+                fullRadio.checked = true;
+            } else {
+                fullCard.classList.remove('selected');
+                specificCard.classList.add('selected');
+                fullInput.style.display = 'none';
+                specificInput.style.display = 'block';
+                specificRadio.checked = true;
+            }
+
+            window.selectedTestMode = mode;
+            console.log('[LIGHTBOX] Selected test mode:', mode);
+        }
+
+        // Update target count in specific targets mode
+        function updateTargetCount() {
+            const textarea = document.getElementById('specificTargetsList');
+            const countSpan = document.getElementById('targetCount');
+            if (textarea && countSpan) {
+                const targets = textarea.value.split('\n').filter(t => t.trim().length > 0);
+                countSpan.textContent = targets.length;
+            }
+        }
+
+        // Initialize target count listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('specificTargetsList');
+            if (textarea) {
+                textarea.addEventListener('input', updateTargetCount);
+            }
+        });
+
+        // Full Attack Surface Test (XASM then Lightbox)
+        async function startFullSurfaceTest(event) {
+            if (event) event.stopPropagation();
+
+            const domain = document.getElementById('fullSurfaceDomain').value.trim();
+
+            if (!domain) {
+                alert('Please enter a target domain');
+                return;
+            }
+
+            // Validate domain format
+            const domainPattern = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+            if (!domainPattern.test(domain)) {
+                alert('Please enter a valid domain (e.g., example.com)');
+                return;
+            }
+
+            // Check authorization
+            const authCheckbox = document.getElementById('lightbox-auth-checkbox');
+            if (!authCheckbox || !authCheckbox.checked) {
+                alert('Please confirm authorization before running tests');
+                return;
+            }
+
+            // Hide input section and show progress
+            const inputSection = document.getElementById('lightbox-input-section');
+            const emptyState = document.getElementById('lightbox-empty-state');
+            const progressContainer = document.getElementById('lightbox-progress-container');
+
+            if (inputSection) inputSection.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'none';
             if (progressContainer) progressContainer.style.display = 'block';
 
-            // Start the test immediately
-            console.log('[LIGHTBOX] Starting test with default settings - Type: vuln, Depth: standard');
-            startLightboxScan();
-        }
+            // Update progress UI
+            const currentTest = document.getElementById('current-test-name');
+            if (currentTest) currentTest.textContent = 'Phase 1: Running XASM discovery scan...';
 
-        function selectTestType(element, type) {
-            // Remove selected from all cards
-            document.querySelectorAll('.lightbox-test-type-card').forEach(card => {
-                card.classList.remove('selected');
-            });
+            try {
+                const token = localStorage.getItem('session_token');
 
-            // Add selected to clicked card
-            element.classList.add('selected');
+                // Run XASM scan first
+                console.log('[FULL SURFACE] Starting XASM scan for:', domain);
+                const xasmResponse = await fetch('http://localhost:5000/api/ghost/asm/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ domain: domain })
+                });
 
-            // Store selected type
-            window.selectedLightboxType = type;
-            console.log('Selected test type:', type);
-        }
+                if (!xasmResponse.ok) {
+                    throw new Error('XASM scan failed: ' + xasmResponse.statusText);
+                }
 
-        function updateDepthValue(value) {
-            const depthValue = document.getElementById('depth-value');
-            const labels = ['Quick (5 min)', 'Standard (15 min)', 'Deep (30 min)'];
-            if (depthValue) {
-                depthValue.textContent = labels[value - 1];
+                const xasmResult = await xasmResponse.json();
+                console.log('[FULL SURFACE] XASM complete:', xasmResult);
+
+                // Get scan_id from response (try both possible field names)
+                const scanId = xasmResult.scan_id || xasmResult.id;
+
+                if (!scanId) {
+                    console.error('[FULL SURFACE] No scan_id in XASM response:', xasmResult);
+                    throw new Error('XASM scan did not return a scan ID');
+                }
+
+                console.log('[FULL SURFACE] Using XASM scan_id:', scanId);
+
+                // Update progress for Lightbox phase
+                if (currentTest) currentTest.textContent = 'Phase 2: Running Lightbox security tests...';
+
+                // Store domain for lightbox
+                window.currentDomain = domain;
+                currentScanDomain = domain;
+
+                // Set default test type and depth
+                window.selectedLightboxType = 'vuln';
+                window.selectedLightboxDepth = 2;
+
+                // ═══════════════════════════════════════════════════════════════
+                // Start Lightbox scan with XASM results
+                // Backend will generate and return the scan_key
+                // ═══════════════════════════════════════════════════════════════
+                console.log('[FULL SURFACE] Starting Lightbox scan with scan_id:', scanId);
+                const lightboxResponse = await fetch('http://localhost:5000/api/ghost/lightbox/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        domain: domain,
+                        mode: 'full_surface',
+                        scan_id: scanId,  // Pass the actual scan_id from XASM
+                        test_type: window.selectedLightboxType,
+                        depth: window.selectedLightboxDepth
+                    })
+                });
+
+                if (!lightboxResponse.ok) {
+                    throw new Error('Lightbox scan failed: ' + lightboxResponse.statusText);
+                }
+
+                const lightboxResult = await lightboxResponse.json();
+                console.log('[FULL SURFACE] Lightbox scan complete:', lightboxResult);
+
+                // ═══════════════════════════════════════════════════════════════
+                // FIX: Use the BACKEND's scan_key for polling (ensures key match)
+                // ═══════════════════════════════════════════════════════════════
+                const scanKey = lightboxResult.scan_key;
+
+                if (!scanKey) {
+                    console.error('[FULL SURFACE] No scan_key in response!');
+                    console.error('[FULL SURFACE] Full response:', lightboxResult);
+                }
+
+                console.log('[FULL SURFACE] Using backend scan_key:', scanKey);
+
+                // Store the scan ID for result loading
+                if (lightboxResult.scan_id) {
+                    currentLightboxScanId = lightboxResult.scan_id;
+                    console.log('[FULL SURFACE] Stored lightbox scan_id:', currentLightboxScanId);
+                }
+
+                // Start polling with the BACKEND's key (will see completion status)
+                if (scanKey) {
+                    startRealLightboxProgressPolling(scanKey);
+                } else {
+                    // No scan_key, load results directly
+                    console.log('[FULL SURFACE] No scan_key, loading results directly...');
+                    await loadLightboxResultsFromHistory();
+                }
+
+            } catch (error) {
+                console.error('[FULL SURFACE] Error:', error);
+                alert('Error: ' + error.message);
+
+                // Stop polling on error
+                stopLightboxProgressPolling();
+
+                // Reset UI
+                if (progressContainer) progressContainer.style.display = 'none';
+                if (inputSection) inputSection.style.display = 'block';
             }
-            window.selectedLightboxDepth = value;
+        }
+
+        // Specific Targets Test (skip XASM)
+        async function startSpecificTargetsTest(event) {
+            if (event) event.stopPropagation();
+
+            const targetsText = document.getElementById('specificTargetsList').value;
+            const targets = targetsText.split('\n')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+
+            if (targets.length === 0) {
+                alert('Please enter at least one target');
+                return;
+            }
+
+            // Check authorization
+            const authCheckbox = document.getElementById('lightbox-auth-checkbox');
+            if (!authCheckbox || !authCheckbox.checked) {
+                alert('Please confirm authorization before running tests');
+                return;
+            }
+
+            // Hide input section and show progress
+            const inputSection = document.getElementById('lightbox-input-section');
+            const emptyState = document.getElementById('lightbox-empty-state');
+            const progressContainer = document.getElementById('lightbox-progress-container');
+
+            if (inputSection) inputSection.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'none';
+            if (progressContainer) progressContainer.style.display = 'block';
+
+            // Update progress UI
+            const currentTest = document.getElementById('current-test-name');
+            if (currentTest) currentTest.textContent = `Testing ${targets.length} specific target(s)...`;
+
+            try {
+                const token = localStorage.getItem('session_token');
+
+                console.log('[SPECIFIC TARGETS] Starting test for:', targets);
+
+                // Set default test type and depth
+                window.selectedLightboxType = 'vuln';
+                window.selectedLightboxDepth = 2;
+
+                // Store domain for fallback (use first target)
+                currentScanDomain = targets[0];
+
+                // ═══════════════════════════════════════════════════════════════
+                // Start Lightbox scan with specific targets
+                // Backend will generate and return the scan_key
+                // ═══════════════════════════════════════════════════════════════
+                console.log('[SPECIFIC TARGETS] Sending scan request to backend...');
+                const response = await fetch('http://localhost:5000/api/ghost/lightbox/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        mode: 'specific_targets',
+                        targets: targets,
+                        test_type: window.selectedLightboxType,
+                        depth: window.selectedLightboxDepth
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Lightbox scan failed: ' + response.statusText);
+                }
+
+                const result = await response.json();
+                console.log('[SPECIFIC TARGETS] Backend response:', result);
+
+                // ═══════════════════════════════════════════════════════════════
+                // Backend now runs scan in background and returns immediately
+                // Use the backend's scan_key for polling progress
+                // ═══════════════════════════════════════════════════════════════
+                const scanKey = result.scan_key;
+
+                if (!scanKey) {
+                    console.error('[SPECIFIC TARGETS] No scan_key in response!');
+                    console.error('[SPECIFIC TARGETS] Full response:', result);
+                    throw new Error('Backend did not return scan_key');
+                }
+
+                console.log('[SPECIFIC TARGETS] Scan started in background');
+                console.log('[SPECIFIC TARGETS] Using scan_key:', scanKey);
+                console.log('[SPECIFIC TARGETS] Targets count:', result.targets_count);
+
+                // Start polling for progress (scan is running in background)
+                console.log('[SPECIFIC TARGETS] Starting progress polling...');
+                startRealLightboxProgressPolling(scanKey);
+
+                // Note: scan_id will be available when scan completes (via progress polling)
+
+            } catch (error) {
+                console.error('[SPECIFIC TARGETS] Error:', error);
+                alert('Error: ' + error.message);
+
+                // Stop polling on error
+                stopLightboxProgressPolling();
+
+                // Reset UI
+                if (progressContainer) progressContainer.style.display = 'none';
+                if (inputSection) inputSection.style.display = 'block';
+            }
+        }
+
+        // Helper function to start Lightbox progress polling
+        // NOTE: This function delegates to the REAL backend polling function at line 6689
+        // DO NOT use simulateLightboxProgress() - it's fake data!
+        function startLightboxProgressPollingHelper(scanKey) {
+            if (!scanKey) {
+                console.error('[LIGHTBOX] No scan key provided for polling');
+                return;
+            }
+
+            console.log('[LIGHTBOX] Starting REAL backend progress polling for:', scanKey);
+
+            // Store the scan key for other functions
+            window.currentLightboxScanKey = scanKey;
+
+            // Call the REAL backend polling function (defined earlier in the file)
+            // The real function polls /api/ghost/lightbox/progress and shows actual progress
+            startRealLightboxProgressPolling(scanKey);
         }
 
         // Trigger the actual Lightbox scan (calls the event listener on #run-lightbox-scan)

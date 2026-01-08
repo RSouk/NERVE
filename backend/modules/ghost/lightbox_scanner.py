@@ -29,12 +29,18 @@ import subprocess
 import json
 import os
 import time
+import re
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Dict
 import urllib3
 
 # Suppress HTTPS warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Nuclei executable path - absolute path for Windows
+# FIX: nuclei.exe is directly in bin/, not in the versioned subfolder
+NUCLEI_PATH = 'C:/Projects/NERVE/backend/bin/nuclei.exe'
 
 # Import modular test classes
 from modules.ghost.lightbox.tests.api_security import APISecurityTests
@@ -738,15 +744,20 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     Returns:
         dict: Lightbox findings categorized by severity
     """
+    # Track tests completed for progress display
+    tests_completed = {'count': 0}
+
     def report_progress(step, progress, total_steps=100):
-        """Report progress back to API"""
+        """Report progress back to API with tests_completed count"""
         if progress_callback:
             progress_callback({
                 'status': 'running',
                 'progress': progress,
                 'current_step': step,
-                'total_steps': total_steps
+                'total_steps': total_steps,
+                'tests_completed': tests_completed['count']
             })
+        print(f"[LIGHTBOX PROGRESS] {progress}% - {step}")
 
     print(f"\n{'='*60}")
     print(f"[LIGHTBOX] Starting automated security testing...")
@@ -870,6 +881,8 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
         return local_findings
 
     # Execute tests in parallel (dynamic worker count)
+    completed_assets = 0
+    total_assets = len(subdomains_to_test)
     with ThreadPoolExecutor(max_workers=optimal_workers) as executor:
         # Submit all tasks
         future_to_subdomain = {
@@ -887,6 +900,12 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
                 for severity in ['critical', 'high', 'medium', 'low']:
                     findings[severity].extend(local_findings[severity])
                 findings['total_tests'] += local_findings['total_tests']
+                tests_completed['count'] += local_findings['total_tests']
+
+                # Update progress during parallel testing (10-25% range)
+                completed_assets += 1
+                parallel_progress = 10 + int((completed_assets / total_assets) * 15)
+                report_progress(f"Testing asset {completed_assets}/{total_assets}", parallel_progress)
 
             except Exception as e:
                 print(f"[LIGHTBOX] ❌ Error testing {subdomain}: {e}")
@@ -905,7 +924,7 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     print(f"[LIGHTBOX] HTTP Security Findings: {manual_findings}")
     print(f"{'='*60}\n")
 
-    report_progress("Testing default credentials", 30)
+    report_progress("Testing default credentials", 28)
 
     # Test default credentials on discovered admin panels
     print(f"[LIGHTBOX] Testing default credentials on admin panels...")
@@ -913,15 +932,17 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     if admin_panels:
         cred_findings = test_default_credentials(admin_panels)
         findings['critical'].extend(cred_findings)
+        tests_completed['count'] += len(admin_panels)
         print(f"[LIGHTBOX] Default credential tests: {len(admin_panels)} panels tested, {len(cred_findings)} successful logins")
     else:
         print(f"[LIGHTBOX] No admin panels found to test credentials")
 
-    report_progress("Checking security headers", 40)
+    report_progress("Checking security headers", 32)
 
     # Check security headers
     print(f"[LIGHTBOX] Checking security headers on {len(subdomains_to_test)} assets...")
     header_findings = check_security_headers(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test)
 
     # Categorize header findings by severity
     for finding in header_findings:
@@ -930,11 +951,12 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
 
     print(f"[LIGHTBOX] Security header checks: {len(header_findings)} issues found\n")
 
-    report_progress("Checking SSL/TLS configuration", 50)
+    report_progress("Checking SSL/TLS configuration", 38)
 
     # Check SSL/TLS vulnerabilities
     print(f"[LIGHTBOX] Checking SSL/TLS configurations on {len(subdomains_to_test)} assets...")
     ssl_findings = check_ssl_vulnerabilities(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test)
 
     # Categorize SSL findings by severity
     for finding in ssl_findings:
@@ -943,9 +965,12 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
 
     print(f"[LIGHTBOX] SSL/TLS checks: {len(ssl_findings)} issues found\n")
 
+    report_progress("Testing open redirects", 44)
+
     # Check for open redirects
     print(f"[LIGHTBOX] Testing for open redirects on {len(subdomains_to_test)} assets...")
     redirect_findings = check_open_redirects(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test)
 
     # Categorize redirect findings by severity
     for finding in redirect_findings:
@@ -954,18 +979,24 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
 
     print(f"[LIGHTBOX] Open redirect checks: {len(redirect_findings)} vulnerabilities found\n")
 
+    report_progress("Checking cookie security", 48)
+
     # Check for cookie security issues
     print(f"[LIGHTBOX] Checking cookie security on {len(subdomains_to_test)} assets...")
     cookie_findings = check_cookie_security(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test)
 
     # Categorize cookie findings by severity
     for finding in cookie_findings:
         severity = finding['severity'].lower()
         findings[severity].append(finding)
 
+    report_progress("Checking information disclosure", 52)
+
     # Check for information disclosure
     print(f"[LIGHTBOX] Checking for information disclosure on {len(subdomains_to_test)} assets...")
     info_findings = check_information_disclosure(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test)
 
     # Categorize info findings by severity
     for finding in info_findings:
@@ -974,14 +1005,18 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
 
     print(f"[LIGHTBOX] Cookie/Info checks: {len(cookie_findings) + len(info_findings)} issues found\n")
 
+    report_progress("Testing database/SSH exploitability", 55)
+
     # Test database and SSH exploitability (if port scan results available)
     port_scan_results = discovered_assets.get('port_scan_results', [])
     if port_scan_results:
         print(f"[LIGHTBOX] Testing database exploitability on {len([p for p in port_scan_results if p.get('port') in [3306, 5432, 1433, 27017]])} database ports...")
         db_exploits = test_database_exploitability(port_scan_results)
+        tests_completed['count'] += len([p for p in port_scan_results if p.get('port') in [3306, 5432, 1433, 27017]])
 
         print(f"[LIGHTBOX] Testing SSH exploitability on {len([p for p in port_scan_results if p.get('port') == 22])} SSH ports...")
         ssh_exploits = test_ssh_exploitability(port_scan_results)
+        tests_completed['count'] += len([p for p in port_scan_results if p.get('port') == 22])
 
         # Categorize exploitability findings by severity
         for finding in db_exploits + ssh_exploits:
@@ -992,13 +1027,19 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     else:
         print(f"[LIGHTBOX] No port scan results available for exploitability testing\n")
 
+    report_progress("Testing file upload vulnerabilities", 58)
+
     # Test file upload vulnerabilities
     print(f"[LIGHTBOX] Testing file upload endpoints on {len(subdomains_to_test)} assets...")
     upload_vulns = test_file_upload_vulnerabilities(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test)
+
+    report_progress("Testing directory traversal", 60)
 
     # Test directory traversal vulnerabilities
     print(f"[LIGHTBOX] Testing directory traversal on {len(subdomains_to_test)} assets...")
     traversal_vulns = test_directory_traversal(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test)
 
     # Categorize upload and traversal findings by severity
     for finding in upload_vulns + traversal_vulns:
@@ -1007,24 +1048,75 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
 
     print(f"[LIGHTBOX] Upload/Traversal: {len(upload_vulns) + len(traversal_vulns)} findings\n")
 
-    report_progress("Testing injection vulnerabilities", 65)
+    report_progress("Testing SQL injection", 62)
+
+    # Test SQL Injection vulnerabilities
+    print(f"[LIGHTBOX] Testing SQL Injection on {len(subdomains_to_test)} assets...")
+    sql_vulns = test_sql_injection(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test) * 8  # 8 endpoints per subdomain
+
+    report_progress("Testing XXE vulnerabilities", 64)
 
     # Test XXE vulnerabilities
     print(f"[LIGHTBOX] Testing XXE vulnerabilities on {len(subdomains_to_test)} assets...")
     xxe_vulns = test_xxe_vulnerabilities(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test) * 8
+
+    report_progress("Testing SSRF vulnerabilities", 66)
 
     # Test SSRF vulnerabilities
     print(f"[LIGHTBOX] Testing SSRF vulnerabilities on {len(subdomains_to_test)} assets...")
     ssrf_vulns = test_ssrf_vulnerabilities(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test) * 9
 
-    # Categorize XXE and SSRF findings by severity
-    for finding in xxe_vulns + ssrf_vulns:
+    report_progress("Testing XSS vulnerabilities", 68)
+
+    # Test XSS vulnerabilities
+    print(f"[LIGHTBOX] Testing XSS vulnerabilities on {len(subdomains_to_test)} assets...")
+    xss_vulns = test_xss_vulnerabilities(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test) * 160  # 5 endpoints * 8 params * 4 payloads
+
+    report_progress("Testing command injection", 70)
+
+    # Test Command Injection vulnerabilities
+    print(f"[LIGHTBOX] Testing Command Injection on {len(subdomains_to_test)} assets...")
+    cmd_vulns = test_command_injection(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test) * 140  # 4 endpoints * 7 params * 5 payloads
+
+    report_progress("Testing CSRF protection", 72)
+
+    # Test CSRF protection
+    print(f"[LIGHTBOX] Testing CSRF protection on {len(subdomains_to_test)} assets...")
+    csrf_vulns = test_csrf_protection(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test) * 7  # 7 paths
+
+    report_progress("Testing CORS configuration", 74)
+
+    # Test CORS misconfiguration
+    print(f"[LIGHTBOX] Testing CORS configuration on {len(subdomains_to_test)} assets...")
+    cors_vulns = test_cors_misconfiguration(subdomains_to_test)
+    tests_completed['count'] += len(subdomains_to_test) * 9  # 3 endpoints * 3 origins
+
+    # Categorize injection findings by severity
+    for finding in sql_vulns + xxe_vulns + ssrf_vulns + cmd_vulns:
         severity = finding['severity'].lower()
         findings[severity].append(finding)
 
-    print(f"[LIGHTBOX] XXE/SSRF: {len(xxe_vulns) + len(ssrf_vulns)} findings\n")
+    # Categorize XSS findings by severity
+    for finding in xss_vulns:
+        severity = finding['severity'].lower()
+        findings[severity].append(finding)
 
-    report_progress("Running API Security tests", 70)
+    # Categorize CSRF/Session findings by severity
+    for finding in csrf_vulns + cors_vulns:
+        severity = finding['severity'].lower()
+        findings[severity].append(finding)
+
+    print(f"[LIGHTBOX] Injection Tests: {len(sql_vulns)} SQLi, {len(xxe_vulns)} XXE, {len(ssrf_vulns)} SSRF, {len(cmd_vulns)} CMDi\n")
+    print(f"[LIGHTBOX] XSS Tests: {len(xss_vulns)} XSS vulnerabilities\n")
+    print(f"[LIGHTBOX] CSRF/Session Tests: {len(csrf_vulns)} CSRF, {len(cors_vulns)} CORS\n")
+
+    report_progress("Running API Security tests", 76)
 
     # Run API Security and Business Logic tests on reachable assets
     print(f"[LIGHTBOX] Running API Security and Business Logic tests...")
@@ -1084,14 +1176,17 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
         if severity in findings:
             findings[severity].append(finding)
 
+    tests_completed['count'] += api_tests_run + logic_tests_run
+
     print(f"[LIGHTBOX] API Security: {len(api_security_findings)} findings")
     print(f"[LIGHTBOX] Business Logic: {len(business_logic_findings)} findings\n")
 
-    report_progress("Running Nuclei template scans", 75)
+    report_progress("Running Nuclei template scans", 82)
 
     # Run template scan
     print(f"[LIGHTBOX] Running template vulnerability scans...")
     nuclei_results = run_nuclei_scan(discovered_assets)
+    tests_completed['count'] += nuclei_results.get('total_templates_used', 0)
 
     # Merge template scan results with HTTP security check results
     for severity in ['critical', 'high', 'medium', 'low']:
@@ -1123,9 +1218,22 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     # Authentication: panels tested for default credentials
     panels_tested = len(admin_panels) if admin_panels else 0
 
-    # Injection tests: XXE + SSRF endpoints tested
-    # XXE tests 6 endpoints per subdomain, SSRF tests 5 params per subdomain
-    injection_tests_count = len(subdomains_to_test) * 6 + len(subdomains_to_test) * 5
+    # Injection tests: SQL + XXE + SSRF + CMDi endpoints tested
+    # SQL tests 8 endpoints per subdomain, XXE tests 8 endpoints, SSRF tests 9 endpoints
+    sql_tests_count = len(subdomains_to_test) * 8
+    xxe_tests_count = len(subdomains_to_test) * 8
+    ssrf_tests_count = len(subdomains_to_test) * 9
+    # Command injection: 4 endpoints * 7 params * 5 payloads = ~140 per subdomain
+    cmd_tests_count = len(subdomains_to_test) * 140
+    injection_tests_count = sql_tests_count + xxe_tests_count + ssrf_tests_count + cmd_tests_count
+
+    # XSS tests: 5 endpoints * 8 params * 4 payloads = ~160 per subdomain
+    xss_tests_count = len(subdomains_to_test) * 160
+
+    # CSRF/Session tests: 7 paths for CSRF + 3 endpoints * 3 origins for CORS
+    csrf_tests_count = len(subdomains_to_test) * 7
+    cors_tests_count = len(subdomains_to_test) * 9
+    csrf_session_tests_count = csrf_tests_count + cors_tests_count
 
     # Data Exposure: sensitive files checked (already in http_security_tests, but track separately)
     # 44 sensitive paths tested per asset
@@ -1151,7 +1259,21 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
         },
         'injection': {
             'tests_run': injection_tests_count,
-            'description': 'XXE and SSRF vulnerability tests'
+            'sql_tests': sql_tests_count,
+            'xxe_tests': xxe_tests_count,
+            'ssrf_tests': ssrf_tests_count,
+            'cmd_tests': cmd_tests_count,
+            'description': 'SQL injection, XXE, SSRF, and Command injection tests'
+        },
+        'xss': {
+            'tests_run': xss_tests_count,
+            'description': 'Cross-Site Scripting (XSS) vulnerability tests'
+        },
+        'csrf_session': {
+            'tests_run': csrf_session_tests_count,
+            'csrf_tests': csrf_tests_count,
+            'cors_tests': cors_tests_count,
+            'description': 'CSRF protection and CORS misconfiguration tests'
         },
         'data_exposure': {
             'files_checked': files_checked,
@@ -1195,6 +1317,14 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     if 'injection' in test_results:
         total_tests_count += test_results['injection'].get('tests_run', 0)
 
+    # XSS (tests_run)
+    if 'xss' in test_results:
+        total_tests_count += test_results['xss'].get('tests_run', 0)
+
+    # CSRF/Session (tests_run)
+    if 'csrf_session' in test_results:
+        total_tests_count += test_results['csrf_session'].get('tests_run', 0)
+
     # Data Exposure (files_checked) - NOTE: May overlap with http_security, use conservative count
     # Skip to avoid double-counting with http_security
 
@@ -1229,6 +1359,8 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     print(f"[LIGHTBOX] HTTP Security Checks: {test_results['http_security']['tests_run']}")
     print(f"[LIGHTBOX] Authentication Tests: {test_results['authentication']['panels_tested']}")
     print(f"[LIGHTBOX] Injection Tests: {test_results['injection']['tests_run']}")
+    print(f"[LIGHTBOX] XSS Tests: {test_results['xss']['tests_run']}")
+    print(f"[LIGHTBOX] CSRF/Session Tests: {test_results['csrf_session']['tests_run']}")
     print(f"[LIGHTBOX] Network Services: {test_results['network']['services_tested']}")
     print(f"[LIGHTBOX] API Security Tests: {test_results['api_security']['tests_run']}")
     print(f"[LIGHTBOX] Business Logic Tests: {test_results['business_logic']['tests_run']}")
@@ -1278,6 +1410,8 @@ def run_lightbox_scan(discovered_assets, domain, progress_callback=None):
     )
 
     print(f"[LIGHTBOX] After smart deduplication: {findings['total_findings']} unique findings\n")
+
+    report_progress("Categorizing findings", 95)
 
     # Add finding_type badges to all findings
     print(f"[LIGHTBOX] Categorizing findings by type...")
@@ -2239,9 +2373,188 @@ def test_ssh_exploitability(port_results):
     return findings
 
 
+def test_sql_injection(subdomains):
+    """
+    Test for SQL injection vulnerabilities with safe, read-only payloads.
+    Only reports when STRONG indicators are present (SQL error messages or boolean-based confirmation).
+
+    SAFETY: Uses read-only payloads only. No destructive commands (DROP, DELETE, etc.)
+
+    Args:
+        subdomains (list): List of subdomains to test
+
+    Returns:
+        list: Findings for SQL injection vulnerabilities
+    """
+    all_findings = []
+
+    # Safe read-only payloads (no destructive commands)
+    SQL_TEST_PAYLOADS = [
+        ("'", "single_quote"),  # Basic syntax break
+        ("' OR '1'='1", "or_bypass"),  # Boolean true
+        ("' AND '1'='2", "and_false"),  # Boolean false (for comparison)
+        ("1' AND '1'='1", "and_true"),  # Boolean true
+        ("1 UNION SELECT NULL--", "union_null"),  # Union test
+    ]
+
+    # STRONG indicators - SQL error messages (report these)
+    SQL_ERROR_PATTERNS = [
+        # MySQL
+        "you have an error in your sql syntax",
+        "mysql_fetch",
+        "mysql_num_rows",
+        "mysql_query",
+        "warning: mysql",
+        # PostgreSQL
+        "pg_query",
+        "pg_exec",
+        "postgresql",
+        "error: syntax error at or near",
+        "unterminated quoted string",
+        # MSSQL
+        "unclosed quotation mark",
+        "microsoft ole db provider for sql server",
+        "microsoft sql native client",
+        "[microsoft][odbc sql server driver]",
+        "mssql_query",
+        # SQLite
+        "sqlite3.operationalerror",
+        "sqlite_error",
+        "unrecognized token",
+        # Oracle
+        "ora-01756",
+        "ora-00933",
+        "oracle error",
+        "quoted string not properly terminated",
+        # Generic
+        "sql syntax",
+        "syntax error",
+        "sqlstate",
+        "jdbc.sqle",
+        "com.mysql.jdbc",
+        "odbc drivers error",
+    ]
+
+    # Test endpoints likely to have SQL-vulnerable parameters
+    test_endpoints = [
+        '/search?q={payload}',
+        '/product?id={payload}',
+        '/user?id={payload}',
+        '/api/search?query={payload}',
+        '/page?id={payload}',
+        '/article?id={payload}',
+        '/news?id={payload}',
+        '/item?id={payload}',
+    ]
+
+    def test_single_subdomain(subdomain):
+        findings = []
+
+        for endpoint_template in test_endpoints:
+            try:
+                # First, get baseline response with normal input
+                baseline_url = f"https://{subdomain}{endpoint_template.replace('{payload}', '1')}"
+                try:
+                    baseline_response = requests.get(baseline_url, timeout=5, verify=False)
+                    baseline_length = len(baseline_response.text)
+                    baseline_status = baseline_response.status_code
+                except:
+                    continue
+
+                # Skip if endpoint doesn't exist
+                if baseline_status == 404:
+                    continue
+
+                sql_error_found = False
+                boolean_confirmed = False
+                true_response_length = None
+                false_response_length = None
+                error_message = None
+
+                for payload, payload_type in SQL_TEST_PAYLOADS:
+                    url = f"https://{subdomain}{endpoint_template.replace('{payload}', requests.utils.quote(payload))}"
+
+                    try:
+                        response = requests.get(url, timeout=5, verify=False)
+                        response_text = response.text.lower()
+
+                        # Check for STRONG indicator: SQL error messages
+                        for error_pattern in SQL_ERROR_PATTERNS:
+                            if error_pattern in response_text:
+                                sql_error_found = True
+                                error_message = error_pattern
+                                break
+
+                        # Track boolean-based responses for confirmation
+                        if payload_type == "and_true":
+                            true_response_length = len(response.text)
+                        elif payload_type == "and_false":
+                            false_response_length = len(response.text)
+
+                        if sql_error_found:
+                            break
+
+                    except:
+                        continue
+
+                # Check for boolean-based SQL injection (different responses for true vs false)
+                if true_response_length and false_response_length:
+                    # Significant difference (>10%) between true and false responses
+                    length_diff = abs(true_response_length - false_response_length)
+                    avg_length = (true_response_length + false_response_length) / 2
+                    if avg_length > 0 and (length_diff / avg_length) > 0.1:
+                        boolean_confirmed = True
+
+                # Only report if STRONG indicator found
+                if sql_error_found:
+                    finding = {
+                        'type': 'SQL Injection Detected',
+                        'severity': 'CRITICAL',
+                        'asset': subdomain,
+                        'url': baseline_url.split('?')[0],
+                        'exploitable': 'CONFIRMED',
+                        'evidence': f"SQL error message detected: '{error_message}'",
+                        'explanation': 'SQL injection confirmed via error-based detection. Attacker could extract database contents.',
+                        'finding_type': 'active-test'
+                    }
+                    findings.append(finding)
+                    print(f"[LIGHTBOX] 🚨 SQL Injection CONFIRMED: {baseline_url.split('?')[0]}")
+                    break  # One finding per subdomain
+
+                elif boolean_confirmed:
+                    finding = {
+                        'type': 'SQL Injection Likely',
+                        'severity': 'HIGH',
+                        'asset': subdomain,
+                        'url': baseline_url.split('?')[0],
+                        'exploitable': 'LIKELY',
+                        'evidence': f"Boolean-based detection: true={true_response_length}b, false={false_response_length}b",
+                        'explanation': 'SQL injection likely via boolean-based detection. Response differs for true/false conditions.',
+                        'finding_type': 'active-test'
+                    }
+                    findings.append(finding)
+                    print(f"[LIGHTBOX] ⚠️  SQL Injection LIKELY: {baseline_url.split('?')[0]}")
+                    break  # One finding per subdomain
+
+            except Exception as e:
+                continue
+
+        return findings
+
+    # Test subdomains in parallel
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = executor.map(test_single_subdomain, subdomains)
+        for result in results:
+            all_findings.extend(result)
+
+    return all_findings
+
+
 def test_file_upload_vulnerabilities(subdomains):
     """
-    Test for unrestricted file upload endpoints
+    Test for unrestricted file upload endpoints with SAFE approach.
+    Only tests with harmless text files - no executable code.
+    Only reports when upload succeeds AND file is accessible.
 
     Args:
         subdomains (list): List of subdomains to test
@@ -2257,31 +2570,87 @@ def test_file_upload_vulnerabilities(subdomains):
         '/admin/upload',
         '/wp-admin/upload.php',
         '/api/upload',
-        '/files/upload'
+        '/files/upload',
+        '/api/files',
+        '/attachments'
     ]
+
+    # Safe test file (harmless text content)
+    safe_test_content = b"LIGHTBOX_SECURITY_TEST_FILE_DO_NOT_WORRY"
+    safe_test_filename = f"lightbox_test_{int(time.time())}.txt"
 
     for subdomain in subdomains:
         for endpoint in upload_endpoints:
             try:
                 url = f"https://{subdomain}{endpoint}"
 
-                # Check if endpoint exists
+                # Step 1: Check if endpoint exists and accepts POST
                 response = requests.head(url, timeout=5, verify=False)
 
-                if response.status_code in [200, 405]:  # 405 = exists but wrong method
-                    # Check allowed methods
-                    options = requests.options(url, timeout=5, verify=False)
+                if response.status_code not in [200, 405, 401, 403]:
+                    continue
 
-                    if 'POST' in options.headers.get('Allow', ''):
+                # Step 2: Check allowed methods
+                try:
+                    options = requests.options(url, timeout=5, verify=False)
+                    allow_header = options.headers.get('Allow', '')
+                except:
+                    allow_header = ''
+
+                # Step 3: Try to upload a harmless text file
+                files = {'file': (safe_test_filename, safe_test_content, 'text/plain')}
+
+                try:
+                    upload_response = requests.post(
+                        url,
+                        files=files,
+                        timeout=10,
+                        verify=False
+                    )
+                except:
+                    continue
+
+                # STRONG indicator: Upload succeeded (2xx response)
+                if upload_response.status_code in [200, 201, 202]:
+                    # Check if response indicates where file was saved
+                    upload_evidence = []
+                    response_text = upload_response.text.lower()
+
+                    if any(x in response_text for x in ['success', 'uploaded', 'created', 'saved']):
+                        upload_evidence.append("Server confirmed upload success")
+
+                    if safe_test_filename.lower() in response_text:
+                        upload_evidence.append("Filename in response")
+
+                    # Only report if we have evidence upload worked
+                    if upload_evidence:
                         findings.append({
-                            'type': 'File Upload Endpoint',
+                            'type': 'Unrestricted File Upload',
                             'severity': 'HIGH',
                             'asset': subdomain,
                             'url': url,
-                            'exploitable': 'NEEDS_VALIDATION',
-                            'explanation': f"Upload endpoint at {endpoint}. May allow malicious file upload → RCE."
+                            'exploitable': 'CONFIRMED',
+                            'evidence': ', '.join(upload_evidence),
+                            'explanation': f"File upload succeeded at {endpoint}. Test with executable types to confirm RCE risk.",
+                            'finding_type': 'active-test'
                         })
-                        print(f"[LIGHTBOX] ⚠️  File upload endpoint found: {url}")
+                        print(f"[LIGHTBOX] ⚠️  File upload CONFIRMED: {url}")
+                        break  # One per subdomain
+                    else:
+                        # Upload returned 2xx but no confirmation - might be form page
+                        # Only report as potential (NEEDS_VALIDATION)
+                        if 'POST' in allow_header:
+                            findings.append({
+                                'type': 'File Upload Endpoint',
+                                'severity': 'MEDIUM',
+                                'asset': subdomain,
+                                'url': url,
+                                'exploitable': 'NEEDS_VALIDATION',
+                                'explanation': f"Upload endpoint at {endpoint} accepts POST. Verify if file uploads are restricted.",
+                                'finding_type': 'active-test'
+                            })
+                            print(f"[LIGHTBOX] ⚠️  File upload endpoint found: {url}")
+
             except:
                 continue
 
@@ -2290,7 +2659,10 @@ def test_file_upload_vulnerabilities(subdomains):
 
 def test_directory_traversal(subdomains):
     """
-    Test for path traversal vulnerabilities
+    Test for path traversal vulnerabilities with STRONG file content validation.
+    Only reports when actual file content is visible in response.
+
+    SAFETY: Uses read-only file paths (no writes, no exfiltration of sensitive data)
 
     Args:
         subdomains (list): List of subdomains to test
@@ -2298,42 +2670,128 @@ def test_directory_traversal(subdomains):
     Returns:
         list: Findings for directory traversal vulnerabilities
     """
-    findings = []
+    all_findings = []
 
-    # Safe payloads (don't actually read files)
-    test_paths = [
-        '/download?file=../../../test',
-        '/image?path=....//....//test',
-        '/api/file?name=..%2f..%2ftest'
+    # Test paths targeting known files (read-only, non-sensitive content)
+    # These files exist on most systems and have recognizable patterns
+    TRAVERSAL_TESTS = [
+        # Linux/Unix paths
+        {
+            'payloads': [
+                '../../../etc/passwd',
+                '..%2f..%2f..%2fetc%2fpasswd',
+                '....//....//....//etc/passwd',
+                '..\\..\\..\\etc\\passwd',
+            ],
+            'indicators': [
+                'root:x:0:0:',
+                'root:*:0:0:',
+                '/bin/bash',
+                '/bin/sh',
+                'nobody:',
+                'daemon:',
+            ],
+            'os': 'Linux'
+        },
+        # Windows paths
+        {
+            'payloads': [
+                '../../../windows/win.ini',
+                '..%2f..%2f..%2fwindows%2fwin.ini',
+                '..\\..\\..\\windows\\win.ini',
+            ],
+            'indicators': [
+                '[fonts]',
+                '[extensions]',
+                '[mci extensions]',
+                '[files]',
+                'for 16-bit app support',
+            ],
+            'os': 'Windows'
+        }
     ]
 
-    for subdomain in subdomains:
-        for path in test_paths:
-            try:
-                url = f"https://{subdomain}{path}"
-                response = requests.get(url, timeout=5, verify=False)
+    # Common endpoints that might have file parameters
+    file_endpoints = [
+        '/download?file={payload}',
+        '/download?path={payload}',
+        '/file?name={payload}',
+        '/image?path={payload}',
+        '/api/file?name={payload}',
+        '/view?file={payload}',
+        '/read?file={payload}',
+        '/get?file={payload}',
+        '/include?page={payload}',
+        '/static?file={payload}',
+    ]
 
-                # Look for traversal indicators
-                if response.status_code == 200 and len(response.text) < 5000:
-                    findings.append({
-                        'type': 'Directory Traversal Possible',
-                        'severity': 'HIGH',
-                        'asset': subdomain,
-                        'url': url.split('?')[0],
-                        'exploitable': 'LIKELY',
-                        'explanation': 'Path traversal detected. Attacker could read sensitive server files.'
-                    })
-                    print(f"[LIGHTBOX] ⚠️  Directory traversal possible: {url.split('?')[0]}")
-                    break  # One per subdomain
-            except:
-                continue
+    def test_single_subdomain(subdomain):
+        findings = []
 
-    return findings
+        for endpoint_template in file_endpoints:
+            for test_config in TRAVERSAL_TESTS:
+                for payload in test_config['payloads']:
+                    try:
+                        url = f"https://{subdomain}{endpoint_template.replace('{payload}', payload)}"
+                        response = requests.get(url, timeout=5, verify=False)
+
+                        # Skip non-200 responses
+                        if response.status_code != 200:
+                            continue
+
+                        # Skip very large responses (likely not file content)
+                        if len(response.text) > 50000:
+                            continue
+
+                        response_text = response.text.lower()
+
+                        # STRONG indicator: Check for actual file content patterns
+                        file_content_found = False
+                        matched_indicator = None
+
+                        for indicator in test_config['indicators']:
+                            if indicator.lower() in response_text:
+                                file_content_found = True
+                                matched_indicator = indicator
+                                break
+
+                        if file_content_found:
+                            finding = {
+                                'type': 'Path Traversal Vulnerability',
+                                'severity': 'CRITICAL',
+                                'asset': subdomain,
+                                'url': url.split('?')[0],
+                                'parameter': endpoint_template.split('?')[1].split('=')[0] if '?' in endpoint_template else 'file',
+                                'exploitable': 'CONFIRMED',
+                                'evidence': f"File content detected ({test_config['os']}): '{matched_indicator}'",
+                                'explanation': f"Path traversal confirmed. {test_config['os']} system file content visible in response.",
+                                'finding_type': 'active-test'
+                            }
+                            findings.append(finding)
+                            print(f"[LIGHTBOX] 🚨 Path Traversal CONFIRMED: {url.split('?')[0]}")
+                            return findings  # One per subdomain is enough
+
+                    except:
+                        continue
+
+        return findings
+
+    # Test subdomains in parallel
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = executor.map(test_single_subdomain, subdomains)
+        for result in results:
+            all_findings.extend(result)
+
+    return all_findings
 
 
 def test_xxe_vulnerabilities(subdomains):
     """
-    Test for XXE with parallel execution
+    Test for XXE vulnerabilities with SAFE approach and STRONG validation.
+    Uses benign external entities - no sensitive file exfiltration.
+    Only reports when entity content appears in response (STRONG indicator).
+
+    SAFETY: Uses non-sensitive test values. No file:///etc/passwd attempts.
 
     Args:
         subdomains (list): List of subdomains to test
@@ -2343,45 +2801,115 @@ def test_xxe_vulnerabilities(subdomains):
     """
     all_findings = []
 
+    # Unique marker for entity detection
+    XXE_MARKER = "LIGHTBOX_XXE_TEST_12345"
+
     def test_single_subdomain(subdomain):
         findings = []
-        api_endpoints = ['/api', '/api/upload', '/api/parse', '/xml', '/upload', '/process']
+        api_endpoints = ['/api', '/api/upload', '/api/parse', '/xml', '/upload', '/process', '/import', '/soap']
 
-        xxe_payload = '''<?xml version="1.0"?>
-<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/hostname">]>
-<root>&xxe;</root>'''
+        # Step 1: Check if endpoint accepts XML at all (baseline)
+        baseline_xml = '''<?xml version="1.0"?>
+<root><data>test</data></root>'''
+
+        # Step 2: XXE test payload using a safe, detectable entity
+        # Uses entity that expands to a known string (no file access)
+        xxe_test_payload = f'''<?xml version="1.0"?>
+<!DOCTYPE foo [
+    <!ENTITY xxetest "{XXE_MARKER}">
+]>
+<root><data>&xxetest;</data></root>'''
+
+        # Step 3: External entity test (non-sensitive - just checks if external entities work)
+        # Uses file:///dev/null (empty, non-sensitive) or a benign path
+        xxe_external_payload = '''<?xml version="1.0"?>
+<!DOCTYPE foo [
+    <!ENTITY xxe SYSTEM "file:///dev/null">
+]>
+<root><data>&xxe;</data></root>'''
 
         for endpoint in api_endpoints:
             try:
                 url = f"https://{subdomain}{endpoint}"
-                response = requests.post(
+
+                # First check if endpoint processes XML at all
+                baseline_response = requests.post(
                     url,
-                    data=xxe_payload,
+                    data=baseline_xml,
                     headers={'Content-Type': 'application/xml'},
                     timeout=5,
                     verify=False
                 )
 
-                if response.status_code in [200, 400, 500]:
-                    if any(keyword in response.text.lower() for keyword in ['xml', 'entity', 'dtd', 'parse error', 'syntax error']):
-                        findings.append({
-                            'type': 'XXE Vulnerability Possible',
-                            'severity': 'HIGH',
-                            'asset': subdomain,
-                            'url': url.split('?')[0],
-                            'status_code': response.status_code,
-                            'exploitable': 'NEEDS_VALIDATION',
-                            'explanation': 'Endpoint processes XML. May allow XXE → read server files, SSRF.',
-                            'remediation': REMEDIATION_GUIDES.get('XXE Vulnerability Possible', {})
-                        })
-                        print(f"[LIGHTBOX] ⚠️  Potential XXE vulnerability: {url.split('?')[0]}")
-                        break
+                # Skip if endpoint doesn't accept XML
+                if baseline_response.status_code == 404:
+                    continue
+
+                # Test with internal entity (our marker)
+                test_response = requests.post(
+                    url,
+                    data=xxe_test_payload,
+                    headers={'Content-Type': 'application/xml'},
+                    timeout=5,
+                    verify=False
+                )
+
+                # STRONG indicator: Our entity marker appears in response
+                if XXE_MARKER in test_response.text:
+                    findings.append({
+                        'type': 'XXE Vulnerability Confirmed',
+                        'severity': 'HIGH',
+                        'asset': subdomain,
+                        'url': url,
+                        'exploitable': 'CONFIRMED',
+                        'evidence': f"Internal entity '{XXE_MARKER}' expanded in response",
+                        'explanation': 'XXE confirmed - entities are processed. Test with external entities manually.',
+                        'remediation': REMEDIATION_GUIDES.get('XXE Vulnerability Possible', {}),
+                        'finding_type': 'active-test'
+                    })
+                    print(f"[LIGHTBOX] 🚨 XXE CONFIRMED: {url}")
+                    return findings  # One per subdomain
+
+                # Check for XML parsing indicators (WEAK - needs manual validation)
+                response_lower = test_response.text.lower()
+                xml_processing_indicators = [
+                    'xml parsing error',
+                    'xmlsyntaxerror',
+                    'parser error',
+                    'doctype not allowed',
+                    'external entities',
+                    'entity expansion',
+                    'dtd not allowed',
+                ]
+
+                xml_accepts_indicators = [
+                    'entity',
+                    'xmlns',
+                ]
+
+                # Only report as "possible" if we see specific XXE-related error messages
+                if any(indicator in response_lower for indicator in xml_processing_indicators):
+                    findings.append({
+                        'type': 'XXE Vulnerability Possible',
+                        'severity': 'MEDIUM',
+                        'asset': subdomain,
+                        'url': url,
+                        'status_code': test_response.status_code,
+                        'exploitable': 'NEEDS_VALIDATION',
+                        'explanation': 'XML parser detected DTD/entity. Manual testing recommended.',
+                        'remediation': REMEDIATION_GUIDES.get('XXE Vulnerability Possible', {}),
+                        'finding_type': 'active-test'
+                    })
+                    print(f"[LIGHTBOX] ⚠️  XXE possible (needs validation): {url}")
+                    return findings
+
             except:
                 continue
+
         return findings
 
     # Test subdomains in parallel
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         results = executor.map(test_single_subdomain, subdomains)
         for result in results:
             all_findings.extend(result)
@@ -2391,7 +2919,10 @@ def test_xxe_vulnerabilities(subdomains):
 
 def test_ssrf_vulnerabilities(subdomains):
     """
-    Test for SSRF with parallel execution
+    Test for SSRF vulnerabilities with STRONG response validation.
+    Only reports when response contains evidence of internal service access.
+
+    SAFETY: Uses safe internal addresses. No actual exploitation.
 
     Args:
         subdomains (list): List of subdomains to test
@@ -2401,50 +2932,456 @@ def test_ssrf_vulnerabilities(subdomains):
     """
     all_findings = []
 
+    # STRONG indicators for cloud metadata services
+    CLOUD_METADATA_INDICATORS = [
+        # AWS metadata
+        'ami-id',
+        'instance-id',
+        'instance-type',
+        'local-ipv4',
+        'public-ipv4',
+        'security-credentials',
+        'iam/info',
+        # GCP metadata
+        'computeMetadata',
+        'google-cloud',
+        'project-id',
+        'instance/zone',
+        # Azure metadata
+        'azureMetadata',
+        'vmId',
+        'subscriptionId',
+    ]
+
+    # STRONG indicators for localhost access
+    LOCALHOST_INDICATORS = [
+        # Common localhost service responses
+        '<title>apache',
+        '<title>nginx',
+        'welcome to nginx',
+        'apache2 debian',
+        'it works!',
+        # Database responses
+        'mysql',
+        'postgresql',
+        'redis_version',
+        'mongodb',
+        # Internal service indicators
+        'x-powered-by:',
+        'server: apache',
+        'server: nginx',
+    ]
+
     def test_single_subdomain(subdomain):
         findings = []
-        ssrf_tests = [
-            ('/fetch', 'url', 'http://127.0.0.1'),
-            ('/proxy', 'url', 'http://localhost'),
-            ('/download', 'url', 'http://169.254.169.254'),
-            ('/api/fetch', 'target', 'http://metadata.google.internal'),
-            ('/webhook', 'url', 'http://internal')
+
+        # Common SSRF-vulnerable endpoints with URL parameters
+        ssrf_endpoints = [
+            ('/fetch', 'url'),
+            ('/proxy', 'url'),
+            ('/download', 'url'),
+            ('/api/fetch', 'target'),
+            ('/webhook', 'url'),
+            ('/api/proxy', 'url'),
+            ('/load', 'url'),
+            ('/image', 'url'),
+            ('/api/url', 'url'),
         ]
 
-        for path, param, value in ssrf_tests:
-            try:
-                url = f"https://{subdomain}{path}?{param}={value}"
-                response = requests.get(
-                    url,
-                    timeout=5,
-                    verify=False,
-                    allow_redirects=False
-                )
+        # Test payloads with expected indicators
+        ssrf_payloads = [
+            # Cloud metadata endpoints
+            {
+                'url': 'http://169.254.169.254/latest/meta-data/',
+                'indicators': CLOUD_METADATA_INDICATORS,
+                'description': 'AWS metadata',
+                'severity': 'CRITICAL'
+            },
+            {
+                'url': 'http://metadata.google.internal/computeMetadata/v1/',
+                'indicators': CLOUD_METADATA_INDICATORS,
+                'description': 'GCP metadata',
+                'severity': 'CRITICAL'
+            },
+            # Localhost access
+            {
+                'url': 'http://127.0.0.1/',
+                'indicators': LOCALHOST_INDICATORS,
+                'description': 'localhost',
+                'severity': 'HIGH'
+            },
+            {
+                'url': 'http://localhost/',
+                'indicators': LOCALHOST_INDICATORS,
+                'description': 'localhost',
+                'severity': 'HIGH'
+            },
+        ]
 
-                if response.status_code in [200, 302, 500]:
-                    findings.append({
-                        'type': 'SSRF Vulnerability Possible',
-                        'severity': 'HIGH',
-                        'asset': subdomain,
-                        'url': url.split('?')[0],
-                        'status_code': response.status_code,
-                        'exploitable': 'NEEDS_VALIDATION',
-                        'explanation': 'Endpoint may allow SSRF. Attacker could access internal services.',
-                        'remediation': REMEDIATION_GUIDES.get('SSRF Vulnerability Possible', {})
-                    })
-                    print(f"[LIGHTBOX] ⚠️  Potential SSRF vulnerability: {url.split('?')[0]}")
-                    break
+        for endpoint, param in ssrf_endpoints:
+            # First, check if endpoint exists with a normal URL
+            baseline_url = f"https://{subdomain}{endpoint}?{param}=https://example.com"
+            try:
+                baseline = requests.get(baseline_url, timeout=5, verify=False, allow_redirects=False)
+                if baseline.status_code == 404:
+                    continue
             except:
                 continue
+
+            for payload_config in ssrf_payloads:
+                try:
+                    test_url = f"https://{subdomain}{endpoint}?{param}={payload_config['url']}"
+                    response = requests.get(
+                        test_url,
+                        timeout=5,
+                        verify=False,
+                        allow_redirects=False
+                    )
+
+                    # Skip non-success responses
+                    if response.status_code not in [200, 301, 302]:
+                        continue
+
+                    response_lower = response.text.lower()
+                    headers_lower = str(response.headers).lower()
+
+                    # STRONG indicator: Check for specific service responses
+                    matched_indicator = None
+                    for indicator in payload_config['indicators']:
+                        if indicator.lower() in response_lower or indicator.lower() in headers_lower:
+                            matched_indicator = indicator
+                            break
+
+                    if matched_indicator:
+                        # CONFIRMED SSRF
+                        finding = {
+                            'type': 'SSRF Vulnerability Confirmed',
+                            'severity': payload_config['severity'],
+                            'asset': subdomain,
+                            'url': f"https://{subdomain}{endpoint}",
+                            'parameter': param,
+                            'exploitable': 'CONFIRMED',
+                            'evidence': f"{payload_config['description']} access detected: '{matched_indicator}'",
+                            'explanation': f"SSRF confirmed - internal {payload_config['description']} service accessible.",
+                            'remediation': REMEDIATION_GUIDES.get('SSRF Vulnerability Possible', {}),
+                            'finding_type': 'active-test'
+                        }
+                        findings.append(finding)
+                        print(f"[LIGHTBOX] 🚨 SSRF CONFIRMED ({payload_config['description']}): https://{subdomain}{endpoint}")
+                        return findings  # One per subdomain
+
+                    # Check for response difference (might indicate SSRF)
+                    # If internal URL gives different response than baseline
+                    response_diff = abs(len(response.text) - len(baseline.text))
+                    if response_diff > 500 and len(response.text) > 100:
+                        # Response changed significantly - possible SSRF but needs validation
+                        finding = {
+                            'type': 'SSRF Vulnerability Possible',
+                            'severity': 'MEDIUM',
+                            'asset': subdomain,
+                            'url': f"https://{subdomain}{endpoint}",
+                            'parameter': param,
+                            'status_code': response.status_code,
+                            'exploitable': 'NEEDS_VALIDATION',
+                            'evidence': f"Response differs for internal URL (delta: {response_diff} bytes)",
+                            'explanation': 'Endpoint responds differently to internal URLs. Manual validation required.',
+                            'remediation': REMEDIATION_GUIDES.get('SSRF Vulnerability Possible', {}),
+                            'finding_type': 'active-test'
+                        }
+                        findings.append(finding)
+                        print(f"[LIGHTBOX] ⚠️  SSRF possible (needs validation): https://{subdomain}{endpoint}")
+                        return findings
+
+                except:
+                    continue
+
         return findings
 
     # Test subdomains in parallel
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         results = executor.map(test_single_subdomain, subdomains)
         for result in results:
             all_findings.extend(result)
 
     return all_findings
+
+
+def test_xss_vulnerabilities(subdomains: List[str], progress_callback=None) -> List[Dict]:
+    """
+    Test for XSS (Cross-Site Scripting) vulnerabilities.
+    SAFETY: Uses harmless alert() payload, doesn't execute actual scripts.
+    Parallelized across subdomains for 10x faster execution.
+    """
+    XSS_PAYLOADS = [
+        '<script>alert("XSS")</script>',
+        '"><script>alert(1)</script>',
+        "'-alert(1)-'",
+        '<img src=x onerror=alert(1)>'
+    ]
+
+    TEST_PARAMS = ['q', 'search', 'query', 'name', 'id', 'user', 'msg', 'comment']
+
+    def test_single_subdomain_xss(subdomain: str) -> List[Dict]:
+        """Test one subdomain for XSS vulnerabilities."""
+        subdomain_findings = []
+        for protocol in ['https', 'http']:
+            base_url = f"{protocol}://{subdomain}"
+            endpoints = ['/', '/search', '/login', '/contact', '/profile']
+
+            for endpoint in endpoints:
+                url = base_url + endpoint
+
+                for param in TEST_PARAMS:
+                    for payload in XSS_PAYLOADS:
+                        try:
+                            test_url = f"{url}?{param}={payload}"
+                            response = requests.get(
+                                test_url,
+                                timeout=5,
+                                allow_redirects=False,
+                                headers={'User-Agent': 'Mozilla/5.0'}
+                            )
+
+                            # Strong indicator: Payload appears unescaped
+                            if payload in response.text:
+                                # Verify it's not escaped
+                                if not any([
+                                    payload.replace('<', '&lt;') in response.text,
+                                    payload.replace('>', '&gt;') in response.text,
+                                    payload.replace('"', '&quot;') in response.text
+                                ]):
+                                    subdomain_findings.append({
+                                        'category': 'xss',
+                                        'test': 'Reflected XSS',
+                                        'severity': 'HIGH',
+                                        'description': f'XSS vulnerability in {param} parameter',
+                                        'url': test_url,
+                                        'evidence': f'Unescaped payload: {payload[:50]}',
+                                        'recommendation': 'Implement input sanitization and output encoding'
+                                    })
+                                    break
+
+                        except Exception:
+                            continue
+        return subdomain_findings
+
+    print(f"[XSS] Testing {len(subdomains)} assets for XSS (parallel)...")
+
+    # Parallelize across subdomains
+    findings = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(test_single_subdomain_xss, sub) for sub in subdomains]
+        for future in as_completed(futures):
+            try:
+                findings.extend(future.result())
+            except Exception:
+                continue
+
+    print(f"[XSS] Found {len(findings)} XSS vulnerabilities")
+    return findings
+
+
+def test_command_injection(subdomains: List[str], progress_callback=None) -> List[Dict]:
+    """
+    Test for OS Command Injection vulnerabilities.
+    SAFETY: Uses harmless commands (echo, whoami) - no destructive operations.
+    Parallelized across subdomains for 10x faster execution.
+    """
+    CMD_PAYLOADS = [
+        '; echo LIGHTBOX_CMD_TEST',
+        '| echo LIGHTBOX_CMD_TEST',
+        '` echo LIGHTBOX_CMD_TEST `',
+        '; whoami',
+        '| hostname'
+    ]
+
+    TEST_PARAMS = ['cmd', 'exec', 'command', 'ping', 'host', 'ip', 'url']
+
+    def test_single_subdomain_cmd(subdomain: str) -> List[Dict]:
+        """Test one subdomain for command injection vulnerabilities."""
+        subdomain_findings = []
+        for protocol in ['https', 'http']:
+            base_url = f"{protocol}://{subdomain}"
+            endpoints = ['/api/ping', '/api/exec', '/tools', '/admin/tools']
+
+            for endpoint in endpoints:
+                url = base_url + endpoint
+
+                for param in TEST_PARAMS:
+                    for payload in CMD_PAYLOADS:
+                        try:
+                            test_url = f"{url}?{param}={payload}"
+                            response = requests.get(test_url, timeout=5)
+
+                            # Strong indicator: Test marker in response
+                            if 'LIGHTBOX_CMD_TEST' in response.text:
+                                subdomain_findings.append({
+                                    'category': 'injection',
+                                    'test': 'Command Injection',
+                                    'severity': 'CRITICAL',
+                                    'description': f'OS command injection in {param} parameter',
+                                    'url': test_url,
+                                    'evidence': 'Command output visible in response',
+                                    'recommendation': 'Never pass user input to system commands'
+                                })
+                                break
+
+                            # Check for command output patterns
+                            if re.search(r'uid=\d+', response.text) or re.search(r'root:', response.text):
+                                subdomain_findings.append({
+                                    'category': 'injection',
+                                    'test': 'Command Injection',
+                                    'severity': 'CRITICAL',
+                                    'description': f'Command execution in {param}',
+                                    'url': test_url,
+                                    'evidence': 'Command output pattern found',
+                                    'recommendation': 'Implement strict input validation'
+                                })
+                                break
+
+                        except Exception:
+                            continue
+        return subdomain_findings
+
+    print(f"[CMD INJECTION] Testing {len(subdomains)} assets (parallel)...")
+
+    # Parallelize across subdomains
+    findings = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(test_single_subdomain_cmd, sub) for sub in subdomains]
+        for future in as_completed(futures):
+            try:
+                findings.extend(future.result())
+            except Exception:
+                continue
+
+    print(f"[CMD INJECTION] Found {len(findings)} command injection vulnerabilities")
+    return findings
+
+
+def test_csrf_protection(subdomains: List[str], progress_callback=None) -> List[Dict]:
+    """
+    Test for missing CSRF protection on state-changing operations.
+    SAFETY: Only checks for tokens, doesn't submit forms.
+    Parallelized across subdomains for 10x faster execution.
+    """
+    STATE_CHANGE_PATHS = [
+        '/login', '/signup', '/register',
+        '/profile/edit', '/settings',
+        '/password/change', '/email/update'
+    ]
+
+    def test_single_subdomain_csrf(subdomain: str) -> List[Dict]:
+        """Test one subdomain for missing CSRF protection."""
+        subdomain_findings = []
+        for protocol in ['https', 'http']:
+            base_url = f"{protocol}://{subdomain}"
+
+            for path in STATE_CHANGE_PATHS:
+                try:
+                    url = base_url + path
+                    response = requests.get(url, timeout=5)
+
+                    if response.status_code == 200:
+                        # Check for CSRF tokens
+                        has_csrf = any([
+                            'csrf' in response.text.lower(),
+                            '_token' in response.text.lower(),
+                            'authenticity_token' in response.text.lower()
+                        ])
+
+                        has_form = '<form' in response.text.lower()
+
+                        if has_form and not has_csrf:
+                            subdomain_findings.append({
+                                'category': 'csrf_session',
+                                'test': 'Missing CSRF Protection',
+                                'severity': 'MEDIUM',
+                                'description': f'Form without CSRF token on {path}',
+                                'url': url,
+                                'evidence': 'State-changing form with no CSRF protection',
+                                'recommendation': 'Implement CSRF tokens'
+                            })
+
+                except Exception:
+                    continue
+        return subdomain_findings
+
+    print(f"[CSRF] Testing {len(subdomains)} assets (parallel)...")
+
+    # Parallelize across subdomains
+    findings = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(test_single_subdomain_csrf, sub) for sub in subdomains]
+        for future in as_completed(futures):
+            try:
+                findings.extend(future.result())
+            except Exception:
+                continue
+
+    print(f"[CSRF] Found {len(findings)} missing CSRF protections")
+    return findings
+
+
+def test_cors_misconfiguration(subdomains: List[str], progress_callback=None) -> List[Dict]:
+    """
+    Test for CORS misconfigurations.
+    SAFETY: Only sends OPTIONS requests, doesn't exploit.
+    Parallelized across subdomains for 10x faster execution.
+    """
+    TEST_ORIGINS = ['https://evil.com', 'https://attacker.com', 'null']
+
+    def test_single_subdomain_cors(subdomain: str) -> List[Dict]:
+        """Test one subdomain for CORS misconfigurations."""
+        subdomain_findings = []
+        for protocol in ['https', 'http']:
+            base_url = f"{protocol}://{subdomain}"
+            endpoints = ['/api', '/api/user', '/api/data']
+
+            for endpoint in endpoints:
+                url = base_url + endpoint
+
+                for origin in TEST_ORIGINS:
+                    try:
+                        response = requests.options(
+                            url,
+                            headers={'Origin': origin},
+                            timeout=5
+                        )
+
+                        acao = response.headers.get('Access-Control-Allow-Origin', '')
+                        acac = response.headers.get('Access-Control-Allow-Credentials', '')
+
+                        # Critical: Reflects attacker origin with credentials
+                        if acao == origin and acac.lower() == 'true':
+                            subdomain_findings.append({
+                                'category': 'csrf_session',
+                                'test': 'CORS Misconfiguration',
+                                'severity': 'HIGH',
+                                'description': 'CORS allows arbitrary origin with credentials',
+                                'url': url,
+                                'evidence': f'Origin {origin} allowed with credentials',
+                                'recommendation': 'Restrict CORS to trusted domains'
+                            })
+
+                    except Exception:
+                        continue
+        return subdomain_findings
+
+    print(f"[CORS] Testing {len(subdomains)} assets (parallel)...")
+
+    # Parallelize across subdomains
+    findings = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(test_single_subdomain_cors, sub) for sub in subdomains]
+        for future in as_completed(futures):
+            try:
+                findings.extend(future.result())
+            except Exception:
+                continue
+
+    print(f"[CORS] Found {len(findings)} CORS misconfigurations")
+    return findings
 
 
 def run_nuclei_scan(discovered_assets):
@@ -2482,12 +3419,12 @@ def run_nuclei_scan(discovered_assets):
         'type_breakdown': {}
     }
 
-    # Check for nuclei binary
-    nuclei_path = os.path.join(os.path.dirname(__file__), '..', '..', 'bin', 'nuclei.exe')
-
-    if not os.path.exists(nuclei_path):
-        print(f"[NUCLEI] Warning: Nuclei binary not found at {nuclei_path}")
+    # Check for nuclei binary using the constant path
+    if not os.path.exists(NUCLEI_PATH):
+        print(f"[NUCLEI] Warning: Nuclei binary not found at {NUCLEI_PATH}")
         return findings
+
+    print(f"[NUCLEI] Using Nuclei binary: {NUCLEI_PATH}")
 
     # Template base path
     template_base = Path(os.path.expanduser('~/nuclei-templates'))
@@ -2583,7 +3520,7 @@ def run_nuclei_scan(discovered_assets):
 
             try:
                 nuclei_cmd = [
-                    nuclei_path,
+                    NUCLEI_PATH,
                     '-u', target,
                     *template_args,
                     '-severity', 'critical,high,medium,low,info',

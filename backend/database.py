@@ -2196,8 +2196,10 @@ def validate_session(token: str, update_activity: bool = True) -> dict:
         if not db_session:
             return None
 
-        # Check expiry
-        if db_session.expires_at < datetime.now(timezone.utc):
+        # Check expiry (use naive datetime for comparison since DB stores naive)
+        now_naive = datetime.utcnow()
+        expires_naive = db_session.expires_at.replace(tzinfo=None) if db_session.expires_at.tzinfo else db_session.expires_at
+        if expires_naive < now_naive:
             db_session.is_active = False
             session.commit()
             return None
@@ -2400,9 +2402,12 @@ def validate_api_key(raw_key: str) -> dict:
         if not api_key:
             return None
 
-        # Check expiry
-        if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
-            return None
+        # Check expiry (use naive datetime for comparison)
+        if api_key.expires_at:
+            now_naive = datetime.utcnow()
+            expires_naive = api_key.expires_at.replace(tzinfo=None) if api_key.expires_at.tzinfo else api_key.expires_at
+            if expires_naive < now_naive:
+                return None
 
         # Check if revoked
         if api_key.revoked_at:
@@ -2657,18 +2662,21 @@ def check_account_lock(user_id: int) -> dict:
             return {'locked': False, 'exists': False}
 
         if user.status == UserStatus.LOCKED:
-            if user.locked_until and user.locked_until > datetime.now(timezone.utc):
-                return {
-                    'locked': True,
-                    'exists': True,
-                    'locked_until': user.locked_until.isoformat(),
-                    'remaining_minutes': int((user.locked_until - datetime.now(timezone.utc)).total_seconds() / 60)
-                }
-            else:
-                # Lock expired, unlock
-                user.status = UserStatus.ACTIVE
-                user.locked_until = None
-                session.commit()
+            now_naive = datetime.utcnow()
+            if user.locked_until:
+                locked_naive = user.locked_until.replace(tzinfo=None) if user.locked_until.tzinfo else user.locked_until
+                if locked_naive > now_naive:
+                    remaining = int((locked_naive - now_naive).total_seconds() / 60)
+                    return {
+                        'locked': True,
+                        'exists': True,
+                        'locked_until': user.locked_until.isoformat(),
+                        'remaining_minutes': remaining
+                    }
+            # Lock expired or no locked_until, unlock
+            user.status = UserStatus.ACTIVE
+            user.locked_until = None
+            session.commit()
 
         return {'locked': False, 'exists': True}
 

@@ -417,6 +417,121 @@
             line-height: 1.7;
         }
 
+        .info-btn {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: inherit;
+        }
+
+        .info-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        /* Platform Info Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            max-width: 650px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-content .close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-content .close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .modal-content h2 {
+            padding: 28px 28px 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            padding: 0 28px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .modal-content ul {
+            padding: 0 28px 28px 48px;
+            color: var(--text-secondary);
+        }
+
+        .modal-content li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .modal-content li strong {
+            color: var(--gold-primary);
+        }
+
         .hero-stats {
             display: flex;
             gap: 48px;
@@ -1106,10 +1221,10 @@
                         <span>Admin</span>
                         <span class="nav-badge active">Admin</span>
                     </a>
-                    <div class="nav-item disabled">
-                        <span class="nav-icon">&#9881;</span>
-                        <span>Settings</span>
-                    </div>
+                    <a href="profile.html" class="nav-item">
+                        <span class="nav-icon">⚙️</span>
+                        <span>System Settings</span>
+                    </a>
                 </div>
             </nav>
 
@@ -1138,8 +1253,11 @@
                         <span class="status-dot"></span>
                         Platform Active
                     </div>
-                    <h1 class="hero-title">Intelligence Overview</h1>
-                    <p class="hero-subtitle">Real-time threat monitoring and security intelligence across all active modules. Your unified command center for cyber defense.</p>
+                    <h1 class="hero-title">NERVE Security Intelligence Platform</h1>
+                    <p class="hero-subtitle">Comprehensive threat intelligence and security management</p>
+                    <button class="info-btn" onclick="showPlatformInfo()">
+                        ℹ️ What is NERVE?
+                    </button>
 
                     <div class="hero-stats">
                         <div class="hero-stat">
@@ -1335,7 +1453,43 @@
         </main>
     </div>
 
+    <!-- Platform Info Modal -->
+    <!-- TODO: Add "Edit Knowledge Base" button for admins to update security content -->
+    <div id="platformInfoModal" class="modal" onclick="closePlatformInfo(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close" onclick="closePlatformInfo()">&times;</span>
+            <h2>About NERVE Platform</h2>
+            <p>NERVE is a comprehensive security intelligence platform designed to provide organizations with:</p>
+            <ul>
+                <li><strong>Threat Intelligence:</strong> Real-time monitoring of threat actors and attack patterns</li>
+                <li><strong>Attack Surface Management:</strong> Continuous scanning and vulnerability assessment</li>
+                <li><strong>Compliance Management:</strong> Framework-based security posture tracking</li>
+                <li><strong>Security Roadmap:</strong> Prioritized, actionable security improvements</li>
+                <li><strong>Intelligence Search:</strong> Deep search across threat databases and breach data</li>
+            </ul>
+            <p>NERVE helps security teams understand their risks, prioritize actions, and improve their security posture systematically.</p>
+        </div>
+    </div>
+
     <script>
+        // Platform Info Modal
+        function showPlatformInfo() {
+            document.getElementById('platformInfoModal').classList.add('active');
+        }
+
+        function closePlatformInfo(event) {
+            if (!event || event.target.id === 'platformInfoModal' || event.target.classList.contains('close')) {
+                document.getElementById('platformInfoModal').classList.remove('active');
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePlatformInfo();
+            }
+        });
+
         // Navigation
         function navigateToModule(moduleId) {
             const routes = {
@@ -1545,7 +1699,7 @@
 
         // Load User Profile for Sidebar
         async function loadSidebarProfile() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             if (!token) {
                 // Hide profile section if not logged in
                 const profileLink = document.getElementById('userProfileLink');

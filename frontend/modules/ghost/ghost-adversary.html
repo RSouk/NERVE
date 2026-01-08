@@ -122,6 +122,16 @@
             transform: translateX(-4px);
         }
 
+        .profile-btn .settings-icon {
+            color: #D4AF37;
+            font-size: 18px;
+            filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.4));
+        }
+
+        .profile-btn:hover .settings-icon {
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+        }
+
         /* Form Container */
         .form-container {
             background: var(--bg-card);
@@ -1163,6 +1173,140 @@
             margin: 0 auto;
         }
 
+        /* Info Button and Modal */
+        .adversary-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .adversary-header h2 {
+            margin-bottom: 0;
+        }
+
+        .info-btn {
+            padding: 8px 16px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .info-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--border-hover);
+            color: var(--gold-primary);
+        }
+
+        .adversary-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .adversary-modal.show {
+            display: flex;
+        }
+
+        .adversary-modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .adversary-modal-content .close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .adversary-modal-content .close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .adversary-modal-content h2 {
+            padding: 28px 28px 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+            margin-bottom: 20px;
+        }
+
+        .adversary-modal-content h3 {
+            padding: 0 28px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .adversary-modal-content p {
+            padding: 0 28px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .adversary-modal-content ul {
+            padding: 0 28px 28px 48px;
+            color: var(--text-secondary);
+        }
+
+        .adversary-modal-content li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .adversary-modal-content li strong {
+            color: var(--gold-primary);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container { padding: 16px; }
@@ -1186,7 +1330,9 @@
                 </div>
             </div>
             <div style="display: flex; gap: 10px;">
-                <a href="../../profile.html" class="back-button" title="Profile">&#128100; Profile</a>
+                <a href="../../profile.html" class="back-button profile-btn" title="Profile">
+                    <span class="settings-icon">⚙️</span>
+                </a>
                 <a href="ghost.html" class="back-button">Back to GHOST</a>
             </div>
         </div>
@@ -1200,8 +1346,13 @@
 
         <!-- Input Form -->
         <div class="form-container">
-            <h2>Organization Threat Profile</h2>
-            <p>Provide detailed information about your organization to receive personalized threat intelligence. We analyze your attack surface and match against 100+ known APT groups using MISP Galaxy and MITRE ATT&CK data.</p>
+            <div class="adversary-header">
+                <h2>Organization Threat Profile</h2>
+                <button class="info-btn" onclick="showAdversaryInfo()">
+                    ℹ️ What is this?
+                </button>
+            </div>
+            <p>Provide detailed information about your organization to receive personalized threat intelligence. We analyze the structure of an organization and match against 800+ known APT groups using MISP Galaxy, MITRE ATT&CK and curated intelligence sources.</p>
 
             <div class="form-grid">
                 <div class="form-group">
@@ -1380,10 +1531,54 @@
         </div>
     </div>
 
+    <!-- Adversary Info Modal -->
+    <div id="adversaryInfoModal" class="adversary-modal" onclick="closeAdversaryInfo(event)">
+        <div class="adversary-modal-content" onclick="event.stopPropagation()">
+            <span class="close" onclick="closeAdversaryInfo()">&times;</span>
+            <h2>About Adversary Intelligence</h2>
+            <p>Adversary Intelligence is designed to give organizations clarity into the actual adversaries that will most likely try to attack them and how they would do it.</p>
+
+            <h3>What This Module Does:</h3>
+            <ul>
+                <li><strong>Threat Actor Matching:</strong> Identifies which Advanced Persistent Threat (APT) groups are most likely to target your organization based on industry, geography, technology stack, and other factors</li>
+                <li><strong>Attack Pattern Analysis:</strong> Shows the specific tactics, techniques, and procedures (TTPs) these groups use, mapped to MITRE ATT&CK framework</li>
+                <li><strong>Intelligence Sources:</strong> Draws from 800+ known APT groups across MISP Galaxy, MITRE ATT&CK, and curated threat intelligence feeds</li>
+                <li><strong>Prioritized Defense:</strong> Helps you focus defensive efforts on the threats you're most likely to face</li>
+            </ul>
+
+            <h3>Why This Matters:</h3>
+            <p>Not all threats are equally likely to target your organization. By understanding which adversaries are most relevant to you, you can:</p>
+            <ul>
+                <li>Prioritize security investments effectively</li>
+                <li>Train your team on relevant attack patterns</li>
+                <li>Configure defenses against specific TTPs</li>
+                <li>Make informed risk decisions</li>
+            </ul>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'http://localhost:5000';
         let currentThreats = null;
         let currentFormData = null;
+
+        // Adversary Info Modal
+        function showAdversaryInfo() {
+            document.getElementById('adversaryInfoModal').classList.add('show');
+        }
+
+        function closeAdversaryInfo(event) {
+            if (!event || event.target.id === 'adversaryInfoModal' || event.target.classList.contains('close')) {
+                document.getElementById('adversaryInfoModal').classList.remove('show');
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAdversaryInfo();
+            }
+        });
 
         // Helper Functions
         function getAptInitials(name) {

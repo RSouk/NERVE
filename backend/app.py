@@ -106,7 +106,7 @@ def require_auth(f):
         token = None
 
         if auth_header.startswith('Bearer '):
-            token = auth_header[7:]
+            token = auth_header[7:].strip()
 
         if not token:
             return jsonify({
@@ -1602,6 +1602,7 @@ def get_scan_history():
 # ============================================================================
 
 @app.route('/api/ghost/lightbox/scan', methods=['POST'])
+@require_auth
 def lightbox_scan():
     """Run Lightbox security scan and save results to database"""
     session = SessionLocal()
@@ -1734,6 +1735,7 @@ def lightbox_scan():
         session.close()
 
 @app.route('/api/ghost/lightbox/progress', methods=['POST'])
+@require_auth
 def get_lightbox_progress():
     """Get current Lightbox scan progress"""
     try:
@@ -1759,6 +1761,7 @@ def get_lightbox_progress():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/ghost/lightbox/history/<domain>', methods=['GET'])
+@require_auth
 def get_lightbox_history(domain):
     """Get Lightbox scan history and cleanup old scans (30+ days)"""
     session = SessionLocal()
@@ -1796,6 +1799,7 @@ def get_lightbox_history(domain):
         session.close()
 
 @app.route('/api/ghost/lightbox/scan/<int:scan_id>', methods=['GET'])
+@require_auth
 def get_lightbox_scan(scan_id):
     """Get specific Lightbox scan by ID"""
     session = SessionLocal()
@@ -1814,6 +1818,7 @@ def get_lightbox_scan(scan_id):
         session.close()
 
 @app.route('/api/ghost/lightbox/scan/<int:scan_id>', methods=['DELETE'])
+@require_auth
 def delete_lightbox_scan(scan_id):
     """Manually delete a specific Lightbox scan"""
     session = SessionLocal()
@@ -5085,8 +5090,12 @@ def auth_login():
         ip_address = request.remote_addr or '0.0.0.0'
         user_agent = request.headers.get('User-Agent', 'Unknown')
 
-        # Check for brute force
-        if detect_brute_force(email, ip_address):
+        # Check for brute force (detect_brute_force returns a dict, check 'detected' key)
+        brute_force_result = detect_brute_force(email, ip_address)
+        print(f"[LOGIN DEBUG] Email: {email}, IP: {ip_address}")
+        print(f"[LOGIN DEBUG] Brute force check result: {brute_force_result}")
+
+        if brute_force_result.get('detected', False):
             return jsonify({
                 'success': False,
                 'error': 'Too many failed attempts. Please try again later.'
@@ -5126,6 +5135,13 @@ def auth_login():
 
         # Create session (longer expiry if remember_me)
         session_data = create_session(user.id, ip_address, user_agent)
+
+        if not session_data:
+            db.close()
+            print("[LOGIN DEBUG] create_session returned None!")
+            return jsonify({'success': False, 'error': 'Failed to create session'}), 500
+
+        print(f"[LOGIN DEBUG] Session created successfully, token: {session_data['token'][:20]}...")
 
         user_data = {
             'id': user.id,

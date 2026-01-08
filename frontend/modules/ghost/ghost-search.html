@@ -185,6 +185,16 @@
             box-shadow: var(--shadow-gold);
         }
 
+        .profile-btn .settings-icon {
+            color: #D4AF37;
+            font-size: 20px;
+            filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.4));
+        }
+
+        .profile-btn:hover .settings-icon {
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+        }
+
         /* ===== QUICK NAV ===== */
         .quick-nav {
             display: flex;
@@ -1446,6 +1456,467 @@
         .stagger-4 { animation-delay: 0.2s; }
         .stagger-5 { animation-delay: 0.25s; }
 
+        /* ===== SEARCH ACTIONS ===== */
+        .search-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .upload-breach-btn {
+            padding: 12px 24px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-md);
+            color: var(--gold-primary);
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-breach-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--gold-primary);
+            transform: translateY(-1px);
+        }
+
+        /* ===== EMAIL MONITORING SECTION ===== */
+        .email-monitoring-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .monitoring-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .monitoring-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .monitoring-limit {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background: rgba(212, 175, 55, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        .monitoring-actions {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .add-email-form {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .add-email-form input {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .add-email-form input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        .add-email-form button {
+            padding: 12px 20px;
+            background: var(--gold-gradient);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+
+        .add-email-form button:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-gold);
+        }
+
+        .bulk-upload-btn {
+            padding: 12px 20px;
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-md);
+            color: var(--gold-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bulk-upload-btn:hover {
+            background: rgba(212, 175, 55, 0.15);
+            border-color: var(--gold-primary);
+        }
+
+        .monitored-emails-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .monitored-email-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+        }
+
+        .monitored-email-card:hover {
+            background: rgba(212, 175, 55, 0.05);
+            border-color: var(--border-accent);
+        }
+
+        .monitored-email-card .email-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .monitored-email-card .email-address {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .monitored-email-card .email-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .monitored-email-card .email-status.breached {
+            color: var(--red-primary);
+        }
+
+        .monitored-email-card .email-status.safe {
+            color: var(--green-primary);
+        }
+
+        .monitored-email-card .remove-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all var(--transition-fast);
+            padding: 4px 8px;
+        }
+
+        .monitored-email-card .remove-btn:hover {
+            color: var(--red-primary);
+            opacity: 1;
+        }
+
+        .monitoring-schedule {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+        }
+
+        .monitoring-schedule h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .monitoring-schedule select {
+            padding: 8px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .empty-monitoring {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-monitoring-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* ===== MONITORING RESULTS SECTION ===== */
+        .monitoring-results-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .results-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .results-section-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+        }
+
+        .results-section-header button {
+            padding: 8px 16px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--gold-primary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .results-section-header button:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .check-schedule-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+        }
+
+        .schedule-item {
+            font-size: 0.85rem;
+        }
+
+        .schedule-item strong {
+            color: var(--text-secondary);
+            display: block;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+        }
+
+        .schedule-item span {
+            color: var(--gold-primary);
+            font-family: var(--font-mono);
+        }
+
+        .timeline-section h4 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timeline-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--gold-primary);
+        }
+
+        .timeline-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            min-width: 140px;
+        }
+
+        .timeline-results {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            padding: 0 20px;
+        }
+
+        .emails-checked {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .breaches-found {
+            font-size: 0.85rem;
+            color: var(--red-primary);
+            font-weight: 500;
+        }
+
+        .breaches-found.none {
+            color: var(--green-primary);
+        }
+
+        .timeline-entry button {
+            padding: 6px 14px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--gold-primary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .timeline-entry button:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        /* ===== BULK EMAIL MODAL ===== */
+        .bulk-email-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bulk-email-modal.show {
+            display: flex;
+        }
+
+        .bulk-modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-xl);
+            width: 90%;
+            max-width: 520px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .bulk-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .bulk-modal-header h2 {
+            font-size: 1.15rem;
+            color: var(--gold-primary);
+        }
+
+        .bulk-modal-header .close-btn {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        .bulk-modal-header .close-btn:hover {
+            background: rgba(255, 82, 82, 0.1);
+            color: var(--red-primary);
+        }
+
+        .bulk-modal-body {
+            padding: 24px;
+        }
+
+        .bulk-modal-body p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .bulk-modal-body textarea {
+            width: 100%;
+            height: 200px;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            resize: vertical;
+            margin-bottom: 16px;
+        }
+
+        .bulk-modal-body textarea:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        .bulk-modal-body button {
+            width: 100%;
+            padding: 14px;
+            background: var(--gold-gradient);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #000;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+
+        .bulk-modal-body button:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-gold);
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 1024px) {
             .content-grid {
@@ -1502,11 +1973,8 @@
             </div>
         </div>
         <div class="header-actions">
-            <button class="btn btn-ghost" onclick="openUploadModal()">
-                <span>+</span> Upload Breach File
-            </button>
-            <a href="../../profile.html" class="btn btn-ghost" title="Profile">
-                <span>&#128100;</span> Profile
+            <a href="../../profile.html" class="btn btn-ghost profile-btn" title="Profile">
+                <span class="settings-icon">⚙️</span>
             </a>
             <a href="ghost.html" class="btn btn-ghost">
                 <span>&#8592;</span> Dashboard
@@ -1564,6 +2032,13 @@
                 <button id="uploadedModeBtn" class="mode-btn" onclick="toggleSearchMode('uploaded')">My Uploaded File</button>
             </div>
 
+            <!-- Search Actions -->
+            <div class="search-actions">
+                <button class="upload-breach-btn" onclick="openUploadModal()">
+                    📁 Upload Breach File
+                </button>
+            </div>
+
             <!-- Search Examples -->
             <div class="search-examples">
                 <span class="example-chip" onclick="exampleSearch('test@example.com')">test@example.com</span>
@@ -1574,7 +2049,7 @@
             </div>
         </div>
 
-        <!-- Content Grid -->
+        <!-- Content Grid (Filters & Results) -->
         <div class="content-grid">
             <!-- Sidebar -->
             <aside class="sidebar">
@@ -1615,33 +2090,6 @@
 
                     <button class="filter-clear-btn" onclick="clearFilters()">Clear All Filters</button>
                 </div>
-
-                <!-- Email Monitoring -->
-                <div class="sidebar-card">
-                    <h3>Email Monitoring</h3>
-
-                    <div class="monitoring-input">
-                        <input type="email" id="monitor-email-input" placeholder="Email to monitor...">
-                        <button onclick="addMonitoredEmail()">Add</button>
-                    </div>
-
-                    <div id="monitored-emails-list" class="monitored-list">
-                        <p style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px 0;">
-                            No emails monitored yet
-                        </p>
-                    </div>
-
-                    <div class="monitoring-stats">
-                        <div class="monitoring-stat">
-                            <span>Last Check</span>
-                            <span id="last-check-date">Never</span>
-                        </div>
-                        <div class="monitoring-stat">
-                            <span>Next Check</span>
-                            <span id="next-check-date" style="color: var(--gold-primary);">--</span>
-                        </div>
-                    </div>
-                </div>
             </aside>
 
             <!-- Results Area -->
@@ -1667,6 +2115,70 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Monitoring Section -->
+        <div class="email-monitoring-section">
+            <div class="monitoring-header">
+                <h2>📧 Email Monitoring</h2>
+                <span class="monitoring-limit">Monitor up to 15 emails for breach exposure</span>
+            </div>
+
+            <div class="monitoring-actions">
+                <div class="add-email-form">
+                    <input type="email" id="emailToMonitor" placeholder="Enter email address">
+                    <button onclick="addMonitoredEmail()">+ Add Email</button>
+                </div>
+                <button class="bulk-upload-btn" onclick="openBulkEmailModal()">
+                    📤 Bulk Upload Emails
+                </button>
+            </div>
+
+            <div id="monitored-emails-grid" class="monitored-emails-grid">
+                <div class="empty-monitoring">
+                    <div class="empty-monitoring-icon">📬</div>
+                    <p>No emails monitored yet. Add emails above to start monitoring.</p>
+                </div>
+            </div>
+
+            <div class="monitoring-schedule">
+                <h3>Check Frequency:</h3>
+                <select id="checkFrequency" onchange="updateCheckFrequency()">
+                    <option value="daily">Daily</option>
+                    <option value="weekly" selected>Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Monitoring Results Section -->
+        <div class="monitoring-results-section" id="monitoringResults">
+            <div class="results-section-header">
+                <h3>Monitoring Results & Timeline</h3>
+                <button onclick="exportMonitoringResults()">Export Results</button>
+            </div>
+
+            <div class="check-schedule-info">
+                <div class="schedule-item">
+                    <strong>Check Frequency</strong>
+                    <span id="currentFrequency">Weekly</span>
+                </div>
+                <div class="schedule-item">
+                    <strong>Last Check</strong>
+                    <span id="lastCheckTime">Never</span>
+                </div>
+                <div class="schedule-item">
+                    <strong>Next Check</strong>
+                    <span id="nextCheckTime">--</span>
+                </div>
+            </div>
+
+            <div class="timeline-section">
+                <h4>Check History</h4>
+                <div class="timeline" id="checkTimeline">
+                    <p style="color: var(--text-muted); text-align: center; padding: 20px;">No check history yet. Add emails and run a check to see results.</p>
                 </div>
             </div>
         </div>
@@ -1704,6 +2216,23 @@
                 <button id="uploadFileButton" class="upload-btn" disabled onclick="uploadFile()">
                     Upload File
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Email Upload Modal -->
+    <div id="bulkEmailModal" class="bulk-email-modal">
+        <div class="bulk-modal-content">
+            <div class="bulk-modal-header">
+                <h2>Bulk Upload Emails</h2>
+                <button class="close-btn" onclick="closeBulkEmailModal()">&times;</button>
+            </div>
+            <div class="bulk-modal-body">
+                <p>Upload up to 15 emails at once (one per line)</p>
+                <textarea id="bulkEmailInput" placeholder="email1@example.com
+email2@example.com
+email3@example.com"></textarea>
+                <button onclick="processBulkEmails()">Add All Emails</button>
             </div>
         </div>
     </div>
@@ -2350,9 +2879,11 @@
 
         // Email Monitoring
         let monitoredEmails = JSON.parse(localStorage.getItem('ghost_monitored_emails') || '[]');
+        let checkFrequency = localStorage.getItem('ghost_check_frequency') || 'weekly';
+        let checkHistory = JSON.parse(localStorage.getItem('ghost_check_history') || '[]');
 
         function addMonitoredEmail() {
-            const input = document.getElementById('monitor-email-input');
+            const input = document.getElementById('emailToMonitor');
             const email = input.value.trim();
 
             if (!email || !email.includes('@')) {
@@ -2365,8 +2896,8 @@
                 return;
             }
 
-            if (!monitoredEmails.includes(email)) {
-                monitoredEmails.push(email);
+            if (!monitoredEmails.find(e => e.email === email)) {
+                monitoredEmails.push({ email: email, status: 'pending', lastChecked: null });
                 localStorage.setItem('ghost_monitored_emails', JSON.stringify(monitoredEmails));
                 renderMonitoredEmails();
             }
@@ -2375,25 +2906,164 @@
         }
 
         function removeMonitoredEmail(email) {
-            monitoredEmails = monitoredEmails.filter(e => e !== email);
+            monitoredEmails = monitoredEmails.filter(e => e.email !== email);
             localStorage.setItem('ghost_monitored_emails', JSON.stringify(monitoredEmails));
             renderMonitoredEmails();
         }
 
         function renderMonitoredEmails() {
-            const container = document.getElementById('monitored-emails-list');
+            const container = document.getElementById('monitored-emails-grid');
 
             if (monitoredEmails.length === 0) {
-                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px 0;">No emails monitored yet</p>`;
+                container.innerHTML = `
+                    <div class="empty-monitoring">
+                        <div class="empty-monitoring-icon">📬</div>
+                        <p>No emails monitored yet. Add emails above to start monitoring.</p>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = monitoredEmails.map(email => `
-                <div class="monitored-item">
-                    <span class="monitored-email">${escapeHtml(email)}</span>
-                    <button class="monitored-remove" onclick="removeMonitoredEmail('${escapeHtml(email)}')">&times;</button>
+            container.innerHTML = monitoredEmails.map(item => `
+                <div class="monitored-email-card">
+                    <div class="email-info">
+                        <span class="email-address">${escapeHtml(item.email)}</span>
+                        <span class="email-status ${item.status === 'breached' ? 'breached' : item.status === 'safe' ? 'safe' : ''}">${
+                            item.status === 'breached' ? '⚠️ Breach found' :
+                            item.status === 'safe' ? '✓ No breaches' :
+                            'Pending check'
+                        }</span>
+                    </div>
+                    <button class="remove-btn" onclick="removeMonitoredEmail('${escapeHtml(item.email)}')">&times;</button>
                 </div>
             `).join('');
+        }
+
+        function openBulkEmailModal() {
+            document.getElementById('bulkEmailModal').classList.add('show');
+        }
+
+        function closeBulkEmailModal() {
+            document.getElementById('bulkEmailModal').classList.remove('show');
+            document.getElementById('bulkEmailInput').value = '';
+        }
+
+        function processBulkEmails() {
+            const textarea = document.getElementById('bulkEmailInput');
+            const emails = textarea.value.split('\n')
+                .map(e => e.trim())
+                .filter(e => e && e.includes('@'));
+
+            const remaining = 15 - monitoredEmails.length;
+            const toAdd = emails.slice(0, remaining);
+
+            toAdd.forEach(email => {
+                if (!monitoredEmails.find(e => e.email === email)) {
+                    monitoredEmails.push({ email: email, status: 'pending', lastChecked: null });
+                }
+            });
+
+            localStorage.setItem('ghost_monitored_emails', JSON.stringify(monitoredEmails));
+            renderMonitoredEmails();
+            closeBulkEmailModal();
+
+            if (emails.length > remaining) {
+                alert(`Added ${toAdd.length} emails. ${emails.length - remaining} emails were skipped due to the 15 email limit.`);
+            }
+        }
+
+        function updateCheckFrequency() {
+            checkFrequency = document.getElementById('checkFrequency').value;
+            localStorage.setItem('ghost_check_frequency', checkFrequency);
+            document.getElementById('currentFrequency').textContent = checkFrequency.charAt(0).toUpperCase() + checkFrequency.slice(1);
+            updateNextCheckTime();
+        }
+
+        function updateNextCheckTime() {
+            const nextCheckEl = document.getElementById('nextCheckTime');
+            const lastCheck = localStorage.getItem('ghost_last_check');
+
+            if (!lastCheck) {
+                nextCheckEl.textContent = 'Run first check';
+                return;
+            }
+
+            const lastDate = new Date(lastCheck);
+            let nextDate = new Date(lastDate);
+
+            switch (checkFrequency) {
+                case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
+                case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
+                case 'monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+            }
+
+            const diff = nextDate - new Date();
+            if (diff <= 0) {
+                nextCheckEl.textContent = 'Due now';
+            } else {
+                const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                nextCheckEl.textContent = `In ${days} day${days > 1 ? 's' : ''}`;
+            }
+        }
+
+        function renderCheckTimeline() {
+            const container = document.getElementById('checkTimeline');
+
+            if (checkHistory.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No check history yet. Add emails and run a check to see results.</p>';
+                return;
+            }
+
+            container.innerHTML = checkHistory.slice(0, 5).map(entry => `
+                <div class="timeline-entry">
+                    <div class="timeline-date">${new Date(entry.timestamp).toLocaleString()}</div>
+                    <div class="timeline-results">
+                        <span class="emails-checked">${entry.emailsChecked} emails checked</span>
+                        <span class="breaches-found ${entry.breachesFound === 0 ? 'none' : ''}">${entry.breachesFound} ${entry.breachesFound === 1 ? 'exposure' : 'exposures'} found</span>
+                    </div>
+                    <button onclick="viewCheckDetails('${entry.id}')">View Details</button>
+                </div>
+            `).join('');
+        }
+
+        function viewCheckDetails(checkId) {
+            // TODO: Implement detailed view
+            alert('Detailed view coming soon');
+        }
+
+        function exportMonitoringResults() {
+            const data = {
+                monitoredEmails: monitoredEmails,
+                checkHistory: checkHistory,
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ghost-monitoring-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function initializeMonitoring() {
+            renderMonitoredEmails();
+            renderCheckTimeline();
+
+            // Set frequency select
+            const freqSelect = document.getElementById('checkFrequency');
+            if (freqSelect) freqSelect.value = checkFrequency;
+
+            document.getElementById('currentFrequency').textContent = checkFrequency.charAt(0).toUpperCase() + checkFrequency.slice(1);
+
+            // Set last check time
+            const lastCheck = localStorage.getItem('ghost_last_check');
+            if (lastCheck) {
+                document.getElementById('lastCheckTime').textContent = formatTimeAgo(lastCheck);
+            }
+
+            updateNextCheckTime();
         }
 
         // Close dropdown when clicking outside
@@ -2407,7 +3077,7 @@
         });
 
         // Initialize
-        renderMonitoredEmails();
+        initializeMonitoring();
     </script>
 </body>
 </html>

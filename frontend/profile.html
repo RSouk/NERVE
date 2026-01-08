@@ -1404,9 +1404,9 @@
 
         // Authentication Check
         async function checkAuth() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             if (!token) {
-                window.location.href = '/auth/login.html';
+                window.location.href = 'auth/login.html';
                 return false;
             }
             return true;
@@ -1420,8 +1420,8 @@
                 });
 
                 if (response.status === 401) {
-                    localStorage.removeItem('auth_token');
-                    window.location.href = '/auth/login.html';
+                    localStorage.removeItem('session_token');
+                    window.location.href = 'auth/login.html';
                     return;
                 }
 
@@ -2061,14 +2061,14 @@
                 // Ignore logout errors
             }
 
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem('session_token');
             localStorage.removeItem('profile_active_tab');
-            window.location.href = '/auth/login.html';
+            window.location.href = 'auth/login.html';
         }
 
         // Utility Functions
         function getAuthHeaders() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             return token ? { 'Authorization': `Bearer ${token}` } : {};
         }
 

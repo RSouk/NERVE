@@ -735,6 +735,9 @@
     </div>
 
     <script>
+        // API Base URL for localhost
+        const API_BASE = 'http://localhost:5000';
+
         const form = document.getElementById('signupForm');
         const submitBtn = document.getElementById('submitBtn');
         const errorMessage = document.getElementById('errorMessage');
@@ -845,7 +848,7 @@
             const password = passwordInput.value;
 
             try {
-                const response = await fetch('/api/auth/signup', {
+                const response = await fetch(`${API_BASE}/api/auth/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ fullName, email, company, password })

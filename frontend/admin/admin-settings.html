@@ -1469,7 +1469,7 @@
 
         // Check Admin Access
         async function checkAdminAccess() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             if (!token) {
                 window.location.href = '../auth/login.html';
                 return;
@@ -1481,7 +1481,7 @@
                 });
 
                 if (!response.ok) {
-                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('session_token');
                     window.location.href = '../auth/login.html';
                     return;
                 }
@@ -1897,7 +1897,7 @@
 
         // Utility Functions
         function getAuthHeaders() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             return token ? { 'Authorization': `Bearer ${token}` } : {};
         }
 
@@ -1922,7 +1922,7 @@
         }
 
         function logout() {
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem('session_token');
             window.location.href = '../auth/login.html';
         }
 

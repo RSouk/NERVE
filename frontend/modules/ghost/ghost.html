@@ -184,6 +184,16 @@
             box-shadow: 0 8px 24px var(--gold-glow);
         }
 
+        .profile-btn .settings-icon {
+            color: #D4AF37;
+            font-size: 20px;
+            filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.4));
+        }
+
+        .profile-btn:hover .settings-icon {
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+        }
+
         /* Main Layout */
         .main-content {
             display: grid;
@@ -1021,12 +1031,14 @@
                 <img src="ghost-logo.png" alt="GHOST">
                 <div class="header-title">
                     <h1>GHOST</h1>
-                    <p>CTI Intelligence Dashboard <span class="beta-badge">Beta</span></p>
+                    <p>CTI Intelligence Dashboard</p>
                 </div>
             </div>
             <div class="header-right">
                 <button class="header-btn" onclick="refreshDashboard()">Refresh</button>
-                <a href="../../profile.html" class="header-btn" id="profileBtn" title="Profile">&#128100;</a>
+                <a href="../../profile.html" class="header-btn profile-btn" id="profileBtn" title="Profile">
+                    <span class="settings-icon">⚙️</span>
+                </a>
                 <a href="../../index.html" class="header-btn">Back to NERVE</a>
             </div>
         </header>
@@ -1051,7 +1063,6 @@
                 <a href="ghost-roadmap.html" class="nav-item featured">
                     <span class="nav-icon">&#128739;</span>
                     <span>Security Roadmap</span>
-                    <span class="nav-badge new">New</span>
                 </a>
                 <a href="../../admin/admin-dashboard.html" class="nav-item" id="adminNavLink" style="display: none;">
                     <span class="nav-icon">&#128736;</span>
@@ -1064,37 +1075,6 @@
 
             <!-- Content -->
             <div class="content">
-                <!-- Quick Actions - Module Cards -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="section-title">Quick Actions</h2>
-                    </div>
-                    <div class="modules-grid">
-                        <a href="ghost-search.html" class="module-card">
-                            <div class="module-icon">&#128269;</div>
-                            <h3 class="module-title">Global Search</h3>
-                            <p class="module-desc">Search across breach databases and dark web sources for exposed credentials.</p>
-                            <span class="module-badge active">Active</span>
-                        </a>
-                        <a href="ghost-adversary.html" class="module-card">
-                            <div class="module-icon">&#127919;</div>
-                            <h3 class="module-title">Adversary Matching</h3>
-                            <p class="module-desc">Match threat actors targeting your industry using MISP and MITRE data.</p>
-                        </a>
-                        <a href="ghost-asm.html" class="module-card">
-                            <div class="module-icon">&#127760;</div>
-                            <h3 class="module-title">Attack Surface</h3>
-                            <p class="module-desc">Scan and analyze your external attack surface for vulnerabilities.</p>
-                        </a>
-                        <a href="ghost-roadmap.html" class="module-card">
-                            <span class="module-badge new">New</span>
-                            <div class="module-icon">&#128739;</div>
-                            <h3 class="module-title">Security Roadmap</h3>
-                            <p class="module-desc">Personalized security improvement plan with gamified progress tracking.</p>
-                        </a>
-                    </div>
-                </div>
-
                 <!-- Security Score -->
                 <div class="section-card">
                     <div class="section-header">
@@ -1302,7 +1282,7 @@
 
         // Check if user has admin access
         async function checkAdminAccess() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             if (!token) return;
 
             try {

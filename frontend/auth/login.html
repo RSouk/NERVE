@@ -702,6 +702,9 @@
     </div>
 
     <script>
+        // API Base URL for localhost
+        const API_BASE = 'http://localhost:5000';
+
         // Password visibility toggle
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');
@@ -736,7 +739,7 @@
             const remember = document.getElementById('remember').checked;
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -748,11 +751,11 @@
 
                 if (response.ok && data.success) {
                     // Store token
-                    localStorage.setItem('nerve_token', data.token);
+                    localStorage.setItem('session_token', data.token);
                     localStorage.setItem('nerve_user', JSON.stringify(data.user));
 
                     // Redirect to dashboard
-                    window.location.href = '/frontend/index.html';
+                    window.location.href = '../index.html';
                 } else {
                     // Show error
                     errorText.textContent = data.message || 'Invalid email or password';

@@ -1144,7 +1144,7 @@
         });
 
         async function checkAdminAccess() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             if (!token) {
                 window.location.href = '../auth/login.html';
                 return;
@@ -1563,8 +1563,8 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        localStorage.setItem('original_token', localStorage.getItem('auth_token'));
-                        localStorage.setItem('auth_token', data.token);
+                        localStorage.setItem('original_token', localStorage.getItem('session_token'));
+                        localStorage.setItem('session_token', data.token);
                         localStorage.setItem('impersonating', data.impersonated_user.email);
                         window.location.href = '../index.html';
                     } else {
@@ -1625,7 +1625,7 @@
 
         // Utilities
         function getAuthHeaders() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('session_token');
             return token ? { 'Authorization': `Bearer ${token}` } : {};
         }
 
@@ -1653,7 +1653,7 @@
         }
 
         function logout() {
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem('session_token');
             window.location.href = '../auth/login.html';
         }
 

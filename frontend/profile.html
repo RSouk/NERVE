@@ -991,6 +991,46 @@
             align-items: center;
             gap: 8px;
         }
+
+        /* Coming Soon Overlay */
+        .coming-soon-overlay {
+            padding: 100px 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+        }
+
+        .coming-soon-content {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .coming-soon-content h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .coming-soon-content p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .coming-soon-pill {
+            display: inline-block;
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--gold-primary);
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -1025,15 +1065,19 @@
             </button>
             <button class="tab-btn" data-tab="security" onclick="switchTab('security')">
                 <span class="tab-icon">&#128274;</span>
-                <span>Security</span>
-            </button>
-            <button class="tab-btn" data-tab="apikeys" id="apiKeysTab" onclick="switchTab('apikeys')">
-                <span class="tab-icon">&#128273;</span>
-                <span>API Keys</span>
+                <span>Security & Data</span>
             </button>
             <button class="tab-btn" data-tab="company" id="companyTab" onclick="switchTab('company')">
                 <span class="tab-icon">&#127970;</span>
                 <span>Company</span>
+            </button>
+            <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications')">
+                <span class="tab-icon">&#128276;</span>
+                <span>Notifications</span>
+            </button>
+            <button class="tab-btn" data-tab="billing" onclick="switchTab('billing')">
+                <span class="tab-icon">&#128179;</span>
+                <span>Billing</span>
             </button>
         </nav>
 
@@ -1053,7 +1097,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Email Address</label>
-                                <input type="email" class="form-input" id="email" placeholder="your@email.com">
+                                <input type="email" class="form-input" id="email" placeholder="your@email.com" readonly disabled style="background: rgba(0,0,0,0.3); cursor: not-allowed; opacity: 0.7;">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Company</label>
@@ -1189,6 +1233,28 @@
                     </table>
                 </div>
 
+                <!-- Your Data & Privacy Section (GDPR) -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Your Data & Privacy</h2>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">View, download, or request deletion of your personal data (GDPR compliant)</p>
+
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="viewMyData()">
+                            &#128065; View My Data
+                        </button>
+
+                        <button class="btn btn-secondary" onclick="downloadMyData()">
+                            &#11015; Download My Data
+                        </button>
+
+                        <button class="btn btn-danger" onclick="requestAccountDeletion()">
+                            &#128465; Request Account Deletion
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Two-Factor Authentication Section -->
                 <div class="section-card">
                     <div class="section-header">
@@ -1203,81 +1269,6 @@
                             <div class="toggle-label">Enable 2FA</div>
                             <div class="toggle-description">Two-factor authentication will be available in a future update.</div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- API Keys Tab -->
-            <div class="tab-content" id="apikeysContent">
-                <!-- Generate New Key Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="section-title">Generate New API Key</h2>
-                    </div>
-                    <form id="apiKeyForm">
-                        <div class="form-group">
-                            <label class="form-label">Key Name</label>
-                            <input type="text" class="form-input" id="keyName" placeholder="e.g., Production API Key" maxlength="100" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Permissions</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="permissions" value="read" checked>
-                                    <span class="checkbox-box">&#10003;</span>
-                                    <span class="checkbox-label">Read Access</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" name="permissions" value="write">
-                                    <span class="checkbox-box">&#10003;</span>
-                                    <span class="checkbox-label">Write Access</span>
-                                </label>
-                                <label class="checkbox-item" id="adminPermissionItem" style="display: none;">
-                                    <input type="checkbox" name="permissions" value="admin">
-                                    <span class="checkbox-box">&#10003;</span>
-                                    <span class="checkbox-label">Admin Access</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Expiration</label>
-                            <select class="form-select" id="keyExpiration">
-                                <option value="30">30 days</option>
-                                <option value="60">60 days</option>
-                                <option value="90" selected>90 days</option>
-                                <option value="0">Never</option>
-                            </select>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">&#128273; Generate API Key</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Active API Keys Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="section-title">Active API Keys</h2>
-                    </div>
-                    <div id="apiKeysContainer">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Key Prefix</th>
-                                    <th>Permissions</th>
-                                    <th>Created</th>
-                                    <th>Last Used</th>
-                                    <th>Expires</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="apiKeysBody">
-                                <tr>
-                                    <td colspan="7" class="empty-state">Loading API keys...</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -1342,6 +1333,28 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Notifications Tab -->
+            <div class="tab-content" id="notificationsContent">
+                <div class="coming-soon-overlay">
+                    <div class="coming-soon-content">
+                        <h2>&#128276; Notifications</h2>
+                        <p>Configure email alerts, security notifications, and update preferences. Get notified about important security events, scan completions, and system updates.</p>
+                        <span class="coming-soon-pill">COMING SOON</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Tab -->
+            <div class="tab-content" id="billingContent">
+                <div class="coming-soon-overlay">
+                    <div class="coming-soon-content">
+                        <h2>&#128179; Billing & Subscription</h2>
+                        <p>Manage payment methods, view invoices, and update subscription plans. Access your billing history and upgrade your account for more features.</p>
+                        <span class="coming-soon-pill">COMING SOON</span>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -1359,29 +1372,6 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
                 <button class="btn btn-danger" id="confirmModalAction">Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- API Key Success Modal -->
-    <div class="modal-overlay" id="apiKeyModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">&#128273; API Key Generated</h2>
-                <button class="modal-close" onclick="closeApiKeyModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="api-key-display">
-                    <div class="api-key-value" id="newApiKeyValue">...</div>
-                    <button class="copy-btn" onclick="copyApiKey()">&#128203; Copy to Clipboard</button>
-                </div>
-                <div class="api-key-warning">
-                    <span>&#9888;</span>
-                    <span>Store this key securely. You won't be able to see it again after closing this dialog.</span>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeApiKeyModal()">I've Saved My Key</button>
             </div>
         </div>
     </div>
@@ -1449,16 +1439,38 @@
             document.getElementById('userName').textContent = currentUser.full_name || 'User';
             document.getElementById('userEmail').textContent = currentUser.email;
 
-            // Role badge
+            // Role badge - map internal roles to user-friendly names
             const roleBadge = document.getElementById('userRoleBadge');
             const roleDisplay = document.getElementById('roleDisplay');
             const role = currentUser.role || 'user';
 
-            roleBadge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-            roleBadge.className = `role-badge ${role}`;
+            const roleDisplayNames = {
+                'SUPER_ADMIN': 'Administrator',
+                'super_admin': 'Administrator',
+                'ADMIN': 'Administrator',
+                'admin': 'Administrator',
+                'ANALYST': 'Analyst',
+                'analyst': 'Analyst',
+                'USER': 'User',
+                'user': 'User',
+                'COMPANY_USER': 'User',
+                'company_user': 'User',
+                'DEMO': 'Demo User',
+                'demo': 'Demo User',
+                'VIEWER': 'Viewer',
+                'viewer': 'Viewer',
+                'OWNER': 'Owner',
+                'owner': 'Owner'
+            };
 
-            roleDisplay.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-            roleDisplay.className = `role-badge ${role}`;
+            const friendlyRole = roleDisplayNames[role] || 'User';
+            const roleClass = role.toLowerCase().replace('_', '-');
+
+            roleBadge.textContent = friendlyRole;
+            roleBadge.className = `role-badge ${roleClass}`;
+
+            roleDisplay.textContent = friendlyRole;
+            roleDisplay.className = `role-badge ${roleClass}`;
 
             // Show admin button for admin/owner roles
             const adminBtn = document.getElementById('adminBtn');
@@ -1503,21 +1515,10 @@
                 document.getElementById('companyTab').style.display = 'none';
             }
 
-            // Hide API Keys tab for viewers
-            if (role === 'viewer') {
-                document.getElementById('apiKeysTab').style.display = 'none';
-            }
-
             // Make Profile tab read-only for viewers
             if (role === 'viewer') {
                 document.getElementById('fullName').disabled = true;
-                document.getElementById('email').disabled = true;
                 document.getElementById('saveProfileBtn').style.display = 'none';
-            }
-
-            // Show admin permission option for admins
-            if (role === 'admin') {
-                document.getElementById('adminPermissionItem').style.display = 'flex';
             }
         }
 
@@ -1525,9 +1526,6 @@
         function loadTabData() {
             loadSessions();
             loadLoginHistory();
-            if (currentUser && currentUser.role !== 'viewer') {
-                loadApiKeys();
-            }
             if (currentUser && ['admin', 'owner'].includes(currentUser.role)) {
                 loadCompany();
             }
@@ -1559,7 +1557,7 @@
             const hash = window.location.hash.slice(1);
             const savedTab = localStorage.getItem('profile_active_tab');
 
-            if (hash && ['profile', 'security', 'apikeys', 'company'].includes(hash)) {
+            if (hash && ['profile', 'security', 'company', 'notifications', 'billing'].includes(hash)) {
                 switchTab(hash);
             } else if (savedTab) {
                 switchTab(savedTab);
@@ -1580,12 +1578,6 @@
                 await changePassword();
             });
 
-            // API Key form
-            document.getElementById('apiKeyForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await generateApiKey();
-            });
-
             // Company form
             document.getElementById('companyForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -1596,7 +1588,6 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     closeConfirmModal();
-                    closeApiKeyModal();
                 }
             });
         }
@@ -1853,147 +1844,6 @@
             `).join('');
         }
 
-        // API Keys Operations
-        async function loadApiKeys() {
-            try {
-                const response = await fetch(`${API_URL}/api/profile/api-keys`, {
-                    headers: getAuthHeaders()
-                });
-
-                if (response.ok) {
-                    const keys = await response.json();
-                    renderApiKeys(keys);
-                }
-            } catch (error) {
-                console.error('Failed to load API keys:', error);
-            }
-        }
-
-        function renderApiKeys(keys) {
-            const tbody = document.getElementById('apiKeysBody');
-
-            if (!keys || keys.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">&#128273;</div>
-                                <p class="empty-state-text">No API keys. Generate one to get started.</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = keys.map(key => `
-                <tr>
-                    <td><strong>${escapeHtml(key.name)}</strong></td>
-                    <td><code>${key.key_prefix}...</code></td>
-                    <td>
-                        <div class="permission-chips">
-                            ${key.permissions.map(p => `<span class="permission-chip">${p}</span>`).join('')}
-                        </div>
-                    </td>
-                    <td>${formatDate(key.created_at)}</td>
-                    <td>${key.last_used_at ? formatRelativeTime(key.last_used_at) : 'Never'}</td>
-                    <td>${key.expires_at ? formatDate(key.expires_at) : 'Never'}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="revokeApiKey(${key.id}, '${escapeHtml(key.name)}')">
-                            Revoke
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        async function generateApiKey() {
-            const name = document.getElementById('keyName').value.trim();
-            const expirationDays = parseInt(document.getElementById('keyExpiration').value);
-
-            const permissions = [];
-            document.querySelectorAll('input[name="permissions"]:checked').forEach(cb => {
-                permissions.push(cb.value);
-            });
-
-            if (!name) {
-                showToast('Please enter a key name', 'error');
-                return;
-            }
-
-            if (permissions.length === 0) {
-                showToast('Please select at least one permission', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/api/profile/api-keys`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...getAuthHeaders()
-                    },
-                    body: JSON.stringify({
-                        name,
-                        permissions,
-                        expires_days: expirationDays
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('newApiKeyValue').textContent = data.key;
-                    document.getElementById('apiKeyModal').classList.add('active');
-                    document.getElementById('apiKeyForm').reset();
-                    loadApiKeys();
-                } else {
-                    showToast(data.error || 'Failed to generate API key', 'error');
-                }
-            } catch (error) {
-                showToast('Connection error. Please try again.', 'error');
-            }
-        }
-
-        async function revokeApiKey(keyId, keyName) {
-            showConfirmModal(
-                'Revoke API Key',
-                `Are you sure you want to revoke the API key "${keyName}"?`,
-                '&#9888; Any applications using this key will stop working.',
-                async () => {
-                    try {
-                        const response = await fetch(`${API_URL}/api/profile/api-keys/${keyId}`, {
-                            method: 'DELETE',
-                            headers: getAuthHeaders()
-                        });
-
-                        if (response.ok) {
-                            showToast('API key revoked successfully', 'success');
-                            loadApiKeys();
-                        } else {
-                            const data = await response.json();
-                            showToast(data.error || 'Failed to revoke API key', 'error');
-                        }
-                    } catch (error) {
-                        showToast('Connection error. Please try again.', 'error');
-                    }
-                }
-            );
-        }
-
-        function copyApiKey() {
-            const keyValue = document.getElementById('newApiKeyValue').textContent;
-            navigator.clipboard.writeText(keyValue).then(() => {
-                showToast('API key copied to clipboard', 'success');
-            }).catch(() => {
-                showToast('Failed to copy. Please select and copy manually.', 'error');
-            });
-        }
-
-        function closeApiKeyModal() {
-            document.getElementById('apiKeyModal').classList.remove('active');
-        }
-
         // Company Operations
         async function loadCompany() {
             try {
@@ -2183,6 +2033,158 @@
                     setTimeout(() => toast.remove(), 300);
                 }
             }, 5000);
+        }
+
+        // GDPR Data Functions
+        async function viewMyData() {
+            try {
+                const response = await fetch(`${API_URL}/api/user/my-data`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to fetch data', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                showDataModal(data);
+            } catch (error) {
+                console.error('View data error:', error);
+                showToast('Connection error. Please try again.', 'error');
+            }
+        }
+
+        function showDataModal(data) {
+            // Create modal for displaying user data
+            const modalHtml = `
+                <div class="modal-overlay active" id="dataModal" onclick="if(event.target === this) closeDataModal()">
+                    <div class="modal-content" style="max-width: 700px; max-height: 85vh;">
+                        <div class="modal-header">
+                            <h2 class="modal-title">Your Personal Data That We Store</h2>
+                            <button class="modal-close" onclick="closeDataModal()">&times;</button>
+                        </div>
+                        <div class="modal-body" style="overflow-y: auto; max-height: 60vh;">
+                            <div style="margin-bottom: 24px;">
+                                <h3 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 1rem;">Account Information</h3>
+                                <div style="background: var(--bg-input); padding: 16px; border-radius: 10px;">
+                                    <p style="margin-bottom: 8px;"><strong>Name:</strong> ${escapeHtml(data.full_name || 'Not set')}</p>
+                                    <p style="margin-bottom: 8px;"><strong>Email:</strong> ${escapeHtml(data.email || 'Not set')}</p>
+                                    <p><strong>Company:</strong> ${escapeHtml(data.company_name || 'Not assigned')}</p>
+                                </div>
+                            </div>
+                            ${data.login_history && data.login_history.length > 0 ? `
+                                <div style="margin-bottom: 24px;">
+                                    <h3 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 1rem;">Recent Login History (${data.login_history.length} entries)</h3>
+                                    <div style="background: var(--bg-input); padding: 16px; border-radius: 10px; max-height: 200px; overflow-y: auto;">
+                                        ${data.login_history.slice(0, 10).map(entry => `
+                                            <p style="margin-bottom: 8px; font-size: 0.85rem;">
+                                                ${formatDateTime(entry.timestamp)} - ${escapeHtml(entry.ip_address || 'Unknown IP')}
+                                                <span style="color: ${entry.success ? 'var(--green)' : 'var(--red)'};">${entry.success ? 'Success' : 'Failed'}</span>
+                                            </p>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${data.scan_history && data.scan_history.length > 0 ? `
+                                <div>
+                                    <h3 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 1rem;">Scan History (${data.scan_history.length} scans)</h3>
+                                    <div style="background: var(--bg-input); padding: 16px; border-radius: 10px; max-height: 200px; overflow-y: auto;">
+                                        ${data.scan_history.slice(0, 10).map(scan => `
+                                            <p style="margin-bottom: 8px; font-size: 0.85rem;">
+                                                ${formatDateTime(scan.created_at)} - ${escapeHtml(scan.scan_type || 'Scan')}
+                                                (${escapeHtml(scan.status || 'Unknown')})
+                                            </p>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="closeDataModal()">Close</button>
+                            <button class="btn btn-primary" onclick="downloadMyData()">Download All</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if present
+            const existingModal = document.getElementById('dataModal');
+            if (existingModal) existingModal.remove();
+
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function closeDataModal() {
+            const modal = document.getElementById('dataModal');
+            if (modal) modal.remove();
+        }
+
+        async function downloadMyData() {
+            try {
+                showToast('Preparing your data export...', 'info');
+
+                const response = await fetch(`${API_URL}/api/user/my-data`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to export data', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Filter to only personal data fields
+                const personalData = {
+                    name: data.full_name || 'Not set',
+                    email: data.email || 'Not set',
+                    company: data.company_name || 'Not assigned'
+                };
+
+                // Download as JSON file
+                const blob = new Blob([JSON.stringify(personalData, null, 2)], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my-personal-data-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                showToast('Data exported successfully', 'success');
+            } catch (error) {
+                console.error('Download data error:', error);
+                showToast('Connection error. Please try again.', 'error');
+            }
+        }
+
+        async function requestAccountDeletion() {
+            if (!confirm('Are you sure? This will submit a deletion request to administrators.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/user/request-deletion`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to submit deletion request', 'error');
+                    return;
+                }
+
+                showToast('Deletion request submitted. An administrator will review your request.', 'success');
+            } catch (error) {
+                console.error('Deletion request error:', error);
+                showToast('Connection error. Please try again.', 'error');
+            }
         }
     </script>
 </body>

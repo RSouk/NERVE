@@ -4,7 +4,7 @@ import os
 import json
 from datetime import datetime
 
-# Configure Gemini with new API
+# Configure Gemini client
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
 def generate_vulnerability_report(company: str, xasm_data: dict, lightbox_data: dict) -> dict:
@@ -92,13 +92,14 @@ IMPORTANT INSTRUCTIONS:
 """
 
     try:
-        # Generate report with new API
+        # Generate report using Gemini
         response = client.models.generate_content(
-            model='gemini-flash-latest',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
-                temperature=0.3,
-                max_output_tokens=8000
+                temperature=0.7,
+                top_p=0.95,
+                max_output_tokens=8192
             )
         )
 

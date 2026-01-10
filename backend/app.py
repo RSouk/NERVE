@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, g
+from flask import Flask, render_template, request, jsonify, g, Response
 from flask_cors import CORS
 from functools import wraps
 from database import (
@@ -5348,24 +5348,24 @@ def auth_login():
         ).first()
 
         if not user:
-            log_login_attempt(email, ip_address, False)
+            log_login_attempt(email, False, ip_address)
             db.close()
             return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
 
         # Check if user is active
         if user.status != UserStatus.ACTIVE:
-            log_login_attempt(email, ip_address, False)
+            log_login_attempt(email, False, ip_address)
             db.close()
             return jsonify({'success': False, 'error': 'Account is not active'}), 403
 
         # Verify password
         if not verify_password(password, user.password_hash):
-            log_login_attempt(email, ip_address, False)
+            log_login_attempt(email, False, ip_address)
             db.close()
             return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
 
         # Log successful attempt
-        log_login_attempt(email, ip_address, True)
+        log_login_attempt(email, True, ip_address)
 
         # Update last login
         user.last_login = datetime.now(timezone.utc)
@@ -6196,6 +6196,326 @@ def update_user_company():
         db.rollback()
         print(f"[PROFILE] Error updating company: {e}")
         return jsonify({'error': 'Failed to update company information'}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# GDPR DATA ACCESS ENDPOINTS
+# =============================================================================
+
+@app.route('/api/user/my-data', methods=['GET'])
+@require_auth
+def get_my_data():
+    """
+    GDPR: Get all personal data stored for the current user.
+    Returns account info, login history, and scan history.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == request.user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Get company name
+        company_name = None
+        if user.company_id:
+            company = db.query(Company).filter(
+                Company.id == user.company_id,
+                Company.deleted_at.is_(None)
+            ).first()
+            if company:
+                company_name = company.name
+
+        # Get login history
+        login_history = []
+        attempts = db.query(LoginAttempt).filter(
+            LoginAttempt.user_id == request.user_id
+        ).order_by(LoginAttempt.attempted_at.desc()).limit(50).all()
+
+        for a in attempts:
+            login_history.append({
+                'timestamp': a.attempted_at.isoformat() if a.attempted_at else None,
+                'ip_address': a.ip_address,
+                'success': a.success,
+                'user_agent': a.user_agent
+            })
+
+        # Get scan history (ASM scans initiated by user)
+        scan_history = []
+        try:
+            scans = db.query(ASMScan).filter(
+                ASMScan.user_id == request.user_id
+            ).order_by(ASMScan.created_at.desc()).limit(50).all()
+
+            for s in scans:
+                scan_history.append({
+                    'id': s.id,
+                    'domain': s.domain,
+                    'scan_type': 'ASM Scan',
+                    'status': s.status,
+                    'created_at': s.created_at.isoformat() if s.created_at else None
+                })
+        except Exception as e:
+            print(f"[GDPR] Error loading scan history: {e}")
+
+        # Get sessions info
+        sessions = []
+        try:
+            user_sessions = db.query(UserSession).filter(
+                UserSession.user_id == request.user_id
+            ).order_by(UserSession.created_at.desc()).limit(20).all()
+
+            for s in user_sessions:
+                sessions.append({
+                    'created_at': s.created_at.isoformat() if s.created_at else None,
+                    'ip_address': s.ip_address,
+                    'is_active': s.is_active and s.revoked_at is None,
+                    'last_activity': s.last_activity.isoformat() if s.last_activity else None
+                })
+        except Exception as e:
+            print(f"[GDPR] Error loading sessions: {e}")
+
+        return jsonify({
+            'id': user.id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'role': user.role.value if user.role else 'user',
+            'status': user.status.value if user.status else 'active',
+            'company_id': user.company_id,
+            'company_name': company_name,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'last_login': user.last_login_at.isoformat() if user.last_login_at else None,
+            'email_verified': user.email_verified,
+            'twofa_enabled': user.twofa_enabled,
+            'login_history': login_history,
+            'scan_history': scan_history,
+            'sessions': sessions
+        })
+
+    except Exception as e:
+        print(f"[GDPR] Error fetching user data: {e}")
+        return jsonify({'error': 'Failed to retrieve your data'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/user/export-data', methods=['GET'])
+@require_auth
+def export_my_data():
+    """
+    GDPR: Export all personal data as a downloadable JSON file.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == request.user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Get company name
+        company_name = None
+        if user.company_id:
+            company = db.query(Company).filter(
+                Company.id == user.company_id,
+                Company.deleted_at.is_(None)
+            ).first()
+            if company:
+                company_name = company.name
+
+        # Get full login history
+        login_history = []
+        attempts = db.query(LoginAttempt).filter(
+            LoginAttempt.user_id == request.user_id
+        ).order_by(LoginAttempt.attempted_at.desc()).all()
+
+        for a in attempts:
+            login_history.append({
+                'timestamp': a.attempted_at.isoformat() if a.attempted_at else None,
+                'ip_address': a.ip_address,
+                'success': a.success,
+                'user_agent': a.user_agent,
+                'failure_reason': a.failure_reason if not a.success else None
+            })
+
+        # Get full scan history
+        scan_history = []
+        try:
+            scans = db.query(ASMScan).filter(
+                ASMScan.user_id == request.user_id
+            ).order_by(ASMScan.created_at.desc()).all()
+
+            for s in scans:
+                scan_history.append({
+                    'id': s.id,
+                    'domain': s.domain,
+                    'scan_type': 'ASM Scan',
+                    'status': s.status,
+                    'created_at': s.created_at.isoformat() if s.created_at else None,
+                    'completed_at': s.completed_at.isoformat() if s.completed_at else None
+                })
+        except Exception as e:
+            print(f"[GDPR] Error loading scan history for export: {e}")
+
+        # Get all sessions
+        sessions = []
+        try:
+            user_sessions = db.query(UserSession).filter(
+                UserSession.user_id == request.user_id
+            ).order_by(UserSession.created_at.desc()).all()
+
+            for s in user_sessions:
+                sessions.append({
+                    'created_at': s.created_at.isoformat() if s.created_at else None,
+                    'ip_address': s.ip_address,
+                    'user_agent': s.user_agent,
+                    'is_active': s.is_active and s.revoked_at is None,
+                    'last_activity': s.last_activity.isoformat() if s.last_activity else None,
+                    'expires_at': s.expires_at.isoformat() if s.expires_at else None
+                })
+        except Exception as e:
+            print(f"[GDPR] Error loading sessions for export: {e}")
+
+        # Get security events related to this user
+        security_events = []
+        try:
+            events = db.query(SecurityEvent).filter(
+                SecurityEvent.user_id == request.user_id
+            ).order_by(SecurityEvent.created_at.desc()).limit(100).all()
+
+            for e in events:
+                security_events.append({
+                    'event_type': e.event_type,
+                    'severity': e.severity,
+                    'description': e.description,
+                    'ip_address': e.ip_address,
+                    'created_at': e.created_at.isoformat() if e.created_at else None
+                })
+        except Exception as e:
+            print(f"[GDPR] Error loading security events for export: {e}")
+
+        # Build export data
+        export_data = {
+            'export_date': datetime.now(timezone.utc).isoformat(),
+            'export_type': 'GDPR Data Export',
+            'user_info': {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role.value if user.role else 'user',
+                'status': user.status.value if user.status else 'active',
+                'company_name': company_name,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_login': user.last_login_at.isoformat() if user.last_login_at else None,
+                'email_verified': user.email_verified,
+                'twofa_enabled': user.twofa_enabled,
+                'last_password_change': user.last_password_change.isoformat() if user.last_password_change else None
+            },
+            'login_history': login_history,
+            'scan_history': scan_history,
+            'sessions': sessions,
+            'security_events': security_events
+        }
+
+        # Log the export
+        log_security_event(
+            event_type='gdpr_data_export',
+            severity='info',
+            user_id=user.id,
+            ip_address=request.remote_addr,
+            description=f'User exported their personal data: {user.email}'
+        )
+
+        print(f"[GDPR] Data exported for user: {user.email}")
+
+        # Return as downloadable JSON
+        response = Response(
+            json.dumps(export_data, indent=2),
+            mimetype='application/json',
+            headers={
+                'Content-Disposition': f'attachment; filename=my-data-{user.id}-{datetime.now().strftime("%Y%m%d")}.json'
+            }
+        )
+        return response
+
+    except Exception as e:
+        print(f"[GDPR] Error exporting user data: {e}")
+        return jsonify({'error': 'Failed to export your data'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/user/request-deletion', methods=['POST'])
+@require_auth
+def request_account_deletion():
+    """
+    GDPR: Submit a request to delete the user's account.
+    Creates a security event for admin review.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.id == request.user_id,
+            User.deleted_at.is_(None)
+        ).first()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Check if there's already a pending deletion request
+        existing_request = db.query(SecurityEvent).filter(
+            SecurityEvent.user_id == request.user_id,
+            SecurityEvent.event_type == 'gdpr_deletion_requested',
+            SecurityEvent.acknowledged == False
+        ).first()
+
+        if existing_request:
+            return jsonify({
+                'success': True,
+                'message': 'You already have a pending deletion request. An administrator will review it shortly.'
+            })
+
+        # Create a security event for the deletion request
+        deletion_request = SecurityEvent(
+            event_type='gdpr_deletion_requested',
+            severity='high',
+            user_id=user.id,
+            email=user.email,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'GDPR account deletion request from user: {user.email} (ID: {user.id})',
+            metadata_json=json.dumps({
+                'user_email': user.email,
+                'user_name': user.full_name,
+                'company_id': user.company_id,
+                'request_time': datetime.now(timezone.utc).isoformat(),
+                'request_ip': request.remote_addr
+            }),
+            acknowledged=False,
+            created_at=datetime.now(timezone.utc)
+        )
+
+        db.add(deletion_request)
+        db.commit()
+
+        print(f"[GDPR] Deletion request submitted for user: {user.email}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Your account deletion request has been submitted. An administrator will review your request and you will be notified of the outcome.'
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"[GDPR] Error submitting deletion request: {e}")
+        return jsonify({'error': 'Failed to submit deletion request'}), 500
     finally:
         db.close()
 

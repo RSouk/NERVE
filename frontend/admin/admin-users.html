@@ -495,26 +495,32 @@
             border: 1px solid rgba(107, 114, 128, 0.3);
         }
 
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
+        .status-cell {
+            text-align: center;
         }
 
-        .status-badge.active {
-            background: rgba(0, 230, 118, 0.1);
-            color: var(--green);
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+            cursor: help;
         }
 
-        .status-badge.locked {
-            background: rgba(255, 82, 82, 0.1);
-            color: var(--red);
+        .status-dot.active {
+            background: #10b981;
+            color: #10b981;
         }
 
-        .status-badge.pending {
-            background: rgba(255, 152, 0, 0.1);
-            color: var(--orange);
+        .status-dot.locked {
+            background: #ef4444;
+            color: #ef4444;
+        }
+
+        .status-dot.pending {
+            background: #D4AF37;
+            color: #D4AF37;
         }
 
         .action-buttons {
@@ -911,9 +917,9 @@
                     <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
                     <a href="admin-users.html" class="nav-link active">Users</a>
                     <a href="admin-companies.html" class="nav-link">Companies</a>
-                    <a href="#" class="nav-link">System</a>
-                    <a href="#" class="nav-link">Logs</a>
-                    <a href="#" class="nav-link">Settings</a>
+                    <a href="admin-system.html" class="nav-link">System</a>
+                    <a href="admin-logs.html" class="nav-link">Logs</a>
+                    <a href="admin-settings.html" class="nav-link">Settings</a>
                 </nav>
             </div>
             <div class="header-right">
@@ -1029,11 +1035,12 @@
                         <div class="form-group">
                             <label class="form-label">Role</label>
                             <select class="form-select" id="userRole" required>
-                                <option value="user">User</option>
-                                <option value="analyst">Analyst</option>
-                                <option value="viewer">Viewer</option>
-                                <option value="admin" id="adminRoleOption">Admin</option>
-                                <option value="owner" id="ownerRoleOption">Owner</option>
+                                <option value="">Select Role</option>
+                                <option value="USER">User</option>
+                                <option value="ANALYST">Analyst</option>
+                                <option value="COMPANY_USER">Company User</option>
+                                <option value="ADMIN" id="adminRoleOption">Admin</option>
+                                <option value="SUPER_ADMIN" id="ownerRoleOption">Super Admin</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1047,7 +1054,7 @@
                         <label class="checkbox-item">
                             <input type="checkbox" id="autoPassword" checked>
                             <span class="checkbox-box">&#10003;</span>
-                            <span class="checkbox-label">Auto-generate password</span>
+                            <span class="checkbox-label">Auto-generate temporary password</span>
                         </label>
                     </div>
                     <div class="form-group" id="sendEmailGroup">
@@ -1186,8 +1193,8 @@
         }
 
         function applyRoleRestrictions() {
-            // Only owners can assign owner/admin roles
-            if (currentUser.role !== 'owner') {
+            // Only super admins can assign admin/super admin roles
+            if (!['owner', 'SUPER_ADMIN', 'super_admin'].includes(currentUser.role)) {
                 document.getElementById('adminRoleOption').disabled = true;
                 document.getElementById('ownerRoleOption').disabled = true;
             }
@@ -1291,7 +1298,7 @@
             tbody.innerHTML = usersData.map(user => {
                 const initials = getInitials(user.full_name || user.email);
                 const canEdit = canEditUser(user);
-                const canDelete = currentUser.role === 'owner';
+                const canDelete = ['owner', 'SUPER_ADMIN', 'super_admin'].includes(currentUser.role);
 
                 return `
                     <tr>
@@ -1306,7 +1313,7 @@
                         </td>
                         <td><span class="role-badge ${user.role}">${user.role}</span></td>
                         <td>${user.company_name || '<span style="color: var(--text-muted)">--</span>'}</td>
-                        <td><span class="status-badge ${user.status}">${user.status}</span></td>
+                        <td class="status-cell"><span class="status-dot ${user.status}" title="${user.status.charAt(0).toUpperCase() + user.status.slice(1)}"></span></td>
                         <td>${user.last_login_at ? formatRelativeTime(user.last_login_at) : '<span style="color: var(--text-muted)">Never</span>'}</td>
                         <td>
                             <div class="action-buttons">
@@ -1577,23 +1584,38 @@
         }
 
         async function deleteUser(userId) {
-            if (currentUser.role !== 'owner') {
-                showToast('Only owners can delete users', 'error');
+            const user = usersData.find(u => u.id === userId);
+            const userName = user ? (user.full_name || user.email) : 'this user';
+
+            // First confirmation
+            if (!confirm(`Are you sure you want to delete ${userName}?\n\nThis action cannot be undone.`)) {
                 return;
             }
 
-            showConfirm('Delete User', 'This will soft-delete the user. Their data will be preserved but they will lose access. Continue?', async () => {
-                try {
-                    await fetch(`${API_URL}/api/admin/users/${userId}`, {
-                        method: 'DELETE',
-                        headers: getAuthHeaders()
-                    });
+            // Second confirmation with final warning
+            const finalConfirm = prompt(`FINAL WARNING: Deleting ${userName} will permanently remove:\n- User account\n- All scan history\n- All session data\n\nType DELETE to confirm:`);
+
+            if (finalConfirm !== 'DELETE') {
+                showToast('Deletion cancelled', 'info');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
                     showToast('User deleted successfully', 'success');
                     loadUsers();
-                } catch (error) {
-                    showToast('Failed to delete user', 'error');
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to delete user', 'error');
                 }
-            });
+            } catch (error) {
+                showToast('Failed to delete user', 'error');
+            }
         }
 
         // URL Params

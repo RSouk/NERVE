@@ -667,6 +667,103 @@
             gap: 16px;
         }
 
+        .form-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .form-divider {
+            display: flex;
+            align-items: center;
+            margin: 16px 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .form-divider::before,
+        .form-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+
+        .form-divider span {
+            padding: 0 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-item input { display: none; }
+
+        .checkbox-box {
+            width: 22px;
+            height: 22px;
+            background: var(--bg-input);
+            border: 2px solid var(--border-input);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: transparent;
+            font-size: 0.8rem;
+        }
+
+        .checkbox-item input:checked + .checkbox-box {
+            background: var(--gold-primary);
+            border-color: var(--gold-primary);
+            color: #000;
+        }
+
+        .checkbox-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .user-assignment select[multiple] {
+            height: auto;
+            min-height: 120px;
+        }
+
+        /* Company Status Dots */
+        .status-cell {
+            text-align: center;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+            cursor: help;
+        }
+
+        .status-dot.status-active {
+            background: #10b981;
+            color: #10b981;
+        }
+
+        .status-dot.status-trial {
+            background: #D4AF37;
+            color: #D4AF37;
+        }
+
+        .status-dot.status-suspended {
+            background: #ef4444;
+            color: #ef4444;
+        }
+
         /* Users List in Modal */
         .users-list {
             max-height: 400px;
@@ -863,9 +960,9 @@
                     <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
                     <a href="admin-users.html" class="nav-link">Users</a>
                     <a href="admin-companies.html" class="nav-link active">Companies</a>
-                    <a href="#" class="nav-link">System</a>
-                    <a href="#" class="nav-link">Logs</a>
-                    <a href="#" class="nav-link">Settings</a>
+                    <a href="admin-system.html" class="nav-link">System</a>
+                    <a href="admin-logs.html" class="nav-link">Logs</a>
+                    <a href="admin-settings.html" class="nav-link">Settings</a>
                 </nav>
             </div>
             <div class="header-right">
@@ -926,6 +1023,12 @@
                 <option value="large">Large (251-1000)</option>
                 <option value="enterprise">Enterprise (1000+)</option>
             </select>
+            <select class="filter-select" id="statusFilter" onchange="loadCompanies()">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="TRIAL">Trial</option>
+                <option value="SUSPENDED">Suspended</option>
+            </select>
         </div>
 
         <!-- Companies Table -->
@@ -939,12 +1042,13 @@
                         <th class="sortable" data-sort="users" onclick="sortBy('users')">Users</th>
                         <th class="sortable" data-sort="scans" onclick="sortBy('scans')">Scans</th>
                         <th class="sortable" data-sort="created" onclick="sortBy('created')">Created</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="companiesTableBody">
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <div class="empty-icon">&#127970;</div>
                                 <p>Loading companies...</p>
@@ -1000,14 +1104,40 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Employee Count</label>
-                        <input type="number" class="form-input" id="employeeCount" placeholder="e.g., 150" min="1">
-                    </div>
-                    <div class="form-group" id="adminUserGroup">
-                        <label class="form-label">Primary Admin (Optional)</label>
-                        <select class="form-select" id="adminUser">
-                            <option value="">Select an existing user to be company admin</option>
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="companyStatus" required>
+                            <option value="ACTIVE">Active - Full access</option>
+                            <option value="TRIAL">Trial - Limited time/features</option>
+                            <option value="SUSPENDED">Suspended - No access</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Primary Domain</label>
+                        <input type="text" class="form-input" id="companyDomain" placeholder="example.com" pattern="[a-zA-Z0-9.-]+" required>
+                        <small class="form-hint">Main domain for this company (used for scan tracking)</small>
+                    </div>
+                    <div class="form-group" id="userAssignmentGroup">
+                        <label class="form-label">Assign Users (Optional)</label>
+                        <div class="user-assignment">
+                            <select class="form-select" id="existingUsers" multiple size="5">
+                                <!-- Populated via loadAvailableUsers() -->
+                            </select>
+                            <small class="form-hint">Hold Ctrl/Cmd to select multiple users</small>
+                        </div>
+                        <div class="form-divider">
+                            <span>OR</span>
+                        </div>
+                        <div class="create-users-inline">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="createUsersNow">
+                                <span class="checkbox-box">&#10003;</span>
+                                <span class="checkbox-label">Create company users now</span>
+                            </label>
+                            <div id="newUsersSection" style="display: none; margin-top: 12px;">
+                                <textarea class="form-input" id="newUserEmails" rows="4" placeholder="user1@example.com&#10;user2@example.com&#10;user3@example.com"></textarea>
+                                <small class="form-hint">One email per line. Users will be created with COMPANY_USER role.</small>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1094,6 +1224,7 @@
             await checkAdminAccess();
             await loadUsers();
             await loadCompanies();
+            setupFormListeners();
             handleUrlParams();
         });
 
@@ -1138,6 +1269,8 @@
             roleTag.className = `role-tag ${currentUser.role === 'owner' ? 'owner' : 'admin'}`;
         }
 
+        let availableUsers = [];
+
         async function loadUsers() {
             try {
                 const response = await fetch(`${API_URL}/api/admin/users`, {
@@ -1145,21 +1278,32 @@
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    const users = data.users || data || [];
-                    populateAdminDropdown(users);
+                    availableUsers = data.users || data || [];
+                    populateAvailableUsers(availableUsers);
                 }
             } catch (error) {
-                populateAdminDropdown([
-                    { id: 1, full_name: 'John Smith', email: 'john@example.com' },
-                    { id: 2, full_name: 'Sarah Johnson', email: 'sarah@acme.com' },
-                ]);
+                availableUsers = [
+                    { id: 1, full_name: 'John Smith', email: 'john@example.com', company_id: null },
+                    { id: 2, full_name: 'Sarah Johnson', email: 'sarah@acme.com', company_id: null },
+                ];
+                populateAvailableUsers(availableUsers);
             }
         }
 
-        function populateAdminDropdown(users) {
-            const select = document.getElementById('adminUser');
-            users.forEach(user => {
+        function populateAvailableUsers(users) {
+            const select = document.getElementById('existingUsers');
+            select.innerHTML = '';
+            // Only show users not already assigned to a company
+            const unassignedUsers = users.filter(u => !u.company_id);
+            unassignedUsers.forEach(user => {
                 select.innerHTML += `<option value="${user.id}">${user.full_name || user.email} (${user.email})</option>`;
+            });
+        }
+
+        function setupFormListeners() {
+            // Toggle new users section
+            document.getElementById('createUsersNow').addEventListener('change', function() {
+                document.getElementById('newUsersSection').style.display = this.checked ? 'block' : 'none';
             });
         }
 
@@ -1167,6 +1311,7 @@
             const search = document.getElementById('searchInput').value;
             const industry = document.getElementById('industryFilter').value;
             const size = document.getElementById('sizeFilter').value;
+            const status = document.getElementById('statusFilter').value;
 
             try {
                 const params = new URLSearchParams({
@@ -1175,7 +1320,8 @@
                     order: sortOrder,
                     ...(search && { search }),
                     ...(industry && { industry }),
-                    ...(size && { size })
+                    ...(size && { size }),
+                    ...(status && { status })
                 });
 
                 const response = await fetch(`${API_URL}/api/admin/companies?${params}`, {
@@ -1198,11 +1344,11 @@
 
         function loadMockCompanies() {
             companiesData = [
-                { id: 1, name: 'Acme Corporation', industry: 'technology', company_size: 'large', employee_count: 450, user_count: 12, scan_count: 156, created_at: '2025-06-15T10:30:00Z' },
-                { id: 2, name: 'TechStart Inc', industry: 'technology', company_size: 'small', employee_count: 25, user_count: 5, scan_count: 42, created_at: '2025-08-22T14:15:00Z' },
-                { id: 3, name: 'GlobalSecure Ltd', industry: 'professional_services', company_size: 'medium', employee_count: 180, user_count: 8, scan_count: 89, created_at: '2025-07-10T09:00:00Z' },
-                { id: 4, name: 'HealthFirst Medical', industry: 'healthcare', company_size: 'enterprise', employee_count: 2500, user_count: 25, scan_count: 312, created_at: '2025-03-05T11:45:00Z' },
-                { id: 5, name: 'FinanceHub Bank', industry: 'finance', company_size: 'large', employee_count: 800, user_count: 15, scan_count: 198, created_at: '2025-04-20T16:30:00Z' },
+                { id: 1, name: 'Acme Corporation', industry: 'technology', company_size: 'large', user_count: 12, scan_count: 156, status: 'ACTIVE', primary_domain: 'acme.com', created_at: '2025-06-15T10:30:00Z' },
+                { id: 2, name: 'TechStart Inc', industry: 'technology', company_size: 'small', user_count: 5, scan_count: 42, status: 'TRIAL', primary_domain: 'techstart.io', created_at: '2025-08-22T14:15:00Z' },
+                { id: 3, name: 'GlobalSecure Ltd', industry: 'professional_services', company_size: 'medium', user_count: 8, scan_count: 89, status: 'ACTIVE', primary_domain: 'globalsecure.com', created_at: '2025-07-10T09:00:00Z' },
+                { id: 4, name: 'HealthFirst Medical', industry: 'healthcare', company_size: 'enterprise', user_count: 25, scan_count: 312, status: 'ACTIVE', primary_domain: 'healthfirst.org', created_at: '2025-03-05T11:45:00Z' },
+                { id: 5, name: 'FinanceHub Bank', industry: 'finance', company_size: 'large', user_count: 15, scan_count: 198, status: 'SUSPENDED', primary_domain: 'financehub.com', created_at: '2025-04-20T16:30:00Z' },
             ];
             totalPages = 1;
             renderCompanies();
@@ -1215,7 +1361,7 @@
             if (companiesData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <div class="empty-icon">&#127970;</div>
                                 <p>No companies found</p>
@@ -1226,9 +1372,12 @@
                 return;
             }
 
-            const canDelete = currentUser.role === 'owner';
+            const canDelete = ['owner', 'SUPER_ADMIN', 'super_admin'].includes(currentUser.role);
 
-            tbody.innerHTML = companiesData.map(company => `
+            tbody.innerHTML = companiesData.map(company => {
+                const status = company.status || 'ACTIVE';
+                const statusClass = status.toLowerCase();
+                return `
                 <tr>
                     <td>
                         <div class="company-cell">
@@ -1244,6 +1393,7 @@
                     <td class="stat-cell">${company.user_count || 0}</td>
                     <td class="stat-cell">${company.scan_count || 0}</td>
                     <td>${formatDate(company.created_at)}</td>
+                    <td class="status-cell"><span class="status-dot status-${statusClass}" title="${status}"></span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn" onclick="editCompany(${company.id})">Edit</button>
@@ -1253,7 +1403,7 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `;}).join('');
         }
 
         function renderPagination() {
@@ -1312,7 +1462,12 @@
             document.getElementById('saveCompanyBtn').textContent = 'Create Company';
             document.getElementById('companyForm').reset();
             document.getElementById('companyId').value = '';
-            document.getElementById('adminUserGroup').style.display = 'block';
+            document.getElementById('companyStatus').value = 'ACTIVE';
+            document.getElementById('userAssignmentGroup').style.display = 'block';
+            document.getElementById('newUsersSection').style.display = 'none';
+            document.getElementById('createUsersNow').checked = false;
+            // Refresh available users list
+            populateAvailableUsers(availableUsers);
             openModal('companyModal');
         }
 
@@ -1326,8 +1481,10 @@
             document.getElementById('companyName').value = company.name || '';
             document.getElementById('companyIndustry').value = company.industry || '';
             document.getElementById('companySize').value = company.company_size || '';
-            document.getElementById('employeeCount').value = company.employee_count || '';
-            document.getElementById('adminUserGroup').style.display = 'none';
+            document.getElementById('companyStatus').value = company.status || 'ACTIVE';
+            document.getElementById('companyDomain').value = company.primary_domain || '';
+            // Hide user assignment when editing (manage users separately)
+            document.getElementById('userAssignmentGroup').style.display = 'none';
             openModal('companyModal');
         }
 
@@ -1337,9 +1494,22 @@
                 name: document.getElementById('companyName').value,
                 industry: document.getElementById('companyIndustry').value,
                 company_size: document.getElementById('companySize').value,
-                employee_count: parseInt(document.getElementById('employeeCount').value) || null,
-                admin_user_id: document.getElementById('adminUser').value || null
+                status: document.getElementById('companyStatus').value,
+                primary_domain: document.getElementById('companyDomain').value
             };
+
+            // Add user assignments only for new companies
+            if (!companyId) {
+                companyData.assigned_users = Array.from(document.getElementById('existingUsers').selectedOptions)
+                    .map(opt => parseInt(opt.value));
+
+                if (document.getElementById('createUsersNow').checked) {
+                    const emailText = document.getElementById('newUserEmails').value;
+                    companyData.new_user_emails = emailText.split('\n')
+                        .map(e => e.trim())
+                        .filter(e => e && e.includes('@'));
+                }
+            }
 
             try {
                 const url = companyId
@@ -1474,44 +1644,42 @@
             `).join('');
         }
 
-        function deleteCompany(companyId, companyName, userCount) {
-            if (currentUser.role !== 'owner') {
-                showToast('Only owners can delete companies', 'error');
+        async function deleteCompany(companyId, companyName, userCount) {
+            // First confirmation
+            let warningMsg = `Delete ${companyName}?\n\nThis will remove:\n- Company account\n- All scan data`;
+            if (userCount > 0) {
+                warningMsg += `\n- ${userCount} user(s) will be unassigned`;
+            }
+            warningMsg += '\n\nThis cannot be undone.';
+
+            if (!confirm(warningMsg)) {
                 return;
             }
 
-            document.getElementById('confirmModalTitle').textContent = `Delete ${companyName}`;
-            document.getElementById('confirmModalText').textContent = 'Are you sure you want to delete this company? This action cannot be undone.';
+            // Second confirmation with typed input
+            const finalConfirm = prompt(`FINAL WARNING: Deleting ${companyName} is permanent.\n\nType DELETE to confirm:`);
 
-            const warningDiv = document.getElementById('deleteWarning');
-            if (userCount > 0) {
-                warningDiv.style.display = 'flex';
-                document.getElementById('deleteWarningText').textContent = `This company has ${userCount} user(s) assigned. They will be unassigned from the company but will retain access to their accounts.`;
-            } else {
-                warningDiv.style.display = 'none';
+            if (finalConfirm !== 'DELETE') {
+                showToast('Deletion cancelled', 'info');
+                return;
             }
 
-            document.getElementById('confirmDeleteBtn').onclick = async () => {
-                try {
-                    const response = await fetch(`${API_URL}/api/admin/companies/${companyId}`, {
-                        method: 'DELETE',
-                        headers: getAuthHeaders()
-                    });
+            try {
+                const response = await fetch(`${API_URL}/api/admin/companies/${companyId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
 
-                    if (response.ok) {
-                        showToast('Company deleted successfully', 'success');
-                        closeModal('confirmModal');
-                        loadCompanies();
-                    } else {
-                        const error = await response.json();
-                        showToast(error.error || 'Failed to delete company', 'error');
-                    }
-                } catch (error) {
-                    showToast('Connection error. Please try again.', 'error');
+                if (response.ok) {
+                    showToast('Company deleted successfully', 'success');
+                    loadCompanies();
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to delete company', 'error');
                 }
-            };
-
-            openModal('confirmModal');
+            } catch (error) {
+                showToast('Connection error. Please try again.', 'error');
+            }
         }
 
         // URL Params

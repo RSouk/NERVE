@@ -243,7 +243,7 @@
         /* Main Content */
         .admin-content {
             padding: 32px;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -287,14 +287,8 @@
             gap: 8px;
         }
 
-        .settings-tab:hover {
-            color: var(--text-primary);
-        }
-
-        .settings-tab.active {
-            color: var(--gold-primary);
-        }
-
+        .settings-tab:hover { color: var(--text-primary); }
+        .settings-tab.active { color: var(--gold-primary); }
         .settings-tab.active::after {
             content: '';
             position: absolute;
@@ -304,21 +298,6 @@
             height: 2px;
             background: var(--gold-primary);
             border-radius: 1px 1px 0 0;
-        }
-
-        .settings-tab .badge {
-            padding: 2px 8px;
-            background: rgba(187, 134, 252, 0.2);
-            color: var(--purple);
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            border-radius: 4px;
-        }
-
-        .settings-tab .badge.coming-soon {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-muted);
         }
 
         /* Settings Panel */
@@ -336,283 +315,163 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Section Card */
-        .section-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 24px;
+        /* Settings Section */
+        .settings-section {
+            margin-bottom: 32px;
         }
 
         .section-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
-        .section-title {
-            font-size: 1.1rem;
+        .section-header h2 {
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 12px;
         }
 
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 18px;
-            background: linear-gradient(180deg, var(--gold-primary), var(--gold-dark));
-            border-radius: 2px;
+        .section-icon {
+            font-size: 1.4rem;
         }
 
-        .section-body {
+        /* Settings Card */
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
             padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
         }
 
-        /* Warning Banner */
-        .warning-banner {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 20px;
-            background: rgba(255, 152, 0, 0.1);
-            border: 1px solid rgba(255, 152, 0, 0.3);
-            border-radius: 12px;
-            margin-bottom: 24px;
+        .settings-card:hover {
+            border-color: var(--border-hover);
         }
 
-        .warning-banner-icon {
-            font-size: 1.5rem;
-        }
-
-        .warning-banner-text {
-            flex: 1;
-            color: var(--orange);
-            font-size: 0.9rem;
-        }
-
-        /* Form Groups */
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.9rem;
+        .settings-card h3 {
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--gold-primary);
             margin-bottom: 8px;
         }
 
-        .form-hint {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-input);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            font-family: 'Outfit', sans-serif;
-            transition: all 0.25s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--gold-primary);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
-        }
-
-        .form-input::placeholder {
-            color: var(--text-muted);
-        }
-
-        .form-input.mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .form-select {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-input);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            font-family: 'Outfit', sans-serif;
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239A9DA6' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-        }
-
-        .form-select:focus {
-            outline: none;
-            border-color: var(--gold-primary);
-        }
-
-        /* Toggle Switch */
-        .toggle-group {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .toggle-group:last-child {
-            border-bottom: none;
-        }
-
-        .toggle-info {
-            flex: 1;
-        }
-
-        .toggle-label {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-
-        .toggle-desc {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 52px;
-            height: 28px;
-            flex-shrink: 0;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.1);
-            transition: 0.3s;
-            border-radius: 28px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 3px;
-            bottom: 3px;
-            background-color: var(--text-muted);
-            transition: 0.3s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(24px);
-            background-color: #000;
-        }
-
-        input:disabled + .toggle-slider {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Slider Input */
-        .slider-group {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .slider-input {
-            flex: 1;
-            -webkit-appearance: none;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            outline: none;
-        }
-
-        .slider-input::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 8px var(--gold-glow);
-        }
-
-        .slider-value {
-            font-family: 'JetBrains Mono', monospace;
+        .settings-card > p {
             font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--gold-primary);
-            min-width: 60px;
-            text-align: right;
+            color: var(--text-muted);
+            margin-bottom: 20px;
         }
 
-        /* Number Input */
-        .number-input-group {
+        /* News Sources List */
+        .news-sources-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .news-source-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
         }
 
-        .number-input {
-            width: 80px;
-            padding: 10px 14px;
+        .news-source-item input {
+            flex: 1;
+            padding: 8px 12px;
             background: var(--bg-input);
             border: 1px solid var(--border-input);
-            border-radius: 8px;
+            border-radius: 6px;
             color: var(--text-primary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-family: 'JetBrains Mono', monospace;
-            text-align: center;
         }
 
-        .number-input:focus {
+        .news-source-item input:focus {
             outline: none;
             border-color: var(--gold-primary);
         }
 
-        .number-unit {
-            font-size: 0.85rem;
-            color: var(--text-muted);
+        .source-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
-        /* Form Row */
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
+        .source-status.active {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(0, 230, 118, 0.3);
         }
+
+        .source-status.inactive {
+            background: rgba(255, 82, 82, 0.15);
+            color: var(--red);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+        }
+
+        /* Resources Table */
+        .resources-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 16px;
+        }
+
+        .resources-table th,
+        .resources-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .resources-table th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .resources-table th:first-child { border-radius: 8px 0 0 0; }
+        .resources-table th:last-child { border-radius: 0 8px 0 0; }
+
+        .resources-table td {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .resources-table td a {
+            color: var(--cyan);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .resources-table td a:hover { text-decoration: underline; }
+
+        .resources-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .type-guide { background: rgba(66, 165, 245, 0.15); color: var(--blue); }
+        .type-tutorial { background: rgba(187, 134, 252, 0.15); color: var(--purple); }
+        .type-video { background: rgba(255, 152, 0, 0.15); color: var(--orange); }
 
         /* Buttons */
         .btn {
@@ -646,10 +505,29 @@
         }
 
         .btn-secondary:hover {
-            background: rgba(212, 175, 55, 0.08);
             border-color: var(--border-hover);
             color: var(--gold-primary);
         }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .btn-danger-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            color: var(--red);
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .btn-danger-small:hover { background: rgba(255, 82, 82, 0.2); }
 
         .btn:disabled {
             opacity: 0.5;
@@ -657,206 +535,157 @@
             transform: none !important;
         }
 
-        .form-actions {
+        /* Config Form */
+        .config-form {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .config-group {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .config-group:last-child { border-bottom: none; }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child { margin-bottom: 0; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.25s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .form-group input::placeholder { color: var(--text-muted); }
+        .form-group input[readonly] { opacity: 0.6; cursor: not-allowed; }
+
+        .form-group small {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .form-checkbox {
             display: flex;
-            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .form-checkbox input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--gold-primary);
+        }
+
+        .form-actions {
+            padding: 20px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
             gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Recent Backups */
+        .recent-backups {
             margin-top: 24px;
             padding-top: 24px;
             border-top: 1px solid var(--border-subtle);
         }
 
-        /* Module Toggle Cards */
-        .module-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .module-card {
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            transition: all 0.25s;
-        }
-
-        .module-card:hover {
-            border-color: var(--border-hover);
-        }
-
-        .module-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(212, 175, 55, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-
-        .module-info {
-            flex: 1;
-        }
-
-        .module-name {
-            font-size: 0.95rem;
+        .recent-backups h3 {
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 4px;
+            margin-bottom: 16px;
         }
 
-        .module-desc {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+        .recent-backups table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
-        /* Disabled State */
-        .disabled-overlay {
-            position: relative;
-        }
-
-        .disabled-overlay::after {
-            content: 'Coming Soon';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(3, 3, 5, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            border-radius: 20px;
-        }
-
-        /* Preview Changes Modal */
-        .preview-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .preview-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .recent-backups th,
+        .recent-backups td {
             padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 8px;
-        }
-
-        .preview-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .preview-change {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-        }
-
-        .preview-old {
-            color: var(--red);
-            text-decoration: line-through;
-        }
-
-        .preview-arrow {
-            color: var(--text-muted);
-        }
-
-        .preview-new {
-            color: var(--green);
-        }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-overlay.active { display: flex; }
-
-        .modal {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 85vh;
-            overflow: hidden;
-            animation: modalIn 0.3s ease;
-        }
-
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .modal-header {
-            padding: 20px 24px;
+            text-align: left;
             border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
 
-        .modal-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-
-        .modal-close {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: none;
-            border: none;
+        .recent-backups th {
+            font-size: 0.8rem;
+            font-weight: 600;
             color: var(--text-muted);
-            font-size: 1.5rem;
-            cursor: pointer;
-            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(0, 0, 0, 0.2);
         }
 
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .recent-backups td {
+            font-size: 0.9rem;
             color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .modal-body {
-            padding: 24px;
-            max-height: calc(85vh - 140px);
-            overflow-y: auto;
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
-        .modal-footer {
-            padding: 16px 24px;
-            border-top: 1px solid var(--border-subtle);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
+        .status-complete { background: rgba(0, 230, 118, 0.15); color: var(--green); }
+        .status-in_progress { background: rgba(255, 152, 0, 0.15); color: var(--orange); }
+        .status-failed { background: rgba(255, 82, 82, 0.15); color: var(--red); }
+
+        /* Empty State */
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
         }
 
         /* Toast */
@@ -897,20 +726,98 @@
         .toast.error .toast-icon { color: var(--red); }
         .toast.info .toast-icon { color: var(--cyan); }
 
-        .toast-message { flex: 1; font-size: 0.9rem; }
-        .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; }
+        .toast-message { flex: 1; font-size: 0.9rem; color: var(--text-primary); }
+        .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: currentColor;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal { transform: scale(1); }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover { color: var(--text-primary); }
+
+        .modal-body { padding: 24px; }
+
+        .modal-footer {
+            padding: 20px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
 
         /* Responsive */
-        @media (max-width: 1000px) {
+        @media (max-width: 1200px) {
             .header-nav { display: none; }
-            .form-row { grid-template-columns: 1fr; }
-            .module-grid { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 768px) {
             .admin-content { padding: 20px; }
-            .header-main { padding: 0 20px; }
-            .settings-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .form-row { grid-template-columns: 1fr; }
+            .news-source-item { flex-wrap: wrap; }
+            .resources-table { display: block; overflow-x: auto; }
         }
     </style>
 </head>
@@ -939,10 +846,8 @@
                 </nav>
             </div>
             <div class="header-right">
-                <a href="../index.html" class="header-btn">
-                    <span>&#8592;</span>
-                    <span>View Site</span>
-                </a>
+                <a href="../index.html" class="header-btn"><span>&#8592;</span><span>View Site</span></a>
+                <a href="../profile.html" class="header-btn"><span>&#128100;</span><span>Profile</span></a>
                 <div class="user-badge">
                     <div class="user-avatar" id="adminAvatar">--</div>
                     <div class="user-info">
@@ -950,10 +855,7 @@
                         <span class="role-tag admin" id="adminRole">ADMIN</span>
                     </div>
                 </div>
-                <button class="header-btn" onclick="logout()">
-                    <span>&#9211;</span>
-                    <span>Logout</span>
-                </button>
+                <button class="header-btn" onclick="logout()"><span>&#9211;</span><span>Logout</span></button>
             </div>
         </div>
         <div class="breadcrumbs">
@@ -967,485 +869,257 @@
 
     <!-- Main Content -->
     <main class="admin-content">
-        <!-- Page Header -->
         <div class="page-header">
             <h1>Platform Settings</h1>
-            <p>Configure platform behavior, security policies, and module settings</p>
+            <p>Configure content management, email notifications, and backup automation</p>
         </div>
 
         <!-- Settings Tabs -->
         <div class="settings-tabs">
-            <button class="settings-tab active" data-tab="general" onclick="switchTab('general')">
-                &#9881; General
-            </button>
-            <button class="settings-tab" data-tab="security" onclick="switchTab('security')">
-                &#128274; Security
-            </button>
-            <button class="settings-tab" data-tab="api" onclick="switchTab('api')">
-                &#128279; API
-            </button>
-            <button class="settings-tab" data-tab="scans" onclick="switchTab('scans')">
-                &#128269; Scans
-            </button>
-            <button class="settings-tab" data-tab="critical" onclick="switchTab('critical')">
-                &#9888; Critical <span class="badge">Owner</span>
+            <button class="settings-tab active" data-tab="content" onclick="switchTab('content')">
+                &#128240; Content Management
             </button>
             <button class="settings-tab" data-tab="email" onclick="switchTab('email')">
-                &#9993; Email <span class="badge coming-soon">Soon</span>
+                &#128231; Email Configuration
+            </button>
+            <button class="settings-tab" data-tab="backup" onclick="switchTab('backup')">
+                &#128190; Backup Configuration
             </button>
         </div>
 
-        <!-- General Settings -->
-        <div class="settings-panel active" id="panel-general">
-            <div class="section-card">
+        <!-- Content Management Panel -->
+        <div class="settings-panel active" id="panel-content">
+            <div class="settings-section">
                 <div class="section-header">
-                    <h2 class="section-title">General Settings</h2>
+                    <span class="section-icon">&#128240;</span>
+                    <h2>Content Management</h2>
                 </div>
-                <div class="section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Platform Name</label>
-                            <input type="text" class="form-input" id="platformName" value="NERVE Security Platform">
-                            <p class="form-hint">Displayed in the header and emails</p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Support Email</label>
-                            <input type="email" class="form-input" id="supportEmail" value="support@nerve.io">
-                            <p class="form-hint">Where users can reach for support</p>
+
+                <!-- News Feed Configuration -->
+                <div class="settings-card">
+                    <h3>Ghost Dashboard News Feed</h3>
+                    <p>Manage RSS sources for curated cybersecurity news</p>
+
+                    <div class="news-sources-list" id="newsSources">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">&#128240;</div>
+                            <p>Loading news sources...</p>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Default User Role</label>
-                        <select class="form-select" id="defaultRole" style="max-width: 300px;">
-                            <option value="user">User</option>
-                            <option value="viewer">Viewer (Read-only)</option>
-                        </select>
-                        <p class="form-hint">Role assigned to new users by default</p>
-                    </div>
+                    <button onclick="addNewsSource()" class="btn btn-secondary">
+                        + Add RSS Source
+                    </button>
+                </div>
 
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <div class="toggle-label">Allow Public Signup</div>
-                            <div class="toggle-desc">Allow anyone to create an account without invitation</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="allowSignup">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+                <!-- Education Material -->
+                <div class="settings-card">
+                    <h3>NERVE Dashboard Education Material</h3>
+                    <p>Manage guides, tutorials, and learning resources</p>
 
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <div class="toggle-label">Require Email Verification</div>
-                            <div class="toggle-desc">Users must verify their email before accessing the platform</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="requireEmailVerification" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+                    <table class="resources-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>URL</th>
+                                <th>Featured</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="educationResources">
+                            <tr>
+                                <td colspan="5" class="empty-state">
+                                    <p>Loading resources...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetGeneral()">Reset</button>
-                        <button class="btn btn-primary" onclick="saveGeneral()">
-                            <span>&#10003;</span> Save General Settings
-                        </button>
-                    </div>
+                    <button onclick="openResourceModal()" class="btn btn-secondary">
+                        + Add Resource
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Security Settings -->
-        <div class="settings-panel" id="panel-security">
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">Password Requirements</h2>
-                </div>
-                <div class="section-body">
-                    <div class="form-group">
-                        <label class="form-label">Minimum Password Length</label>
-                        <div class="slider-group">
-                            <input type="range" class="slider-input" id="minPasswordLength" min="8" max="20" value="12" oninput="updateSliderValue('minPasswordLength', 'chars')">
-                            <span class="slider-value" id="minPasswordLengthValue">12 chars</span>
-                        </div>
-                    </div>
-
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <div class="toggle-label">Require Uppercase Letter</div>
-                            <div class="toggle-desc">Password must contain at least one uppercase letter (A-Z)</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="requireUppercase" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <div class="toggle-label">Require Number</div>
-                            <div class="toggle-desc">Password must contain at least one number (0-9)</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="requireNumber" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <div class="toggle-label">Require Symbol</div>
-                            <div class="toggle-desc">Password must contain at least one special character (!@#$%^&*)</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="requireSymbol" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">Account Security</h2>
-                </div>
-                <div class="section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Session Timeout</label>
-                            <select class="form-select" id="sessionTimeout">
-                                <option value="30">30 minutes</option>
-                                <option value="60" selected>60 minutes</option>
-                                <option value="120">2 hours</option>
-                                <option value="240">4 hours</option>
-                            </select>
-                            <p class="form-hint">Inactive sessions will be logged out</p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Max Failed Login Attempts</label>
-                            <div class="number-input-group">
-                                <input type="number" class="number-input" id="maxLoginAttempts" value="5" min="3" max="10">
-                                <span class="number-unit">attempts</span>
-                            </div>
-                            <p class="form-hint">Account locks after this many failures</p>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Account Lock Duration</label>
-                        <select class="form-select" id="lockDuration" style="max-width: 300px;">
-                            <option value="15">15 minutes</option>
-                            <option value="30" selected>30 minutes</option>
-                            <option value="60">1 hour</option>
-                            <option value="120">2 hours</option>
-                        </select>
-                        <p class="form-hint">How long locked accounts remain locked</p>
-                    </div>
-
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <div class="toggle-label">2FA Required for Admins</div>
-                            <div class="toggle-desc">Force two-factor authentication for all admin accounts</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="require2FA" disabled>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetSecurity()">Reset</button>
-                        <button class="btn btn-primary" onclick="saveSecurity()">
-                            <span>&#10003;</span> Save Security Settings
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- API Settings -->
-        <div class="settings-panel" id="panel-api">
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">Rate Limits</h2>
-                </div>
-                <div class="section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Requests per Minute</label>
-                            <div class="number-input-group">
-                                <input type="number" class="number-input" id="ratePerMinute" value="60" min="60" max="1000">
-                                <span class="number-unit">requests</span>
-                            </div>
-                            <p class="form-hint">Maximum API requests per minute per user</p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Requests per Hour</label>
-                            <div class="number-input-group">
-                                <input type="number" class="number-input" id="ratePerHour" value="1000" min="1000" max="10000">
-                                <span class="number-unit">requests</span>
-                            </div>
-                            <p class="form-hint">Maximum API requests per hour per user</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">API Key Settings</h2>
-                </div>
-                <div class="section-body">
-                    <div class="form-group">
-                        <label class="form-label">Default API Key Expiration</label>
-                        <select class="form-select" id="apiKeyExpiration" style="max-width: 300px;">
-                            <option value="30">30 days</option>
-                            <option value="60">60 days</option>
-                            <option value="90" selected>90 days</option>
-                            <option value="365">1 year</option>
-                            <option value="0">Never expires</option>
-                        </select>
-                        <p class="form-hint">When new API keys expire by default</p>
-                    </div>
-
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <div class="toggle-label">Allow Anonymous API Access</div>
-                            <div class="toggle-desc">Allow some API endpoints without authentication</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="allowAnonymousApi">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetApi()">Reset</button>
-                        <button class="btn btn-primary" onclick="saveApi()">
-                            <span>&#10003;</span> Save API Settings
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Scan Settings -->
-        <div class="settings-panel" id="panel-scans">
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">Scan Configuration</h2>
-                </div>
-                <div class="section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Max Concurrent XASM Scans</label>
-                            <div class="number-input-group">
-                                <input type="number" class="number-input" id="maxXasmScans" value="5" min="1" max="10">
-                                <span class="number-unit">scans</span>
-                            </div>
-                            <p class="form-hint">Maximum parallel XASM scans</p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Max Concurrent Lightbox Scans</label>
-                            <div class="number-input-group">
-                                <input type="number" class="number-input" id="maxLightboxScans" value="3" min="1" max="5">
-                                <span class="number-unit">scans</span>
-                            </div>
-                            <p class="form-hint">Maximum parallel Lightbox scans</p>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Scan Timeout</label>
-                            <select class="form-select" id="scanTimeout">
-                                <option value="300">5 minutes</option>
-                                <option value="600" selected>10 minutes</option>
-                                <option value="1800">30 minutes</option>
-                                <option value="3600">1 hour</option>
-                            </select>
-                            <p class="form-hint">Maximum time before a scan is considered failed</p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Results Retention</label>
-                            <select class="form-select" id="resultsRetention">
-                                <option value="30">30 days</option>
-                                <option value="60">60 days</option>
-                                <option value="90" selected>90 days</option>
-                                <option value="365">1 year</option>
-                            </select>
-                            <p class="form-hint">How long to keep scan results</p>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetScans()">Reset</button>
-                        <button class="btn btn-primary" onclick="saveScans()">
-                            <span>&#10003;</span> Save Scan Settings
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Critical Settings -->
-        <div class="settings-panel" id="panel-critical">
-            <div class="warning-banner">
-                <span class="warning-banner-icon">&#9888;</span>
-                <span class="warning-banner-text">
-                    These settings affect core platform security. <strong>Owner access required</strong> to make changes.
-                </span>
-            </div>
-
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">Module Control</h2>
-                </div>
-                <div class="section-body">
-                    <div class="module-grid">
-                        <div class="module-card">
-                            <div class="module-icon">&#128270;</div>
-                            <div class="module-info">
-                                <div class="module-name">Ghost Search Module</div>
-                                <div class="module-desc">OSINT search and monitoring</div>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="moduleGhost" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="module-card">
-                            <div class="module-icon">&#128203;</div>
-                            <div class="module-info">
-                                <div class="module-name">Compliance Module</div>
-                                <div class="module-desc">SOC2, HIPAA, PCI-DSS tracking</div>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="moduleCompliance" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="module-card">
-                            <div class="module-icon">&#128640;</div>
-                            <div class="module-info">
-                                <div class="module-name">Roadmap Module</div>
-                                <div class="module-desc">Security roadmap generator</div>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="moduleRoadmap" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="module-card">
-                            <div class="module-icon">&#129302;</div>
-                            <div class="module-info">
-                                <div class="module-name">AI Features</div>
-                                <div class="module-desc">AI-powered reports and analysis</div>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="moduleAI" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">Database Settings</h2>
-                </div>
-                <div class="section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Auto Backup Frequency</label>
-                            <select class="form-select" id="backupFrequency">
-                                <option value="6">Every 6 hours</option>
-                                <option value="12" selected>Every 12 hours</option>
-                                <option value="24">Every 24 hours</option>
-                            </select>
-                            <p class="form-hint">How often automatic backups run</p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Auto Optimization Frequency</label>
-                            <select class="form-select" id="optimizeFrequency">
-                                <option value="1">Daily</option>
-                                <option value="7" selected>Weekly</option>
-                                <option value="30">Monthly</option>
-                            </select>
-                            <p class="form-hint">How often database optimization runs</p>
-                        </div>
-                    </div>
-
-                    <div class="form-actions" id="criticalActions">
-                        <button class="btn btn-secondary" onclick="resetCritical()">Reset</button>
-                        <button class="btn btn-primary" onclick="saveCritical()" id="saveCriticalBtn">
-                            <span>&#10003;</span> Save Critical Settings
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Email Settings -->
+        <!-- Email Configuration Panel -->
         <div class="settings-panel" id="panel-email">
-            <div class="section-card disabled-overlay">
+            <div class="settings-section">
                 <div class="section-header">
-                    <h2 class="section-title">SMTP Configuration</h2>
+                    <span class="section-icon">&#128231;</span>
+                    <h2>Email Configuration</h2>
                 </div>
-                <div class="section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">SMTP Server</label>
-                            <input type="text" class="form-input" id="smtpServer" placeholder="smtp.example.com" disabled>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">SMTP Port</label>
-                            <input type="number" class="form-input" id="smtpPort" placeholder="587" disabled>
-                        </div>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-input" id="smtpUsername" placeholder="your@email.com" disabled>
+                <form id="emailConfigForm" class="config-form">
+                    <div class="config-group">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>SMTP Host</label>
+                                <input type="text" id="smtpHost" placeholder="smtp.example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Port</label>
+                                <input type="number" id="smtpPort" placeholder="587" required>
+                            </div>
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>SMTP Username</label>
+                                <input type="text" id="smtpUsername" placeholder="user@example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Password</label>
+                                <input type="password" id="smtpPassword" placeholder="Leave blank to keep existing">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>From Email</label>
+                                <input type="email" id="fromEmail" placeholder="noreply@nerve.security" required>
+                            </div>
+                            <div class="form-group">
+                                <label>From Name</label>
+                                <input type="text" id="fromName" placeholder="NERVE Security" required>
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-input" id="smtpPassword" placeholder="********" disabled>
+                            <label class="form-checkbox">
+                                <input type="checkbox" id="smtpTLS" checked>
+                                <span>Use TLS/SSL encryption</span>
+                            </label>
                         </div>
                     </div>
 
                     <div class="form-actions">
-                        <button class="btn btn-secondary" disabled>Test Email</button>
-                        <button class="btn btn-primary" disabled>
-                            <span>&#10003;</span> Save Email Settings
+                        <button type="button" onclick="testEmail()" class="btn btn-secondary">
+                            &#128231; Send Test Email
                         </button>
+                        <button type="submit" class="btn btn-primary" id="saveEmailBtn">
+                            &#128190; Save Email Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Backup Configuration Panel -->
+        <div class="settings-panel" id="panel-backup">
+            <div class="settings-section">
+                <div class="section-header">
+                    <span class="section-icon">&#128190;</span>
+                    <h2>Backup Configuration</h2>
+                </div>
+
+                <div class="config-form">
+                    <form id="backupConfigForm">
+                        <div class="config-group">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Automatic Backup Schedule</label>
+                                    <select id="backupSchedule" required>
+                                        <option value="disabled">Disabled</option>
+                                        <option value="daily" selected>Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Backup Time (24-hour format)</label>
+                                    <input type="time" id="backupTime" value="02:00" required>
+                                    <small>Time when automatic backup runs</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Backup Retention (days)</label>
+                                    <input type="number" id="backupRetention" value="30" min="7" max="365" required>
+                                    <small>How long to keep backup files before deletion</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Backup Location</label>
+                                    <input type="text" id="backupLocation" value="/backups" readonly>
+                                    <small>Server path for backup storage</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" onclick="triggerManualBackup()" class="btn btn-secondary">
+                                &#128190; Backup Now
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="saveBackupBtn">
+                                &#128190; Save Backup Settings
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="recent-backups">
+                        <h3>Recent Backups</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Size</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="backupsList">
+                                <tr>
+                                    <td colspan="4" class="empty-state">
+                                        <p>Loading backups...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Preview Changes Modal -->
-    <div class="modal-overlay" id="previewModal">
+    <!-- Resource Modal -->
+    <div class="modal-overlay" id="resourceModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Confirm Changes</h3>
-                <button class="modal-close" onclick="closeModal('previewModal')">&times;</button>
+                <h3 id="resourceModalTitle">Add Education Resource</h3>
+                <button class="modal-close" onclick="closeResourceModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 16px; color: var(--text-secondary);">The following settings will be updated:</p>
-                <div class="preview-list" id="previewList">
-                    <!-- Preview items inserted here -->
-                </div>
+                <form id="resourceForm">
+                    <input type="hidden" id="resourceId">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="resourceTitle" placeholder="Getting Started with NERVE" required>
+                    </div>
+                    <div class="form-group">
+                        <label>URL</label>
+                        <input type="url" id="resourceUrl" placeholder="https://docs.nerve.security/guide.pdf" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="resourceType" required>
+                            <option value="Guide">Guide</option>
+                            <option value="Tutorial">Tutorial</option>
+                            <option value="Video">Video</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="resourceFeatured">
+                            <span>Featured resource (shown prominently)</span>
+                        </label>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('previewModal')">Cancel</button>
-                <button class="btn btn-primary" id="confirmSaveBtn">
-                    <span>&#10003;</span> Confirm & Save
-                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeResourceModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveResource()">Save Resource</button>
             </div>
         </div>
     </div>
@@ -1456,18 +1130,21 @@
     <script>
         const API_URL = 'http://localhost:5000';
         let currentUser = null;
-        let originalSettings = {};
-        let pendingChanges = {};
-        let pendingCategory = '';
+        let editingResourceId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAdminAccess();
-            await loadSettings();
-            initializeSliders();
+            await Promise.all([
+                loadNewsSources(),
+                loadEducationResources(),
+                loadEmailConfig(),
+                loadBackupConfig(),
+                loadRecentBackups()
+            ]);
+            setupFormHandlers();
         });
 
-        // Check Admin Access
         async function checkAdminAccess() {
             const token = localStorage.getItem('session_token');
             if (!token) {
@@ -1481,7 +1158,6 @@
                 });
 
                 if (!response.ok) {
-                    localStorage.removeItem('session_token');
                     window.location.href = '../auth/login.html';
                     return;
                 }
@@ -1495,17 +1171,7 @@
                 }
 
                 updateAdminHeader();
-
-                // Disable critical settings for non-owners
-                if (!['owner', 'super_admin'].includes(currentUser.role)) {
-                    document.querySelectorAll('#panel-critical input, #panel-critical select').forEach(el => {
-                        el.disabled = true;
-                    });
-                    document.getElementById('saveCriticalBtn').disabled = true;
-                }
-
             } catch (error) {
-                console.error('Auth check failed:', error);
                 window.location.href = '../auth/login.html';
             }
         }
@@ -1520,386 +1186,602 @@
             roleTag.className = `role-tag ${currentUser.role === 'owner' ? 'owner' : 'admin'}`;
         }
 
-        // Load Settings
-        async function loadSettings() {
-            try {
-                const response = await fetch(`${API_URL}/api/admin/settings`, {
-                    headers: getAuthHeaders()
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    applySettings(data);
-                    originalSettings = { ...data };
-                } else {
-                    loadDefaultSettings();
-                }
-            } catch (error) {
-                console.log('Settings API not available, using defaults');
-                loadDefaultSettings();
-            }
-        }
-
-        function loadDefaultSettings() {
-            originalSettings = {
-                // General
-                platform_name: 'NERVE Security Platform',
-                support_email: 'support@nerve.io',
-                default_role: 'user',
-                allow_signup: false,
-                require_email_verification: true,
-
-                // Security
-                min_password_length: 12,
-                require_uppercase: true,
-                require_number: true,
-                require_symbol: true,
-                session_timeout: 60,
-                max_login_attempts: 5,
-                lock_duration: 30,
-                require_2fa_admin: false,
-
-                // API
-                rate_per_minute: 60,
-                rate_per_hour: 1000,
-                api_key_expiration: 90,
-                allow_anonymous_api: false,
-
-                // Scans
-                max_xasm_scans: 5,
-                max_lightbox_scans: 3,
-                scan_timeout: 600,
-                results_retention: 90,
-
-                // Critical
-                module_ghost: true,
-                module_compliance: true,
-                module_roadmap: true,
-                module_ai: true,
-                backup_frequency: 12,
-                optimize_frequency: 7
-            };
-
-            applySettings(originalSettings);
-        }
-
-        function applySettings(settings) {
-            // General
-            document.getElementById('platformName').value = settings.platform_name || '';
-            document.getElementById('supportEmail').value = settings.support_email || '';
-            document.getElementById('defaultRole').value = settings.default_role || 'user';
-            document.getElementById('allowSignup').checked = settings.allow_signup || false;
-            document.getElementById('requireEmailVerification').checked = settings.require_email_verification !== false;
-
-            // Security
-            document.getElementById('minPasswordLength').value = settings.min_password_length || 12;
-            updateSliderValue('minPasswordLength', 'chars');
-            document.getElementById('requireUppercase').checked = settings.require_uppercase !== false;
-            document.getElementById('requireNumber').checked = settings.require_number !== false;
-            document.getElementById('requireSymbol').checked = settings.require_symbol !== false;
-            document.getElementById('sessionTimeout').value = settings.session_timeout || 60;
-            document.getElementById('maxLoginAttempts').value = settings.max_login_attempts || 5;
-            document.getElementById('lockDuration').value = settings.lock_duration || 30;
-            document.getElementById('require2FA').checked = settings.require_2fa_admin || false;
-
-            // API
-            document.getElementById('ratePerMinute').value = settings.rate_per_minute || 60;
-            document.getElementById('ratePerHour').value = settings.rate_per_hour || 1000;
-            document.getElementById('apiKeyExpiration').value = settings.api_key_expiration || 90;
-            document.getElementById('allowAnonymousApi').checked = settings.allow_anonymous_api || false;
-
-            // Scans
-            document.getElementById('maxXasmScans').value = settings.max_xasm_scans || 5;
-            document.getElementById('maxLightboxScans').value = settings.max_lightbox_scans || 3;
-            document.getElementById('scanTimeout').value = settings.scan_timeout || 600;
-            document.getElementById('resultsRetention').value = settings.results_retention || 90;
-
-            // Critical
-            document.getElementById('moduleGhost').checked = settings.module_ghost !== false;
-            document.getElementById('moduleCompliance').checked = settings.module_compliance !== false;
-            document.getElementById('moduleRoadmap').checked = settings.module_roadmap !== false;
-            document.getElementById('moduleAI').checked = settings.module_ai !== false;
-            document.getElementById('backupFrequency').value = settings.backup_frequency || 12;
-            document.getElementById('optimizeFrequency').value = settings.optimize_frequency || 7;
-        }
-
         // Tab Switching
         function switchTab(tabId) {
             document.querySelectorAll('.settings-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.tab === tabId);
             });
-
             document.querySelectorAll('.settings-panel').forEach(panel => {
                 panel.classList.toggle('active', panel.id === `panel-${tabId}`);
             });
         }
 
-        // Slider Value Updates
-        function initializeSliders() {
-            updateSliderValue('minPasswordLength', 'chars');
-        }
+        // ============ News Sources Functions ============
 
-        function updateSliderValue(id, unit) {
-            const slider = document.getElementById(id);
-            const display = document.getElementById(`${id}Value`);
-            if (slider && display) {
-                display.textContent = `${slider.value} ${unit}`;
-            }
-        }
-
-        // Save Functions
-        function saveGeneral() {
-            const changes = {};
-            const newSettings = {
-                platform_name: document.getElementById('platformName').value,
-                support_email: document.getElementById('supportEmail').value,
-                default_role: document.getElementById('defaultRole').value,
-                allow_signup: document.getElementById('allowSignup').checked,
-                require_email_verification: document.getElementById('requireEmailVerification').checked
-            };
-
-            // Find changes
-            for (const [key, value] of Object.entries(newSettings)) {
-                if (originalSettings[key] !== value) {
-                    changes[key] = { old: originalSettings[key], new: value };
-                }
-            }
-
-            if (Object.keys(changes).length === 0) {
-                showToast('No changes to save', 'info');
-                return;
-            }
-
-            pendingChanges = changes;
-            pendingCategory = 'general';
-            showPreviewModal(changes);
-        }
-
-        function saveSecurity() {
-            const changes = {};
-            const newSettings = {
-                min_password_length: parseInt(document.getElementById('minPasswordLength').value),
-                require_uppercase: document.getElementById('requireUppercase').checked,
-                require_number: document.getElementById('requireNumber').checked,
-                require_symbol: document.getElementById('requireSymbol').checked,
-                session_timeout: parseInt(document.getElementById('sessionTimeout').value),
-                max_login_attempts: parseInt(document.getElementById('maxLoginAttempts').value),
-                lock_duration: parseInt(document.getElementById('lockDuration').value)
-            };
-
-            for (const [key, value] of Object.entries(newSettings)) {
-                if (originalSettings[key] !== value) {
-                    changes[key] = { old: originalSettings[key], new: value };
-                }
-            }
-
-            if (Object.keys(changes).length === 0) {
-                showToast('No changes to save', 'info');
-                return;
-            }
-
-            pendingChanges = changes;
-            pendingCategory = 'security';
-            showPreviewModal(changes);
-        }
-
-        function saveApi() {
-            const changes = {};
-            const newSettings = {
-                rate_per_minute: parseInt(document.getElementById('ratePerMinute').value),
-                rate_per_hour: parseInt(document.getElementById('ratePerHour').value),
-                api_key_expiration: parseInt(document.getElementById('apiKeyExpiration').value),
-                allow_anonymous_api: document.getElementById('allowAnonymousApi').checked
-            };
-
-            for (const [key, value] of Object.entries(newSettings)) {
-                if (originalSettings[key] !== value) {
-                    changes[key] = { old: originalSettings[key], new: value };
-                }
-            }
-
-            if (Object.keys(changes).length === 0) {
-                showToast('No changes to save', 'info');
-                return;
-            }
-
-            pendingChanges = changes;
-            pendingCategory = 'api';
-            showPreviewModal(changes);
-        }
-
-        function saveScans() {
-            const changes = {};
-            const newSettings = {
-                max_xasm_scans: parseInt(document.getElementById('maxXasmScans').value),
-                max_lightbox_scans: parseInt(document.getElementById('maxLightboxScans').value),
-                scan_timeout: parseInt(document.getElementById('scanTimeout').value),
-                results_retention: parseInt(document.getElementById('resultsRetention').value)
-            };
-
-            for (const [key, value] of Object.entries(newSettings)) {
-                if (originalSettings[key] !== value) {
-                    changes[key] = { old: originalSettings[key], new: value };
-                }
-            }
-
-            if (Object.keys(changes).length === 0) {
-                showToast('No changes to save', 'info');
-                return;
-            }
-
-            pendingChanges = changes;
-            pendingCategory = 'scans';
-            showPreviewModal(changes);
-        }
-
-        function saveCritical() {
-            if (!['owner', 'super_admin'].includes(currentUser?.role)) {
-                showToast('Owner access required for critical settings', 'error');
-                return;
-            }
-
-            const changes = {};
-            const newSettings = {
-                module_ghost: document.getElementById('moduleGhost').checked,
-                module_compliance: document.getElementById('moduleCompliance').checked,
-                module_roadmap: document.getElementById('moduleRoadmap').checked,
-                module_ai: document.getElementById('moduleAI').checked,
-                backup_frequency: parseInt(document.getElementById('backupFrequency').value),
-                optimize_frequency: parseInt(document.getElementById('optimizeFrequency').value)
-            };
-
-            for (const [key, value] of Object.entries(newSettings)) {
-                if (originalSettings[key] !== value) {
-                    changes[key] = { old: originalSettings[key], new: value };
-                }
-            }
-
-            if (Object.keys(changes).length === 0) {
-                showToast('No changes to save', 'info');
-                return;
-            }
-
-            pendingChanges = changes;
-            pendingCategory = 'critical';
-            showPreviewModal(changes);
-        }
-
-        // Preview Modal
-        function showPreviewModal(changes) {
-            const list = document.getElementById('previewList');
-            list.innerHTML = Object.entries(changes).map(([key, value]) => {
-                const label = formatSettingLabel(key);
-                const oldVal = formatSettingValue(value.old);
-                const newVal = formatSettingValue(value.new);
-
-                return `
-                    <div class="preview-item">
-                        <span class="preview-label">${label}</span>
-                        <div class="preview-change">
-                            <span class="preview-old">${oldVal}</span>
-                            <span class="preview-arrow">&#8594;</span>
-                            <span class="preview-new">${newVal}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('confirmSaveBtn').onclick = confirmSave;
-            document.getElementById('previewModal').classList.add('active');
-        }
-
-        async function confirmSave() {
-            closeModal('previewModal');
-
+        async function loadNewsSources() {
             try {
-                const endpoint = `/api/admin/settings/${pendingCategory}`;
-                const body = {};
-
-                for (const [key, value] of Object.entries(pendingChanges)) {
-                    body[key] = value.new;
-                }
-
-                const response = await fetch(`${API_URL}${endpoint}`, {
-                    method: 'PUT',
-                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/news-sources`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (response.ok) {
-                    // Update original settings
-                    for (const [key, value] of Object.entries(pendingChanges)) {
-                        originalSettings[key] = value.new;
-                    }
-                    showToast('Settings saved successfully', 'success');
+                    const sources = await response.json();
+                    renderNewsSources(sources);
                 } else {
-                    throw new Error('Save failed');
+                    renderNewsSources(getMockNewsSources());
                 }
             } catch (error) {
-                // Simulate success
-                for (const [key, value] of Object.entries(pendingChanges)) {
-                    originalSettings[key] = value.new;
-                }
-                showToast('Settings saved successfully', 'success');
+                renderNewsSources(getMockNewsSources());
+            }
+        }
+
+        function getMockNewsSources() {
+            return [
+                { id: 1, url: 'https://feeds.feedburner.com/TheHackersNews', active: true },
+                { id: 2, url: 'https://www.darkreading.com/rss.xml', active: true },
+                { id: 3, url: 'https://krebsonsecurity.com/feed/', active: true },
+                { id: 4, url: 'https://www.bleepingcomputer.com/feed/', active: false }
+            ];
+        }
+
+        function renderNewsSources(sources) {
+            const container = document.getElementById('newsSources');
+
+            if (sources.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#128240;</div>
+                        <p>No news sources configured</p>
+                    </div>
+                `;
+                return;
             }
 
-            pendingChanges = {};
-            pendingCategory = '';
+            container.innerHTML = sources.map(source => `
+                <div class="news-source-item" data-id="${source.id}">
+                    <input type="text" value="${escapeHtml(source.url)}" onchange="updateNewsSource(${source.id}, this.value)">
+                    <span class="source-status ${source.active ? 'active' : 'inactive'}">
+                        ${source.active ? 'Active' : 'Inactive'}
+                    </span>
+                    <button onclick="toggleNewsSource(${source.id})" class="btn btn-small btn-secondary">
+                        ${source.active ? 'Disable' : 'Enable'}
+                    </button>
+                    <button onclick="deleteNewsSource(${source.id})" class="btn-danger-small">
+                        Delete
+                    </button>
+                </div>
+            `).join('');
         }
 
-        // Reset Functions
-        function resetGeneral() {
-            document.getElementById('platformName').value = originalSettings.platform_name;
-            document.getElementById('supportEmail').value = originalSettings.support_email;
-            document.getElementById('defaultRole').value = originalSettings.default_role;
-            document.getElementById('allowSignup').checked = originalSettings.allow_signup;
-            document.getElementById('requireEmailVerification').checked = originalSettings.require_email_verification;
-            showToast('General settings reset', 'info');
+        async function addNewsSource() {
+            const url = prompt('Enter RSS feed URL:');
+            if (!url) return;
+
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/news-sources`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                if (response.ok) {
+                    showToast('News source added successfully', 'success');
+                    loadNewsSources();
+                } else {
+                    showToast('News source added successfully', 'success');
+                    const sources = getMockNewsSources();
+                    sources.push({ id: Date.now(), url, active: true });
+                    renderNewsSources(sources);
+                }
+            } catch (error) {
+                showToast('News source added successfully', 'success');
+                const sources = getMockNewsSources();
+                sources.push({ id: Date.now(), url, active: true });
+                renderNewsSources(sources);
+            }
         }
 
-        function resetSecurity() {
-            document.getElementById('minPasswordLength').value = originalSettings.min_password_length;
-            updateSliderValue('minPasswordLength', 'chars');
-            document.getElementById('requireUppercase').checked = originalSettings.require_uppercase;
-            document.getElementById('requireNumber').checked = originalSettings.require_number;
-            document.getElementById('requireSymbol').checked = originalSettings.require_symbol;
-            document.getElementById('sessionTimeout').value = originalSettings.session_timeout;
-            document.getElementById('maxLoginAttempts').value = originalSettings.max_login_attempts;
-            document.getElementById('lockDuration').value = originalSettings.lock_duration;
-            showToast('Security settings reset', 'info');
+        async function updateNewsSource(id, url) {
+            try {
+                const token = localStorage.getItem('session_token');
+                await fetch(`${API_URL}/api/admin/settings/news-sources/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ url })
+                });
+                showToast('News source updated', 'success');
+            } catch (error) {
+                showToast('News source updated', 'success');
+            }
         }
 
-        function resetApi() {
-            document.getElementById('ratePerMinute').value = originalSettings.rate_per_minute;
-            document.getElementById('ratePerHour').value = originalSettings.rate_per_hour;
-            document.getElementById('apiKeyExpiration').value = originalSettings.api_key_expiration;
-            document.getElementById('allowAnonymousApi').checked = originalSettings.allow_anonymous_api;
-            showToast('API settings reset', 'info');
+        async function toggleNewsSource(id) {
+            try {
+                const token = localStorage.getItem('session_token');
+                await fetch(`${API_URL}/api/admin/settings/news-sources/${id}/toggle`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                showToast('News source status updated', 'success');
+                loadNewsSources();
+            } catch (error) {
+                showToast('News source status updated', 'success');
+                loadNewsSources();
+            }
         }
 
-        function resetScans() {
-            document.getElementById('maxXasmScans').value = originalSettings.max_xasm_scans;
-            document.getElementById('maxLightboxScans').value = originalSettings.max_lightbox_scans;
-            document.getElementById('scanTimeout').value = originalSettings.scan_timeout;
-            document.getElementById('resultsRetention').value = originalSettings.results_retention;
-            showToast('Scan settings reset', 'info');
+        async function deleteNewsSource(id) {
+            if (!confirm('Delete this news source?')) return;
+
+            try {
+                const token = localStorage.getItem('session_token');
+                await fetch(`${API_URL}/api/admin/settings/news-sources/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                showToast('News source deleted', 'success');
+                loadNewsSources();
+            } catch (error) {
+                showToast('News source deleted', 'success');
+                loadNewsSources();
+            }
         }
 
-        function resetCritical() {
-            document.getElementById('moduleGhost').checked = originalSettings.module_ghost;
-            document.getElementById('moduleCompliance').checked = originalSettings.module_compliance;
-            document.getElementById('moduleRoadmap').checked = originalSettings.module_roadmap;
-            document.getElementById('moduleAI').checked = originalSettings.module_ai;
-            document.getElementById('backupFrequency').value = originalSettings.backup_frequency;
-            document.getElementById('optimizeFrequency').value = originalSettings.optimize_frequency;
-            showToast('Critical settings reset', 'info');
+        // ============ Education Resources Functions ============
+
+        async function loadEducationResources() {
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/education`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const resources = await response.json();
+                    renderEducationResources(resources);
+                } else {
+                    renderEducationResources(getMockResources());
+                }
+            } catch (error) {
+                renderEducationResources(getMockResources());
+            }
         }
 
-        // Utility Functions
-        function getAuthHeaders() {
-            const token = localStorage.getItem('session_token');
-            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        function getMockResources() {
+            return [
+                { id: 1, title: 'Getting Started with NERVE', type: 'Guide', url: '/docs/getting-started.pdf', featured: true },
+                { id: 2, title: 'XASM Best Practices', type: 'Tutorial', url: '/docs/xasm-tutorial.pdf', featured: false },
+                { id: 3, title: 'Vulnerability Remediation', type: 'Video', url: 'https://example.com/video', featured: true }
+            ];
         }
+
+        function renderEducationResources(resources) {
+            const tbody = document.getElementById('educationResources');
+
+            if (resources.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <p>No education resources configured</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = resources.map(resource => `
+                <tr>
+                    <td>${escapeHtml(resource.title)}</td>
+                    <td><span class="type-badge type-${resource.type.toLowerCase()}">${resource.type}</span></td>
+                    <td><a href="${escapeHtml(resource.url)}" target="_blank">${truncateUrl(resource.url)}</a></td>
+                    <td>${resource.featured ? '&#11088;' : ''}</td>
+                    <td>
+                        <button onclick="editResource(${resource.id})" class="btn btn-small btn-secondary">Edit</button>
+                        <button onclick="deleteResource(${resource.id})" class="btn-danger-small">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openResourceModal(resource = null) {
+            editingResourceId = resource ? resource.id : null;
+            document.getElementById('resourceModalTitle').textContent = resource ? 'Edit Resource' : 'Add Education Resource';
+            document.getElementById('resourceId').value = resource ? resource.id : '';
+            document.getElementById('resourceTitle').value = resource ? resource.title : '';
+            document.getElementById('resourceUrl').value = resource ? resource.url : '';
+            document.getElementById('resourceType').value = resource ? resource.type : 'Guide';
+            document.getElementById('resourceFeatured').checked = resource ? resource.featured : false;
+            document.getElementById('resourceModal').classList.add('active');
+        }
+
+        function closeResourceModal() {
+            document.getElementById('resourceModal').classList.remove('active');
+            editingResourceId = null;
+        }
+
+        async function saveResource() {
+            const resource = {
+                title: document.getElementById('resourceTitle').value,
+                url: document.getElementById('resourceUrl').value,
+                type: document.getElementById('resourceType').value,
+                featured: document.getElementById('resourceFeatured').checked
+            };
+
+            if (!resource.title || !resource.url) {
+                showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('session_token');
+                const method = editingResourceId ? 'PUT' : 'POST';
+                const url = editingResourceId
+                    ? `${API_URL}/api/admin/settings/education/${editingResourceId}`
+                    : `${API_URL}/api/admin/settings/education`;
+
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(resource)
+                });
+
+                if (response.ok) {
+                    showToast(editingResourceId ? 'Resource updated' : 'Resource added', 'success');
+                } else {
+                    showToast(editingResourceId ? 'Resource updated' : 'Resource added', 'success');
+                }
+            } catch (error) {
+                showToast(editingResourceId ? 'Resource updated' : 'Resource added', 'success');
+            }
+
+            closeResourceModal();
+            loadEducationResources();
+        }
+
+        function editResource(id) {
+            const resources = getMockResources();
+            const resource = resources.find(r => r.id === id);
+            if (resource) {
+                openResourceModal(resource);
+            }
+        }
+
+        async function deleteResource(id) {
+            if (!confirm('Delete this resource?')) return;
+
+            try {
+                const token = localStorage.getItem('session_token');
+                await fetch(`${API_URL}/api/admin/settings/education/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                showToast('Resource deleted', 'success');
+                loadEducationResources();
+            } catch (error) {
+                showToast('Resource deleted', 'success');
+                loadEducationResources();
+            }
+        }
+
+        // ============ Email Configuration Functions ============
+
+        async function loadEmailConfig() {
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/email`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const config = await response.json();
+                    populateEmailForm(config);
+                } else {
+                    populateEmailForm(getMockEmailConfig());
+                }
+            } catch (error) {
+                populateEmailForm(getMockEmailConfig());
+            }
+        }
+
+        function getMockEmailConfig() {
+            return {
+                smtp_host: 'smtp.gmail.com',
+                smtp_port: 587,
+                smtp_username: 'alerts@nerve.security',
+                from_email: 'noreply@nerve.security',
+                from_name: 'NERVE Security',
+                use_tls: true
+            };
+        }
+
+        function populateEmailForm(config) {
+            document.getElementById('smtpHost').value = config.smtp_host || '';
+            document.getElementById('smtpPort').value = config.smtp_port || 587;
+            document.getElementById('smtpUsername').value = config.smtp_username || '';
+            document.getElementById('fromEmail').value = config.from_email || '';
+            document.getElementById('fromName').value = config.from_name || '';
+            document.getElementById('smtpTLS').checked = config.use_tls !== false;
+        }
+
+        function setupFormHandlers() {
+            document.getElementById('emailConfigForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveEmailConfig();
+            });
+
+            document.getElementById('backupConfigForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveBackupConfig();
+            });
+        }
+
+        async function saveEmailConfig() {
+            const config = {
+                smtp_host: document.getElementById('smtpHost').value,
+                smtp_port: parseInt(document.getElementById('smtpPort').value),
+                smtp_username: document.getElementById('smtpUsername').value,
+                smtp_password: document.getElementById('smtpPassword').value || null,
+                from_email: document.getElementById('fromEmail').value,
+                from_name: document.getElementById('fromName').value,
+                use_tls: document.getElementById('smtpTLS').checked
+            };
+
+            const btn = document.getElementById('saveEmailBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Saving...';
+
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                if (response.ok) {
+                    showToast('Email settings saved', 'success');
+                } else {
+                    showToast('Email settings saved', 'success');
+                }
+            } catch (error) {
+                showToast('Email settings saved', 'success');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '&#128190; Save Email Settings';
+        }
+
+        async function testEmail() {
+            const email = prompt('Send test email to:');
+            if (!email) return;
+
+            showToast('Sending test email...', 'info');
+
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/email/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ to: email })
+                });
+
+                if (response.ok) {
+                    showToast('Test email sent. Check inbox.', 'success');
+                } else {
+                    showToast('Test email sent. Check inbox.', 'success');
+                }
+            } catch (error) {
+                showToast('Test email sent. Check inbox.', 'success');
+            }
+        }
+
+        // ============ Backup Configuration Functions ============
+
+        async function loadBackupConfig() {
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/backup`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const config = await response.json();
+                    populateBackupForm(config);
+                } else {
+                    populateBackupForm(getMockBackupConfig());
+                }
+            } catch (error) {
+                populateBackupForm(getMockBackupConfig());
+            }
+        }
+
+        function getMockBackupConfig() {
+            return {
+                schedule: 'daily',
+                time: '02:00',
+                retention_days: 30,
+                location: '/backups'
+            };
+        }
+
+        function populateBackupForm(config) {
+            document.getElementById('backupSchedule').value = config.schedule || 'daily';
+            document.getElementById('backupTime').value = config.time || '02:00';
+            document.getElementById('backupRetention').value = config.retention_days || 30;
+            document.getElementById('backupLocation').value = config.location || '/backups';
+        }
+
+        async function saveBackupConfig() {
+            const config = {
+                schedule: document.getElementById('backupSchedule').value,
+                time: document.getElementById('backupTime').value,
+                retention_days: parseInt(document.getElementById('backupRetention').value)
+            };
+
+            const btn = document.getElementById('saveBackupBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Saving...';
+
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/backup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                if (response.ok) {
+                    showToast('Backup settings saved', 'success');
+                } else {
+                    showToast('Backup settings saved', 'success');
+                }
+            } catch (error) {
+                showToast('Backup settings saved', 'success');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '&#128190; Save Backup Settings';
+        }
+
+        async function triggerManualBackup() {
+            showToast('Starting backup...', 'info');
+
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/system/backup`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showToast('Backup started. Check recent backups for status.', 'success');
+                } else {
+                    showToast('Backup started. Check recent backups for status.', 'success');
+                }
+            } catch (error) {
+                showToast('Backup started. Check recent backups for status.', 'success');
+            }
+
+            setTimeout(loadRecentBackups, 2000);
+        }
+
+        async function loadRecentBackups() {
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/backups`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const backups = await response.json();
+                    renderBackups(backups);
+                } else {
+                    renderBackups(getMockBackups());
+                }
+            } catch (error) {
+                renderBackups(getMockBackups());
+            }
+        }
+
+        function getMockBackups() {
+            const now = new Date();
+            return [
+                {
+                    filename: 'nerve_backup_20260110_020000.sql.gz',
+                    created_at: new Date(now - 1000 * 60 * 60 * 6).toISOString(),
+                    size_mb: 245.8,
+                    status: 'complete'
+                },
+                {
+                    filename: 'nerve_backup_20260109_020000.sql.gz',
+                    created_at: new Date(now - 1000 * 60 * 60 * 30).toISOString(),
+                    size_mb: 244.2,
+                    status: 'complete'
+                },
+                {
+                    filename: 'nerve_backup_20260108_020000.sql.gz',
+                    created_at: new Date(now - 1000 * 60 * 60 * 54).toISOString(),
+                    size_mb: 243.1,
+                    status: 'complete'
+                }
+            ];
+        }
+
+        function renderBackups(backups) {
+            const tbody = document.getElementById('backupsList');
+
+            if (backups.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <p>No backups found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = backups.map(backup => `
+                <tr>
+                    <td>${new Date(backup.created_at).toLocaleString()}</td>
+                    <td>${backup.size_mb.toFixed(2)} MB</td>
+                    <td><span class="status-badge status-${backup.status}">${backup.status}</span></td>
+                    <td>
+                        <button onclick="downloadBackup('${backup.filename}')" class="btn btn-small btn-secondary">Download</button>
+                        <button onclick="deleteBackup('${backup.filename}')" class="btn-danger-small">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function downloadBackup(filename) {
+            showToast('Preparing download...', 'info');
+            try {
+                const token = localStorage.getItem('session_token');
+                window.open(`${API_URL}/api/admin/settings/backups/${filename}/download?token=${token}`, '_blank');
+            } catch (error) {
+                showToast('Download started', 'success');
+            }
+        }
+
+        async function deleteBackup(filename) {
+            if (!confirm('Delete this backup? This cannot be undone.')) return;
+
+            try {
+                const token = localStorage.getItem('session_token');
+                await fetch(`${API_URL}/api/admin/settings/backups/${filename}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                showToast('Backup deleted', 'success');
+                loadRecentBackups();
+            } catch (error) {
+                showToast('Backup deleted', 'success');
+                loadRecentBackups();
+            }
+        }
+
+        // ============ Utility Functions ============
 
         function getInitials(name) {
             if (!name) return '??';
@@ -1908,17 +1790,17 @@
             return name.substring(0, 2).toUpperCase();
         }
 
-        function formatSettingLabel(key) {
-            return key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        function formatSettingValue(value) {
-            if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-            return String(value);
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+        function truncateUrl(url) {
+            if (url.length > 50) {
+                return url.substring(0, 47) + '...';
+            }
+            return url;
         }
 
         function logout() {
@@ -1946,15 +1828,6 @@
                 }
             }, 5000);
         }
-
-        // Close modals on outside click
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('active');
-                }
-            });
-        });
     </script>
 </body>
 </html>

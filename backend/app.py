@@ -16,7 +16,9 @@ from database import (
     LoginAttempt, APIKey, log_security_event, create_api_key, revoke_api_key,
     # Admin - System & Settings
     SecurityEvent, PlatformSettings, ErrorLog,
-    run_health_check, create_backup, optimize_database, AuditLog, DB_PATH
+    run_health_check, create_backup, optimize_database, AuditLog, DB_PATH,
+    # Content Management
+    NewsSource, EducationResource, BackupRecord
 )
 import feedparser
 from modules.ghost.osint import scan_profile_breaches
@@ -1411,6 +1413,21 @@ def asm_scan():
                 'message': 'Initializing...'
             }
 
+        # Log scan started event
+        log_security_event(
+            event_type='scan_started',
+            severity='info',
+            user_id=user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'XASM scan started for domain: {domain}',
+            metadata={
+                'scan_type': 'xasm',
+                'domain': domain,
+                'force_rescan': force_rescan
+            }
+        )
+
         def update_progress(step, progress, total, message):
             """Helper to update progress"""
             with scan_progress_lock:
@@ -1457,6 +1474,24 @@ def asm_scan():
         logger.info(f"[ASM API] Risk Score: {scan_results.get('risk_score', 0)}/100")
         logger.info(f"[ASM API] Total CVEs: {cve_stats.get('total_cves', 0)}")
 
+        # Log scan completed event
+        log_security_event(
+            event_type='scan_completed',
+            severity='info',
+            user_id=user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'XASM scan completed for domain: {domain} - Risk Score: {scan_results.get("risk_score", 0)}/100',
+            metadata={
+                'scan_type': 'xasm',
+                'scan_id': new_scan.id,
+                'domain': domain,
+                'risk_score': scan_results.get('risk_score', 0),
+                'total_cves': cve_stats.get('total_cves', 0),
+                'critical_cves': cve_stats.get('critical_cves', 0)
+            }
+        )
+
         # Save XASM results for AI report generation
         try:
             save_xasm_for_ai(domain, scan_results)
@@ -1486,6 +1521,22 @@ def asm_scan():
                     'status': 'failed',
                     'message': str(e)
                 })
+
+        # Log scan failure
+        log_security_event(
+            event_type='scan_completed',
+            severity='error',
+            user_id=user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'XASM scan failed for domain: {domain} - Error: {str(e)}',
+            metadata={
+                'scan_type': 'xasm',
+                'domain': domain,
+                'error': str(e),
+                'status': 'failed'
+            }
+        )
 
         logger.error(f"[ASM API] Error: {str(e)}")
         import traceback
@@ -1729,6 +1780,25 @@ def lightbox_scan():
 
                     logger.info(f"[LIGHTBOX BG] Saved to database with ID {lightbox_record.id}")
 
+                    # Log scan completed event
+                    log_security_event(
+                        event_type='scan_completed',
+                        severity='info',
+                        user_id=user_id,
+                        description=f'Lightbox scan completed - {total_findings} findings (C:{critical}, H:{high}, M:{medium}, L:{low})',
+                        metadata={
+                            'scan_type': 'lightbox',
+                            'mode': 'specific_targets',
+                            'scan_id': lightbox_record.id,
+                            'domain': domain,
+                            'total_findings': total_findings,
+                            'critical': critical,
+                            'high': high,
+                            'medium': medium,
+                            'low': low
+                        }
+                    )
+
                     # Save for AI report
                     try:
                         save_lightbox_for_ai(domain, scan_results)
@@ -1758,6 +1828,22 @@ def lightbox_scan():
                     logger.error(f"[LIGHTBOX BG] Error: {e}")
                     import traceback
                     traceback.print_exc()
+
+                    # Log scan failure
+                    log_security_event(
+                        event_type='scan_completed',
+                        severity='error',
+                        user_id=user_id,
+                        description=f'Lightbox scan failed - Error: {str(e)}',
+                        metadata={
+                            'scan_type': 'lightbox',
+                            'mode': 'specific_targets',
+                            'domain': domain,
+                            'error': str(e),
+                            'status': 'failed'
+                        }
+                    )
+
                     # Set error status
                     with scan_progress_lock:
                         scan_progress[scan_key] = {
@@ -1776,6 +1862,22 @@ def lightbox_scan():
             thread = threading.Thread(target=run_specific_targets_scan_background, daemon=True)
             thread.start()
             logger.info(f"[LIGHTBOX API] Started background thread for {scan_key}")
+
+            # Log scan started event
+            log_security_event(
+                event_type='scan_started',
+                severity='info',
+                user_id=user_id,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent', ''),
+                description=f'Lightbox scan started for {len(validated_targets)} targets',
+                metadata={
+                    'scan_type': 'lightbox',
+                    'mode': 'specific_targets',
+                    'targets_count': len(validated_targets),
+                    'scan_key': scan_key
+                }
+            )
 
             # Return immediately - frontend will poll for progress
             return jsonify({
@@ -1906,6 +2008,16 @@ def lightbox_scan():
 
                     logger.info(f"[LIGHTBOX BG] Saved to database with ID {lightbox_record.id}")
 
+                    # Log scan completed event
+                    log_activity_event(
+                        db=bg_session,
+                        event_type='scan_completed',
+                        description=f'Completed Lightbox full surface scan for {domain}: {total_findings} findings (C:{critical}, H:{high}, M:{medium}, L:{low})',
+                        severity='info',
+                        user_id=user_id,
+                        metadata={'scan_type': 'lightbox_full_surface', 'domain': domain, 'scan_id': lightbox_record.id, 'total_findings': total_findings, 'critical': critical, 'high': high, 'medium': medium, 'low': low}
+                    )
+
                     # Save Lightbox results for AI report generation
                     try:
                         save_lightbox_for_ai(domain, scan_results)
@@ -1943,6 +2055,18 @@ def lightbox_scan():
                             'current_step': f'Error: {str(e)}',
                             'total_steps': 100
                         }
+                    # Log scan failure event
+                    try:
+                        log_activity_event(
+                            db=bg_session,
+                            event_type='scan_completed',
+                            description=f'Lightbox full surface scan failed for {domain}: {str(e)}',
+                            severity='error',
+                            user_id=user_id,
+                            metadata={'scan_type': 'lightbox_full_surface', 'domain': domain, 'error': str(e)}
+                        )
+                    except:
+                        pass  # Don't fail on logging error
                 finally:
                     bg_session.close()
 
@@ -1953,6 +2077,16 @@ def lightbox_scan():
             thread = threading.Thread(target=run_full_surface_scan_background, daemon=True)
             thread.start()
             logger.info(f"[LIGHTBOX API] Started background thread for full surface scan {scan_key}")
+
+            # Log scan started event
+            log_activity_event(
+                db=session,
+                event_type='scan_started',
+                description=f'Started Lightbox full surface scan for {domain} ({assets_count} assets)',
+                severity='info',
+                user_id=user_id,
+                metadata={'scan_type': 'lightbox_full_surface', 'domain': domain, 'scan_key': scan_key, 'assets_count': assets_count}
+            )
 
             # Return immediately - frontend will poll for progress
             return jsonify({
@@ -5407,6 +5541,7 @@ def auth_login():
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
     """Revoke user session (logout)."""
+    db = None
     try:
         # Get token from header or body
         auth_header = request.headers.get('Authorization', '')
@@ -5421,8 +5556,24 @@ def auth_logout():
         if not token:
             return jsonify({'success': False, 'error': 'No token provided'}), 400
 
+        # Get user info before revoking
+        user = get_current_user()
+
         # Revoke the session
         revoke_session(token)
+
+        # Log logout event
+        if user:
+            db = SessionLocal()
+            log_activity_event(
+                db,
+                event_type='logout',
+                description=f'User logged out: {user.get("email", "unknown")}',
+                severity='info',
+                user_id=user.get('id'),
+                email=user.get('email')
+            )
+            db.close()
 
         return jsonify({
             'success': True,
@@ -5430,6 +5581,8 @@ def auth_logout():
         }), 200
 
     except Exception as e:
+        if db:
+            db.close()
         print(f"[AUTH] Logout error: {e}")
         return jsonify({'success': False, 'error': 'Logout failed'}), 500
 
@@ -5637,6 +5790,16 @@ def auth_reset_password():
         db.commit()
 
         # Log security event
+        log_security_event(
+            event_type='password_change',
+            severity='info',
+            user_id=user.id,
+            email=user.email,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'Password reset via email link for user: {user.email}'
+        )
+
         print(f"[AUTH] Password reset successful for user: {user.email}")
 
         db.close()
@@ -5806,11 +5969,13 @@ def change_user_password():
 
         # Log security event
         log_security_event(
-            event_type='password_changed',
+            event_type='password_change',
             severity='info',
             user_id=user.id,
+            email=user.email,
             ip_address=request.remote_addr,
-            description=f'Password changed for user: {user.email}'
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'Password changed via profile settings for user: {user.email}'
         )
 
         print(f"[PROFILE] Password changed for user: {user.email}")
@@ -6521,6 +6686,48 @@ def request_account_deletion():
 
 
 # =============================================================================
+# ACTIVITY LOGGING HELPER
+# =============================================================================
+
+def log_activity_event(db, event_type, description, severity='info', user_id=None,
+                       email=None, ip_address=None, user_agent=None, metadata=None):
+    """
+    Helper function to log activity events to the SecurityEvent table.
+
+    Event types supported:
+    - login, login_failed, logout
+    - password_change
+    - user_created, user_deleted
+    - company_created, company_deleted
+    - scan_started, scan_completed
+    - data_export
+    - admin_action
+
+    Severity levels: info, warning, error, critical
+    """
+    try:
+        event = SecurityEvent(
+            event_type=event_type,
+            severity=severity,
+            user_id=user_id,
+            email=email,
+            ip_address=ip_address or (request.remote_addr if request else None),
+            user_agent=user_agent or (request.headers.get('User-Agent', '') if request else None),
+            description=description,
+            metadata_json=json.dumps(metadata) if metadata else None,
+            acknowledged=False,
+            created_at=datetime.now(timezone.utc)
+        )
+        db.add(event)
+        db.commit()
+        return event
+    except Exception as e:
+        print(f"[LOG] Failed to log activity event: {e}")
+        db.rollback()
+        return None
+
+
+# =============================================================================
 # ADMIN DECORATORS
 # =============================================================================
 
@@ -6813,7 +7020,7 @@ def admin_create_user():
         db.commit()
         db.refresh(new_user)
 
-        # Log the action
+        # Log the action to AuditLog
         try:
             from database import AuditLog
             audit = AuditLog(
@@ -6829,6 +7036,22 @@ def admin_create_user():
             db.commit()
         except Exception as e:
             print(f"[ADMIN] Audit log error: {e}")
+
+        # Log to SecurityEvent for activity tracking
+        log_security_event(
+            event_type='user_created',
+            severity='info',
+            user_id=request.user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'New user created: {new_user.email} (role: {new_user.role.value})',
+            metadata={
+                'created_user_id': new_user.id,
+                'created_user_email': new_user.email,
+                'created_user_role': new_user.role.value,
+                'company_id': new_user.company_id
+            }
+        )
 
         return jsonify({
             'id': new_user.id,
@@ -6935,10 +7158,28 @@ def admin_delete_user(user_id):
         if user.id == request.user_id:
             return jsonify({'error': 'You cannot delete your own account'}), 400
 
+        # Store user info before deletion for logging
+        deleted_email = user.email
+        deleted_user_id = user.id
+
         # Soft delete
         user.deleted_at = datetime.now(timezone.utc)
         user.is_active = False
         db.commit()
+
+        # Log user deletion
+        log_security_event(
+            event_type='user_deleted',
+            severity='warning',
+            user_id=request.user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'User account deleted: {deleted_email}',
+            metadata={
+                'deleted_user_id': deleted_user_id,
+                'deleted_user_email': deleted_email
+            }
+        )
 
         return jsonify({'message': 'User deleted successfully'})
 
@@ -7040,6 +7281,21 @@ def admin_reset_user_password(user_id):
 
         # Generate reset link
         reset_link = f"{request.host_url}auth/reset?token={reset_token}"
+
+        # Log admin action
+        log_security_event(
+            event_type='admin_action',
+            severity='info',
+            user_id=request.user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'Admin initiated password reset for user: {user.email}',
+            metadata={
+                'target_user_id': user.id,
+                'target_user_email': user.email,
+                'action': 'password_reset_initiated'
+            }
+        )
 
         return jsonify({
             'reset_link': reset_link,
@@ -7181,6 +7437,7 @@ def admin_list_companies():
         search = request.args.get('search', '')
         industry_filter = request.args.get('industry', '')
         size_filter = request.args.get('size', '')
+        status_filter = request.args.get('status', '')
         sort_field = request.args.get('sort', 'name')
         sort_order = request.args.get('order', 'asc')
 
@@ -7192,6 +7449,17 @@ def admin_list_companies():
                 (Company.name.ilike(f'%{search}%')) |
                 (Company.primary_domain.ilike(f'%{search}%'))
             )
+
+        # Status filter (applied at database level)
+        if status_filter:
+            if status_filter.upper() == 'ACTIVE':
+                # ACTIVE means subscription_status is ACTIVE or NULL
+                query = query.filter(
+                    (Company.subscription_status == 'ACTIVE') |
+                    (Company.subscription_status.is_(None))
+                )
+            else:
+                query = query.filter(Company.subscription_status == status_filter.upper())
 
         # Get total before pagination
         total = query.count()
@@ -7273,6 +7541,7 @@ def admin_list_companies():
                 'user_count': user_counts.get(c.id, 0),
                 'scan_count': scan_counts.get(c.id, 0),
                 'subscription_tier': c.subscription_tier,
+                'status': c.subscription_status or 'ACTIVE',
                 'created_at': c.created_at.isoformat() if c.created_at else None
             })
 
@@ -7322,14 +7591,20 @@ def admin_create_company():
         if data.get('employee_count'):
             additional_data['employee_count'] = data['employee_count']
 
+        # Get status (default to ACTIVE)
+        status = data.get('status', 'ACTIVE').upper()
+        if status not in ['ACTIVE', 'TRIAL', 'SUSPENDED']:
+            status = 'ACTIVE'
+
         new_company = Company(
             name=data['name'],
             primary_domain=primary_domain,
             additional_domains=json.dumps(additional_data) if additional_data else None,
             subscription_tier='basic',
+            subscription_status=status,
             max_seats=10,
             max_domains=1,
-            is_active=True,
+            is_active=status != 'SUSPENDED',
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
@@ -7338,17 +7613,80 @@ def admin_create_company():
         db.commit()
         db.refresh(new_company)
 
-        # Assign admin user if provided
+        users_assigned = 0
+        users_created = 0
+
+        # Assign existing users if provided
+        assigned_users = data.get('assigned_users', [])
+        if assigned_users:
+            for user_id in assigned_users:
+                user = db.query(User).filter(
+                    User.id == user_id,
+                    User.deleted_at.is_(None)
+                ).first()
+                if user:
+                    user.company_id = new_company.id
+                    user.updated_at = datetime.now(timezone.utc)
+                    users_assigned += 1
+            db.commit()
+
+        # Create new users from emails if provided
+        new_user_emails = data.get('new_user_emails', [])
+        if new_user_emails:
+            import secrets
+            for email in new_user_emails:
+                email = email.strip().lower()
+                if not email or '@' not in email:
+                    continue
+                # Check if user already exists
+                existing_user = db.query(User).filter(User.email == email).first()
+                if existing_user:
+                    continue
+                # Create new user with temporary password
+                temp_password = secrets.token_urlsafe(12)
+                new_user = User(
+                    email=email,
+                    password_hash=generate_password_hash(temp_password),
+                    role='COMPANY_USER',
+                    company_id=new_company.id,
+                    is_active=True,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
+                )
+                db.add(new_user)
+                users_created += 1
+            db.commit()
+
+        # Legacy: Assign admin user if provided (backwards compatibility)
         if data.get('admin_user_id'):
             admin_user = db.query(User).filter(User.id == data['admin_user_id']).first()
             if admin_user:
                 admin_user.company_id = new_company.id
                 db.commit()
 
+        # Log company creation
+        log_security_event(
+            event_type='company_created',
+            severity='info',
+            user_id=request.user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'New company created: {new_company.name}',
+            metadata={
+                'company_id': new_company.id,
+                'company_name': new_company.name,
+                'primary_domain': new_company.primary_domain,
+                'users_assigned': users_assigned,
+                'users_created': users_created
+            }
+        )
+
         return jsonify({
             'id': new_company.id,
             'name': new_company.name,
             'primary_domain': new_company.primary_domain,
+            'users_assigned': users_assigned,
+            'users_created': users_created,
             'message': 'Company created successfully'
         }), 201
 
@@ -7382,6 +7720,19 @@ def admin_update_company(company_id):
         if 'name' in data:
             company.name = data['name'][:255]
 
+        # Update primary domain if provided
+        if 'primary_domain' in data and data['primary_domain']:
+            new_domain = data['primary_domain'].lower().strip()
+            # Check if domain is already used by another company
+            existing = db.query(Company).filter(
+                Company.primary_domain == new_domain,
+                Company.id != company_id,
+                Company.deleted_at.is_(None)
+            ).first()
+            if existing:
+                return jsonify({'error': 'This domain is already in use by another company'}), 400
+            company.primary_domain = new_domain
+
         # Update additional data
         additional_data = {}
         if company.additional_domains:
@@ -7394,8 +7745,13 @@ def admin_update_company(company_id):
             additional_data['industry'] = data['industry']
         if 'company_size' in data:
             additional_data['company_size'] = data['company_size']
-        if 'employee_count' in data:
-            additional_data['employee_count'] = data['employee_count']
+
+        # Update status if provided
+        if 'status' in data:
+            status = data['status'].upper()
+            if status in ['ACTIVE', 'TRIAL', 'SUSPENDED']:
+                company.subscription_status = status
+                company.is_active = status != 'SUSPENDED'
 
         company.additional_domains = json.dumps(additional_data)
         company.updated_at = datetime.now(timezone.utc)
@@ -7404,6 +7760,8 @@ def admin_update_company(company_id):
         return jsonify({
             'id': company.id,
             'name': company.name,
+            'primary_domain': company.primary_domain,
+            'status': company.subscription_status or 'ACTIVE',
             'message': 'Company updated successfully'
         })
 
@@ -7438,6 +7796,10 @@ def admin_delete_company(company_id):
             User.deleted_at.is_(None)
         ).count()
 
+        # Store company info before deletion for logging
+        company_name = company.name
+        company_domain = company.primary_domain
+
         # Unassign users from company
         if user_count > 0:
             db.query(User).filter(User.company_id == company_id).update({
@@ -7449,6 +7811,22 @@ def admin_delete_company(company_id):
         company.deleted_at = datetime.now(timezone.utc)
         company.is_active = False
         db.commit()
+
+        # Log company deletion
+        log_security_event(
+            event_type='company_deleted',
+            severity='warning',
+            user_id=request.user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', ''),
+            description=f'Company deleted: {company_name}',
+            metadata={
+                'company_id': company_id,
+                'company_name': company_name,
+                'company_domain': company_domain,
+                'users_unassigned': user_count
+            }
+        )
 
         return jsonify({
             'message': 'Company deleted successfully',
@@ -7919,29 +8297,56 @@ def admin_toggle_maintenance():
 @require_auth
 @require_admin
 def admin_get_logs():
-    """Get security events with filtering and pagination."""
+    """Get activity logs with comprehensive filtering and pagination."""
     db = SessionLocal()
     try:
+        # Pagination
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 50, type=int)
+
+        # Filters
         event_type = request.args.get('event_type')
         severity = request.args.get('severity')
         user_id = request.args.get('user_id', type=int)
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
+        company_id = request.args.get('company_id', type=int)
+
+        # Date filters (support both formats)
+        date_from = request.args.get('date_from') or request.args.get('start_date')
+        date_to = request.args.get('date_to') or request.args.get('end_date')
 
         query = db.query(SecurityEvent)
 
+        # Apply filters
         if event_type:
             query = query.filter(SecurityEvent.event_type == event_type)
         if severity:
             query = query.filter(SecurityEvent.severity == severity)
         if user_id:
             query = query.filter(SecurityEvent.user_id == user_id)
-        if start_date:
-            query = query.filter(SecurityEvent.created_at >= datetime.fromisoformat(start_date))
-        if end_date:
-            query = query.filter(SecurityEvent.created_at <= datetime.fromisoformat(end_date))
+        if date_from:
+            try:
+                from_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                query = query.filter(SecurityEvent.created_at >= from_date)
+            except:
+                query = query.filter(SecurityEvent.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
+        if date_to:
+            try:
+                to_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                # Add one day to include the entire end date
+                to_date = to_date + timedelta(days=1)
+                query = query.filter(SecurityEvent.created_at < to_date)
+            except:
+                to_date = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+                query = query.filter(SecurityEvent.created_at < to_date)
+
+        # Company filter - filter by users belonging to a company
+        if company_id:
+            company_users = db.query(User.id).filter(User.company_id == company_id).all()
+            company_user_ids = [u.id for u in company_users]
+            if company_user_ids:
+                query = query.filter(SecurityEvent.user_id.in_(company_user_ids))
+            else:
+                query = query.filter(False)  # No users in company, return nothing
 
         total = query.count()
         events = query.order_by(SecurityEvent.created_at.desc()).offset(
@@ -7949,19 +8354,50 @@ def admin_get_logs():
         ).limit(per_page).all()
 
         # Get user info for events
-        user_ids = [e.user_id for e in events if e.user_id]
+        user_ids = list(set([e.user_id for e in events if e.user_id]))
         users = {}
+        user_companies = {}
         if user_ids:
             user_records = db.query(User).filter(User.id.in_(user_ids)).all()
-            users = {u.id: {'email': u.email, 'name': u.full_name} for u in user_records}
+            users = {u.id: {'email': u.email, 'name': u.full_name, 'company_id': u.company_id} for u in user_records}
 
-        return jsonify({
-            'events': [{
+            # Get company info
+            company_ids = list(set([u.company_id for u in user_records if u.company_id]))
+            if company_ids:
+                companies = db.query(Company).filter(Company.id.in_(company_ids)).all()
+                company_map = {c.id: c.name for c in companies}
+                user_companies = {u.id: company_map.get(u.company_id) for u in user_records}
+
+        # Calculate stats
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        stats_query = db.query(SecurityEvent)
+        logins_today = stats_query.filter(
+            SecurityEvent.event_type.in_(['login', 'login_success']),
+            SecurityEvent.created_at >= today_start
+        ).count()
+
+        failed_logins = stats_query.filter(
+            SecurityEvent.event_type == 'login_failed',
+            SecurityEvent.created_at >= today_start
+        ).count()
+
+        critical_count = db.query(SecurityEvent).filter(
+            SecurityEvent.severity == 'critical'
+        ).count()
+
+        # Format response
+        logs = []
+        for e in events:
+            user_info = users.get(e.user_id, {})
+            logs.append({
                 'id': e.id,
                 'timestamp': e.created_at.isoformat() if e.created_at else None,
                 'user_id': e.user_id,
-                'user_email': e.email or (users.get(e.user_id, {}).get('email') if e.user_id else 'system'),
-                'user_name': users.get(e.user_id, {}).get('name') if e.user_id else 'System',
+                'user_email': e.email or user_info.get('email') or ('system' if not e.user_id else None),
+                'user_name': user_info.get('name') or ('System' if not e.user_id else None),
+                'company_name': user_companies.get(e.user_id),
                 'event_type': e.event_type,
                 'severity': e.severity,
                 'ip_address': e.ip_address,
@@ -7970,14 +8406,26 @@ def admin_get_logs():
                 'user_agent': e.user_agent,
                 'acknowledged': e.acknowledged,
                 'metadata': json.loads(e.metadata_json) if e.metadata_json else None
-            } for e in events],
+            })
+
+        return jsonify({
+            'logs': logs,
+            'events': logs,  # Backward compatibility
             'total': total,
             'page': page,
             'per_page': per_page,
-            'pages': (total + per_page - 1) // per_page
+            'pages': (total + per_page - 1) // per_page if total > 0 else 1,
+            'stats': {
+                'total': total,
+                'logins_today': logins_today,
+                'failed_logins': failed_logins,
+                'critical': critical_count
+            }
         })
     except Exception as e:
         print(f"[ADMIN] Get logs error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
@@ -8078,22 +8526,40 @@ def admin_acknowledge_log(event_id):
         db.close()
 
 
-@app.route('/api/admin/logs/export', methods=['POST'])
+@app.route('/api/admin/logs/export', methods=['GET', 'POST'])
 @require_auth
 @require_admin
 def admin_export_logs():
-    """Export security logs as CSV or JSON."""
+    """Export activity logs as CSV or JSON with filtering."""
     db = SessionLocal()
     try:
-        data = request.get_json() or {}
-        format_type = data.get('format', 'csv')
-        date_range = data.get('date_range', 'all')
-        filters = data.get('filters', {})
+        # Get filters from query params (GET) or body (POST)
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            format_type = data.get('format', 'csv')
+            date_range = data.get('date_range', 'all')
+            filters = data.get('filters', {})
+            event_type = filters.get('type') or filters.get('event_type')
+            severity = filters.get('severity')
+            user_id = filters.get('user_id')
+            company_id = filters.get('company_id')
+            date_from = filters.get('date_from')
+            date_to = filters.get('date_to')
+        else:
+            # GET request - use query params
+            format_type = request.args.get('format', 'csv')
+            date_range = request.args.get('date_range')
+            event_type = request.args.get('event_type')
+            severity = request.args.get('severity')
+            user_id = request.args.get('user_id', type=int)
+            company_id = request.args.get('company_id', type=int)
+            date_from = request.args.get('date_from')
+            date_to = request.args.get('date_to')
 
         query = db.query(SecurityEvent)
-
-        # Apply date filter
         now = datetime.now(timezone.utc)
+
+        # Apply date range filter
         if date_range == 'today':
             query = query.filter(SecurityEvent.created_at >= now.replace(hour=0, minute=0, second=0))
         elif date_range == '7days':
@@ -8101,34 +8567,77 @@ def admin_export_logs():
         elif date_range == '30days':
             query = query.filter(SecurityEvent.created_at >= now - timedelta(days=30))
 
-        # Apply type/severity filters
-        if filters.get('type'):
-            query = query.filter(SecurityEvent.event_type == filters['type'])
-        if filters.get('severity'):
-            query = query.filter(SecurityEvent.severity == filters['severity'])
+        # Apply specific date filters
+        if date_from:
+            try:
+                from_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                query = query.filter(SecurityEvent.created_at >= from_date)
+            except:
+                query = query.filter(SecurityEvent.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
+        if date_to:
+            try:
+                to_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                to_date = to_date + timedelta(days=1)
+                query = query.filter(SecurityEvent.created_at < to_date)
+            except:
+                to_date = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+                query = query.filter(SecurityEvent.created_at < to_date)
 
-        events = query.order_by(SecurityEvent.created_at.desc()).all()
+        # Apply type/severity/user filters
+        if event_type:
+            query = query.filter(SecurityEvent.event_type == event_type)
+        if severity:
+            query = query.filter(SecurityEvent.severity == severity)
+        if user_id:
+            query = query.filter(SecurityEvent.user_id == user_id)
+
+        # Company filter
+        if company_id:
+            company_users = db.query(User.id).filter(User.company_id == company_id).all()
+            company_user_ids = [u.id for u in company_users]
+            if company_user_ids:
+                query = query.filter(SecurityEvent.user_id.in_(company_user_ids))
+            else:
+                query = query.filter(False)
+
+        events = query.order_by(SecurityEvent.created_at.desc()).limit(10000).all()
+
+        # Get user and company info
+        user_ids = list(set([e.user_id for e in events if e.user_id]))
+        users = {}
+        user_companies = {}
+        if user_ids:
+            user_records = db.query(User).filter(User.id.in_(user_ids)).all()
+            users = {u.id: {'email': u.email, 'name': u.full_name, 'company_id': u.company_id} for u in user_records}
+            company_ids = list(set([u.company_id for u in user_records if u.company_id]))
+            if company_ids:
+                companies = db.query(Company).filter(Company.id.in_(company_ids)).all()
+                company_map = {c.id: c.name for c in companies}
+                user_companies = {u.id: company_map.get(u.company_id) for u in user_records}
 
         if format_type == 'json':
             content = json.dumps([{
                 'timestamp': e.created_at.isoformat() if e.created_at else None,
                 'event_type': e.event_type,
                 'severity': e.severity,
-                'user': e.email,
+                'user': e.email or users.get(e.user_id, {}).get('email') or 'System',
+                'company': user_companies.get(e.user_id) or '',
                 'ip_address': e.ip_address,
                 'description': e.description
             } for e in events], indent=2)
             mimetype = 'application/json'
-            filename = f'security-logs-{now.strftime("%Y%m%d")}.json'
+            filename = f'activity-logs-{now.strftime("%Y%m%d")}.json'
         else:
             # CSV
-            lines = ['Timestamp,Event Type,Severity,User,IP Address,Description']
+            lines = ['Timestamp,Event Type,Severity,User,Company,IP Address,Description']
             for e in events:
                 desc = (e.description or '').replace('"', '""')
-                lines.append(f'{e.created_at.isoformat() if e.created_at else ""},{e.event_type},{e.severity},{e.email or ""},{e.ip_address or ""},"{desc}"')
+                user_email = e.email or users.get(e.user_id, {}).get('email') or 'System'
+                company = user_companies.get(e.user_id) or ''
+                lines.append(f'{e.created_at.isoformat() if e.created_at else ""},{e.event_type},{e.severity},{user_email},{company},{e.ip_address or ""},"{desc}"')
             content = '\n'.join(lines)
             mimetype = 'text/csv'
-            filename = f'security-logs-{now.strftime("%Y%m%d")}.csv'
+            filename = f'activity-logs-{now.strftime("%Y%m%d")}.csv'
 
         from flask import Response
         response = Response(content, mimetype=mimetype)
@@ -8137,6 +8646,8 @@ def admin_export_logs():
 
     except Exception as e:
         print(f"[ADMIN] Export logs error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
@@ -8413,6 +8924,608 @@ def admin_test_email():
         'success': False,
         'message': 'Email functionality coming soon'
     }), 501
+
+
+# =============================================================================
+# ADMIN SETTINGS - NEWS SOURCES
+# =============================================================================
+
+@app.route('/api/admin/settings/news-sources', methods=['GET'])
+@require_auth
+@require_admin
+def get_news_sources():
+    """Get all configured news RSS sources."""
+    db = SessionLocal()
+    try:
+        sources = db.query(NewsSource).order_by(NewsSource.created_at.desc()).all()
+        return jsonify([s.to_dict() for s in sources])
+    except Exception as e:
+        print(f"[ADMIN] Get news sources error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/news-sources', methods=['POST'])
+@require_auth
+@require_admin
+def add_news_source():
+    """Add a new RSS news source."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        url = data.get('url', '').strip()
+
+        if not url:
+            return jsonify({'error': 'URL is required'}), 400
+
+        # Check for duplicate
+        existing = db.query(NewsSource).filter(NewsSource.url == url).first()
+        if existing:
+            return jsonify({'error': 'This URL is already configured'}), 400
+
+        user = get_current_user()
+        source = NewsSource(
+            url=url,
+            name=data.get('name'),
+            active=True,
+            created_by=user.get('id') if user else None
+        )
+        db.add(source)
+        db.commit()
+
+        # Log the action
+        log_security_event(
+            event_type='news_source_added',
+            severity='info',
+            message=f"News source added: {url}",
+            user_id=user.get('id') if user else None,
+            ip_address=request.remote_addr
+        )
+
+        return jsonify({'success': True, 'source': source.to_dict()})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Add news source error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/news-sources/<int:source_id>', methods=['PUT'])
+@require_auth
+@require_admin
+def update_news_source(source_id):
+    """Update a news source URL."""
+    db = SessionLocal()
+    try:
+        source = db.query(NewsSource).filter(NewsSource.id == source_id).first()
+        if not source:
+            return jsonify({'error': 'News source not found'}), 404
+
+        data = request.get_json() or {}
+        if 'url' in data:
+            source.url = data['url'].strip()
+        if 'name' in data:
+            source.name = data.get('name')
+
+        db.commit()
+        return jsonify({'success': True, 'source': source.to_dict()})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update news source error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/news-sources/<int:source_id>/toggle', methods=['POST'])
+@require_auth
+@require_admin
+def toggle_news_source(source_id):
+    """Toggle a news source active/inactive status."""
+    db = SessionLocal()
+    try:
+        source = db.query(NewsSource).filter(NewsSource.id == source_id).first()
+        if not source:
+            return jsonify({'error': 'News source not found'}), 404
+
+        source.active = not source.active
+        db.commit()
+
+        return jsonify({'success': True, 'active': source.active})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Toggle news source error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/news-sources/<int:source_id>', methods=['DELETE'])
+@require_auth
+@require_admin
+def delete_news_source(source_id):
+    """Delete a news source."""
+    db = SessionLocal()
+    try:
+        source = db.query(NewsSource).filter(NewsSource.id == source_id).first()
+        if not source:
+            return jsonify({'error': 'News source not found'}), 404
+
+        url = source.url
+        db.delete(source)
+        db.commit()
+
+        user = get_current_user()
+        log_security_event(
+            event_type='news_source_deleted',
+            severity='info',
+            message=f"News source deleted: {url}",
+            user_id=user.get('id') if user else None,
+            ip_address=request.remote_addr
+        )
+
+        return jsonify({'success': True})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Delete news source error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN SETTINGS - EDUCATION RESOURCES
+# =============================================================================
+
+@app.route('/api/admin/settings/education', methods=['GET'])
+@require_auth
+@require_admin
+def get_education_resources():
+    """Get all education resources."""
+    db = SessionLocal()
+    try:
+        resources = db.query(EducationResource).order_by(
+            EducationResource.featured.desc(),
+            EducationResource.order_index.asc(),
+            EducationResource.created_at.desc()
+        ).all()
+        return jsonify([r.to_dict() for r in resources])
+    except Exception as e:
+        print(f"[ADMIN] Get education resources error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/education', methods=['POST'])
+@require_auth
+@require_admin
+def add_education_resource():
+    """Add a new education resource."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+
+        title = data.get('title', '').strip()
+        url = data.get('url', '').strip()
+        resource_type = data.get('type', 'Guide')
+
+        if not title or not url:
+            return jsonify({'error': 'Title and URL are required'}), 400
+
+        user = get_current_user()
+        resource = EducationResource(
+            title=title,
+            url=url,
+            type=resource_type,
+            description=data.get('description'),
+            featured=data.get('featured', False),
+            order_index=data.get('order_index', 0),
+            created_by=user.get('id') if user else None
+        )
+        db.add(resource)
+        db.commit()
+
+        return jsonify({'success': True, 'resource': resource.to_dict()})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Add education resource error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/education/<int:resource_id>', methods=['PUT'])
+@require_auth
+@require_admin
+def update_education_resource(resource_id):
+    """Update an education resource."""
+    db = SessionLocal()
+    try:
+        resource = db.query(EducationResource).filter(EducationResource.id == resource_id).first()
+        if not resource:
+            return jsonify({'error': 'Resource not found'}), 404
+
+        data = request.get_json() or {}
+
+        if 'title' in data:
+            resource.title = data['title'].strip()
+        if 'url' in data:
+            resource.url = data['url'].strip()
+        if 'type' in data:
+            resource.type = data['type']
+        if 'description' in data:
+            resource.description = data.get('description')
+        if 'featured' in data:
+            resource.featured = data['featured']
+        if 'order_index' in data:
+            resource.order_index = data['order_index']
+
+        db.commit()
+        return jsonify({'success': True, 'resource': resource.to_dict()})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Update education resource error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/education/<int:resource_id>', methods=['DELETE'])
+@require_auth
+@require_admin
+def delete_education_resource(resource_id):
+    """Delete an education resource."""
+    db = SessionLocal()
+    try:
+        resource = db.query(EducationResource).filter(EducationResource.id == resource_id).first()
+        if not resource:
+            return jsonify({'error': 'Resource not found'}), 404
+
+        db.delete(resource)
+        db.commit()
+
+        return jsonify({'success': True})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Delete education resource error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN SETTINGS - EMAIL CONFIGURATION
+# =============================================================================
+
+@app.route('/api/admin/settings/email', methods=['GET'])
+@require_auth
+@require_admin
+def get_email_config():
+    """Get email configuration settings."""
+    db = SessionLocal()
+    try:
+        # Get email settings from PlatformSettings
+        email_settings = db.query(PlatformSettings).filter(
+            PlatformSettings.category == 'email'
+        ).all()
+
+        config = {}
+        for setting in email_settings:
+            try:
+                config[setting.key] = json.loads(setting.value) if setting.value_type == 'json' else setting.value
+            except:
+                config[setting.key] = setting.value
+
+        # Don't return the actual password, just indicate if it's set
+        if 'smtp_password' in config:
+            config['smtp_password_set'] = bool(config['smtp_password'])
+            del config['smtp_password']
+
+        return jsonify(config)
+    except Exception as e:
+        print(f"[ADMIN] Get email config error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/email', methods=['POST'])
+@require_auth
+@require_admin
+def save_email_config():
+    """Save email configuration settings."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        user = get_current_user()
+
+        email_keys = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password',
+                      'from_email', 'from_name', 'use_tls']
+
+        for key in email_keys:
+            if key in data:
+                value = data[key]
+
+                # Skip empty password (means keep existing)
+                if key == 'smtp_password' and not value:
+                    continue
+
+                # Convert value to string for storage
+                if isinstance(value, bool):
+                    value_str = 'true' if value else 'false'
+                    value_type = 'boolean'
+                elif isinstance(value, int):
+                    value_str = str(value)
+                    value_type = 'number'
+                else:
+                    value_str = str(value) if value else ''
+                    value_type = 'string'
+
+                # Upsert the setting
+                setting = db.query(PlatformSettings).filter(
+                    PlatformSettings.key == key
+                ).first()
+
+                if setting:
+                    setting.value = value_str
+                    setting.value_type = value_type
+                    setting.updated_by = user.get('id') if user else None
+                else:
+                    setting = PlatformSettings(
+                        key=key,
+                        value=value_str,
+                        category='email',
+                        value_type=value_type,
+                        updated_by=user.get('id') if user else None
+                    )
+                    db.add(setting)
+
+        db.commit()
+
+        log_security_event(
+            event_type='email_config_updated',
+            severity='info',
+            message="Email configuration updated",
+            user_id=user.get('id') if user else None,
+            ip_address=request.remote_addr
+        )
+
+        return jsonify({'success': True, 'message': 'Email settings saved'})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Save email config error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/email/test', methods=['POST'])
+@require_auth
+@require_admin
+def test_email_config():
+    """Send a test email to verify configuration."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        to_email = data.get('to', '').strip()
+
+        if not to_email:
+            return jsonify({'error': 'Recipient email is required'}), 400
+
+        # Get email settings
+        email_settings = db.query(PlatformSettings).filter(
+            PlatformSettings.category == 'email'
+        ).all()
+
+        config = {}
+        for setting in email_settings:
+            config[setting.key] = setting.value
+
+        # Check if email is configured
+        if not config.get('smtp_host') or not config.get('smtp_username'):
+            return jsonify({'error': 'Email is not configured. Please save SMTP settings first.'}), 400
+
+        # TODO: Actually send the email using smtplib
+        # For now, just return success to test the flow
+
+        return jsonify({
+            'success': True,
+            'message': f'Test email would be sent to {to_email} (email sending not yet implemented)'
+        })
+    except Exception as e:
+        print(f"[ADMIN] Test email error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+# =============================================================================
+# ADMIN SETTINGS - BACKUP CONFIGURATION
+# =============================================================================
+
+@app.route('/api/admin/settings/backup', methods=['GET'])
+@require_auth
+@require_admin
+def get_backup_config():
+    """Get backup configuration settings."""
+    db = SessionLocal()
+    try:
+        # Get backup settings from PlatformSettings
+        backup_settings = db.query(PlatformSettings).filter(
+            PlatformSettings.category == 'backup'
+        ).all()
+
+        config = {
+            'schedule': 'daily',
+            'time': '02:00',
+            'retention_days': 30,
+            'location': os.path.join(os.path.dirname(DB_PATH), 'backups')
+        }
+
+        for setting in backup_settings:
+            try:
+                if setting.value_type == 'number':
+                    config[setting.key] = int(setting.value)
+                elif setting.value_type == 'boolean':
+                    config[setting.key] = setting.value.lower() == 'true'
+                else:
+                    config[setting.key] = setting.value
+            except:
+                config[setting.key] = setting.value
+
+        return jsonify(config)
+    except Exception as e:
+        print(f"[ADMIN] Get backup config error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/backup', methods=['POST'])
+@require_auth
+@require_admin
+def save_backup_config():
+    """Save backup configuration settings."""
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        user = get_current_user()
+
+        backup_keys = ['schedule', 'time', 'retention_days']
+
+        for key in backup_keys:
+            if key in data:
+                value = data[key]
+
+                if isinstance(value, int):
+                    value_str = str(value)
+                    value_type = 'number'
+                else:
+                    value_str = str(value)
+                    value_type = 'string'
+
+                setting = db.query(PlatformSettings).filter(
+                    PlatformSettings.key == key
+                ).first()
+
+                if setting:
+                    setting.value = value_str
+                    setting.value_type = value_type
+                    setting.category = 'backup'
+                    setting.updated_by = user.get('id') if user else None
+                else:
+                    setting = PlatformSettings(
+                        key=key,
+                        value=value_str,
+                        category='backup',
+                        value_type=value_type,
+                        updated_by=user.get('id') if user else None
+                    )
+                    db.add(setting)
+
+        db.commit()
+
+        log_security_event(
+            event_type='backup_config_updated',
+            severity='info',
+            message="Backup configuration updated",
+            user_id=user.get('id') if user else None,
+            ip_address=request.remote_addr
+        )
+
+        return jsonify({'success': True, 'message': 'Backup settings saved'})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Save backup config error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/backups', methods=['GET'])
+@require_auth
+@require_admin
+def get_backup_list():
+    """Get list of recent backups."""
+    db = SessionLocal()
+    try:
+        backups = db.query(BackupRecord).order_by(
+            BackupRecord.created_at.desc()
+        ).limit(20).all()
+
+        return jsonify([b.to_dict() for b in backups])
+    except Exception as e:
+        print(f"[ADMIN] Get backups error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/backups/<filename>/download', methods=['GET'])
+@require_auth
+@require_admin
+def download_backup(filename):
+    """Download a backup file."""
+    db = SessionLocal()
+    try:
+        backup = db.query(BackupRecord).filter(BackupRecord.filename == filename).first()
+        if not backup:
+            return jsonify({'error': 'Backup not found'}), 404
+
+        if not os.path.exists(backup.filepath):
+            return jsonify({'error': 'Backup file not found on disk'}), 404
+
+        from flask import send_file
+        return send_file(
+            backup.filepath,
+            as_attachment=True,
+            download_name=backup.filename
+        )
+    except Exception as e:
+        print(f"[ADMIN] Download backup error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/settings/backups/<filename>', methods=['DELETE'])
+@require_auth
+@require_admin
+def delete_backup(filename):
+    """Delete a backup file."""
+    db = SessionLocal()
+    try:
+        backup = db.query(BackupRecord).filter(BackupRecord.filename == filename).first()
+        if not backup:
+            return jsonify({'error': 'Backup not found'}), 404
+
+        # Delete the file if it exists
+        if os.path.exists(backup.filepath):
+            os.remove(backup.filepath)
+
+        # Delete the record
+        db.delete(backup)
+        db.commit()
+
+        user = get_current_user()
+        log_security_event(
+            event_type='backup_deleted',
+            severity='warning',
+            message=f"Backup deleted: {filename}",
+            user_id=user.get('id') if user else None,
+            ip_address=request.remote_addr
+        )
+
+        return jsonify({'success': True})
+    except Exception as e:
+        db.rollback()
+        print(f"[ADMIN] Delete backup error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
 
 
 if __name__ == '__main__':

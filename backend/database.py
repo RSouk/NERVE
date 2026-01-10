@@ -37,7 +37,7 @@ TODO (Phase 7 - PostgreSQL Migration):
     - Add GIN indexes for JSONB columns
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON, Boolean, Enum, text, inspect
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Text, DateTime, Float, ForeignKey, JSON, Boolean, Enum, text, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError
@@ -446,6 +446,107 @@ class ErrorLog(Base):
 
     def __repr__(self):
         return f'<ErrorLog {self.error_type} at {self.endpoint}>'
+
+
+# ============================================================================
+# CONTENT MANAGEMENT MODELS
+# ============================================================================
+
+class NewsSource(Base):
+    """RSS news sources for the Ghost Dashboard news feed"""
+    __tablename__ = 'news_sources'
+
+    id = Column(Integer, primary_key=True)
+    url = Column(String(500), nullable=False, unique=True)
+    name = Column(String(200))  # Optional friendly name
+    active = Column(Boolean, default=True, nullable=False)
+    last_fetched = Column(DateTime)
+    fetch_error = Column(Text)  # Last error if fetch failed
+    article_count = Column(Integer, default=0)
+
+    # Audit
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'))
+
+    def __repr__(self):
+        return f'<NewsSource {self.url}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'url': self.url,
+            'name': self.name,
+            'active': self.active,
+            'last_fetched': self.last_fetched.isoformat() if self.last_fetched else None,
+            'fetch_error': self.fetch_error,
+            'article_count': self.article_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class EducationResource(Base):
+    """Education resources for the NERVE Dashboard"""
+    __tablename__ = 'education_resources'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(255), nullable=False)
+    url = Column(String(500), nullable=False)
+    type = Column(String(50), nullable=False)  # Guide, Tutorial, Video
+    description = Column(Text)
+    featured = Column(Boolean, default=False, nullable=False)
+    order_index = Column(Integer, default=0)  # For sorting
+
+    # Audit
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'))
+
+    def __repr__(self):
+        return f'<EducationResource {self.title}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'url': self.url,
+            'type': self.type,
+            'description': self.description,
+            'featured': self.featured,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class BackupRecord(Base):
+    """Records of database backups"""
+    __tablename__ = 'backup_records'
+
+    id = Column(Integer, primary_key=True)
+    filename = Column(String(255), nullable=False, unique=True)
+    filepath = Column(String(500), nullable=False)
+    size_bytes = Column(BigInteger, nullable=False)
+    status = Column(String(20), nullable=False, default='complete')  # in_progress, complete, failed
+    backup_type = Column(String(20), nullable=False, default='manual')  # manual, scheduled
+    error_message = Column(Text)
+
+    # Audit
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'))
+
+    def __repr__(self):
+        return f'<BackupRecord {self.filename}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'filename': self.filename,
+            'size_mb': round(self.size_bytes / (1024 * 1024), 2) if self.size_bytes else 0,
+            'status': self.status,
+            'backup_type': self.backup_type,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'error_message': self.error_message
+        }
 
 
 # ============================================================================
@@ -2536,16 +2637,26 @@ def log_login_attempt(email: str, success: bool, ip_address: str,
         session.add(attempt)
         session.commit()
 
-        # Also log as security event for failed attempts
-        if not success:
+        # Log as security event
+        if success:
             log_security_event(
-                event_type='login_failed',
-                severity='low',
+                event_type='login',
+                severity='info',
                 email=email,
                 user_id=user_id,
                 ip_address=ip_address,
                 user_agent=user_agent,
-                description=f'Failed login attempt for {email}: {failure_reason}'
+                description=f'Successful login for {email}'
+            )
+        else:
+            log_security_event(
+                event_type='login_failed',
+                severity='warning',
+                email=email,
+                user_id=user_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                description=f'Failed login attempt for {email}: {failure_reason or "Invalid credentials"}'
             )
 
         return True

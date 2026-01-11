@@ -491,11 +491,14 @@ class EducationResource(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
-    url = Column(String(500), nullable=False)
-    type = Column(String(50), nullable=False)  # Guide, Tutorial, Video
-    description = Column(Text)
+    description = Column(String(140))  # 140 char limit for cards
+    image_url = Column(String(500))  # Icon/thumbnail URL or emoji
+    url = Column(String(500), nullable=False)  # External link or PDF URL
+    type = Column(String(50), nullable=False)  # guide, tutorial, video, pdf
+    read_time = Column(String(20))  # e.g., "5 min read", "10 min watch"
     featured = Column(Boolean, default=False, nullable=False)
     order_index = Column(Integer, default=0)  # For sorting
+    active = Column(Boolean, default=True, nullable=False)
 
     # Audit
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -509,11 +512,14 @@ class EducationResource(Base):
         return {
             'id': self.id,
             'title': self.title,
+            'description': self.description,
+            'image_url': self.image_url,
             'url': self.url,
             'type': self.type,
-            'description': self.description,
+            'read_time': self.read_time,
             'featured': self.featured,
             'order_index': self.order_index,
+            'active': self.active,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 

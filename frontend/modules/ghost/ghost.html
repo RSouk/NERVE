@@ -1536,8 +1536,12 @@
         // Curated News
         async function loadCuratedNews() {
             const container = document.getElementById('curated-news-feed');
+            const token = localStorage.getItem('session_token');
+
             try {
-                const response = await fetch(`${API_URL}/api/cti/feed`);
+                const response = await fetch(`${API_URL}/api/cti/feed`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
                 const data = await response.json();
 
                 if (data.articles && data.articles.length > 0) {
@@ -1546,13 +1550,14 @@
                             <div class="news-source">${article.source || 'Security News'}</div>
                             <h4 class="news-title">${article.title}</h4>
                             <p class="news-desc">${article.summary || article.description || ''}</p>
-                            <a href="${article.link}" target="_blank" class="news-link">Read More &#8594;</a>
+                            <a href="${article.url || article.link}" target="_blank" class="news-link">Read More &#8594;</a>
                         </div>
                     `).join('');
                 } else {
-                    container.innerHTML = '<p class="loading-text">No news available</p>';
+                    container.innerHTML = '<p class="loading-text">No news available. Admin can add RSS sources in Settings.</p>';
                 }
             } catch (error) {
+                console.error('[NEWS FEED] Error:', error);
                 container.innerHTML = '<p class="loading-text">Unable to load news feed</p>';
             }
         }

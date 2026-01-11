@@ -912,20 +912,20 @@
                     </div>
                 </div>
 
-                <!-- Storage -->
+                <!-- Storage (NERVE Data) -->
                 <div class="health-card" id="healthStorage">
                     <div class="health-card-header">
                         <div class="health-icon">&#128191;</div>
-                        <h3>Storage</h3>
+                        <h3>NERVE Data</h3>
                     </div>
                     <div class="health-status status-healthy" id="storageStatus">Checking...</div>
                     <div class="health-details">
                         <div class="health-detail-row">
-                            <span class="label">Used</span>
+                            <span class="label">Total Size</span>
                             <span class="value" id="storageUsed">--</span>
                         </div>
                         <div class="health-detail-row">
-                            <span class="label">Scan Data</span>
+                            <span class="label">Scan Cache</span>
                             <span class="value" id="storageScanData">--</span>
                         </div>
                         <div class="health-detail-row">
@@ -938,16 +938,16 @@
                     </div>
                 </div>
 
-                <!-- System Resources -->
+                <!-- Flask Process Resources -->
                 <div class="health-card" id="healthResources">
                     <div class="health-card-header">
                         <div class="health-icon">&#9889;</div>
-                        <h3>Resources</h3>
+                        <h3>Flask Process</h3>
                     </div>
                     <div class="health-status status-healthy" id="resourceStatus">Checking...</div>
                     <div class="health-details">
                         <div class="health-detail-row">
-                            <span class="label">CPU</span>
+                            <span class="label">CPU (System)</span>
                             <span class="value" id="resourceCPU">--</span>
                         </div>
                         <div class="health-detail-row">
@@ -955,7 +955,7 @@
                             <span class="value" id="resourceMemory">--</span>
                         </div>
                         <div class="health-detail-row">
-                            <span class="label">Load</span>
+                            <span class="label">Sessions</span>
                             <span class="value" id="resourceLoad">--</span>
                         </div>
                     </div>
@@ -1124,6 +1124,28 @@
                                 <span class="toggle-slider"></span>
                             </div>
                         </label>
+
+                        <label class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">Ghost Adversary (Threat Actor Intelligence)</span>
+                                <span class="toggle-desc">Track and analyze threat actors targeting your organization</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="featureGhostAdversary" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+
+                        <label class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">Security Roadmap (Strategic Planning)</span>
+                                <span class="toggle-desc">AI-powered security improvement recommendations</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="featureSecurityRoadmap" checked>
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
@@ -1229,8 +1251,8 @@
             const mockData = {
                 database: {
                     status: 'healthy',
-                    size: '245 MB',
-                    connections: '12/50',
+                    size: '2.8 MB',
+                    connections: '5/50',
                     avg_query_time: '23ms'
                 },
                 api: {
@@ -1241,23 +1263,23 @@
                 },
                 scan_queue: {
                     status: 'healthy',
-                    pending: 3,
-                    running: 2,
+                    pending: 0,
+                    running: 0,
                     failed_24h: 0
                 },
                 storage: {
-                    status: 'warning',
-                    used_percent: 75,
-                    used: '750 GB / 1 TB',
-                    scan_data: '620 GB',
-                    database: '130 GB'
+                    status: 'healthy',
+                    used_percent: 5,
+                    used: '245 MB',
+                    scan_data: '120 MB',
+                    database: '2.8 MB'
                 },
                 resources: {
                     status: 'healthy',
-                    cpu_percent: 34,
-                    cpu: '34%',
-                    memory: '6.2 GB / 16 GB',
-                    load: '2.1'
+                    cpu_percent: 15,
+                    cpu: '15%',
+                    memory: '85 MB',
+                    active_sessions: 3
                 }
             };
             updateHealthCards(mockData);
@@ -1301,17 +1323,19 @@
                 storageProgress.className = `progress-fill ${percent > 90 ? 'error' : percent > 75 ? 'warning' : 'healthy'}`;
             }
 
-            // Resources
+            // Resources (Flask Process)
             if (data.resources) {
                 updateStatusBadge('resourceStatus', data.resources.status);
                 document.getElementById('resourceCPU').textContent = data.resources.cpu || '--';
                 document.getElementById('resourceMemory').textContent = data.resources.memory || '--';
-                document.getElementById('resourceLoad').textContent = data.resources.load || '--';
+                document.getElementById('resourceLoad').textContent = data.resources.active_sessions ?? '--';
 
+                // Memory progress bar (Flask process memory as % of 500MB threshold)
                 const cpuProgress = document.getElementById('cpuProgress');
-                const cpuPercent = data.resources.cpu_percent || 0;
-                cpuProgress.style.width = `${cpuPercent}%`;
-                cpuProgress.className = `progress-fill ${cpuPercent > 90 ? 'error' : cpuPercent > 75 ? 'warning' : 'healthy'}`;
+                const memoryMb = data.resources.memory_mb || 0;
+                const memoryPercent = Math.min((memoryMb / 500) * 100, 100);  // % of 500MB threshold
+                cpuProgress.style.width = `${memoryPercent}%`;
+                cpuProgress.className = `progress-fill ${memoryPercent > 100 ? 'error' : memoryPercent > 60 ? 'warning' : 'healthy'}`;
             }
         }
 
@@ -1488,7 +1512,9 @@
                     xasm: true,
                     lightbox: true,
                     ai_vuln: true,
-                    ghost_search: true
+                    ghost_search: true,
+                    ghost_adversary: true,
+                    security_roadmap: true
                 }
             };
             populateConfigForm(defaultConfig);
@@ -1515,6 +1541,8 @@
                 document.getElementById('featureLightbox').checked = config.features.lightbox !== false;
                 document.getElementById('featureAI').checked = config.features.ai_vuln !== false;
                 document.getElementById('featureGhostSearch').checked = config.features.ghost_search !== false;
+                document.getElementById('featureGhostAdversary').checked = config.features.ghost_adversary !== false;
+                document.getElementById('featureSecurityRoadmap').checked = config.features.security_roadmap !== false;
             }
 
             document.getElementById('configLastSaved').textContent = 'Configuration loaded';
@@ -1541,7 +1569,9 @@
                     xasm: document.getElementById('featureXASM').checked,
                     lightbox: document.getElementById('featureLightbox').checked,
                     ai_vuln: document.getElementById('featureAI').checked,
-                    ghost_search: document.getElementById('featureGhostSearch').checked
+                    ghost_search: document.getElementById('featureGhostSearch').checked,
+                    ghost_adversary: document.getElementById('featureGhostAdversary').checked,
+                    security_roadmap: document.getElementById('featureSecurityRoadmap').checked
                 }
             };
 

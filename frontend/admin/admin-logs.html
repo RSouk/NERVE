@@ -607,6 +607,27 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
+        /* Delete Button */
+        .btn-delete-small {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-delete-small:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: scale(1.05);
+        }
+
         /* Pagination */
         .pagination {
             display: flex;
@@ -901,10 +922,16 @@
                 <h1>Activity Logs & Audit Trail</h1>
                 <p>Comprehensive activity logging for compliance and security monitoring</p>
             </div>
-            <button class="btn btn-secondary" onclick="loadLogs()">
-                <span>&#8635;</span>
-                <span>Refresh</span>
-            </button>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" onclick="loadLogs()">
+                    <span>&#8635;</span>
+                    <span>Refresh</span>
+                </button>
+                <button class="btn btn-secondary" onclick="clearTestData()" style="color: var(--red); border-color: rgba(239, 68, 68, 0.3);">
+                    <span>&#128465;</span>
+                    <span>Clear Test Data</span>
+                </button>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -1024,11 +1051,12 @@
                         <th>IP Address</th>
                         <th>Description</th>
                         <th>Severity</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="logsTableBody">
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <div class="empty-icon">&#128203;</div>
                                 <p>Loading logs...</p>
@@ -1320,7 +1348,7 @@
             if (!logs || logs.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <div class="empty-icon">&#128203;</div>
                                 <p>No logs found matching your filters</p>
@@ -1335,21 +1363,29 @@
                 const eventLabel = eventLabels[log.event_type] || { icon: '&#8226;', text: log.event_type };
                 const initials = log.user_name ? getInitials(log.user_name) : 'SY';
                 const isSystem = !log.user_email;
+                const safeEmail = (log.user_email || 'System').replace(/'/g, "\\'");
 
                 return `
-                    <tr class="log-row severity-${log.severity}" onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
-                        <td class="timestamp-cell">${formatTimestamp(log.timestamp)}</td>
-                        <td><span class="event-badge ${log.event_type}">${eventLabel.icon} ${eventLabel.text}</span></td>
-                        <td>
+                    <tr class="log-row severity-${log.severity}">
+                        <td class="timestamp-cell" onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'>${formatTimestamp(log.timestamp)}</td>
+                        <td onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'><span class="event-badge ${log.event_type}">${eventLabel.icon} ${eventLabel.text}</span></td>
+                        <td onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
                             <div class="user-cell">
                                 <div class="user-cell-avatar ${isSystem ? 'system' : ''}">${initials}</div>
                                 <span class="user-cell-name">${log.user_email || 'System'}</span>
                             </div>
                         </td>
-                        <td>${log.company_name || '<span style="color: var(--text-muted)">--</span>'}</td>
-                        <td class="ip-cell">${log.ip_address || '--'}</td>
-                        <td class="description-cell" title="${log.description}">${log.description}</td>
-                        <td><span class="severity-badge severity-${log.severity}">${log.severity}</span></td>
+                        <td onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'>${log.company_name || '<span style="color: var(--text-muted)">--</span>'}</td>
+                        <td class="ip-cell" onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'>${log.ip_address || '--'}</td>
+                        <td class="description-cell" title="${log.description}" onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'>${log.description}</td>
+                        <td onclick='viewLogDetail(${JSON.stringify(log).replace(/'/g, "&#39;")})'><span class="severity-badge severity-${log.severity}">${log.severity}</span></td>
+                        <td>
+                            <button onclick="event.stopPropagation(); deleteSingleLog(${log.id}, '${safeEmail}')"
+                                    class="btn-delete-small"
+                                    title="Delete this log entry">
+                                &#128465;
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1560,6 +1596,86 @@
             `;
 
             openModal('logDetailModal');
+        }
+
+        // Delete single log entry
+        async function deleteSingleLog(logId, userEmail) {
+            if (!confirm(`Delete this log entry?\n\nUser: ${userEmail}\nLog ID: ${logId}\n\nThis cannot be undone.`)) {
+                return;
+            }
+
+            const token = localStorage.getItem('session_token');
+            try {
+                const response = await fetch(`${API_URL}/api/admin/logs/${logId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showToast('Log entry deleted successfully', 'success');
+                    loadLogs(); // Refresh the list
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Failed to delete log entry', 'error');
+                }
+            } catch (error) {
+                console.error('Delete log error:', error);
+                showToast('Failed to delete log entry', 'error');
+            }
+        }
+
+        // Clear test data with preview
+        async function clearTestData() {
+            const token = localStorage.getItem('session_token');
+
+            try {
+                // Step 1: Get preview of what will be deleted
+                const previewResponse = await fetch(`${API_URL}/api/admin/logs/preview-test-data`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!previewResponse.ok) {
+                    showToast('Failed to preview test data', 'error');
+                    return;
+                }
+
+                const preview = await previewResponse.json();
+
+                if (preview.count === 0) {
+                    showToast('No test data found to delete', 'info');
+                    return;
+                }
+
+                // Step 2: Show preview to admin
+                const emailList = preview.emails.map(e => `- ${e.email} (${e.count} logs)`).join('\n');
+
+                if (!confirm(`Found ${preview.count} test log entries from:\n\n${emailList}\n\nDelete all of these?`)) {
+                    return;
+                }
+
+                // Step 3: Final confirmation
+                if (!confirm(`FINAL WARNING: This will permanently delete ${preview.count} log entries.\n\nContinue?`)) {
+                    return;
+                }
+
+                // Step 4: Actually delete
+                const deleteResponse = await fetch(`${API_URL}/api/admin/logs/clear-test-data`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await deleteResponse.json();
+
+                if (deleteResponse.ok) {
+                    showToast(`Successfully deleted ${result.deleted_count} test log entries`, 'success');
+                    loadLogs(); // Refresh
+                } else {
+                    showToast(result.error || 'Failed to clear test data', 'error');
+                }
+            } catch (error) {
+                console.error('Clear test data error:', error);
+                showToast('Failed to clear test data', 'error');
+            }
         }
 
         // Modal Helpers

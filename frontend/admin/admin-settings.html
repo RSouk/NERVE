@@ -472,6 +472,7 @@
         .type-guide { background: rgba(66, 165, 245, 0.15); color: var(--blue); }
         .type-tutorial { background: rgba(187, 134, 252, 0.15); color: var(--purple); }
         .type-video { background: rgba(255, 152, 0, 0.15); color: var(--orange); }
+        .type-pdf { background: rgba(255, 82, 82, 0.15); color: var(--red); }
 
         /* Buttons */
         .btn {
@@ -674,6 +675,100 @@
         .status-complete { background: rgba(0, 230, 118, 0.15); color: var(--green); }
         .status-in_progress { background: rgba(255, 152, 0, 0.15); color: var(--orange); }
         .status-failed { background: rgba(255, 82, 82, 0.15); color: var(--red); }
+        .status-healthy { background: rgba(0, 230, 118, 0.15); color: var(--green); border: 1px solid rgba(0, 230, 118, 0.3); }
+        .status-warning { background: rgba(255, 152, 0, 0.15); color: var(--orange); border: 1px solid rgba(255, 152, 0, 0.3); }
+
+        /* Email Setup Instructions */
+        .email-setup-instructions {
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .email-setup-instructions h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold-primary);
+            margin-bottom: 12px;
+        }
+
+        .setup-status {
+            margin-bottom: 16px;
+        }
+
+        .instructions-panel {
+            margin-top: 16px;
+        }
+
+        .instructions-panel h4 {
+            color: var(--gold-primary);
+            font-size: 0.95rem;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+
+        .instructions-panel ul, .instructions-panel ol {
+            margin-left: 20px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .instructions-panel li {
+            margin-bottom: 4px;
+        }
+
+        .instructions-panel ul ul {
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+
+        .note-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            padding: 12px 16px;
+            margin-top: 16px;
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+        }
+
+        .note-box strong {
+            color: var(--text-primary);
+        }
+
+        /* Backup Setup Note */
+        .backup-setup-note {
+            background: rgba(255, 152, 0, 0.08);
+            border: 1px solid rgba(255, 152, 0, 0.25);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .backup-setup-note h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--orange);
+            margin-bottom: 12px;
+        }
+
+        .backup-setup-note ul {
+            margin-left: 20px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .backup-setup-note li {
+            margin-bottom: 4px;
+        }
+
+        .backup-setup-note .warning-text {
+            color: var(--orange);
+            font-size: 0.9rem;
+            margin-top: 12px;
+        }
 
         /* Empty State */
         .empty-state {
@@ -767,6 +862,9 @@
             border-radius: 20px;
             width: 90%;
             max-width: 500px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
             transform: scale(0.9);
             transition: transform 0.3s;
         }
@@ -779,6 +877,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
         }
 
         .modal-header h3 {
@@ -798,7 +897,11 @@
 
         .modal-close:hover { color: var(--text-primary); }
 
-        .modal-body { padding: 24px; }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
 
         .modal-footer {
             padding: 20px 24px;
@@ -806,6 +909,7 @@
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            flex-shrink: 0;
         }
 
         /* Responsive */
@@ -915,21 +1019,22 @@
                 <!-- Education Material -->
                 <div class="settings-card">
                     <h3>NERVE Dashboard Education Material</h3>
-                    <p>Manage guides, tutorials, and learning resources</p>
+                    <p>Manage guides, tutorials, and learning resources displayed to users</p>
 
                     <table class="resources-table">
                         <thead>
                             <tr>
+                                <th>Icon</th>
                                 <th>Title</th>
                                 <th>Type</th>
-                                <th>URL</th>
+                                <th>Read Time</th>
                                 <th>Featured</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="educationResources">
                             <tr>
-                                <td colspan="5" class="empty-state">
+                                <td colspan="6" class="empty-state">
                                     <p>Loading resources...</p>
                                 </td>
                             </tr>
@@ -949,6 +1054,54 @@
                 <div class="section-header">
                     <span class="section-icon">&#128231;</span>
                     <h2>Email Configuration</h2>
+                </div>
+
+                <!-- Email Setup Instructions -->
+                <div class="email-setup-instructions">
+                    <h3>Email Configuration Setup</h3>
+
+                    <div class="setup-status">
+                        <span id="emailConfigStatus" class="status-badge status-warning">Not Configured</span>
+                    </div>
+
+                    <div class="instructions-panel">
+                        <h4>What Email is Used For:</h4>
+                        <ul>
+                            <li>Password reset emails ("Forgot password" flow)</li>
+                            <li>Welcome emails when creating new users</li>
+                            <li>Security alerts (failed logins, account locked)</li>
+                            <li>Scan completion notifications (optional)</li>
+                            <li>Account deletion confirmations</li>
+                        </ul>
+
+                        <h4>Setup Steps (Before Production):</h4>
+                        <ol>
+                            <li><strong>Buy Domain:</strong> nerveplatform.com (or your preferred domain)</li>
+                            <li><strong>Choose Email Provider:</strong>
+                                <ul>
+                                    <li><strong>SendGrid</strong> (recommended) - 100 emails/day free tier</li>
+                                    <li><strong>Mailgun</strong> - Good for high volume</li>
+                                    <li><strong>AWS SES</strong> - Cheapest for production scale</li>
+                                    <li><strong>Gmail SMTP</strong> - Only for testing (not production)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Setup Email Address:</strong> noreply@nerveplatform.com or alerts@nerveplatform.com</li>
+                            <li><strong>Get SMTP Credentials:</strong> Provider will give you:
+                                <ul>
+                                    <li>SMTP Host (e.g., smtp.sendgrid.net)</li>
+                                    <li>SMTP Port (usually 587 for TLS)</li>
+                                    <li>Username (API key or username)</li>
+                                    <li>Password (API secret)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Configure DNS:</strong> Add SPF, DKIM, DMARC records for deliverability</li>
+                            <li><strong>Enter credentials below and test</strong></li>
+                        </ol>
+
+                        <div class="note-box">
+                            <strong>For Now:</strong> Platform works without email configured. Password resets and notifications will be disabled until email is set up. Configure before production launch.
+                        </div>
+                    </div>
                 </div>
 
                 <form id="emailConfigForm" class="config-form">
@@ -1042,8 +1195,11 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Backup Location</label>
-                                    <input type="text" id="backupLocation" value="/backups" readonly>
-                                    <small>Server path for backup storage</small>
+                                    <input type="text" id="backupLocation" value="./backups" placeholder="./backups or cloud storage URL">
+                                    <small>
+                                        Local: ./backups (relative path)<br>
+                                        Cloud: s3://bucket-name/backups or https://storage.example.com/backups
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -1057,6 +1213,19 @@
                             </button>
                         </div>
                     </form>
+
+                    <!-- Production Setup Note -->
+                    <div class="backup-setup-note">
+                        <h4>Production Setup Required</h4>
+                        <p>Before going live, configure:</p>
+                        <ul>
+                            <li><strong>Cloud Storage:</strong> AWS S3, Cloudflare R2, or Azure Blob Storage</li>
+                            <li><strong>Credentials:</strong> Access keys stored in environment variables</li>
+                            <li><strong>Encryption:</strong> Enable encryption at rest for backups</li>
+                            <li><strong>Testing:</strong> Verify backup and restore process works</li>
+                        </ul>
+                        <p class="warning-text">Current local backups are <strong>NOT production-ready</strong>.</p>
+                    </div>
 
                     <div class="recent-backups">
                         <h3>Recent Backups</h3>
@@ -1085,7 +1254,7 @@
 
     <!-- Resource Modal -->
     <div class="modal-overlay" id="resourceModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
                 <h3 id="resourceModalTitle">Add Education Resource</h3>
                 <button class="modal-close" onclick="closeResourceModal()">&times;</button>
@@ -1094,20 +1263,38 @@
                 <form id="resourceForm">
                     <input type="hidden" id="resourceId">
                     <div class="form-group">
-                        <label>Title</label>
+                        <label>Title *</label>
                         <input type="text" id="resourceTitle" placeholder="Getting Started with NERVE" required>
                     </div>
                     <div class="form-group">
-                        <label>URL</label>
-                        <input type="url" id="resourceUrl" placeholder="https://docs.nerve.security/guide.pdf" required>
+                        <label>Description (140 char max) *</label>
+                        <textarea id="resourceDescription" maxlength="140" rows="3" placeholder="Brief description for the card display" style="width:100%;padding:14px 18px;background:var(--bg-input);border:1px solid var(--border-input);border-radius:10px;color:var(--text-primary);font-size:0.95rem;font-family:'Outfit',sans-serif;resize:vertical;"></textarea>
+                        <small id="charCount" style="color:var(--text-muted);">0/140 characters</small>
                     </div>
                     <div class="form-group">
-                        <label>Type</label>
-                        <select id="resourceType" required>
-                            <option value="Guide">Guide</option>
-                            <option value="Tutorial">Tutorial</option>
-                            <option value="Video">Video</option>
-                        </select>
+                        <label>Image URL (icon/emoji)</label>
+                        <input type="text" id="resourceImage" placeholder="Or use emoji like: 📚 🎓 🔒 📖">
+                        <small style="color:var(--text-muted);">Use emoji or external image URL</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Content URL (external link or PDF) *</label>
+                        <input type="url" id="resourceUrl" placeholder="https://docs.nerve.security/guide.pdf" required>
+                        <small style="color:var(--text-muted);">External website or cloud-hosted PDF link</small>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Type *</label>
+                            <select id="resourceType" required>
+                                <option value="guide">Guide</option>
+                                <option value="tutorial">Tutorial</option>
+                                <option value="video">Video</option>
+                                <option value="pdf">PDF Download</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Read/Watch Time</label>
+                            <input type="text" id="resourceReadTime" placeholder="5 min read">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-checkbox">
@@ -1369,7 +1556,7 @@
             if (resources.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="empty-state">
+                        <td colspan="6" class="empty-state">
                             <p>No education resources configured</p>
                         </td>
                     </tr>
@@ -1379,9 +1566,13 @@
 
             tbody.innerHTML = resources.map(resource => `
                 <tr>
-                    <td>${escapeHtml(resource.title)}</td>
-                    <td><span class="type-badge type-${resource.type.toLowerCase()}">${resource.type}</span></td>
-                    <td><a href="${escapeHtml(resource.url)}" target="_blank">${truncateUrl(resource.url)}</a></td>
+                    <td style="font-size:1.5rem;text-align:center;">${resource.image_url || '📚'}</td>
+                    <td>
+                        <strong>${escapeHtml(resource.title)}</strong>
+                        ${resource.description ? `<br><small style="color:var(--text-muted)">${escapeHtml(resource.description.substring(0, 60))}...</small>` : ''}
+                    </td>
+                    <td><span class="type-badge type-${(resource.type || 'guide').toLowerCase()}">${resource.type || 'Guide'}</span></td>
+                    <td style="font-size:0.85rem;color:var(--text-muted)">${resource.read_time || '5 min'}</td>
                     <td>${resource.featured ? '&#11088;' : ''}</td>
                     <td>
                         <button onclick="editResource(${resource.id})" class="btn btn-small btn-secondary">Edit</button>
@@ -1396,27 +1587,46 @@
             document.getElementById('resourceModalTitle').textContent = resource ? 'Edit Resource' : 'Add Education Resource';
             document.getElementById('resourceId').value = resource ? resource.id : '';
             document.getElementById('resourceTitle').value = resource ? resource.title : '';
+            document.getElementById('resourceDescription').value = resource ? (resource.description || '') : '';
+            document.getElementById('resourceImage').value = resource ? (resource.image_url || '') : '';
             document.getElementById('resourceUrl').value = resource ? resource.url : '';
-            document.getElementById('resourceType').value = resource ? resource.type : 'Guide';
+            document.getElementById('resourceType').value = resource ? (resource.type || 'guide').toLowerCase() : 'guide';
+            document.getElementById('resourceReadTime').value = resource ? (resource.read_time || '') : '';
             document.getElementById('resourceFeatured').checked = resource ? resource.featured : false;
+
+            // Update character counter
+            const desc = document.getElementById('resourceDescription').value;
+            document.getElementById('charCount').textContent = `${desc.length}/140 characters`;
+
             document.getElementById('resourceModal').classList.add('active');
         }
 
         function closeResourceModal() {
             document.getElementById('resourceModal').classList.remove('active');
             editingResourceId = null;
+            // Reset form
+            document.getElementById('resourceForm').reset();
+            document.getElementById('charCount').textContent = '0/140 characters';
         }
 
         async function saveResource() {
             const resource = {
                 title: document.getElementById('resourceTitle').value,
+                description: document.getElementById('resourceDescription').value,
+                image_url: document.getElementById('resourceImage').value,
                 url: document.getElementById('resourceUrl').value,
                 type: document.getElementById('resourceType').value,
+                read_time: document.getElementById('resourceReadTime').value || '5 min read',
                 featured: document.getElementById('resourceFeatured').checked
             };
 
             if (!resource.title || !resource.url) {
                 showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            if (resource.description && resource.description.length > 140) {
+                showToast('Description must be 140 characters or less', 'error');
                 return;
             }
 
@@ -1439,17 +1649,40 @@
                 if (response.ok) {
                     showToast(editingResourceId ? 'Resource updated' : 'Resource added', 'success');
                 } else {
-                    showToast(editingResourceId ? 'Resource updated' : 'Resource added', 'success');
+                    const errorData = await response.json();
+                    showToast(errorData.error || 'Failed to save resource', 'error');
+                    return;
                 }
             } catch (error) {
-                showToast(editingResourceId ? 'Resource updated' : 'Resource added', 'success');
+                console.error('[EDUCATION] Save error:', error);
+                showToast('Failed to save resource', 'error');
+                return;
             }
 
             closeResourceModal();
             loadEducationResources();
         }
 
-        function editResource(id) {
+        async function editResource(id) {
+            try {
+                const token = localStorage.getItem('session_token');
+                const response = await fetch(`${API_URL}/api/admin/settings/education`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const resources = await response.json();
+                    const resource = resources.find(r => r.id === id);
+                    if (resource) {
+                        openResourceModal(resource);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('[EDUCATION] Error fetching resource, using fallback');
+            }
+
+            // Fallback to mock data
             const resources = getMockResources();
             const resource = resources.find(r => r.id === id);
             if (resource) {
@@ -1486,11 +1719,25 @@
                 if (response.ok) {
                     const config = await response.json();
                     populateEmailForm(config);
+                    updateEmailConfigStatus(config);
                 } else {
                     populateEmailForm(getMockEmailConfig());
+                    updateEmailConfigStatus(getMockEmailConfig());
                 }
             } catch (error) {
                 populateEmailForm(getMockEmailConfig());
+                updateEmailConfigStatus(getMockEmailConfig());
+            }
+        }
+
+        function updateEmailConfigStatus(config) {
+            const statusBadge = document.getElementById('emailConfigStatus');
+            if (config.smtp_host && config.smtp_username) {
+                statusBadge.textContent = 'Configured';
+                statusBadge.className = 'status-badge status-healthy';
+            } else {
+                statusBadge.textContent = 'Not Configured';
+                statusBadge.className = 'status-badge status-warning';
             }
         }
 
@@ -1524,6 +1771,14 @@
                 e.preventDefault();
                 await saveBackupConfig();
             });
+
+            // Character counter for education resource description
+            const descriptionField = document.getElementById('resourceDescription');
+            if (descriptionField) {
+                descriptionField.addEventListener('input', function() {
+                    document.getElementById('charCount').textContent = `${this.value.length}/140 characters`;
+                });
+            }
         }
 
         async function saveEmailConfig() {
@@ -1632,7 +1887,8 @@
             const config = {
                 schedule: document.getElementById('backupSchedule').value,
                 time: document.getElementById('backupTime').value,
-                retention_days: parseInt(document.getElementById('backupRetention').value)
+                retention_days: parseInt(document.getElementById('backupRetention').value),
+                location: document.getElementById('backupLocation').value
             };
 
             const btn = document.getElementById('saveBackupBtn');

@@ -1956,6 +1956,586 @@
                 text-align: center;
             }
         }
+
+        /* ===== XPOSEDORNOT BREACH STYLES ===== */
+        .breach-result {
+            border-left: 3px solid var(--red-primary);
+        }
+
+        .risk-badge {
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .breach-summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .breach-email {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold-primary);
+            margin-bottom: 8px;
+            font-family: var(--font-mono);
+        }
+
+        .breach-summary {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .breach-summary strong {
+            color: var(--red-primary);
+            font-size: 1.2rem;
+        }
+
+        .breaches-list {
+            margin-top: 24px;
+        }
+
+        .breaches-list-title {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .breach-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all var(--transition-fast);
+        }
+
+        .breach-card:hover {
+            border-color: var(--border-accent);
+        }
+
+        .breach-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .breach-header strong {
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .breach-date {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-family: var(--font-mono);
+        }
+
+        .breach-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .breach-meta {
+            display: flex;
+            gap: 24px;
+            margin: 14px 0;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .meta-item strong {
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
+        .password-risk-plaintext,
+        .password-risk-easytocrack {
+            color: var(--red-primary) !important;
+        }
+
+        .password-risk-hardtocrack {
+            color: var(--orange-primary) !important;
+        }
+
+        .password-risk-stronghash {
+            color: var(--green-primary) !important;
+        }
+
+        .exposed-data {
+            margin-top: 16px;
+        }
+
+        .exposed-data strong {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .data-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .data-tag {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--gold-primary);
+            padding: 5px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid rgba(212, 175, 55, 0.25);
+        }
+
+        /* Password Exposure Styles */
+        .password-safe {
+            border-left: 3px solid var(--green-primary);
+        }
+
+        .password-exposed {
+            border-left: 3px solid var(--red-primary);
+        }
+
+        .safe-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--green-primary);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .exposure-badge {
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .exposure-badge.critical {
+            background: rgba(127, 29, 29, 0.3);
+            color: var(--red-primary);
+        }
+
+        .exposure-badge.high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .exposure-badge.medium {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .exposure-badge.low {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .password-safe-card,
+        .password-exposed-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius-md);
+            padding: 24px;
+        }
+
+        .password-safe-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .password-exposed-card h4 {
+            color: var(--red-primary);
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+        }
+
+        .exposure-count {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin: 16px 0;
+        }
+
+        .exposure-count strong {
+            color: var(--red-primary);
+            font-size: 1.3rem;
+        }
+
+        .recommendation {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--red-primary);
+            padding: 14px 18px;
+            margin-top: 20px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .recommendation strong {
+            color: var(--red-primary);
+        }
+
+        .warning-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        /* Unified Search Results Styles */
+        .results-summary {
+            background: rgba(212, 175, 55, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .summary-stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-badge.breach {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .stat-badge.stealer {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+
+        .stat-badge.paste {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .stat-badge.code {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .result-section-title {
+            color: #D4AF37;
+            margin: 30px 0 16px 0;
+            font-size: 20px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .result-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.3s;
+        }
+
+        .result-card:hover {
+            border-color: rgba(212, 175, 55, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .breach-card {
+            border-left: 3px solid #ef4444;
+        }
+
+        .stealer-card {
+            border-left: 3px solid #a855f7;
+        }
+
+        .paste-card {
+            border-left: 3px solid #3b82f6;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        .breach-name, .stealer-type, .paste-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .breach-date, .infection-date, .paste-date {
+            color: rgba(255,255,255,0.6);
+            font-size: 13px;
+        }
+
+        .card-body p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .redacted {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .btn-export {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #10b981;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-export:hover {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.6);
+        }
+
+        .show-more-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn-show-more {
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            color: #D4AF37;
+            padding: 12px 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .btn-show-more:hover {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: rgba(212, 175, 55, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* ===== ATTACK VECTOR ANALYSIS ===== */
+        .attack-vector-card {
+            background: linear-gradient(135deg, rgba(127, 29, 29, 0.2), rgba(239, 68, 68, 0.1));
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .attack-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .attack-header h3 {
+            color: #ef4444;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .threat-level {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .threat-level.critical {
+            background: rgba(127, 29, 29, 0.4);
+            color: #fca5a5;
+        }
+
+        .threat-level.high {
+            background: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .threat-level.medium {
+            background: rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .attack-intro {
+            font-size: 16px;
+            margin-bottom: 24px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .attack-scenarios {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .scenario {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .scenario.easy {
+            border-left: 3px solid #ef4444;
+        }
+
+        .scenario.medium {
+            border-left: 3px solid #f59e0b;
+        }
+
+        .scenario.hard {
+            border-left: 3px solid #6b7280;
+        }
+
+        .scenario-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .scenario-icon {
+            font-size: 20px;
+        }
+
+        .scenario-title {
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .scenario-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .scenario-list li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .scenario-list li:before {
+            content: "\2192 ";
+            color: #D4AF37;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .attack-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #D4AF37;
+        }
+
+        .password-danger {
+            color: #ef4444 !important;
+        }
+
+        .attack-recommendation {
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 3px solid #D4AF37;
+            padding: 16px;
+            border-radius: 4px;
+        }
+
+        .attack-recommendation strong {
+            color: #D4AF37;
+            display: block;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .attack-recommendation ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .attack-recommendation li {
+            padding: 6px 0;
+            line-height: 1.6;
+        }
+
+        /* Responsive Attack Vector */
+        @media (max-width: 1024px) {
+            .attack-scenarios {
+                grid-template-columns: 1fr;
+            }
+
+            .attack-metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
@@ -2258,6 +2838,26 @@ email3@example.com"></textarea>
         // Query history
         let queryHistory = JSON.parse(localStorage.getItem('ghost_query_history') || '[]');
 
+        // Pagination state
+        const RESULTS_PER_PAGE = 12;
+        let paginationState = {
+            breach_data: { page: 1 },
+            infostealer_logs: { page: 1 }
+        };
+
+        function resetPagination() {
+            paginationState = {
+                breach_data: { page: 1 },
+                infostealer_logs: { page: 1 }
+            };
+        }
+
+        function showMore(type) {
+            paginationState[type].page++;
+            // Re-render just that section
+            displayResults(window.lastSearchResults);
+        }
+
         // Check for query parameter from dashboard
         const urlParams = new URLSearchParams(window.location.search);
         const queryParam = urlParams.get('q');
@@ -2416,6 +3016,9 @@ email3@example.com"></textarea>
         }
 
         async function performSearch() {
+            // Reset pagination when new search starts
+            resetPagination();
+
             const input = document.getElementById('search-input');
             const query = input ? input.value.trim() : '';
 
@@ -2475,226 +3078,467 @@ email3@example.com"></textarea>
         }
 
         function displayResults(data) {
+            console.log('[SEARCH] Displaying results:', data);
             const resultsDiv = document.getElementById('results');
             if (!resultsDiv) return;
 
             currentResults = data;
 
-            // Calculate stats
-            const totalFindings = data.total_results || 0;
-            const credentialsCount = data.results?.filter(r => r.type === 'credential' || r.email || r.password).length || 0;
-            const machinesCount = data.results?.filter(r => r.type === 'infected_machine' || r.machine_id).length || 0;
-            const hibpCount = data.hibp_count || 0;
+            // Store for pagination
+            window.lastSearchResults = data;
 
-            // Detect query type
-            const query = data.query || document.getElementById('search-input').value;
-            let queryType = 'KEYWORD';
-            if (query.includes('@')) queryType = 'EMAIL';
-            else if (/^[0-9.]+$/.test(query)) queryType = 'IP';
-            else if (query.includes('.') && !query.includes(' ')) queryType = 'DOMAIN';
+            if (!data || !data.results) {
+                resultsDiv.innerHTML = '<p class="no-results">No results found</p>';
+                return;
+            }
 
-            let html = `
-                <!-- Results Header -->
-                <div class="results-header fade-in-up">
-                    <div class="results-stats">
-                        <div class="result-stat">
-                            <div class="result-stat-value ${totalFindings > 100 ? 'critical' : totalFindings > 10 ? 'warning' : ''}">${totalFindings}</div>
-                            <div class="result-stat-label">Total Findings</div>
-                        </div>
-                        <div class="result-stat">
-                            <div class="result-stat-value">${credentialsCount}</div>
-                            <div class="result-stat-label">Credentials</div>
-                        </div>
-                        <div class="result-stat">
-                            <div class="result-stat-value">${machinesCount}</div>
-                            <div class="result-stat-label">Machines</div>
-                        </div>
-                        ${hibpCount > 0 ? `
-                        <div class="result-stat">
-                            <div class="result-stat-value ${hibpCount > 1000 ? 'critical' : hibpCount > 100 ? 'warning' : 'safe'}">${hibpCount.toLocaleString()}</div>
-                            <div class="result-stat-label">HIBP Exposures</div>
-                        </div>
-                        ` : ''}
+            // Convert results object to array of findings
+            const allFindings = [];
+
+            Object.keys(data.results).forEach(source => {
+                const sourceData = data.results[source];
+
+                if (sourceData.found && sourceData.data) {
+                    sourceData.data.forEach(item => {
+                        allFindings.push({
+                            source: source,
+                            type: sourceData.type,
+                            ...item
+                        });
+                    });
+                }
+            });
+
+            console.log('[SEARCH] Total findings to display:', allFindings.length);
+
+            if (allFindings.length === 0) {
+                resultsDiv.innerHTML = '<p class="no-results">No results found</p>';
+                return;
+            }
+
+            // Group by type
+            const grouped = {
+                infostealer_logs: allFindings.filter(f => f.type === 'infostealer_logs'),
+                breach_data: allFindings.filter(f => f.type === 'breach_data'),
+                paste_data: allFindings.filter(f => f.type === 'paste_data'),
+                code_exposure: allFindings.filter(f => f.type === 'code_exposure')
+            };
+
+            // Generate attack vector analysis
+            const analysis = generateAttackVectorAnalysis(allFindings);
+            let html = renderAttackVectorCard(analysis);
+
+            html += `
+                <div class="results-summary">
+                    <div class="summary-header">
+                        <h3>Found ${allFindings.length} results across ${data.sources_queried.length} sources</h3>
+                        <button onclick="exportToCSV()" class="btn-export">
+                            &#128229; Export to CSV
+                        </button>
                     </div>
-                    <div class="results-meta">
-                        <div class="query-type-badge">${queryType}</div>
-                        <div class="query-text">${escapeHtml(query)}</div>
-                        <div class="export-buttons">
-                            <button class="export-btn" onclick="exportToJSON()">
-                                <span>&#128229;</span> JSON
-                            </button>
-                            <button class="export-btn" onclick="exportToPDF()">
-                                <span>&#128196;</span> PDF
-                            </button>
-                        </div>
+                    <div class="summary-stats">
+                        ${grouped.infostealer_logs.length > 0 ? `<span class="stat-badge stealer">&#129440; ${grouped.infostealer_logs.length} Stealer Logs</span>` : ''}
+                        ${grouped.breach_data.length > 0 ? `<span class="stat-badge breach">&#128275; ${grouped.breach_data.length} Breaches</span>` : ''}
+                        ${grouped.paste_data.length > 0 ? `<span class="stat-badge paste">&#128203; ${grouped.paste_data.length} Pastes</span>` : ''}
+                        ${grouped.code_exposure.length > 0 ? `<span class="stat-badge code">&#128187; ${grouped.code_exposure.length} Code</span>` : ''}
                     </div>
                 </div>
             `;
 
-            // Group results by type
-            const credentials = data.results?.filter(r => r.type === 'credential' || r.email || r.password) || [];
-            const machines = data.results?.filter(r => r.type === 'infected_machine' || r.machine_id) || [];
-            const breaches = data.results?.filter(r => r.type === 'breach' || r.breach_name) || [];
-            const attackPaths = data.attack_paths || [];
+            // REORDERED: Stealer logs first (more critical)
+            if (grouped.infostealer_logs.length > 0) {
+                const currentPage = paginationState.infostealer_logs.page;
+                const totalResults = grouped.infostealer_logs.length;
+                const visibleResults = grouped.infostealer_logs.slice(0, currentPage * RESULTS_PER_PAGE);
+                const hasMore = visibleResults.length < totalResults;
 
-            // Attack Paths Section
-            if (attackPaths.length > 0) {
-                html += `
-                    <div class="results-section attack-path fade-in-up stagger-1">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <span class="section-title-icon">&#9888;</span>
-                                Potential Attack Paths
-                            </div>
-                            <span class="section-count">${attackPaths.length}</span>
+                html += '<h4 class="result-section-title">&#129440; Infostealer Logs (Most Recent Threats)</h4>';
+                html += '<div class="results-grid">';
+                visibleResults.forEach(finding => {
+                    html += renderStealerCard(finding);
+                });
+                html += '</div>';
+
+                if (hasMore) {
+                    html += `
+                        <div class="show-more-container">
+                            <button onclick="showMore('infostealer_logs')" class="btn-show-more">
+                                Show More (${totalResults - visibleResults.length} remaining)
+                            </button>
                         </div>
-                        <div class="section-content">
-                            ${attackPaths.map((path, i) => `
-                                <div class="attack-phase">
-                                    <div class="phase-number">${i + 1}</div>
-                                    <div class="phase-content">${escapeHtml(path.description || path)}</div>
-                                    ${path.probability ? `<div class="phase-probability">${path.probability}%</div>` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
             }
 
-            // Credentials Section
-            if (credentials.length > 0) {
-                html += `
-                    <div class="results-section fade-in-up stagger-2" data-type="credentials">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <span class="section-title-icon">&#128274;</span>
-                                Compromised Credentials
-                            </div>
-                            <span class="section-count">${credentials.length}</span>
+            // Display breach data second
+            if (grouped.breach_data.length > 0) {
+                const currentPage = paginationState.breach_data.page;
+                const totalResults = grouped.breach_data.length;
+                const visibleResults = grouped.breach_data.slice(0, currentPage * RESULTS_PER_PAGE);
+                const hasMore = visibleResults.length < totalResults;
+
+                html += '<h4 class="result-section-title">&#128275; Data Breaches</h4>';
+                html += '<div class="results-grid">';
+                visibleResults.forEach(finding => {
+                    html += renderBreachCard(finding);
+                });
+                html += '</div>';
+
+                if (hasMore) {
+                    html += `
+                        <div class="show-more-container">
+                            <button onclick="showMore('breach_data')" class="btn-show-more">
+                                Show More (${totalResults - visibleResults.length} remaining)
+                            </button>
                         </div>
-                        <div class="section-content">
-                            ${credentials.slice(0, displayedCredentialCount).map((cred, i) => `
-                                <div class="result-item ${getSeverityClass(cred)}" data-source="${escapeHtml(cred.source || 'Unknown')}">
-                                    <div class="result-primary">
-                                        <div class="result-value">${escapeHtml(cred.email || cred.username || 'N/A')}</div>
-                                        <div class="result-badges">
-                                            <span class="source-badge">${escapeHtml(cred.source || 'Unknown')}</span>
-                                            ${cred.severity ? `<span class="severity-badge ${cred.severity.toLowerCase()}">${cred.severity}</span>` : ''}
-                                        </div>
-                                    </div>
-                                    <div class="result-details">
-                                        ${cred.password ? `
-                                            <span>
-                                                <span class="detail-label">Password:</span>
-                                                <span class="password-field">
-                                                    <span class="password-value" id="pwd-${i}">••••••••</span>
-                                                    <button class="password-toggle" onclick="togglePassword(${i}, '${escapeHtml(cred.password)}')">Show</button>
-                                                </span>
-                                            </span>
-                                        ` : ''}
-                                        ${cred.domain ? `<span><span class="detail-label">Domain:</span> ${escapeHtml(cred.domain)}</span>` : ''}
-                                        ${cred.ip ? `<span><span class="detail-label">IP:</span> ${escapeHtml(cred.ip)}</span>` : ''}
-                                    </div>
-                                    <div class="result-meta">
-                                        <span>${cred.date || cred.breach_date || 'Date unknown'}</span>
-                                        <div class="result-actions">
-                                            <span class="result-action" onclick="copyToClipboard('${escapeHtml(cred.email || cred.username)}')">Copy</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                            ${credentials.length > displayedCredentialCount ? `
-                                <button class="expand-btn" onclick="showMoreCredentials()">
-                                    Show ${Math.min(10, credentials.length - displayedCredentialCount)} more credentials
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
             }
 
-            // Infected Machines Section
-            if (machines.length > 0) {
-                html += `
-                    <div class="results-section fade-in-up stagger-3" data-type="machines">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <span class="section-title-icon">&#128187;</span>
-                                Infected Machines
-                            </div>
-                            <span class="section-count">${machines.length}</span>
-                        </div>
-                        <div class="section-content">
-                            ${machines.slice(0, 10).map(machine => `
-                                <div class="result-item severity-high" data-source="${escapeHtml(machine.source || 'Infostealer')}">
-                                    <div class="result-primary">
-                                        <div class="result-value">${escapeHtml(machine.machine_id || machine.hostname || 'Unknown Machine')}</div>
-                                        <div class="result-badges">
-                                            <span class="source-badge">Infostealer</span>
-                                            <span class="severity-badge high">High Risk</span>
-                                        </div>
-                                    </div>
-                                    <div class="result-details">
-                                        ${machine.ip ? `<span><span class="detail-label">IP:</span> ${escapeHtml(machine.ip)}</span>` : ''}
-                                        ${machine.os ? `<span><span class="detail-label">OS:</span> ${escapeHtml(machine.os)}</span>` : ''}
-                                        ${machine.malware ? `<span><span class="detail-label">Malware:</span> ${escapeHtml(machine.malware)}</span>` : ''}
-                                    </div>
-                                    <div class="result-meta">
-                                        <span>${machine.date || 'Date unknown'}</span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Breach History Section
-            if (breaches.length > 0) {
-                html += `
-                    <div class="results-section fade-in-up stagger-4" data-type="breaches">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <span class="section-title-icon">&#128200;</span>
-                                Breach History
-                            </div>
-                            <span class="section-count">${breaches.length}</span>
-                        </div>
-                        <div class="section-content">
-                            ${breaches.slice(0, 10).map(breach => `
-                                <div class="result-item" data-source="${escapeHtml(breach.source || 'Breach Database')}">
-                                    <div class="result-primary">
-                                        <div class="result-value">${escapeHtml(breach.breach_name || breach.name || 'Unknown Breach')}</div>
-                                        <div class="result-badges">
-                                            <span class="source-badge">${escapeHtml(breach.source || 'HIBP')}</span>
-                                        </div>
-                                    </div>
-                                    <div class="result-details">
-                                        ${breach.data_classes ? `<span><span class="detail-label">Exposed:</span> ${escapeHtml(breach.data_classes.join(', '))}</span>` : ''}
-                                        ${breach.records ? `<span><span class="detail-label">Records:</span> ${breach.records.toLocaleString()}</span>` : ''}
-                                    </div>
-                                    <div class="result-meta">
-                                        <span>${breach.breach_date || breach.date || 'Date unknown'}</span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Empty results
-            if (totalFindings === 0) {
-                html += `
-                    <div class="empty-state fade-in-up">
-                        <div class="empty-state-icon">&#9989;</div>
-                        <h3>No Results Found</h3>
-                        <p>Good news! No compromised data was found for this query in our databases.</p>
-                    </div>
-                `;
+            // Display pastes
+            if (grouped.paste_data.length > 0) {
+                html += '<h4 class="result-section-title">&#128203; Paste Sites</h4>';
+                html += '<div class="results-grid">';
+                grouped.paste_data.forEach(finding => {
+                    html += renderPasteCard(finding);
+                });
+                html += '</div>';
             }
 
             resultsDiv.innerHTML = html;
+        }
+
+        function renderBreachCard(finding) {
+            return `
+                <div class="result-card breach-card">
+                    <div class="card-header">
+                        <span class="breach-name">${escapeHtml(finding.breach_name || finding.source_name || 'Unknown Breach')}</span>
+                        ${finding.breach_date ? `<span class="breach-date">${escapeHtml(finding.breach_date)}</span>` : ''}
+                    </div>
+                    <div class="card-body">
+                        ${finding.email ? `<p><strong>Email:</strong> ${escapeHtml(finding.email)}</p>` : ''}
+                        ${finding.username ? `<p><strong>Username:</strong> ${escapeHtml(finding.username)}</p>` : ''}
+                        ${finding.password ? `<p><strong>Password:</strong> <code class="redacted">••••••••</code></p>` : ''}
+                        ${finding.hash ? `<p><strong>Hash:</strong> <code>${escapeHtml(finding.hash.substring(0, 16))}...</code></p>` : ''}
+                        ${finding.ip_address ? `<p><strong>IP:</strong> ${escapeHtml(finding.ip_address)}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStealerCard(finding) {
+            return `
+                <div class="result-card stealer-card">
+                    <div class="card-header">
+                        <span class="stealer-type">&#129440; ${escapeHtml(finding.malware_family || 'Infostealer')}</span>
+                        ${finding.infection_date ? `<span class="infection-date">${escapeHtml(finding.infection_date)}</span>` : ''}
+                    </div>
+                    <div class="card-body">
+                        ${finding.computer_name ? `<p><strong>Computer:</strong> ${escapeHtml(finding.computer_name)}</p>` : ''}
+                        ${finding.operating_system ? `<p><strong>OS:</strong> ${escapeHtml(finding.operating_system)}</p>` : ''}
+                        ${finding.credentials_count ? `<p><strong>Credentials:</strong> ${finding.credentials_count}</p>` : ''}
+                        ${finding.antiviruses ? `<p><strong>AV:</strong> ${escapeHtml(finding.antiviruses)}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPasteCard(finding) {
+            return `
+                <div class="result-card paste-card">
+                    <div class="card-header">
+                        <span class="paste-title">${escapeHtml(finding.title || 'Paste')}</span>
+                        ${finding.date ? `<span class="paste-date">${escapeHtml(finding.date)}</span>` : ''}
+                    </div>
+                    <div class="card-body">
+                        ${finding.url ? `<p><a href="${escapeHtml(finding.url)}" target="_blank">View Paste &#8594;</a></p>` : ''}
+                        ${finding.preview ? `<pre>${escapeHtml(finding.preview.substring(0, 200))}...</pre>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateAttackVectorAnalysis(allFindings) {
+            // Analyze password reuse
+            const passwords = {};
+            const emails = {};
+            const usernames = {};
+            let oldestExposure = null;
+            let exposureAgeInDays = 0;
+
+            allFindings.forEach(finding => {
+                // Track password reuse
+                if (finding.password) {
+                    const pwd = finding.password.toLowerCase();
+                    passwords[pwd] = (passwords[pwd] || 0) + 1;
+                }
+
+                // Track email usage
+                if (finding.email) {
+                    emails[finding.email] = (emails[finding.email] || 0) + 1;
+                }
+
+                // Track username reuse
+                if (finding.username) {
+                    usernames[finding.username] = (usernames[finding.username] || 0) + 1;
+                }
+
+                // Find oldest exposure
+                if (finding.breach_date || finding.infection_date) {
+                    const dateStr = finding.breach_date || finding.infection_date;
+                    const date = new Date(dateStr);
+                    if (!oldestExposure || date < oldestExposure) {
+                        oldestExposure = date;
+                    }
+                }
+            });
+
+            // Calculate exposure window
+            if (oldestExposure) {
+                const now = new Date();
+                exposureAgeInDays = Math.floor((now - oldestExposure) / (1000 * 60 * 60 * 24));
+            }
+
+            // Find most reused credentials
+            const reusedPasswords = Object.entries(passwords).filter(([pwd, count]) => count > 1);
+            const mostReusedPassword = reusedPasswords.sort((a, b) => b[1] - a[1])[0];
+            const totalPasswordReuse = reusedPasswords.reduce((sum, [pwd, count]) => sum + count, 0);
+
+            // Count unique accounts compromised
+            const uniqueAccounts = new Set();
+            allFindings.forEach(f => {
+                if (f.breach_name) uniqueAccounts.add(f.breach_name);
+                if (f.source_name) uniqueAccounts.add(f.source_name);
+            });
+
+            // Determine attacker effort
+            let attackerEffort = 'Unknown';
+            let effortColor = '#6b7280';
+
+            if (reusedPasswords.length > 5) {
+                attackerEffort = '15-30 minutes';
+                effortColor = '#ef4444'; // Red - very easy
+            } else if (reusedPasswords.length > 2) {
+                attackerEffort = '45-60 minutes';
+                effortColor = '#f59e0b'; // Orange - moderate
+            } else if (reusedPasswords.length > 0) {
+                attackerEffort = '2-3 hours';
+                effortColor = '#eab308'; // Yellow - takes time
+            } else {
+                attackerEffort = '4+ hours';
+                effortColor = '#10b981'; // Green - difficult
+            }
+
+            return {
+                totalFindings: allFindings.length,
+                uniqueAccounts: uniqueAccounts.size,
+                passwordReuseCount: reusedPasswords.length,
+                totalPasswordReuse: totalPasswordReuse,
+                mostReusedPassword: mostReusedPassword,
+                exposureAgeInDays: exposureAgeInDays,
+                attackerEffort: attackerEffort,
+                effortColor: effortColor,
+                hasStealerLogs: allFindings.some(f => f.type === 'infostealer_logs')
+            };
+        }
+
+        function renderAttackVectorCard(analysis) {
+            return `
+                <div class="attack-vector-card">
+                    <div class="attack-header">
+                        <h3>&#127919; Attack Vector Analysis</h3>
+                        <span class="threat-level ${analysis.passwordReuseCount > 5 ? 'critical' : analysis.passwordReuseCount > 2 ? 'high' : 'medium'}">
+                            ${analysis.passwordReuseCount > 5 ? 'CRITICAL RISK' : analysis.passwordReuseCount > 2 ? 'HIGH RISK' : 'MODERATE RISK'}
+                        </span>
+                    </div>
+
+                    <p class="attack-intro">Based on your exposed data, here's what an attacker could accomplish:</p>
+
+                    <div class="attack-scenarios">
+                        <div class="scenario easy">
+                            <div class="scenario-header">
+                                <span class="scenario-icon">&#9889;</span>
+                                <span class="scenario-title">EASY ATTACKS</span>
+                            </div>
+                            <ul class="scenario-list">
+                                ${analysis.passwordReuseCount > 0 ? `
+                                    <li>Access ${analysis.totalPasswordReuse} accounts using reused passwords</li>
+                                ` : ''}
+                                ${analysis.uniqueAccounts > 5 ? `
+                                    <li>Impersonate you on ${analysis.uniqueAccounts} platforms</li>
+                                ` : ''}
+                                ${analysis.hasStealerLogs ? `
+                                    <li>Use stolen session cookies to bypass 2FA</li>
+                                ` : ''}
+                                <li>Send phishing emails from your compromised accounts</li>
+                                <li>Access password recovery for linked accounts</li>
+                            </ul>
+                        </div>
+
+                        <div class="scenario medium">
+                            <div class="scenario-header">
+                                <span class="scenario-icon">&#128296;</span>
+                                <span class="scenario-title">MODERATE ATTACKS</span>
+                            </div>
+                            <ul class="scenario-list">
+                                ${analysis.mostReusedPassword ? `
+                                    <li>Password spray attack (try most common password on ${analysis.mostReusedPassword[1]} related sites)</li>
+                                ` : ''}
+                                <li>Build full identity profile by linking ${analysis.totalFindings} data points</li>
+                                <li>Social engineer your contacts using breach data</li>
+                                <li>Attempt credential stuffing on financial platforms</li>
+                            </ul>
+                        </div>
+
+                        <div class="scenario hard">
+                            <div class="scenario-header">
+                                <span class="scenario-icon">&#127891;</span>
+                                <span class="scenario-title">ADVANCED ATTACKS</span>
+                            </div>
+                            <ul class="scenario-list">
+                                <li>Combine with OSINT for complete doxing</li>
+                                <li>Target family/colleagues via your exposed data</li>
+                                <li>Create convincing deepfake with public info</li>
+                                <li>Corporate espionage (if work email exposed)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="attack-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Attacker Time Required</div>
+                            <div class="metric-value" style="color: ${analysis.effortColor}">
+                                ${analysis.attackerEffort}
+                            </div>
+                        </div>
+
+                        <div class="metric">
+                            <div class="metric-label">Your Exposure Window</div>
+                            <div class="metric-value">
+                                ${analysis.exposureAgeInDays > 0 ? `${analysis.exposureAgeInDays} days` : 'Unknown'}
+                            </div>
+                        </div>
+
+                        <div class="metric">
+                            <div class="metric-label">Unique Accounts at Risk</div>
+                            <div class="metric-value">
+                                ${analysis.uniqueAccounts}
+                            </div>
+                        </div>
+
+                        ${analysis.mostReusedPassword ? `
+                            <div class="metric">
+                                <div class="metric-label">Most Dangerous Password</div>
+                                <div class="metric-value password-danger">
+                                    Used ${analysis.mostReusedPassword[1]}x
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="attack-recommendation">
+                        <strong>&#9888;&#65039; Immediate Actions:</strong>
+                        <ol>
+                            ${analysis.passwordReuseCount > 0 ? '<li>Change all reused passwords to unique values</li>' : ''}
+                            <li>Enable MFA on all ${analysis.uniqueAccounts} exposed accounts</li>
+                            ${analysis.hasStealerLogs ? '<li>Run full malware scan and reset all browser sessions</li>' : ''}
+                            <li>Monitor accounts for suspicious activity (use alerts)</li>
+                            <li>Consider password manager to prevent future reuse</li>
+                        </ol>
+                    </div>
+                </div>
+            `;
+        }
+
+        function exportToCSV() {
+            const data = window.lastSearchResults;
+
+            if (!data || !data.results) {
+                alert('No results to export');
+                return;
+            }
+
+            // Collect all findings
+            const allFindings = [];
+
+            Object.keys(data.results).forEach(source => {
+                const sourceData = data.results[source];
+
+                if (sourceData.found && sourceData.data) {
+                    sourceData.data.forEach(item => {
+                        allFindings.push({
+                            source: source,
+                            type: sourceData.type,
+                            ...item
+                        });
+                    });
+                }
+            });
+
+            if (allFindings.length === 0) {
+                alert('No results to export');
+                return;
+            }
+
+            // Build CSV
+            const headers = [
+                'Type',
+                'Source',
+                'Email',
+                'Username',
+                'Password',
+                'Hash',
+                'Breach Name',
+                'Breach Date',
+                'IP Address',
+                'Computer Name',
+                'Operating System',
+                'Malware Family',
+                'Infection Date'
+            ];
+
+            let csv = headers.join(',') + '\n';
+
+            allFindings.forEach(finding => {
+                const row = [
+                    finding.type || '',
+                    finding.source || '',
+                    finding.email || '',
+                    finding.username || '',
+                    finding.password || '',
+                    finding.hash || '',
+                    finding.breach_name || finding.source_name || '',
+                    finding.breach_date || '',
+                    finding.ip_address || '',
+                    finding.computer_name || '',
+                    finding.operating_system || '',
+                    finding.malware_family || '',
+                    finding.infection_date || ''
+                ];
+
+                // Escape commas and quotes
+                const escaped = row.map(field => {
+                    const str = String(field).replace(/"/g, '""');
+                    return str.includes(',') ? `"${str}"` : str;
+                });
+
+                csv += escaped.join(',') + '\n';
+            });
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `ghost-search-${data.query}-${Date.now()}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            console.log('[EXPORT] CSV downloaded:', allFindings.length, 'records');
         }
 
         function getSeverityClass(item) {
@@ -2702,6 +3546,39 @@ email3@example.com"></textarea>
             if (item.severity === 'high') return 'severity-high';
             if (item.severity === 'medium') return 'severity-medium';
             return '';
+        }
+
+        function getRiskColor(riskLabel) {
+            const colors = {
+                'Low': 'rgba(16, 185, 129, 0.2)',
+                'Medium': 'rgba(251, 191, 36, 0.2)',
+                'High': 'rgba(239, 68, 68, 0.2)',
+                'Critical': 'rgba(127, 29, 29, 0.3)'
+            };
+            return colors[riskLabel] || 'rgba(107, 114, 128, 0.2)';
+        }
+
+        function formatPasswordRisk(risk) {
+            const labels = {
+                'plaintext': 'Plain Text',
+                'easytocrack': 'Easy to Crack',
+                'hardtocrack': 'Hard to Crack',
+                'stronghash': 'Strong Hash',
+                'unknown': 'Unknown'
+            };
+            return labels[risk] || risk || 'Unknown';
+        }
+
+        function getExposureLevel(count) {
+            if (count > 1000000) {
+                return { label: 'Extremely Common', class: 'critical' };
+            } else if (count > 100000) {
+                return { label: 'Very Common', class: 'high' };
+            } else if (count > 10000) {
+                return { label: 'Common', class: 'medium' };
+            } else {
+                return { label: 'Seen Before', class: 'low' };
+            }
         }
 
         function togglePassword(index, password) {

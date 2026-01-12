@@ -20,6 +20,7 @@ import sys
 import os
 
 from modules.ghost.leakinsight_api import search_leakinsight
+from modules.ghost.xposedornot import check_xposedornot_email, check_xposedornot_password
 
 class UnifiedSearch:
     """
@@ -105,6 +106,7 @@ class UnifiedSearch:
         self._query_source('leakcheck', lambda: self._leakcheck_search(email))
         self._query_source('breachdirectory', lambda: self._breachdirectory_search(email))
         self._query_source('leakinsight', lambda: self._leakinsight_search(email))
+        self._query_source('xposedornot', lambda: self._xposedornot_email_search(email))
         self._query_source('hibp', lambda: self._check_hibp_breaches(email))
         self._query_source('intelligence_x', lambda: self._intelx_email_search(email))
         self._query_source('local_files', lambda: self._local_search(email))
@@ -134,6 +136,9 @@ class UnifiedSearch:
 
         # Have I Been Pwned Passwords API check
         self._query_source('pwned_passwords', lambda: self._check_pwned_password(password))
+
+        # XposedOrNot password exposure check (anonymous via hash prefix)
+        self._query_source('xposedornot', lambda: self._xposedornot_password_search(password))
 
         # GitHub and PasteBin password search
         self._query_source('github', lambda: self._search_github_data(password, 'password'))
@@ -381,6 +386,48 @@ class UnifiedSearch:
                 'data': results,
                 'type': 'breach_data'
             }
+        return {'found': False, 'count': 0}
+
+    def _xposedornot_email_search(self, email: str):
+        """Query XposedOrNot for email breach analytics"""
+        breaches, count = check_xposedornot_email(email)
+
+        # Handle error codes
+        if count == -3:
+            print("[XON] API error")
+            return {'found': False, 'count': 0, 'error': 'API unavailable'}
+
+        if count > 0 and breaches:
+            return {
+                'found': True,
+                'count': count,
+                'data': breaches,
+                'type': 'breach_data'
+            }
+
+        return {'found': False, 'count': 0}
+
+    def _xposedornot_password_search(self, password: str):
+        """Query XposedOrNot for password exposure (anonymous via hash prefix)"""
+        result, count = check_xposedornot_password(password)
+
+        # Handle error codes
+        if count == -3:
+            print("[XON] Password check API error")
+            return {'found': False, 'count': 0, 'error': 'API unavailable'}
+
+        if result and result.get('exposed'):
+            return {
+                'found': True,
+                'count': result.get('exposure_count', 0),
+                'data': {
+                    'exposure_count': result.get('exposure_count', 0),
+                    'characteristics': result.get('characteristics', ''),
+                    'severity': self._assess_password_severity(result.get('exposure_count', 0))
+                },
+                'type': 'password_exposure'
+            }
+
         return {'found': False, 'count': 0}
 
     def _local_search(self, email: str):

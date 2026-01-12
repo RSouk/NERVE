@@ -892,6 +892,7 @@ class RoadmapProfile(Base):
 
     # Company Profile
     company_name = Column(String(255), nullable=False)
+    company_domain = Column(String(255))  # Primary domain for scan tracking
     company_size = Column(String(50))  # small, medium, large, enterprise
     industry = Column(String(100), index=True)  # healthcare, finance, retail, tech, etc.
     employee_count = Column(Integer)
@@ -900,11 +901,18 @@ class RoadmapProfile(Base):
     current_security_score = Column(Integer, default=0)  # 0-100
     target_security_score = Column(Integer, default=75)  # Target to reach
 
-    # Data Sensitivity Flags
+    # Data Sensitivity Flags (legacy - kept for backward compatibility)
     handles_pii = Column(Boolean, default=False)
     handles_payment_data = Column(Boolean, default=False)
     handles_health_data = Column(Boolean, default=False)
     handles_financial_data = Column(Boolean, default=False)
+
+    # Comprehensive data types array (JSON) - expanded field for granular data classification
+    # Values: pii, credentials, biometric, payment, financial, banking, phi, medical,
+    #         intellectual_property, trade_secrets, customer_data, contracts,
+    #         government, classified, cji, source_code, api_keys, infrastructure,
+    #         email, messaging, other
+    data_types = Column(Text)  # JSON array of data type strings
 
     # JSON Fields for complex data
     current_measures = Column(Text)  # JSON: existing security measures

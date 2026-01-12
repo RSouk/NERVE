@@ -202,7 +202,7 @@ TASK_LIBRARY = {
         'estimated_cost_min': 0,
         'estimated_cost_max': 100,
         'difficulty_level': 'easy',
-        'security_score_impact': 15,
+        'security_score_impact': 10,  # Rebalanced from 15
         'risk_level': 'high',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -227,7 +227,7 @@ TASK_LIBRARY = {
         'estimated_cost_min': 0,
         'estimated_cost_max': 0,
         'difficulty_level': 'easy',
-        'security_score_impact': 10,
+        'security_score_impact': 8,  # Rebalanced from 10
         'risk_level': 'high',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -250,7 +250,7 @@ TASK_LIBRARY = {
         'estimated_cost_min': 0,
         'estimated_cost_max': 0,
         'difficulty_level': 'easy',
-        'security_score_impact': 12,
+        'security_score_impact': 8,  # Rebalanced from 12
         'risk_level': 'critical',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -274,7 +274,7 @@ TASK_LIBRARY = {
         'estimated_cost_min': 0,
         'estimated_cost_max': 0,
         'difficulty_level': 'easy',
-        'security_score_impact': 15,
+        'security_score_impact': 10,  # Rebalanced from 15
         'risk_level': 'critical',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -299,7 +299,7 @@ TASK_LIBRARY = {
         'estimated_cost_min': 0,
         'estimated_cost_max': 0,
         'difficulty_level': 'easy',
-        'security_score_impact': 15,
+        'security_score_impact': 10,  # Rebalanced from 15
         'risk_level': 'critical',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -323,7 +323,7 @@ TASK_LIBRARY = {
         'estimated_cost_min': 0,
         'estimated_cost_max': 0,
         'difficulty_level': 'medium',
-        'security_score_impact': 12,
+        'security_score_impact': 10,  # Rebalanced from 12
         'risk_level': 'high',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -373,7 +373,7 @@ TASK_LIBRARY = {
         'estimated_cost_min': 0,
         'estimated_cost_max': 500,
         'difficulty_level': 'medium',
-        'security_score_impact': 20,
+        'security_score_impact': 12,  # Rebalanced from 20
         'risk_level': 'critical',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -427,7 +427,7 @@ Test with securityheaders.com after implementation.''',
         'estimated_cost_min': 0,
         'estimated_cost_max': 2000,
         'difficulty_level': 'hard',
-        'security_score_impact': 20,
+        'security_score_impact': 15,  # Rebalanced from 20
         'risk_level': 'critical',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -452,7 +452,7 @@ Test with securityheaders.com after implementation.''',
         'estimated_cost_min': 0,
         'estimated_cost_max': 1500,
         'difficulty_level': 'medium',
-        'security_score_impact': 15,
+        'security_score_impact': 12,  # Rebalanced from 15
         'risk_level': 'high',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -549,7 +549,7 @@ Also:
         'estimated_cost_min': 0,
         'estimated_cost_max': 1500,
         'difficulty_level': 'hard',
-        'security_score_impact': 18,
+        'security_score_impact': 12,  # Rebalanced from 18
         'risk_level': 'critical',
         'applies_to_industries': ['all'],
         'applies_to_sizes': ['all'],
@@ -972,6 +972,352 @@ Also:
         'applies_to_sizes': ['all'],
         'requires_compliance': ['soc2']
     },
+
+    # ========== DATA TYPE SPECIFIC TASKS ==========
+    'TASK_DATA_HEALTHCARE_ENCRYPT': {
+        'task_id': 'TASK_DATA_HEALTHCARE_ENCRYPT',
+        'task_name': 'Implement Healthcare Data Encryption',
+        'category': 'data_protection',
+        'description': 'Encrypt all patient health information using AES-256 encryption.',
+        'why_it_matters': 'PHI is protected under HIPAA. Unencrypted health data breaches can result in fines up to $1.5M per violation.',
+        'how_to_fix': '''1. Identify all systems storing PHI
+2. Implement AES-256 encryption at rest
+3. Enable TLS 1.3 for data in transit
+4. Use key management service for encryption keys
+5. Document encryption implementation
+6. Test encryption coverage with security audit''',
+        'estimated_time_minutes': 240,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 1000,
+        'difficulty_level': 'hard',
+        'security_score_impact': 12,  # Rebalanced from 20
+        'risk_level': 'critical',
+        'applies_to_industries': ['healthcare'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['hipaa']
+    },
+
+    'TASK_DATA_HEALTHCARE_LOGGING': {
+        'task_id': 'TASK_DATA_HEALTHCARE_LOGGING',
+        'task_name': 'Enable Healthcare Access Logging',
+        'category': 'monitoring',
+        'description': 'Track all access to patient health records with comprehensive audit logs.',
+        'why_it_matters': 'HIPAA requires tracking who accesses PHI. Audit logs are essential for breach investigation and compliance.',
+        'how_to_fix': '''1. Enable access logging on all PHI systems
+2. Log user ID, timestamp, action, and data accessed
+3. Store logs securely for 6+ years
+4. Implement log monitoring and alerting
+5. Regular audit log reviews
+6. Train staff on proper PHI handling''',
+        'estimated_time_minutes': 180,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 500,
+        'difficulty_level': 'medium',
+        'security_score_impact': 10,  # Rebalanced from 15
+        'risk_level': 'critical',
+        'applies_to_industries': ['healthcare'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['hipaa']
+    },
+
+    'TASK_DATA_PAYMENT_ENCRYPT': {
+        'task_id': 'TASK_DATA_PAYMENT_ENCRYPT',
+        'task_name': 'Implement Payment Data Encryption',
+        'category': 'data_protection',
+        'description': 'Encrypt payment card data at rest and in transit per PCI DSS requirements.',
+        'why_it_matters': 'PCI DSS mandates encryption of cardholder data. Non-compliance can result in fines and loss of payment processing.',
+        'how_to_fix': '''1. Identify all systems handling payment data
+2. Implement tokenization where possible
+3. Use point-to-point encryption (P2PE)
+4. Encrypt stored card data with AES-256
+5. Never store CVV/CVC codes
+6. Complete PCI DSS self-assessment questionnaire''',
+        'estimated_time_minutes': 300,
+        'estimated_cost_min': 500,
+        'estimated_cost_max': 5000,
+        'difficulty_level': 'hard',
+        'security_score_impact': 12,  # Rebalanced from 20
+        'risk_level': 'critical',
+        'applies_to_industries': ['retail', 'ecommerce', 'finance'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['pci']
+    },
+
+    'TASK_DATA_TRANSACTION_MONITOR': {
+        'task_id': 'TASK_DATA_TRANSACTION_MONITOR',
+        'task_name': 'Enable Transaction Monitoring',
+        'category': 'fraud_prevention',
+        'description': 'Deploy real-time transaction anomaly detection to prevent fraud.',
+        'why_it_matters': 'Payment fraud costs businesses billions annually. Real-time monitoring can block fraudulent transactions.',
+        'how_to_fix': '''1. Implement transaction velocity checks
+2. Set up geographic anomaly detection
+3. Configure amount threshold alerts
+4. Deploy machine learning fraud detection
+5. Create escalation procedures
+6. Regular review of fraud patterns''',
+        'estimated_time_minutes': 240,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 2000,
+        'difficulty_level': 'medium',
+        'security_score_impact': 12,
+        'risk_level': 'high',
+        'applies_to_industries': ['retail', 'ecommerce', 'finance'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['pci']
+    },
+
+    'TASK_DATA_GOV_ENCRYPT': {
+        'task_id': 'TASK_DATA_GOV_ENCRYPT',
+        'task_name': 'Implement Government-Grade Encryption',
+        'category': 'data_protection',
+        'description': 'Use FIPS 140-2 validated encryption modules for classified/CJI data.',
+        'why_it_matters': 'Federal requirements mandate FIPS-validated encryption for government data. Non-compliance can terminate contracts.',
+        'how_to_fix': '''1. Inventory all government data systems
+2. Deploy FIPS 140-2 validated encryption modules
+3. Enable encryption for data at rest and in transit
+4. Implement hardware security modules (HSMs)
+5. Document encryption implementation
+6. Obtain FIPS validation certification''',
+        'estimated_time_minutes': 480,
+        'estimated_cost_min': 1000,
+        'estimated_cost_max': 10000,
+        'difficulty_level': 'hard',
+        'security_score_impact': 15,  # Rebalanced from 25
+        'risk_level': 'critical',
+        'applies_to_industries': ['government', 'defense'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['fedramp', 'fisma', 'cjis']
+    },
+
+    'TASK_DATA_GOV_ACCESS': {
+        'task_id': 'TASK_DATA_GOV_ACCESS',
+        'task_name': 'Deploy Advanced Access Controls',
+        'category': 'access_control',
+        'description': 'Implement role-based access control with comprehensive audit trails for government data.',
+        'why_it_matters': 'Government contracts require strict access controls. Unauthorized access can result in security clearance revocation.',
+        'how_to_fix': '''1. Define access roles based on job functions
+2. Implement least-privilege access model
+3. Deploy multi-factor authentication
+4. Enable comprehensive audit logging
+5. Conduct background checks for data access
+6. Regular access reviews and recertification''',
+        'estimated_time_minutes': 360,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 2000,
+        'difficulty_level': 'hard',
+        'security_score_impact': 12,  # Rebalanced from 20
+        'risk_level': 'critical',
+        'applies_to_industries': ['government', 'defense'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['fedramp', 'fisma', 'cjis']
+    },
+
+    'TASK_DATA_PII_ENCRYPT': {
+        'task_id': 'TASK_DATA_PII_ENCRYPT',
+        'task_name': 'Implement User Data Encryption',
+        'category': 'data_protection',
+        'description': 'Encrypt all personal identifiable information to protect user privacy.',
+        'why_it_matters': 'Data breaches expose PII leading to identity theft. GDPR/CCPA require protection of personal data.',
+        'how_to_fix': '''1. Identify all PII in your systems
+2. Classify data by sensitivity level
+3. Encrypt PII at rest using AES-256
+4. Enforce HTTPS for all data transmission
+5. Implement field-level encryption for sensitive fields
+6. Document data protection measures''',
+        'estimated_time_minutes': 180,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 500,
+        'difficulty_level': 'medium',
+        'security_score_impact': 10,  # Rebalanced from 15
+        'risk_level': 'high',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['gdpr', 'ccpa', 'soc2']
+    },
+
+    'TASK_DATA_SECRETS_VAULT': {
+        'task_id': 'TASK_DATA_SECRETS_VAULT',
+        'task_name': 'Implement Secrets Management Vault',
+        'category': 'secrets_management',
+        'description': 'Deploy HashiCorp Vault, AWS Secrets Manager, or similar for secure secrets storage.',
+        'why_it_matters': 'Hardcoded secrets in code or config files are easily exposed. Centralized secrets management enables rotation and auditing.',
+        'how_to_fix': '''1. Choose secrets management solution (Vault, AWS SM, etc.)
+2. Deploy and configure the vault
+3. Migrate existing secrets from code/config
+4. Update applications to fetch secrets dynamically
+5. Implement access policies
+6. Enable audit logging for secrets access''',
+        'estimated_time_minutes': 240,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 1000,
+        'difficulty_level': 'medium',
+        'security_score_impact': 12,  # Rebalanced from 15
+        'risk_level': 'high',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['medium', 'large', 'enterprise'],
+        'requires_compliance': ['soc2', 'pci']
+    },
+
+    'TASK_DATA_KEY_ROTATION': {
+        'task_id': 'TASK_DATA_KEY_ROTATION',
+        'task_name': 'Enable API Key Rotation',
+        'category': 'secrets_management',
+        'description': 'Automatically rotate API keys every 90 days to limit exposure window.',
+        'why_it_matters': 'Long-lived API keys increase risk if exposed. Regular rotation limits damage from compromised credentials.',
+        'how_to_fix': '''1. Inventory all API keys and tokens
+2. Configure automatic rotation (90 days recommended)
+3. Update applications to handle key rotation
+4. Implement graceful key transition periods
+5. Monitor for rotation failures
+6. Revoke old keys after transition''',
+        'estimated_time_minutes': 120,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 200,
+        'difficulty_level': 'medium',
+        'security_score_impact': 10,
+        'risk_level': 'high',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['soc2', 'pci']
+    },
+
+    'TASK_DATA_SECRET_SCANNING': {
+        'task_id': 'TASK_DATA_SECRET_SCANNING',
+        'task_name': 'Enable Secret Scanning in Repositories',
+        'category': 'code_security',
+        'description': 'Configure GitHub/GitLab secret scanning to prevent credential leaks in source code.',
+        'why_it_matters': 'Secrets accidentally committed to repos are a leading cause of breaches. Automated scanning catches them before damage.',
+        'how_to_fix': '''1. Enable GitHub/GitLab secret scanning
+2. Configure pre-commit hooks for local scanning
+3. Add custom patterns for internal secrets
+4. Set up alerts for detected secrets
+5. Implement process for secret remediation
+6. Train developers on secure coding practices''',
+        'estimated_time_minutes': 60,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 0,
+        'difficulty_level': 'easy',
+        'security_score_impact': 12,
+        'risk_level': 'high',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['soc2']
+    },
+
+    'TASK_DATA_CODE_SIGNING': {
+        'task_id': 'TASK_DATA_CODE_SIGNING',
+        'task_name': 'Implement Code Signing',
+        'category': 'code_security',
+        'description': 'Sign all production code releases with GPG keys to verify authenticity.',
+        'why_it_matters': 'Unsigned code can be tampered with. Code signing proves releases came from your organization.',
+        'how_to_fix': '''1. Generate GPG keys for code signing
+2. Configure CI/CD to sign releases
+3. Publish public keys for verification
+4. Implement signature verification in deployment
+5. Protect signing keys with HSM or secure storage
+6. Document signing procedures''',
+        'estimated_time_minutes': 120,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 500,
+        'difficulty_level': 'medium',
+        'security_score_impact': 8,
+        'risk_level': 'medium',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['soc2']
+    },
+
+    'TASK_DATA_DOC_ENCRYPT': {
+        'task_id': 'TASK_DATA_DOC_ENCRYPT',
+        'task_name': 'Implement Document Encryption',
+        'category': 'data_protection',
+        'description': 'Encrypt sensitive business documents at rest to prevent unauthorized access.',
+        'why_it_matters': 'Trade secrets and contracts can be stolen if unencrypted. Document encryption protects intellectual property.',
+        'how_to_fix': '''1. Identify sensitive document repositories
+2. Enable encryption on file storage (S3, SharePoint, etc.)
+3. Implement document classification system
+4. Use rights management for sensitive documents
+5. Train employees on document handling
+6. Regular audits of document access''',
+        'estimated_time_minutes': 120,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 500,
+        'difficulty_level': 'easy',
+        'security_score_impact': 10,
+        'risk_level': 'medium',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['soc2', 'gdpr']
+    },
+
+    'TASK_DATA_AUDIT_TRAILS': {
+        'task_id': 'TASK_DATA_AUDIT_TRAILS',
+        'task_name': 'Enable Access Audit Trails',
+        'category': 'monitoring',
+        'description': 'Log all access to sensitive business data for compliance and security monitoring.',
+        'why_it_matters': 'Without audit trails, you cannot detect or investigate unauthorized access. Required for most compliance frameworks.',
+        'how_to_fix': '''1. Enable logging on all sensitive data stores
+2. Capture user, timestamp, action, and data accessed
+3. Centralize logs in SIEM or log aggregator
+4. Set up alerts for suspicious access patterns
+5. Retain logs per compliance requirements
+6. Regular review of audit logs''',
+        'estimated_time_minutes': 120,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 300,
+        'difficulty_level': 'medium',
+        'security_score_impact': 10,
+        'risk_level': 'medium',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['soc2', 'hipaa', 'pci']
+    },
+
+    'TASK_DATA_EMAIL_TLS': {
+        'task_id': 'TASK_DATA_EMAIL_TLS',
+        'task_name': 'Implement Email Encryption (TLS)',
+        'category': 'communication_security',
+        'description': 'Enforce TLS 1.3 for all email communications to prevent eavesdropping.',
+        'why_it_matters': 'Unencrypted email can be intercepted. TLS ensures email is encrypted in transit between servers.',
+        'how_to_fix': '''1. Configure email server for TLS 1.3
+2. Enable opportunistic TLS for outbound mail
+3. Require TLS for sensitive domains
+4. Disable older TLS versions (1.0, 1.1)
+5. Monitor TLS enforcement with reports
+6. Consider S/MIME for end-to-end encryption''',
+        'estimated_time_minutes': 60,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 0,
+        'difficulty_level': 'easy',
+        'security_score_impact': 8,
+        'risk_level': 'medium',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['all'],
+        'requires_compliance': ['soc2']
+    },
+
+    'TASK_DATA_DLP': {
+        'task_id': 'TASK_DATA_DLP',
+        'task_name': 'Deploy Data Loss Prevention (DLP)',
+        'category': 'data_protection',
+        'description': 'Prevent sensitive data from being sent via email or uploaded to unauthorized services.',
+        'why_it_matters': 'Accidental data leaks via email are common. DLP catches sensitive data before it leaves your organization.',
+        'how_to_fix': '''1. Define sensitive data patterns (SSN, credit cards, etc.)
+2. Deploy email DLP scanning
+3. Configure cloud app DLP (O365, Google Workspace)
+4. Set up endpoint DLP on workstations
+5. Create policies for detection and blocking
+6. Train users on DLP policies''',
+        'estimated_time_minutes': 240,
+        'estimated_cost_min': 0,
+        'estimated_cost_max': 2000,
+        'difficulty_level': 'medium',
+        'security_score_impact': 12,
+        'risk_level': 'medium',
+        'applies_to_industries': ['all'],
+        'applies_to_sizes': ['medium', 'large', 'enterprise'],
+        'requires_compliance': ['soc2', 'hipaa', 'pci', 'gdpr']
+    },
 }
 
 
@@ -1171,6 +1517,243 @@ def get_achievement_progress(profile_data, user_tasks):
         achievement_status[ach_id] = status
 
     return achievement_status
+
+
+def generate_data_specific_tasks(data_types):
+    """
+    Generate security tasks based on what data types the user handles.
+
+    Args:
+        data_types: List of data type strings (e.g., ['phi', 'pii', 'payment'])
+
+    Returns:
+        List of task dictionaries with task_id, priority, finding_type, etc.
+    """
+    tasks = []
+
+    # === CRITICAL DATA TYPES ===
+
+    if 'phi' in data_types or 'medical_records' in data_types:
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_HEALTHCARE_ENCRYPT',
+                'finding_type': 'phi_data_handling',
+                'finding_severity': 'critical',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_DATA_HEALTHCARE_LOGGING',
+                'finding_type': 'phi_data_handling',
+                'finding_severity': 'critical',
+                'source': 'data_profile'
+            }
+        ])
+
+    if 'payment' in data_types or 'financial' in data_types or 'banking' in data_types:
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_PAYMENT_ENCRYPT',
+                'finding_type': 'payment_data_handling',
+                'finding_severity': 'critical',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_DATA_TRANSACTION_MONITOR',
+                'finding_type': 'payment_data_handling',
+                'finding_severity': 'high',
+                'source': 'data_profile'
+            }
+        ])
+
+    if 'classified' in data_types or 'cji' in data_types or 'government' in data_types:
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_GOV_ENCRYPT',
+                'finding_type': 'government_data_handling',
+                'finding_severity': 'critical',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_DATA_GOV_ACCESS',
+                'finding_type': 'government_data_handling',
+                'finding_severity': 'critical',
+                'source': 'data_profile'
+            }
+        ])
+
+    # === HIGH PRIORITY DATA TYPES ===
+
+    if 'pii' in data_types or 'credentials' in data_types or 'biometric' in data_types:
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_PII_ENCRYPT',
+                'finding_type': 'pii_data_handling',
+                'finding_severity': 'high',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_MFA_ENABLE',
+                'finding_type': 'pii_data_handling',
+                'finding_severity': 'high',
+                'source': 'data_profile'
+            }
+        ])
+
+    if 'api_keys' in data_types or 'infrastructure' in data_types:
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_SECRETS_VAULT',
+                'finding_type': 'secrets_handling',
+                'finding_severity': 'high',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_DATA_KEY_ROTATION',
+                'finding_type': 'secrets_handling',
+                'finding_severity': 'high',
+                'source': 'data_profile'
+            }
+        ])
+
+    if 'source_code' in data_types:
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_SECRET_SCANNING',
+                'finding_type': 'code_security',
+                'finding_severity': 'high',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_DATA_CODE_SIGNING',
+                'finding_type': 'code_security',
+                'finding_severity': 'medium',
+                'source': 'data_profile'
+            }
+        ])
+
+    # === MEDIUM PRIORITY DATA TYPES ===
+
+    if any(dt in ['customer_data', 'contracts', 'intellectual_property', 'trade_secrets'] for dt in data_types):
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_DOC_ENCRYPT',
+                'finding_type': 'business_data_handling',
+                'finding_severity': 'medium',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_DATA_AUDIT_TRAILS',
+                'finding_type': 'business_data_handling',
+                'finding_severity': 'medium',
+                'source': 'data_profile'
+            }
+        ])
+
+    if 'email' in data_types or 'messaging' in data_types:
+        tasks.extend([
+            {
+                'task_id': 'TASK_DATA_EMAIL_TLS',
+                'finding_type': 'communication_security',
+                'finding_severity': 'medium',
+                'source': 'data_profile'
+            },
+            {
+                'task_id': 'TASK_DATA_DLP',
+                'finding_type': 'communication_security',
+                'finding_severity': 'medium',
+                'source': 'data_profile'
+            }
+        ])
+
+    return tasks
+
+
+def generate_scan_based_tasks(scan_results):
+    """
+    Generate tasks from actual vulnerabilities found in Lightbox scans.
+
+    Args:
+        scan_results: The scan results dictionary (findings, http_security, etc.)
+
+    Returns:
+        List of task dictionaries based on scan findings
+    """
+    tasks = []
+
+    if not scan_results:
+        return tasks
+
+    # Check for missing security headers
+    http_findings = scan_results.get('http_security', [])
+    if isinstance(http_findings, str):
+        import json
+        try:
+            http_findings = json.loads(http_findings)
+        except:
+            http_findings = []
+
+    if any('Content-Security-Policy' in str(f) for f in http_findings):
+        tasks.append({
+            'task_id': 'TASK_SECURITY_HEADERS',
+            'finding_type': 'missing_csp',
+            'finding_severity': 'high',
+            'source': 'lightbox_scan',
+            'source_details': 'Missing Content-Security-Policy header'
+        })
+
+    if any('Strict-Transport-Security' in str(f) for f in http_findings):
+        tasks.append({
+            'task_id': 'TASK_UPDATE_SSL',
+            'finding_type': 'missing_hsts',
+            'finding_severity': 'high',
+            'source': 'lightbox_scan',
+            'source_details': 'Missing HSTS header'
+        })
+
+    # Check for injection vulnerabilities
+    injection_findings = scan_results.get('injection', [])
+    if any('SQL' in str(f) for f in injection_findings):
+        tasks.append({
+            'task_id': 'TASK_FIX_SQL_INJECTION',
+            'finding_type': 'sql_injection',
+            'finding_severity': 'critical',
+            'source': 'lightbox_scan',
+            'source_details': 'SQL injection vulnerability detected'
+        })
+
+    # Check for XSS vulnerabilities
+    xss_findings = scan_results.get('xss', [])
+    if xss_findings:
+        tasks.append({
+            'task_id': 'TASK_FIX_XSS',
+            'finding_type': 'xss_vulnerability',
+            'finding_severity': 'high',
+            'source': 'lightbox_scan',
+            'source_details': f'XSS vulnerability in {len(xss_findings)} locations'
+        })
+
+    # Check for open network services
+    network_findings = scan_results.get('network_services', [])
+    if network_findings:
+        tasks.append({
+            'task_id': 'TASK_CLOSE_PORTS',
+            'finding_type': 'open_ports',
+            'finding_severity': 'high',
+            'source': 'lightbox_scan',
+            'source_details': f'{len(network_findings)} exposed services'
+        })
+
+    # Check for weak TLS
+    if any('TLS 1.0' in str(f) or 'TLS 1.1' in str(f) for f in http_findings):
+        tasks.append({
+            'task_id': 'TASK_UPDATE_SSL',
+            'finding_type': 'weak_tls',
+            'finding_severity': 'medium',
+            'source': 'lightbox_scan',
+            'source_details': 'Weak TLS version detected'
+        })
+
+    return tasks
 
 
 def prioritize_tasks(tasks, profile_data):

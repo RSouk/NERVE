@@ -4490,11 +4490,14 @@ def get_roadmap_profile():
         # Parse JSON fields
         current_measures = []
         compliance_reqs = []
+        data_types = []
         try:
             if profile.current_measures:
                 current_measures = json.loads(profile.current_measures)
             if profile.compliance_requirements:
                 compliance_reqs = json.loads(profile.compliance_requirements)
+            if profile.data_types:
+                data_types = json.loads(profile.data_types)
         except:
             pass
 
@@ -4512,6 +4515,7 @@ def get_roadmap_profile():
                 'handles_payment_data': profile.handles_payment_data,
                 'handles_health_data': profile.handles_health_data,
                 'handles_financial_data': profile.handles_financial_data,
+                'data_types': data_types,  # Expanded data types array
                 'current_measures': current_measures,
                 'compliance_requirements': compliance_reqs,
                 'created_at': profile.created_at.isoformat() if profile.created_at else None,
@@ -4551,6 +4555,7 @@ def create_roadmap_profile():
         if existing:
             # Update existing profile
             existing.company_name = data.get('company_name', existing.company_name)
+            existing.company_domain = data.get('company_domain', existing.company_domain)
             existing.company_size = data.get('company_size', existing.company_size)
             existing.industry = data.get('industry', existing.industry)
             existing.employee_count = data.get('employee_count', existing.employee_count)
@@ -4558,6 +4563,10 @@ def create_roadmap_profile():
             existing.handles_payment_data = data.get('handles_payment_data', existing.handles_payment_data)
             existing.handles_health_data = data.get('handles_health_data', existing.handles_health_data)
             existing.handles_financial_data = data.get('handles_financial_data', existing.handles_financial_data)
+
+            # Handle expanded data_types array
+            if data.get('data_types'):
+                existing.data_types = json.dumps(data['data_types'])
 
             if data.get('current_measures'):
                 existing.current_measures = json.dumps(data['current_measures'])
@@ -4577,6 +4586,7 @@ def create_roadmap_profile():
             profile = RoadmapProfile(
                 user_id=user_id,
                 company_name=data.get('company_name', 'My Company'),
+                company_domain=data.get('company_domain'),
                 company_size=data.get('company_size', 'small'),
                 industry=data.get('industry', 'technology'),
                 employee_count=data.get('employee_count'),
@@ -4586,6 +4596,7 @@ def create_roadmap_profile():
                 handles_payment_data=data.get('handles_payment_data', False),
                 handles_health_data=data.get('handles_health_data', False),
                 handles_financial_data=data.get('handles_financial_data', False),
+                data_types=json.dumps(data.get('data_types', [])),  # Expanded data types array
                 current_measures=json.dumps(data.get('current_measures', [])),
                 compliance_requirements=json.dumps(data.get('compliance_requirements', [])),
                 created_at=datetime.now(timezone.utc),
@@ -4619,18 +4630,31 @@ def create_roadmap_profile():
 def get_roadmap_tasks():
     """
     Get all assigned tasks for user's roadmap.
-    Query params: phase, status, source
+    Query params: phase, status, source, company_id (admin only)
     """
     from roadmap_mappings import TASK_LIBRARY
     user_id = request.user_id
+    user_role = getattr(request, 'user_role', None)
 
     db = None
     try:
         db = get_db()
 
-        # Get user's profile
+        # Check for company_id param (admin viewing company roadmap)
+        company_id = request.args.get('company_id', type=int)
+        target_user_ids = [user_id]
+
+        if company_id and user_role in ['SUPER_ADMIN', 'ADMIN', 'ANALYST']:
+            # Get all users in the specified company
+            company_users = db.query(User).filter(
+                User.company_id == company_id,
+                User.deleted_at.is_(None)
+            ).all()
+            target_user_ids = [u.id for u in company_users]
+
+        # Get profile(s) - for admin viewing company, get first active profile
         profile = db.query(RoadmapProfile).filter(
-            RoadmapProfile.user_id == user_id,
+            RoadmapProfile.user_id.in_(target_user_ids),
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -4738,9 +4762,12 @@ def get_roadmap_tasks():
 @require_auth
 def generate_roadmap():
     """
-    Generate personalized roadmap based on profile + scans.
+    Generate personalized roadmap based on profile + scans + data types.
     """
-    from roadmap_mappings import TASK_LIBRARY, map_scan_to_tasks, get_tasks_for_profile, prioritize_tasks
+    from roadmap_mappings import (
+        TASK_LIBRARY, map_scan_to_tasks, get_tasks_for_profile, prioritize_tasks,
+        generate_data_specific_tasks, generate_scan_based_tasks
+    )
     user_id = request.user_id
 
     db = None
@@ -4760,7 +4787,23 @@ def generate_roadmap():
         if not profile:
             return jsonify({'success': False, 'error': 'No profile found. Create profile first.'}), 400
 
-        # Clear existing tasks (regenerating)
+        # Get existing completed tasks BEFORE regeneration to preserve progress
+        existing_tasks = db.query(RoadmapUserTask).filter(
+            RoadmapUserTask.profile_id == profile.id
+        ).all()
+
+        # Create map of completed tasks by task_id
+        completed_map = {}
+        for task in existing_tasks:
+            if task.status == 'completed':
+                completed_map[task.task_id] = {
+                    'completed_at': task.completed_at,
+                    'started_at': task.started_at,
+                    'verified_at': task.verified_at,
+                    'user_notes': task.user_notes
+                }
+
+        # Delete only pending/in_progress tasks (keep completed for reference, but we'll recreate them)
         db.query(RoadmapUserTask).filter(
             RoadmapUserTask.profile_id == profile.id
         ).delete()
@@ -4796,7 +4839,21 @@ def generate_roadmap():
                     'finding_severity': TASK_LIBRARY[task_id].get('risk_level', 'medium')
                 })
 
-        # 2. If include_scans, get scan-based tasks
+        # 2. Get data-type-specific tasks based on what data the user handles
+        data_types = []
+        try:
+            if profile.data_types:
+                data_types = json.loads(profile.data_types)
+        except:
+            pass
+
+        if data_types:
+            data_type_tasks = generate_data_specific_tasks(data_types)
+            for task in data_type_tasks:
+                if task['task_id'] in TASK_LIBRARY:
+                    tasks_to_create.append(task)
+
+        # 3. If include_scans, get scan-based tasks
         if include_scans:
             # Get latest XASM scan
             xasm_scan = db.query(CachedASMScan).order_by(CachedASMScan.scanned_at.desc()).first()
@@ -4833,12 +4890,30 @@ def generate_roadmap():
             'company_size': profile.company_size
         })
 
-        # Create user tasks
+        # Create user tasks, restoring completion status for previously completed tasks
+        tasks_preserved = 0
         for task in prioritized:
+            task_id = task['task_id']
+
+            # Check if this task was previously completed
+            if task_id in completed_map:
+                status = 'completed'
+                completed_at = completed_map[task_id]['completed_at']
+                started_at = completed_map[task_id]['started_at']
+                verified_at = completed_map[task_id]['verified_at']
+                user_notes = completed_map[task_id]['user_notes']
+                tasks_preserved += 1
+            else:
+                status = 'not_started'
+                completed_at = None
+                started_at = None
+                verified_at = None
+                user_notes = None
+
             user_task = RoadmapUserTask(
                 profile_id=profile.id,
-                task_id=task['task_id'],
-                status='not_started',
+                task_id=task_id,
+                status=status,
                 phase=task.get('phase', 2),
                 priority_order=task.get('priority_order', 99),
                 source=task.get('source', 'profile'),
@@ -4846,28 +4921,51 @@ def generate_roadmap():
                 finding_severity=task.get('finding_severity'),
                 scan_domain=task.get('scan_domain'),
                 scan_date=task.get('scan_date'),
+                started_at=started_at,
+                completed_at=completed_at,
+                verified_at=verified_at,
+                user_notes=user_notes,
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc)
             )
             db.add(user_task)
 
-        # Create initial progress snapshot
+        # Calculate current score from preserved completed tasks
+        current_score = 0
+        for task in prioritized:
+            if task['task_id'] in completed_map:
+                task_details = TASK_LIBRARY.get(task['task_id'], {})
+                current_score += task_details.get('security_score_impact', 5)
+
+        # Create progress snapshot with preserved progress
         progress = RoadmapProgressHistory(
             profile_id=profile.id,
-            security_score=0,
-            tasks_completed=0,
+            security_score=current_score,
+            tasks_completed=tasks_preserved,
             tasks_total=len(prioritized),
             snapshot_date=datetime.now(timezone.utc),
-            snapshot_reason='roadmap_generated'
+            snapshot_reason='roadmap_regenerated' if tasks_preserved > 0 else 'roadmap_generated'
         )
         db.add(progress)
 
+        # Update profile score
+        profile.current_security_score = current_score
+        profile.updated_at = datetime.now(timezone.utc)
+
         db.commit()
+
+        # Build response message
+        if tasks_preserved > 0:
+            message = f'Roadmap regenerated with {len(prioritized)} tasks ({tasks_preserved} completed tasks preserved)'
+        else:
+            message = f'Roadmap generated with {len(prioritized)} tasks'
 
         return jsonify({
             'success': True,
             'tasks_created': len(prioritized),
-            'message': f'Roadmap generated with {len(prioritized)} tasks'
+            'tasks_preserved': tasks_preserved,
+            'current_score': current_score,
+            'message': message
         }), 200
 
     except Exception as e:
@@ -5096,17 +5194,31 @@ def verify_roadmap_task(task_id):
 def get_roadmap_progress():
     """
     Get progress history for graphs.
+    Query params: days, company_id (admin only)
     """
     user_id = request.user_id
+    user_role = getattr(request, 'user_role', None)
     db = None
     try:
         days = request.args.get('days', 30, type=int)
 
         db = get_db()
 
+        # Check for company_id param (admin viewing company roadmap)
+        company_id = request.args.get('company_id', type=int)
+        target_user_ids = [user_id]
+
+        if company_id and user_role in ['SUPER_ADMIN', 'ADMIN', 'ANALYST']:
+            # Get all users in the specified company
+            company_users = db.query(User).filter(
+                User.company_id == company_id,
+                User.deleted_at.is_(None)
+            ).all()
+            target_user_ids = [u.id for u in company_users]
+
         # Get user's profile
         profile = db.query(RoadmapProfile).filter(
-            RoadmapProfile.user_id == user_id,
+            RoadmapProfile.user_id.in_(target_user_ids),
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -5176,17 +5288,31 @@ def get_roadmap_progress():
 def get_roadmap_achievements():
     """
     Get unlocked and available achievements.
+    Query params: company_id (admin only)
     """
     from roadmap_mappings import ACHIEVEMENTS
     user_id = request.user_id
+    user_role = getattr(request, 'user_role', None)
 
     db = None
     try:
         db = get_db()
 
+        # Check for company_id param (admin viewing company roadmap)
+        company_id = request.args.get('company_id', type=int)
+        target_user_ids = [user_id]
+
+        if company_id and user_role in ['SUPER_ADMIN', 'ADMIN', 'ANALYST']:
+            # Get all users in the specified company
+            company_users = db.query(User).filter(
+                User.company_id == company_id,
+                User.deleted_at.is_(None)
+            ).all()
+            target_user_ids = [u.id for u in company_users]
+
         # Get user's profile
         profile = db.query(RoadmapProfile).filter(
-            RoadmapProfile.user_id == user_id,
+            RoadmapProfile.user_id.in_(target_user_ids),
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -5262,17 +5388,31 @@ def get_roadmap_achievements():
 def get_roadmap_stats():
     """
     Get dashboard stats for roadmap widget.
+    Query params: company_id (admin only)
     """
     from roadmap_mappings import TASK_LIBRARY
     user_id = request.user_id
+    user_role = getattr(request, 'user_role', None)
 
     db = None
     try:
         db = get_db()
 
+        # Check for company_id param (admin viewing company roadmap)
+        company_id = request.args.get('company_id', type=int)
+        target_user_ids = [user_id]
+
+        if company_id and user_role in ['SUPER_ADMIN', 'ADMIN', 'ANALYST']:
+            # Get all users in the specified company
+            company_users = db.query(User).filter(
+                User.company_id == company_id,
+                User.deleted_at.is_(None)
+            ).all()
+            target_user_ids = [u.id for u in company_users]
+
         # Get user's profile
         profile = db.query(RoadmapProfile).filter(
-            RoadmapProfile.user_id == user_id,
+            RoadmapProfile.user_id.in_(target_user_ids),
             RoadmapProfile.deleted_at == None,
             RoadmapProfile.is_active == True
         ).first()
@@ -7556,6 +7696,91 @@ def admin_list_companies():
     except Exception as e:
         print(f"[ADMIN] List companies error: {e}")
         return jsonify({'error': 'Failed to load companies'}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/companies/roadmap-stats', methods=['GET'])
+@require_auth
+@require_admin
+def admin_companies_roadmap_stats():
+    """
+    Get all companies with roadmap statistics for admin roadmap view.
+    Returns companies with their security scores and task completion stats.
+    """
+    db = SessionLocal()
+    try:
+        # Get all active companies
+        companies = db.query(Company).filter(
+            Company.deleted_at.is_(None)
+        ).order_by(Company.name.asc()).all()
+
+        results = []
+        for company in companies:
+            # Parse additional data for industry/size
+            additional_data = {}
+            if company.additional_domains:
+                try:
+                    additional_data = json.loads(company.additional_domains)
+                except:
+                    pass
+
+            # Get all users in this company
+            company_users = db.query(User).filter(
+                User.company_id == company.id,
+                User.deleted_at.is_(None)
+            ).all()
+            user_ids = [u.id for u in company_users]
+
+            # Get roadmap profiles for company users
+            total_tasks = 0
+            completed_tasks = 0
+            total_score = 0
+            profile_count = 0
+
+            if user_ids:
+                # Get all roadmap profiles for company users
+                profiles = db.query(RoadmapProfile).filter(
+                    RoadmapProfile.user_id.in_(user_ids),
+                    RoadmapProfile.deleted_at.is_(None),
+                    RoadmapProfile.is_active == True
+                ).all()
+
+                for profile in profiles:
+                    profile_count += 1
+                    total_score += profile.current_security_score or 0
+
+                    # Get tasks for this profile
+                    tasks = db.query(RoadmapUserTask).filter(
+                        RoadmapUserTask.profile_id == profile.id,
+                        RoadmapUserTask.deleted_at.is_(None)
+                    ).all()
+
+                    total_tasks += len(tasks)
+                    completed_tasks += len([t for t in tasks if t.status == 'completed'])
+
+            # Calculate average score
+            avg_score = round(total_score / profile_count, 1) if profile_count > 0 else 0
+
+            results.append({
+                'id': company.id,
+                'name': company.name,
+                'industry': additional_data.get('industry', 'Technology'),
+                'size': additional_data.get('company_size', 'Unknown'),
+                'security_score': avg_score,
+                'total_tasks': total_tasks,
+                'completed_tasks': completed_tasks,
+                'user_count': len(company_users),
+                'profile_count': profile_count
+            })
+
+        return jsonify(results)
+
+    except Exception as e:
+        print(f"[ADMIN] Roadmap stats error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to load roadmap stats'}), 500
     finally:
         db.close()
 

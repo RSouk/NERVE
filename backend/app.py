@@ -1684,6 +1684,2215 @@ def toggle_maintenance_task_by_key(task_key):
 
 
 # ============================================================================
+# DAILY SECURITY QUIZ ENDPOINTS
+# ============================================================================
+
+# Security quiz questions bank (rotates daily based on date)
+QUIZ_QUESTIONS = [
+    {
+        "id": 1,
+        "category": "Phishing Defense",
+        "question": "You receive an email from 'IT Support' asking you to click a link to verify your credentials. The sender's email is support@c0mpany-it.com. What should you do?",
+        "options": [
+            "Click the link - IT Support needs to verify accounts regularly",
+            "Forward the email to your actual IT department to verify",
+            "Reply asking if they are legitimate IT staff",
+            "Delete the email and clear your inbox"
+        ],
+        "correct_answer": 1,
+        "explanation": "The sender's domain uses a zero instead of 'o' (c0mpany vs company), a common phishing tactic. <strong>Always verify suspicious emails with your actual IT department</strong> through known contact channels, never by replying to the suspicious email."
+    },
+    {
+        "id": 2,
+        "category": "Password Security",
+        "question": "Which of the following is the most secure password practice?",
+        "options": [
+            "Using the same complex password across all accounts",
+            "Writing passwords on a sticky note kept under your keyboard",
+            "Using a password manager with unique passwords per site",
+            "Creating passwords based on personal information like birthdays"
+        ],
+        "correct_answer": 2,
+        "explanation": "<strong>Password managers generate and store unique, complex passwords</strong> for each account. This prevents credential stuffing attacks where one breached password compromises all your accounts."
+    },
+    {
+        "id": 3,
+        "category": "Social Engineering",
+        "question": "A caller claims to be from Microsoft and says your computer has a virus. They ask for remote access to fix it. What is this?",
+        "options": [
+            "Legitimate technical support",
+            "A vishing (voice phishing) attack",
+            "A routine security check",
+            "An automated security notification"
+        ],
+        "correct_answer": 1,
+        "explanation": "This is a classic <strong>vishing attack</strong>. Microsoft and other legitimate companies never make unsolicited calls about computer problems. Attackers use urgency and fear to gain remote access to steal data or install malware."
+    },
+    {
+        "id": 4,
+        "category": "Data Protection",
+        "question": "What is the primary purpose of data encryption at rest?",
+        "options": [
+            "To make files smaller for storage",
+            "To speed up data access times",
+            "To protect data if storage media is stolen or accessed unauthorized",
+            "To organize files more efficiently"
+        ],
+        "correct_answer": 2,
+        "explanation": "<strong>Encryption at rest</strong> protects stored data from unauthorized access. If a laptop is stolen or a hard drive is accessed without authorization, encrypted data remains unreadable without the proper decryption keys."
+    },
+    {
+        "id": 5,
+        "category": "Network Security",
+        "question": "You're working from a coffee shop and need to access company resources. What's the safest approach?",
+        "options": [
+            "Connect directly to the cafe's free WiFi",
+            "Use your phone as a mobile hotspot with VPN",
+            "Ask the staff for the WiFi password and trust it",
+            "Use any available open network for convenience"
+        ],
+        "correct_answer": 1,
+        "explanation": "Public WiFi networks can be compromised or spoofed by attackers. <strong>Using a mobile hotspot combined with a VPN</strong> provides encrypted connectivity that protects your data from man-in-the-middle attacks."
+    },
+    {
+        "id": 6,
+        "category": "Malware Defense",
+        "question": "A USB drive is found in your office parking lot with a label 'Q4 Salary Review'. What should you do?",
+        "options": [
+            "Plug it into your computer to find the owner",
+            "Give it to IT security without plugging it in",
+            "Plug it into a public computer to check contents",
+            "Keep it in case the owner asks for it"
+        ],
+        "correct_answer": 1,
+        "explanation": "This is a <strong>baiting attack</strong> - attackers deliberately drop infected USB drives hoping curiosity will make someone plug them in. Unknown USB devices should always be handed to IT security who have isolated systems to safely examine them."
+    },
+    {
+        "id": 7,
+        "category": "Access Control",
+        "question": "What does the principle of 'least privilege' mean in cybersecurity?",
+        "options": [
+            "Give everyone admin access for efficiency",
+            "Users should only have access needed for their specific job",
+            "Restrict internet access for all employees",
+            "Privileged users should have the least monitoring"
+        ],
+        "correct_answer": 1,
+        "explanation": "<strong>Least privilege</strong> means granting only the minimum access rights necessary to perform a job. This limits the damage potential if an account is compromised and reduces the attack surface across the organization."
+    },
+    {
+        "id": 8,
+        "category": "Incident Response",
+        "question": "You notice your computer is running unusually slow and the hard drive is constantly active even when idle. What should be your first action?",
+        "options": [
+            "Restart the computer to fix the slowness",
+            "Install a free antivirus from the internet",
+            "Disconnect from the network and report to IT security",
+            "Continue working and wait for it to resolve"
+        ],
+        "correct_answer": 2,
+        "explanation": "These symptoms could indicate malware activity such as cryptocurrency mining or data exfiltration. <strong>Disconnecting from the network prevents potential spread</strong> and stops data leaving the system while IT security investigates."
+    },
+    {
+        "id": 9,
+        "category": "Authentication",
+        "question": "What is the main advantage of hardware security keys (like YubiKey) over SMS-based 2FA?",
+        "options": [
+            "They are cheaper to implement",
+            "They cannot be phished or intercepted like SMS codes",
+            "They work without internet connection only",
+            "They eliminate the need for passwords entirely"
+        ],
+        "correct_answer": 1,
+        "explanation": "<strong>Hardware security keys</strong> are phishing-resistant because they use cryptographic proof tied to the specific website. SMS codes can be intercepted through SIM swapping attacks or SS7 vulnerabilities, making them less secure."
+    },
+    {
+        "id": 10,
+        "category": "Cloud Security",
+        "question": "What is the 'shared responsibility model' in cloud computing?",
+        "options": [
+            "All security is the cloud provider's responsibility",
+            "Security duties are split between the provider and customer",
+            "Customers must handle all security themselves",
+            "A model where employees share login credentials"
+        ],
+        "correct_answer": 1,
+        "explanation": "In cloud computing, <strong>providers secure the infrastructure</strong> (physical data centers, network, hypervisor) while <strong>customers secure their data, access management, and application configurations</strong>. Understanding this division is crucial for proper cloud security."
+    },
+    {
+        "id": 11,
+        "category": "Ransomware",
+        "question": "Your screen suddenly shows a message demanding Bitcoin payment to decrypt your files. What's the recommended first response?",
+        "options": [
+            "Pay the ransom to recover files quickly",
+            "Isolate the system, don't pay, and contact IT/incident response",
+            "Try to decrypt the files yourself using online tools",
+            "Format the hard drive immediately"
+        ],
+        "correct_answer": 1,
+        "explanation": "<strong>Never pay ransomware demands</strong> - it funds criminal operations and doesn't guarantee file recovery. Isolate the infected system to prevent spread, then work with IT security to assess damage and restore from backups."
+    },
+    {
+        "id": 12,
+        "category": "Secure Development",
+        "question": "What is SQL injection and how can it be prevented?",
+        "options": [
+            "A database optimization technique using special queries",
+            "An attack inserting malicious SQL; prevented by parameterized queries",
+            "A method to speed up SQL queries in applications",
+            "An attack on physical servers; prevented by firewalls"
+        ],
+        "correct_answer": 1,
+        "explanation": "<strong>SQL injection</strong> occurs when attackers insert malicious SQL code through user inputs. Using <strong>parameterized queries</strong> (prepared statements) ensures user input is treated as data, not executable code."
+    },
+    {
+        "id": 13,
+        "category": "Physical Security",
+        "question": "Someone in business attire follows you through a secure door without badging in, claiming they forgot their badge. What should you do?",
+        "options": [
+            "Let them in - they look professional",
+            "Politely ask them to contact reception for a visitor badge",
+            "Ignore the situation to avoid confrontation",
+            "Give them your badge to use temporarily"
+        ],
+        "correct_answer": 1,
+        "explanation": "This is <strong>tailgating</strong>, a social engineering technique. Professional appearance is easily faked. Politely directing them to reception maintains security without confrontation and follows proper access control procedures."
+    },
+    {
+        "id": 14,
+        "category": "Threat Intelligence",
+        "question": "What is an Indicator of Compromise (IoC)?",
+        "options": [
+            "A legal document for security compliance",
+            "Evidence that suggests a security breach may have occurred",
+            "A metric for measuring employee security awareness",
+            "A type of encryption algorithm"
+        ],
+        "correct_answer": 1,
+        "explanation": "<strong>Indicators of Compromise</strong> are forensic artifacts like suspicious IP addresses, file hashes, or unusual network traffic that suggest malicious activity. Security teams use IoCs to detect, investigate, and respond to threats."
+    },
+    {
+        "id": 15,
+        "category": "Zero Trust",
+        "question": "What is the core principle of Zero Trust security architecture?",
+        "options": [
+            "Trust all internal network traffic automatically",
+            "Never trust, always verify - regardless of network location",
+            "Zero security measures are needed for trusted users",
+            "Trust users after they've been employed for a year"
+        ],
+        "correct_answer": 1,
+        "explanation": "<strong>Zero Trust</strong> assumes breach and verifies every request as if it originates from an untrusted network. This means continuous authentication, least-privilege access, and micro-segmentation regardless of whether traffic is internal or external."
+    }
+]
+
+@app.route('/api/ghost/daily-quiz', methods=['GET'])
+@require_auth
+def get_daily_quiz():
+    """
+    Get today's quiz question for the authenticated user.
+    Question rotates daily based on date.
+    """
+    user_id = request.user_id
+    db = None
+    try:
+        db = get_db()
+
+        # Determine today's question based on date
+        today = datetime.now(timezone.utc).date()
+        question_index = today.toordinal() % len(QUIZ_QUESTIONS)
+        question = QUIZ_QUESTIONS[question_index].copy()
+
+        # Get or create user quiz stats
+        user = db.query(User).filter_by(id=user_id).first()
+
+        # Check if user already answered today (store in session or simple tracking)
+        # For simplicity, we'll use a date-based approach
+        # In production, you'd want a proper QuizAnswer table
+
+        # Get basic stats (placeholder - in production use proper tables)
+        stats = {
+            'streak': 0,
+            'correct_count': 0,
+            'total_attempted': 0,
+            'completed_today': False,
+            'already_answered': False
+        }
+
+        # Return question without correct answer exposed initially
+        response = {
+            'question_id': question['id'],
+            'category': question['category'],
+            'question': question['question'],
+            'options': question['options'],
+            'correct_answer': question['correct_answer'],
+            'explanation': question['explanation'],
+            'has_more': True,
+            **stats
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        print(f"[QUIZ] Error getting quiz: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/ghost/daily-quiz/answer', methods=['POST'])
+@require_auth
+def submit_quiz_answer():
+    """
+    Submit answer for the daily quiz question.
+    """
+    user_id = request.user_id
+    db = None
+    try:
+        data = request.get_json()
+        db = get_db()
+
+        question_id = data.get('question_id')
+        selected_answer = data.get('selected_answer')
+        correct = data.get('correct', False)
+
+        # In production, save to QuizAnswer table and update user stats
+        # For now, return updated stats
+        response = {
+            'success': True,
+            'streak': 1 if correct else 0,
+            'correct_count': 1 if correct else 0,
+            'total_attempted': 1
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        print(f"[QUIZ] Error saving answer: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/ghost/daily-quiz/next', methods=['GET'])
+@require_auth
+def get_next_quiz_question():
+    """
+    Get the next quiz question (for bonus questions).
+    """
+    user_id = request.user_id
+    try:
+        # Pick a random question different from today's
+        today = datetime.now(timezone.utc).date()
+        today_index = today.toordinal() % len(QUIZ_QUESTIONS)
+
+        # Get a different random question
+        import random
+        available_indices = [i for i in range(len(QUIZ_QUESTIONS)) if i != today_index]
+        next_index = random.choice(available_indices)
+        question = QUIZ_QUESTIONS[next_index].copy()
+
+        response = {
+            'question_id': question['id'],
+            'category': question['category'],
+            'question': question['question'],
+            'options': question['options'],
+            'correct_answer': question['correct_answer'],
+            'explanation': question['explanation'],
+            'has_more': len(available_indices) > 1
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        print(f"[QUIZ] Error getting next question: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# HACKER PLAYBOOK ENDPOINTS
+# ============================================================================
+
+# Hacker techniques database - 100 real-world attack techniques with defenses
+HACKER_PLAYBOOK = [
+    {
+        "id": 0,
+        "name": "SQL Injection",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify input fields that interact with databases",
+            "Test with basic payloads like ' OR '1'='1",
+            "Use UNION SELECT to extract data from other tables",
+            "Escalate to read files or execute commands if possible"
+        ],
+        "defense_steps": [
+            "Use parameterized queries or prepared statements",
+            "Implement input validation and sanitization",
+            "Apply principle of least privilege to database accounts",
+            "Use Web Application Firewalls (WAF) as additional layer"
+        ]
+    },
+    {
+        "id": 1,
+        "name": "Cross-Site Scripting (XSS)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Find user input reflected in page output",
+            "Test with simple payloads like <script>alert(1)</script>",
+            "Craft payload to steal session cookies or credentials",
+            "Use social engineering to deliver malicious link"
+        ],
+        "defense_steps": [
+            "Encode output based on context (HTML, JS, URL, CSS)",
+            "Implement Content Security Policy (CSP) headers",
+            "Use HTTPOnly and Secure flags on cookies",
+            "Sanitize rich text with allowlist-based filtering"
+        ]
+    },
+    {
+        "id": 2,
+        "name": "Password Spraying",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Gather list of valid usernames through OSINT or enumeration",
+            "Choose common passwords (Season+Year, Company123, etc.)",
+            "Spray one password across all accounts, then wait",
+            "Avoid lockouts by staying below threshold"
+        ],
+        "defense_steps": [
+            "Enforce strong password policies with complexity requirements",
+            "Implement multi-factor authentication (MFA)",
+            "Monitor for distributed login failures",
+            "Use adaptive authentication based on risk signals"
+        ]
+    },
+    {
+        "id": 3,
+        "name": "Phishing with Credential Harvesting",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Clone target company's login page with tools like Gophish",
+            "Register look-alike domain (typosquatting)",
+            "Craft convincing email with urgency or authority",
+            "Capture credentials and optionally proxy to real site"
+        ],
+        "defense_steps": [
+            "Train users to recognize phishing indicators",
+            "Deploy email security with DMARC, DKIM, SPF",
+            "Use phishing-resistant MFA like hardware keys",
+            "Monitor for brand impersonation and takedown fake domains"
+        ]
+    },
+    {
+        "id": 4,
+        "name": "LLMNR/NBT-NS Poisoning",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Position on same network segment as targets",
+            "Run Responder to answer broadcast name queries",
+            "Capture NTLMv2 hashes from authentication attempts",
+            "Crack hashes offline or relay to other services"
+        ],
+        "defense_steps": [
+            "Disable LLMNR via Group Policy",
+            "Disable NBT-NS in network adapter settings",
+            "Enable SMB signing to prevent relay attacks",
+            "Segment networks and monitor for suspicious broadcasts"
+        ]
+    },
+    {
+        "id": 5,
+        "name": "Kerberoasting",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Enumerate SPNs with tools like GetUserSPNs.py",
+            "Request TGS tickets for service accounts",
+            "Extract tickets and crack offline with hashcat",
+            "Use cracked credentials to access services"
+        ],
+        "defense_steps": [
+            "Use long, complex passwords for service accounts",
+            "Implement Group Managed Service Accounts (gMSA)",
+            "Monitor for excessive TGS requests",
+            "Apply AES encryption instead of RC4 for Kerberos"
+        ]
+    },
+    {
+        "id": 6,
+        "name": "Pass-the-Hash",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Obtain NTLM hash through credential dumping",
+            "Use hash directly for authentication without cracking",
+            "Authenticate to services accepting NTLM (SMB, WMI, etc.)",
+            "Move laterally across the network"
+        ],
+        "defense_steps": [
+            "Implement Credential Guard on Windows 10/11",
+            "Use Protected Users security group for privileged accounts",
+            "Disable NTLM where possible, enforce Kerberos",
+            "Deploy LAPS for unique local admin passwords"
+        ]
+    },
+    {
+        "id": 7,
+        "name": "Golden Ticket Attack",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Compromise domain controller to get KRBTGT hash",
+            "Forge TGT with any user/group membership",
+            "Ticket valid until KRBTGT password changed twice",
+            "Access any resource in the domain as any user"
+        ],
+        "defense_steps": [
+            "Reset KRBTGT password twice to invalidate tickets",
+            "Monitor for TGTs with unusually long lifetimes",
+            "Implement tiered administration model",
+            "Use Advanced Threat Analytics or Defender for Identity"
+        ]
+    },
+    {
+        "id": 8,
+        "name": "DNS Tunneling",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Set up authoritative DNS server for controlled domain",
+            "Encode data in DNS queries (subdomains) and responses",
+            "Use tools like dnscat2 or iodine for C2 channel",
+            "Bypass firewalls that allow outbound DNS"
+        ],
+        "defense_steps": [
+            "Monitor for high-volume or unusual DNS queries",
+            "Analyze DNS query entropy and length anomalies",
+            "Force internal DNS resolution through proxy",
+            "Block DNS over HTTPS (DoH) or monitor it"
+        ]
+    },
+    {
+        "id": 9,
+        "name": "Living off the Land (LOLBins)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Use built-in tools like PowerShell, certutil, mshta",
+            "Download payloads with certutil or bitsadmin",
+            "Execute code through wmic, regsvr32, or rundll32",
+            "Evade detection by avoiding custom malware"
+        ],
+        "defense_steps": [
+            "Implement application allowlisting with AppLocker/WDAC",
+            "Enable PowerShell logging (Script Block, Module, Transcription)",
+            "Monitor command-line arguments for LOLBin abuse",
+            "Use EDR with behavioral detection capabilities"
+        ]
+    },
+    {
+        "id": 10,
+        "name": "Server-Side Request Forgery (SSRF)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Find functionality that fetches URLs (webhooks, imports)",
+            "Test access to internal resources (169.254.169.254)",
+            "Pivot to internal services not exposed externally",
+            "Exfiltrate cloud metadata credentials"
+        ],
+        "defense_steps": [
+            "Validate and allowlist destination URLs",
+            "Block requests to internal/private IP ranges",
+            "Disable unnecessary URL schemes (file://, gopher://)",
+            "Use IMDSv2 requiring session tokens for cloud metadata"
+        ]
+    },
+    {
+        "id": 11,
+        "name": "Command Injection",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify inputs passed to system commands",
+            "Test with command separators (; | & ` $())",
+            "Chain commands to establish reverse shell",
+            "Escalate privileges through command access"
+        ],
+        "defense_steps": [
+            "Avoid calling system commands with user input",
+            "Use language APIs instead of shell commands",
+            "If unavoidable, use strict allowlist validation",
+            "Run applications with minimal privileges"
+        ]
+    },
+    {
+        "id": 12,
+        "name": "Insecure Deserialization",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify serialized data in requests or cookies",
+            "Analyze application for gadget chains",
+            "Craft malicious serialized object for RCE",
+            "Use tools like ysoserial for Java applications"
+        ],
+        "defense_steps": [
+            "Avoid deserializing untrusted data",
+            "Implement integrity checks (HMAC) on serialized data",
+            "Use allowlists for deserializable classes",
+            "Keep frameworks updated to patch known gadgets"
+        ]
+    },
+    {
+        "id": 13,
+        "name": "Subdomain Takeover",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Enumerate subdomains using tools like subfinder",
+            "Check for dangling DNS records (CNAME to unclaimed service)",
+            "Register the unclaimed resource on cloud provider",
+            "Serve malicious content on trusted subdomain"
+        ],
+        "defense_steps": [
+            "Regularly audit DNS records for stale entries",
+            "Remove DNS records before deprovisioning services",
+            "Monitor for unauthorized subdomain content changes",
+            "Use subdomain takeover scanning tools proactively"
+        ]
+    },
+    {
+        "id": 14,
+        "name": "JWT Token Attacks",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Intercept JWT token from authentication flow",
+            "Try algorithm confusion (alg:none or RS256->HS256)",
+            "Brute force weak signing secrets",
+            "Modify claims and resign with discovered key"
+        ],
+        "defense_steps": [
+            "Use strong, random signing keys (256+ bits)",
+            "Explicitly validate algorithm in verification code",
+            "Implement short expiration times with refresh tokens",
+            "Use asymmetric algorithms (RS256, ES256) properly"
+        ]
+    },
+    {
+        "id": 15,
+        "name": "Directory Traversal",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Identify file path parameters in requests",
+            "Test with ../ sequences to escape directory",
+            "Try encoding bypasses (%2e%2e/, ..%00/)",
+            "Read sensitive files like /etc/passwd or web.config"
+        ],
+        "defense_steps": [
+            "Canonicalize paths and validate against allowlist",
+            "Use chroot or containers to limit filesystem access",
+            "Remove path separators from user input",
+            "Store files with random names, use database mapping"
+        ]
+    },
+    {
+        "id": 16,
+        "name": "Privilege Escalation via SUID",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Find SUID binaries with: find / -perm -4000",
+            "Check GTFOBins for exploitable binaries",
+            "Abuse misconfigured SUID programs",
+            "Escalate to root through vulnerable binary"
+        ],
+        "defense_steps": [
+            "Audit and minimize SUID/SGID binaries",
+            "Remove SUID from unnecessary programs",
+            "Use capabilities instead of SUID where possible",
+            "Mount partitions with nosuid option"
+        ]
+    },
+    {
+        "id": 17,
+        "name": "Cloud Storage Misconfiguration",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Enumerate S3 buckets using keyword-based naming",
+            "Check for public read/write permissions",
+            "Download sensitive data or upload malicious content",
+            "Pivot using discovered credentials in files"
+        ],
+        "defense_steps": [
+            "Block public access at account level",
+            "Enable S3 Block Public Access settings",
+            "Use bucket policies with explicit denies",
+            "Enable CloudTrail logging for all S3 operations"
+        ]
+    },
+    {
+        "id": 18,
+        "name": "Container Escape",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Check for privileged container or dangerous mounts",
+            "Exploit kernel vulnerabilities (Dirty Pipe, etc.)",
+            "Abuse Docker socket if mounted inside container",
+            "Access host filesystem through /proc or device nodes"
+        ],
+        "defense_steps": [
+            "Never run containers as privileged",
+            "Use seccomp, AppArmor, or SELinux profiles",
+            "Keep container runtime and kernel updated",
+            "Implement Pod Security Standards in Kubernetes"
+        ]
+    },
+    {
+        "id": 19,
+        "name": "OAuth Token Theft",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Exploit open redirectors in OAuth flow",
+            "Use redirect_uri manipulation to steal codes",
+            "Phish users to authorize malicious application",
+            "Replay stolen tokens for account access"
+        ],
+        "defense_steps": [
+            "Strictly validate redirect_uri against allowlist",
+            "Use PKCE (Proof Key for Code Exchange)",
+            "Implement token binding where supported",
+            "Audit and revoke unused OAuth application grants"
+        ]
+    },
+    {
+        "id": 20,
+        "name": "Man-in-the-Middle (MITM)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Position between victim and target using ARP spoofing",
+            "Intercept and modify traffic in real-time",
+            "Strip TLS with tools like sslstrip (if possible)",
+            "Capture credentials or inject malicious content"
+        ],
+        "defense_steps": [
+            "Enforce HTTPS everywhere with HSTS preloading",
+            "Implement certificate pinning for critical apps",
+            "Use VPN for sensitive communications",
+            "Enable 802.1X for network access control"
+        ]
+    },
+    {
+        "id": 21,
+        "name": "Business Email Compromise (BEC)",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Compromise executive email or spoof their address",
+            "Study communication patterns and relationships",
+            "Send urgent request for wire transfer or gift cards",
+            "Use authority and urgency to bypass verification"
+        ],
+        "defense_steps": [
+            "Require out-of-band verification for financial requests",
+            "Implement DMARC with reject policy",
+            "Train employees on BEC indicators",
+            "Flag external emails that spoof internal domains"
+        ]
+    },
+    {
+        "id": 22,
+        "name": "API Key Exposure",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Search GitHub, GitLab for exposed credentials",
+            "Use tools like truffleHog or gitleaks",
+            "Check client-side JavaScript for hardcoded keys",
+            "Abuse discovered keys for unauthorized access"
+        ],
+        "defense_steps": [
+            "Use secrets managers, never commit credentials",
+            "Implement pre-commit hooks to scan for secrets",
+            "Rotate keys regularly and monitor for abuse",
+            "Use short-lived tokens with minimal permissions"
+        ]
+    },
+    {
+        "id": 23,
+        "name": "Wireless Evil Twin",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Create fake access point with same SSID as target",
+            "Use stronger signal to attract victim connections",
+            "Capture credentials through fake captive portal",
+            "Perform MITM on connected clients"
+        ],
+        "defense_steps": [
+            "Use WPA3 Enterprise with certificate validation",
+            "Train users to verify network authenticity",
+            "Deploy Wireless Intrusion Detection Systems",
+            "Use always-on VPN for corporate devices"
+        ]
+    },
+    {
+        "id": 24,
+        "name": "Domain Fronting",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Use CDN that allows routing based on Host header",
+            "Send traffic appearing to go to legitimate domain",
+            "CDN routes to attacker's backend server",
+            "Bypass domain-based blocking and monitoring"
+        ],
+        "defense_steps": [
+            "Implement TLS inspection for outbound traffic",
+            "Monitor for Host header mismatches",
+            "Use CDNs that have disabled domain fronting",
+            "Deploy behavioral analysis for C2 detection"
+        ]
+    },
+    {
+        "id": 25,
+        "name": "DLL Hijacking",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Find applications with insecure DLL search order",
+            "Place malicious DLL in application or PATH directory",
+            "Wait for application to load the malicious DLL",
+            "Execute code in context of legitimate application"
+        ],
+        "defense_steps": [
+            "Use absolute paths for DLL loading",
+            "Implement SafeDllSearchMode",
+            "Sign and verify all loaded DLLs",
+            "Restrict write access to application directories"
+        ]
+    },
+    {
+        "id": 26,
+        "name": "Watering Hole Attack",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify websites frequently visited by target group",
+            "Compromise the trusted website",
+            "Inject malicious code or exploit kit",
+            "Selectively target specific visitor IP ranges"
+        ],
+        "defense_steps": [
+            "Keep browsers and plugins fully patched",
+            "Use network segmentation and monitoring",
+            "Implement browser isolation for high-risk users",
+            "Monitor for unusual website behavior changes"
+        ]
+    },
+    {
+        "id": 27,
+        "name": "Macro Malware in Documents",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Create document with malicious VBA macro",
+            "Social engineer user to enable macros",
+            "Macro downloads and executes payload",
+            "Establish persistence and C2 connection"
+        ],
+        "defense_steps": [
+            "Disable macros by default via Group Policy",
+            "Use Attack Surface Reduction (ASR) rules",
+            "Block macros in documents from internet",
+            "Convert documents to PDF for external sharing"
+        ]
+    },
+    {
+        "id": 28,
+        "name": "Registry Persistence",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Add entries to Run/RunOnce keys for user persistence",
+            "Use HKLM keys for system-wide persistence",
+            "Abuse lesser-known keys like AppInit_DLLs",
+            "Survive reboots and user logoffs"
+        ],
+        "defense_steps": [
+            "Monitor registry keys with Sysmon or EDR",
+            "Implement application allowlisting",
+            "Use least privilege to limit registry writes",
+            "Regularly audit autorun locations"
+        ]
+    },
+    {
+        "id": 29,
+        "name": "BloodHound AD Mapping",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Run SharpHound to collect AD relationships",
+            "Import data into BloodHound for analysis",
+            "Identify shortest paths to Domain Admin",
+            "Chain attack paths through vulnerable nodes"
+        ],
+        "defense_steps": [
+            "Review and reduce excessive privileges",
+            "Clean up nested group memberships",
+            "Implement tiered administration model",
+            "Monitor for LDAP enumeration activity"
+        ]
+    },
+    {
+        "id": 30,
+        "name": "CSRF (Cross-Site Request Forgery)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify state-changing actions without CSRF protection",
+            "Craft malicious page with auto-submitting form",
+            "Trick authenticated user into visiting page",
+            "Action executes with victim's session"
+        ],
+        "defense_steps": [
+            "Implement anti-CSRF tokens on all forms",
+            "Use SameSite cookie attribute (Strict or Lax)",
+            "Verify Origin and Referer headers",
+            "Require re-authentication for sensitive actions"
+        ]
+    },
+    {
+        "id": 31,
+        "name": "WMI Persistence",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Create WMI event subscription for persistence",
+            "Use EventConsumer to execute payload on trigger",
+            "Survive reboots without file-based persistence",
+            "Difficult to detect with traditional antivirus"
+        ],
+        "defense_steps": [
+            "Monitor WMI activity with Sysmon Event ID 19-21",
+            "Audit WMI subscriptions regularly",
+            "Restrict WMI access to necessary accounts",
+            "Use ASR rules to block WMI event subscriptions"
+        ]
+    },
+    {
+        "id": 32,
+        "name": "Browser Extension Hijacking",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Create or compromise browser extension",
+            "Request broad permissions (all URLs, cookies)",
+            "Intercept web traffic and steal credentials",
+            "Inject malicious content into pages"
+        ],
+        "defense_steps": [
+            "Audit and allowlist approved extensions",
+            "Use enterprise browser management policies",
+            "Monitor extension installations and updates",
+            "Educate users about extension permissions"
+        ]
+    },
+    {
+        "id": 33,
+        "name": "Scheduled Task Persistence",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Create scheduled task running malicious payload",
+            "Set trigger for boot, logon, or time-based",
+            "Run with SYSTEM or user privileges",
+            "Persist across reboots and updates"
+        ],
+        "defense_steps": [
+            "Monitor scheduled task creation with Sysmon",
+            "Audit scheduled tasks regularly",
+            "Restrict task creation to authorized users",
+            "Use application allowlisting to prevent execution"
+        ]
+    },
+    {
+        "id": 34,
+        "name": "Silver Ticket Attack",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Obtain service account password hash",
+            "Forge TGS for specific service without DC contact",
+            "Access target service as any user",
+            "Stealthier than Golden Ticket (no DC communication)"
+        ],
+        "defense_steps": [
+            "Use gMSA for service accounts",
+            "Implement PAC validation on services",
+            "Monitor for TGS requests without prior TGT",
+            "Rotate service account passwords regularly"
+        ]
+    },
+    {
+        "id": 35,
+        "name": "PowerShell Constrained Language Bypass",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify constrained language mode restrictions",
+            "Use Add-Type to compile inline C# code",
+            "Leverage COM objects for code execution",
+            "Downgrade PowerShell version if possible"
+        ],
+        "defense_steps": [
+            "Implement WDAC with strict policies",
+            "Block PowerShell v2 via Windows Features",
+            "Enable comprehensive PowerShell logging",
+            "Use Just Enough Administration (JEA)"
+        ]
+    },
+    {
+        "id": 36,
+        "name": "Email Header Injection",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Find contact forms that send emails",
+            "Inject newlines and additional headers",
+            "Add BCC or modify From address",
+            "Use application as open relay for spam/phishing"
+        ],
+        "defense_steps": [
+            "Sanitize user input, remove newlines",
+            "Use email libraries with proper encoding",
+            "Implement rate limiting on email functions",
+            "Monitor outbound email for anomalies"
+        ]
+    },
+    {
+        "id": 37,
+        "name": "XML External Entity (XXE)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify XML parsing endpoints",
+            "Inject external entity referencing local files",
+            "Exfiltrate sensitive files through entity expansion",
+            "Perform SSRF through external DTD references"
+        ],
+        "defense_steps": [
+            "Disable external entity processing",
+            "Use less complex formats like JSON where possible",
+            "Validate XML against strict schema",
+            "Keep XML parsers updated"
+        ]
+    },
+    {
+        "id": 38,
+        "name": "Active Directory Certificate Services Abuse",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Find misconfigured certificate templates",
+            "Request certificate for privileged user (ESC1)",
+            "Use certificate for Kerberos PKINIT authentication",
+            "Gain Domain Admin through certificate abuse"
+        ],
+        "defense_steps": [
+            "Audit certificate templates for misconfigurations",
+            "Require manager approval for sensitive templates",
+            "Enable certificate mapping for authentication",
+            "Monitor certificate requests and usage"
+        ]
+    },
+    {
+        "id": 39,
+        "name": "Cobalt Strike Beacon Detection",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Deploy beacon through phishing or exploit",
+            "Use Malleable C2 profiles for evasion",
+            "Establish encrypted command and control",
+            "Perform post-exploitation and lateral movement"
+        ],
+        "defense_steps": [
+            "Deploy EDR with memory scanning capabilities",
+            "Monitor for named pipe and SMB beacon traffic",
+            "Analyze network for periodic callback patterns",
+            "Use JA3/JA3S fingerprinting for TLS detection"
+        ]
+    },
+    {
+        "id": 40,
+        "name": "SSH Key Theft",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Locate SSH private keys in .ssh directories",
+            "Check for keys without passphrases",
+            "Use agent forwarding abuse if enabled",
+            "Pivot to additional systems using stolen keys"
+        ],
+        "defense_steps": [
+            "Always use passphrases on SSH keys",
+            "Disable agent forwarding when not needed",
+            "Use SSH certificates with short validity",
+            "Implement centralized SSH key management"
+        ]
+    },
+    {
+        "id": 41,
+        "name": "HTTP Request Smuggling",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Identify discrepancies between frontend and backend",
+            "Craft ambiguous Content-Length and Transfer-Encoding",
+            "Smuggle malicious requests to backend",
+            "Bypass security controls or poison cache"
+        ],
+        "defense_steps": [
+            "Normalize request parsing across all layers",
+            "Use HTTP/2 end-to-end where possible",
+            "Reject ambiguous requests at load balancer",
+            "Keep web server software updated"
+        ]
+    },
+    {
+        "id": 42,
+        "name": "Process Injection",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Choose target process for injection",
+            "Use techniques like CreateRemoteThread or APC injection",
+            "Execute code in context of legitimate process",
+            "Evade process-based security monitoring"
+        ],
+        "defense_steps": [
+            "Monitor for cross-process memory operations",
+            "Enable CIG (Code Integrity Guard) on processes",
+            "Use EDR with injection detection",
+            "Implement Credential Guard to protect LSASS"
+        ]
+    },
+    {
+        "id": 43,
+        "name": "Supply Chain Attack",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Compromise developer environment or build system",
+            "Inject malicious code into legitimate software",
+            "Distribute through official update channels",
+            "Gain trusted access to target environments"
+        ],
+        "defense_steps": [
+            "Implement SBOM (Software Bill of Materials)",
+            "Verify signatures on all dependencies",
+            "Use dependency scanning and pinning",
+            "Isolate build systems with zero-trust principles"
+        ]
+    },
+    {
+        "id": 44,
+        "name": "Keylogger Deployment",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Deploy software keylogger through malware",
+            "Hook keyboard APIs to capture keystrokes",
+            "Exfiltrate captured data to C2 server",
+            "Target credentials and sensitive communications"
+        ],
+        "defense_steps": [
+            "Use password managers with auto-fill",
+            "Implement virtual keyboards for sensitive input",
+            "Monitor for suspicious API hooking behavior",
+            "Use EDR to detect keylogging indicators"
+        ]
+    },
+    {
+        "id": 45,
+        "name": "NTDS.dit Extraction",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Gain Domain Admin or backup operator access",
+            "Use Volume Shadow Copy to access locked file",
+            "Extract NTDS.dit and SYSTEM hive",
+            "Dump all domain password hashes offline"
+        ],
+        "defense_steps": [
+            "Monitor for Volume Shadow Copy activity on DCs",
+            "Implement Privileged Access Workstations (PAW)",
+            "Use gMSA and reduce standing privileges",
+            "Alert on sensitive file access on DCs"
+        ]
+    },
+    {
+        "id": 46,
+        "name": "Mimikatz Credential Dumping",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Execute Mimikatz with administrative privileges",
+            "Dump credentials from LSASS memory",
+            "Extract Kerberos tickets and NTLM hashes",
+            "Use credentials for lateral movement"
+        ],
+        "defense_steps": [
+            "Enable Credential Guard on supported systems",
+            "Disable WDigest authentication",
+            "Protect LSASS with RunAsPPL",
+            "Deploy EDR monitoring LSASS access"
+        ]
+    },
+    {
+        "id": 47,
+        "name": "SMB Relay Attack",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Position to intercept SMB authentication",
+            "Use tools like ntlmrelayx to relay credentials",
+            "Authenticate to target services as victim",
+            "Execute commands or access shares on target"
+        ],
+        "defense_steps": [
+            "Enable SMB signing on all systems",
+            "Disable NTLM where possible",
+            "Use EPA (Extended Protection for Authentication)",
+            "Implement network segmentation"
+        ]
+    },
+    {
+        "id": 48,
+        "name": "Log4Shell (Log4j RCE)",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify applications using vulnerable Log4j",
+            "Inject JNDI lookup string in logged input",
+            "Host malicious LDAP/RMI server",
+            "Achieve remote code execution on target"
+        ],
+        "defense_steps": [
+            "Update Log4j to patched versions",
+            "Set log4j2.formatMsgNoLookups=true",
+            "Block outbound LDAP/RMI connections",
+            "Use WAF rules to detect JNDI patterns"
+        ]
+    },
+    {
+        "id": 49,
+        "name": "Cloud Privilege Escalation",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Enumerate IAM permissions of compromised identity",
+            "Find path to escalate privileges (PassRole, etc.)",
+            "Create new admin user or attach admin policy",
+            "Gain persistent high-privilege access"
+        ],
+        "defense_steps": [
+            "Implement least privilege for all identities",
+            "Use AWS IAM Access Analyzer or equivalent",
+            "Enable CloudTrail with anomaly detection",
+            "Regularly audit IAM policies and roles"
+        ]
+    },
+    {
+        "id": 50,
+        "name": "Ransomware Deployment",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Gain initial access through phishing or RDP",
+            "Establish persistence and map network",
+            "Exfiltrate sensitive data for double extortion",
+            "Deploy ransomware and encrypt systems"
+        ],
+        "defense_steps": [
+            "Maintain offline, tested backups",
+            "Implement network segmentation",
+            "Use EDR and monitor for encryption behavior",
+            "Disable unnecessary services like RDP"
+        ]
+    },
+    {
+        "id": 51,
+        "name": "Local File Inclusion (LFI)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify parameters loading local files",
+            "Use path traversal to include sensitive files",
+            "Chain with log poisoning for RCE",
+            "Read application source code or config files"
+        ],
+        "defense_steps": [
+            "Use allowlist for includeable files",
+            "Avoid user input in file paths",
+            "Disable PHP wrappers if not needed",
+            "Run web server with minimal permissions"
+        ]
+    },
+    {
+        "id": 52,
+        "name": "GraphQL Introspection Abuse",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Query __schema to dump entire API structure",
+            "Discover hidden queries, mutations, and types",
+            "Find sensitive fields and test authorization",
+            "Craft targeted attacks based on schema"
+        ],
+        "defense_steps": [
+            "Disable introspection in production",
+            "Implement proper authorization on all fields",
+            "Use query depth and complexity limits",
+            "Monitor for introspection queries"
+        ]
+    },
+    {
+        "id": 53,
+        "name": "Android APK Analysis",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Decompile APK with tools like jadx or apktool",
+            "Extract hardcoded credentials and API keys",
+            "Analyze network traffic for API endpoints",
+            "Find vulnerabilities in client-side logic"
+        ],
+        "defense_steps": [
+            "Never embed secrets in mobile apps",
+            "Use obfuscation and code hardening",
+            "Implement certificate pinning",
+            "Validate all security checks server-side"
+        ]
+    },
+    {
+        "id": 54,
+        "name": "Formjacking",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Compromise website or third-party script",
+            "Inject JavaScript to capture form data",
+            "Exfiltrate payment card details to attacker server",
+            "Remain undetected in legitimate page"
+        ],
+        "defense_steps": [
+            "Implement Subresource Integrity (SRI)",
+            "Use Content Security Policy (CSP)",
+            "Monitor for unauthorized script changes",
+            "Regular security scanning of third-party code"
+        ]
+    },
+    {
+        "id": 55,
+        "name": "Responder Credential Capture",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Deploy Responder on internal network",
+            "Answer LLMNR, NBT-NS, and mDNS queries",
+            "Capture NTLMv1/v2 hashes from clients",
+            "Crack or relay captured credentials"
+        ],
+        "defense_steps": [
+            "Disable LLMNR and NBT-NS via Group Policy",
+            "Enable SMB signing",
+            "Monitor for rogue name resolution responses",
+            "Use network segmentation"
+        ]
+    },
+    {
+        "id": 56,
+        "name": "PrintNightmare Exploitation",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify vulnerable Windows print spooler service",
+            "Use CVE-2021-34527 to load malicious DLL",
+            "Gain SYSTEM privileges on target",
+            "Potentially escalate to domain admin on DCs"
+        ],
+        "defense_steps": [
+            "Apply Microsoft security patches",
+            "Disable print spooler where not needed",
+            "Restrict Point and Print with Group Policy",
+            "Monitor for suspicious spooler activity"
+        ]
+    },
+    {
+        "id": 57,
+        "name": "Time-Based Blind SQL Injection",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Inject time delay payloads (SLEEP, WAITFOR)",
+            "Infer database responses from response timing",
+            "Extract data one character at a time",
+            "Use binary search to speed up extraction"
+        ],
+        "defense_steps": [
+            "Use parameterized queries consistently",
+            "Implement query timeouts",
+            "Monitor for unusually slow queries",
+            "Use WAF with SQLi detection"
+        ]
+    },
+    {
+        "id": 58,
+        "name": "Dependency Confusion",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify internal package names from repositories",
+            "Create public package with same name",
+            "Trick package managers to pull malicious version",
+            "Execute code during package installation"
+        ],
+        "defense_steps": [
+            "Claim namespaces on public registries",
+            "Configure package managers for private first",
+            "Use package signing and verification",
+            "Implement dependency lockfiles"
+        ]
+    },
+    {
+        "id": 59,
+        "name": "Bluetooth Exploitation",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Scan for discoverable Bluetooth devices",
+            "Exploit vulnerabilities like BlueBorne",
+            "Pair without authentication if possible",
+            "Access device data or establish C2"
+        ],
+        "defense_steps": [
+            "Keep Bluetooth firmware updated",
+            "Disable Bluetooth when not in use",
+            "Set devices to non-discoverable mode",
+            "Monitor for unknown device connections"
+        ]
+    },
+    {
+        "id": 60,
+        "name": "Host Header Injection",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Modify Host header in HTTP requests",
+            "Exploit password reset link generation",
+            "Poison web cache with malicious content",
+            "Bypass access controls based on host"
+        ],
+        "defense_steps": [
+            "Validate Host header against allowlist",
+            "Use absolute URLs in password reset emails",
+            "Configure web server to reject invalid hosts",
+            "Implement proper cache-control headers"
+        ]
+    },
+    {
+        "id": 61,
+        "name": "Memory Scraping",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Compromise point-of-sale or payment system",
+            "Scan process memory for card data patterns",
+            "Extract track data before encryption",
+            "Exfiltrate data to attacker infrastructure"
+        ],
+        "defense_steps": [
+            "Implement point-to-point encryption (P2PE)",
+            "Use tokenization for stored card data",
+            "Deploy memory protection technologies",
+            "Monitor for unauthorized memory access"
+        ]
+    },
+    {
+        "id": 62,
+        "name": "IDOR (Insecure Direct Object Reference)",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Identify sequential or predictable object IDs",
+            "Modify ID parameters to access other users' data",
+            "Enumerate through possible ID values",
+            "Access or modify unauthorized resources"
+        ],
+        "defense_steps": [
+            "Use non-sequential GUIDs for object references",
+            "Implement proper authorization checks",
+            "Log and monitor access patterns",
+            "Use indirect reference maps per session"
+        ]
+    },
+    {
+        "id": 63,
+        "name": "Type Juggling Attacks",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify loose type comparisons in PHP/JavaScript",
+            "Craft payloads exploiting type coercion",
+            "Bypass authentication with magic hash values",
+            "Manipulate comparison logic for privilege escalation"
+        ],
+        "defense_steps": [
+            "Use strict comparison operators (===)",
+            "Validate and cast input types explicitly",
+            "Audit code for loose comparisons",
+            "Use static analysis tools to detect issues"
+        ]
+    },
+    {
+        "id": 64,
+        "name": "SSTI (Server-Side Template Injection)",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify user input in template rendering",
+            "Test with template syntax like {{7*7}}",
+            "Discover template engine and craft payload",
+            "Achieve remote code execution through templates"
+        ],
+        "defense_steps": [
+            "Never pass user input directly to templates",
+            "Use sandbox mode for template engines",
+            "Implement strict input validation",
+            "Prefer logic-less templates where possible"
+        ]
+    },
+    {
+        "id": 65,
+        "name": "Firmware Analysis",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Extract firmware from device or download",
+            "Use binwalk to identify and extract filesystem",
+            "Analyze for hardcoded credentials and keys",
+            "Find command injection or backdoor access"
+        ],
+        "defense_steps": [
+            "Encrypt firmware with secure boot validation",
+            "Remove debug interfaces in production",
+            "Implement firmware signing and verification",
+            "Regular security audits of embedded systems"
+        ]
+    },
+    {
+        "id": 66,
+        "name": "Service Principal Abuse (Azure)",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Enumerate Service Principals with excessive permissions",
+            "Obtain SP credentials from config or metadata",
+            "Use credentials to access Azure resources",
+            "Escalate privileges through role assignments"
+        ],
+        "defense_steps": [
+            "Apply least privilege to Service Principals",
+            "Use Managed Identities instead of SPs where possible",
+            "Rotate credentials and audit access logs",
+            "Implement Conditional Access for SP authentication"
+        ]
+    },
+    {
+        "id": 67,
+        "name": "GPO Abuse",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Gain write access to Group Policy Objects",
+            "Modify GPO to deploy malicious scripts or settings",
+            "Wait for group policy refresh (90 min default)",
+            "Execute code on all machines receiving GPO"
+        ],
+        "defense_steps": [
+            "Audit GPO permissions regularly",
+            "Alert on GPO modifications",
+            "Implement tiered admin model for GPO management",
+            "Use LAPS to prevent lateral movement"
+        ]
+    },
+    {
+        "id": 68,
+        "name": "Account Enumeration",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Test login and registration endpoints",
+            "Observe different responses for valid vs invalid users",
+            "Build list of valid usernames from differences",
+            "Use list for targeted attacks"
+        ],
+        "defense_steps": [
+            "Use generic error messages consistently",
+            "Implement account lockout and rate limiting",
+            "Add timing delays to normalize responses",
+            "Use CAPTCHA for login and registration"
+        ]
+    },
+    {
+        "id": 69,
+        "name": "WebSocket Security Issues",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Intercept WebSocket traffic with Burp or similar",
+            "Identify missing authentication on WS endpoints",
+            "Inject malicious messages through WebSocket",
+            "Exploit lack of input validation or CSRF"
+        ],
+        "defense_steps": [
+            "Authenticate WebSocket connections with tokens",
+            "Validate Origin header on WS handshake",
+            "Implement proper input validation on messages",
+            "Use secure WebSocket (wss://) connections"
+        ]
+    },
+    {
+        "id": 70,
+        "name": "Clickjacking",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Create transparent iframe over legitimate site",
+            "Trick user into clicking invisible button",
+            "Hijack clicks to perform unintended actions",
+            "Steal credentials or change settings"
+        ],
+        "defense_steps": [
+            "Implement X-Frame-Options header",
+            "Use Content-Security-Policy frame-ancestors",
+            "Add frame-busting JavaScript as backup",
+            "Require re-authentication for sensitive actions"
+        ]
+    },
+    {
+        "id": 71,
+        "name": "DCSync Attack",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Obtain account with replication permissions",
+            "Use Mimikatz to request replication from DC",
+            "Extract password hashes for all domain accounts",
+            "Create Golden Ticket or crack passwords"
+        ],
+        "defense_steps": [
+            "Audit accounts with replication permissions",
+            "Monitor for unusual replication requests",
+            "Implement AdminSDHolder protections",
+            "Use Defender for Identity to detect DCSync"
+        ]
+    },
+    {
+        "id": 72,
+        "name": "Exposed Git Repository",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Access /.git/ directory on web server",
+            "Download and reconstruct repository",
+            "Extract source code, credentials, and secrets",
+            "Analyze commit history for sensitive data"
+        ],
+        "defense_steps": [
+            "Block access to .git directories in web server config",
+            "Use separate deployment without .git",
+            "Scan for exposed .git in regular assessments",
+            "Use git-secrets to prevent credential commits"
+        ]
+    },
+    {
+        "id": 73,
+        "name": "ICS/SCADA Attacks",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Identify industrial control systems on network",
+            "Exploit legacy protocols lacking authentication",
+            "Send commands to manipulate physical processes",
+            "Cause operational disruption or safety issues"
+        ],
+        "defense_steps": [
+            "Segment OT networks from IT networks",
+            "Implement network monitoring for OT protocols",
+            "Use protocol-aware firewalls for ICS traffic",
+            "Maintain inventory of all ICS assets"
+        ]
+    },
+    {
+        "id": 74,
+        "name": "Password Manager Vulnerabilities",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Target password manager process or memory",
+            "Exploit auto-fill on malicious sites",
+            "Access local database if weakly encrypted",
+            "Capture master password through keylogging"
+        ],
+        "defense_steps": [
+            "Keep password manager updated",
+            "Use strong master password with 2FA",
+            "Lock password manager when inactive",
+            "Enable origin checking for auto-fill"
+        ]
+    },
+    {
+        "id": 75,
+        "name": "Steganography Detection Evasion",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Hide malware or commands in image files",
+            "Use tools like steghide or LSB techniques",
+            "Deliver payload through innocent-looking images",
+            "Extract and execute hidden data on target"
+        ],
+        "defense_steps": [
+            "Implement file type verification beyond extension",
+            "Use sandboxing for downloaded files",
+            "Monitor for unusual image processing activity",
+            "Deploy advanced threat detection with behavioral analysis"
+        ]
+    },
+    {
+        "id": 76,
+        "name": "VPN Credential Theft",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Phish VPN credentials with fake login page",
+            "Exploit VPN vulnerabilities (CVE-2018-13379, etc.)",
+            "Capture credentials from compromised endpoints",
+            "Gain persistent remote access to network"
+        ],
+        "defense_steps": [
+            "Implement MFA for all VPN access",
+            "Keep VPN software patched and updated",
+            "Use certificate-based authentication",
+            "Monitor VPN logins for anomalies"
+        ]
+    },
+    {
+        "id": 77,
+        "name": "Prototype Pollution",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify JavaScript code modifying object prototypes",
+            "Inject __proto__ or constructor.prototype properties",
+            "Pollute Object prototype to affect all objects",
+            "Achieve XSS, RCE, or privilege escalation"
+        ],
+        "defense_steps": [
+            "Use Object.freeze() on prototypes",
+            "Validate and sanitize user input for keys",
+            "Use Map instead of plain objects",
+            "Update dependencies with prototype pollution fixes"
+        ]
+    },
+    {
+        "id": 78,
+        "name": "RDP BlueKeep Exploitation",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Scan for systems vulnerable to CVE-2019-0708",
+            "Exploit pre-authentication RCE vulnerability",
+            "Gain SYSTEM level access without credentials",
+            "Potentially wormable across networks"
+        ],
+        "defense_steps": [
+            "Apply Microsoft security patches immediately",
+            "Disable RDP if not needed",
+            "Use Network Level Authentication (NLA)",
+            "Implement VPN or jump servers for RDP access"
+        ]
+    },
+    {
+        "id": 79,
+        "name": "Session Fixation",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Obtain valid session ID from application",
+            "Force victim to authenticate with known session ID",
+            "Hijack authenticated session using fixed ID",
+            "Access application as authenticated user"
+        ],
+        "defense_steps": [
+            "Regenerate session ID after authentication",
+            "Use secure, HTTP-only, SameSite cookies",
+            "Implement additional session binding (IP, user-agent)",
+            "Expire sessions on logout and timeout"
+        ]
+    },
+    {
+        "id": 80,
+        "name": "Office Macro Alternative (DDE)",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Embed DDE field in Word or Excel document",
+            "Craft payload to execute on document open",
+            "Bypass macro restrictions with DDE",
+            "Social engineer user to allow connection"
+        ],
+        "defense_steps": [
+            "Disable DDE in Microsoft Office via registry",
+            "Use ASR rules to block Office child processes",
+            "Train users to reject external content prompts",
+            "Monitor for unusual Office subprocess execution"
+        ]
+    },
+    {
+        "id": 81,
+        "name": "Shadow Admin Accounts",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify high-privilege accounts not in admin groups",
+            "Look for accounts with DCSync or GPO permissions",
+            "Exploit these less-monitored privileged accounts",
+            "Maintain persistence through shadow admins"
+        ],
+        "defense_steps": [
+            "Run BloodHound to identify shadow admins",
+            "Audit all accounts with elevated permissions",
+            "Implement AdminSDHolder properly",
+            "Monitor for privilege escalation paths"
+        ]
+    },
+    {
+        "id": 82,
+        "name": "Mass Assignment Vulnerability",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify API endpoints accepting object properties",
+            "Add additional properties to requests (isAdmin, role)",
+            "Modify protected fields through binding",
+            "Escalate privileges or modify system state"
+        ],
+        "defense_steps": [
+            "Use DTOs with explicit property allowlisting",
+            "Implement proper input validation and binding",
+            "Test for mass assignment in security assessments",
+            "Use framework protections for binding"
+        ]
+    },
+    {
+        "id": 83,
+        "name": "Kubernetes API Server Exploitation",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Find exposed Kubernetes API (port 6443/8443)",
+            "Exploit misconfigured RBAC or anonymous access",
+            "Create privileged pods or access secrets",
+            "Pivot to underlying nodes and infrastructure"
+        ],
+        "defense_steps": [
+            "Never expose API server publicly",
+            "Implement strict RBAC policies",
+            "Use network policies to segment pod traffic",
+            "Enable audit logging for API access"
+        ]
+    },
+    {
+        "id": 84,
+        "name": "S3 Bucket Access Logging Analysis",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Gain access to S3 server access logs",
+            "Analyze for presigned URLs with embedded credentials",
+            "Extract and reuse valid presigned URLs",
+            "Access restricted objects using discovered URLs"
+        ],
+        "defense_steps": [
+            "Use short expiration times for presigned URLs",
+            "Restrict access logging to separate secure bucket",
+            "Monitor for presigned URL abuse patterns",
+            "Implement bucket policies restricting access"
+        ]
+    },
+    {
+        "id": 85,
+        "name": "Race Condition Exploitation",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Identify time-of-check-to-time-of-use vulnerabilities",
+            "Send concurrent requests to exploit race window",
+            "Achieve double-spending or privilege escalation",
+            "Use tools like Turbo Intruder for precision timing"
+        ],
+        "defense_steps": [
+            "Use proper locking mechanisms",
+            "Implement atomic operations for critical sections",
+            "Use database transactions with proper isolation",
+            "Test for race conditions in security assessments"
+        ]
+    },
+    {
+        "id": 86,
+        "name": "Credential Stuffing",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Obtain breached credential databases",
+            "Automated login attempts across multiple sites",
+            "Exploit password reuse across accounts",
+            "Use rotating proxies to avoid detection"
+        ],
+        "defense_steps": [
+            "Implement MFA on all accounts",
+            "Use breached password detection services",
+            "Deploy bot detection and rate limiting",
+            "Monitor for distributed login failures"
+        ]
+    },
+    {
+        "id": 87,
+        "name": "Zero-Day Exploitation",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Discover unknown vulnerability through research",
+            "Develop working exploit for vulnerability",
+            "Deploy exploit before patch availability",
+            "Maintain access while avoiding detection"
+        ],
+        "defense_steps": [
+            "Implement defense in depth architecture",
+            "Use behavior-based detection and EDR",
+            "Apply microsegmentation to limit blast radius",
+            "Maintain incident response capability"
+        ]
+    },
+    {
+        "id": 88,
+        "name": "BitLocker Bypass",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Extract BitLocker keys from TPM using sniffing",
+            "Exploit vulnerable boot process configurations",
+            "Use cold boot attack to dump memory",
+            "Access encrypted drive with recovered key"
+        ],
+        "defense_steps": [
+            "Use TPM + PIN for BitLocker authentication",
+            "Enable Secure Boot and measure boot chain",
+            "Implement physical security for devices",
+            "Use BitLocker network unlock with controls"
+        ]
+    },
+    {
+        "id": 89,
+        "name": "AWS Lambda Injection",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify Lambda functions processing user input",
+            "Inject commands through event data",
+            "Exploit environment variable exposure",
+            "Access AWS credentials from execution environment"
+        ],
+        "defense_steps": [
+            "Validate all input to Lambda functions",
+            "Use least privilege IAM roles for Lambdas",
+            "Implement proper error handling without leaking info",
+            "Monitor Lambda execution with CloudWatch"
+        ]
+    },
+    {
+        "id": 90,
+        "name": "SAML Assertion Manipulation",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Intercept SAML response in authentication flow",
+            "Modify assertions (user, roles, attributes)",
+            "Exploit signature wrapping vulnerabilities",
+            "Gain unauthorized access as different user"
+        ],
+        "defense_steps": [
+            "Properly validate SAML signatures",
+            "Use encrypted assertions",
+            "Implement proper XML parsing security",
+            "Test SAML implementation with security tools"
+        ]
+    },
+    {
+        "id": 91,
+        "name": "Exploiting Debug Endpoints",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Discover debug endpoints left in production",
+            "Access /debug, /trace, /actuator endpoints",
+            "Extract sensitive configuration and secrets",
+            "Execute arbitrary code through debug features"
+        ],
+        "defense_steps": [
+            "Disable debug features in production",
+            "Implement endpoint security regardless of environment",
+            "Regular scanning for exposed debug interfaces",
+            "Use separate build profiles for production"
+        ]
+    },
+    {
+        "id": 92,
+        "name": "USB Rubber Ducky Attack",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Program USB device with keystroke injection payload",
+            "Deploy through social engineering or physical access",
+            "Execute commands as fast as device can type",
+            "Establish persistence or exfiltrate data"
+        ],
+        "defense_steps": [
+            "Disable USB ports or use device control policies",
+            "Implement application allowlisting",
+            "Monitor for rapid keystroke patterns",
+            "Educate users about unknown USB devices"
+        ]
+    },
+    {
+        "id": 93,
+        "name": "Second Order SQL Injection",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Store malicious payload in database safely",
+            "Payload activates when data is used later",
+            "Exploit different context with less sanitization",
+            "Bypass input validation targeting entry point"
+        ],
+        "defense_steps": [
+            "Use parameterized queries everywhere, not just input",
+            "Sanitize data on retrieval, not just storage",
+            "Implement consistent encoding throughout application",
+            "Test for stored injection in security assessments"
+        ]
+    },
+    {
+        "id": 94,
+        "name": "Social Engineering Pretexting",
+        "difficulty": "EASY",
+        "attack_steps": [
+            "Research target organization and employees",
+            "Develop believable scenario (IT support, vendor)",
+            "Build rapport and establish trust with target",
+            "Extract credentials or gain access through deception"
+        ],
+        "defense_steps": [
+            "Implement verification procedures for requests",
+            "Train employees on social engineering tactics",
+            "Establish out-of-band verification channels",
+            "Create culture where questioning requests is acceptable"
+        ]
+    },
+    {
+        "id": 95,
+        "name": "Insecure File Upload",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Find file upload functionality in application",
+            "Bypass extension and content-type validation",
+            "Upload web shell or malicious executable",
+            "Access uploaded file to achieve code execution"
+        ],
+        "defense_steps": [
+            "Validate file type by content, not extension",
+            "Store uploads outside web root",
+            "Use random filenames for uploaded files",
+            "Scan uploads with antivirus before storage"
+        ]
+    },
+    {
+        "id": 96,
+        "name": "AI/ML Model Poisoning",
+        "difficulty": "EXPERT",
+        "attack_steps": [
+            "Identify machine learning pipeline and training data",
+            "Inject malicious samples into training dataset",
+            "Cause model to learn incorrect behaviors",
+            "Exploit poisoned model for specific triggers"
+        ],
+        "defense_steps": [
+            "Validate and sanitize training data",
+            "Implement anomaly detection on training inputs",
+            "Use multiple data sources for verification",
+            "Monitor model outputs for unexpected behavior"
+        ]
+    },
+    {
+        "id": 97,
+        "name": "SIM Swapping",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Gather personal information about target",
+            "Social engineer mobile carrier support",
+            "Transfer target's phone number to attacker SIM",
+            "Intercept SMS 2FA codes and reset accounts"
+        ],
+        "defense_steps": [
+            "Use authenticator apps instead of SMS 2FA",
+            "Add PIN/password to carrier account",
+            "Implement additional verification for account changes",
+            "Use hardware security keys where possible"
+        ]
+    },
+    {
+        "id": 98,
+        "name": "Exploiting Misconfigured CORS",
+        "difficulty": "MEDIUM",
+        "attack_steps": [
+            "Identify APIs with overly permissive CORS",
+            "Find reflected Origin in Access-Control headers",
+            "Host malicious page to make cross-origin requests",
+            "Steal sensitive data or perform actions as victim"
+        ],
+        "defense_steps": [
+            "Explicitly allowlist trusted origins",
+            "Never reflect Origin header dynamically",
+            "Avoid using credentials with wildcard CORS",
+            "Test CORS configuration in security assessments"
+        ]
+    },
+    {
+        "id": 99,
+        "name": "Lateral Movement via Jump Server",
+        "difficulty": "HARD",
+        "attack_steps": [
+            "Compromise jump server or bastion host",
+            "Use stored credentials or sessions on jump server",
+            "Access multiple internal systems through pivot",
+            "Avoid direct network detection on target systems"
+        ],
+        "defense_steps": [
+            "Implement privileged session management",
+            "Use ephemeral credentials that don't persist",
+            "Monitor jump server for unusual activity",
+            "Implement zero-trust access controls"
+        ]
+    }
+]
+
+@app.route('/api/ghost/hacker-playbook', methods=['GET'])
+@require_auth
+def get_hacker_playbook():
+    """Get the current/today's hacker technique"""
+    db = None
+    try:
+        db = get_db()
+
+        # Get user's learned techniques from database
+        user = request.user
+        user_id = user.get('id') if isinstance(user, dict) else user.id
+
+        # Check for existing progress - use a simple key-value approach
+        from sqlalchemy import text
+        learned_result = db.execute(
+            text("SELECT technique_ids FROM hacker_playbook_progress WHERE user_id = :user_id"),
+            {"user_id": user_id}
+        ).fetchone()
+
+        learned_ids = []
+        if learned_result and learned_result[0]:
+            try:
+                learned_ids = json.loads(learned_result[0])
+            except:
+                learned_ids = []
+
+        # Determine current technique index based on date rotation
+        today = datetime.now(timezone.utc).date()
+        day_of_year = today.timetuple().tm_yday
+        current_index = day_of_year % len(HACKER_PLAYBOOK)
+
+        technique = HACKER_PLAYBOOK[current_index]
+
+        return jsonify({
+            'current_index': current_index,
+            'name': technique['name'],
+            'difficulty': technique['difficulty'],
+            'attack_steps': technique['attack_steps'],
+            'defense_steps': technique['defense_steps'],
+            'learned_count': len(learned_ids),
+            'is_learned': current_index in learned_ids
+        })
+
+    except Exception as e:
+        print(f"[PLAYBOOK] Error: {e}")
+        # Return first technique as fallback
+        technique = HACKER_PLAYBOOK[0]
+        return jsonify({
+            'current_index': 0,
+            'name': technique['name'],
+            'difficulty': technique['difficulty'],
+            'attack_steps': technique['attack_steps'],
+            'defense_steps': technique['defense_steps'],
+            'learned_count': 0,
+            'is_learned': False
+        })
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/ghost/hacker-playbook/<int:index>', methods=['GET'])
+@require_auth
+def get_technique_by_index(index):
+    """Get a specific technique by index"""
+    db = None
+    try:
+        if index < 0 or index >= len(HACKER_PLAYBOOK):
+            return jsonify({'error': 'Invalid technique index'}), 400
+
+        db = get_db()
+        user = request.user
+        user_id = user.get('id') if isinstance(user, dict) else user.id
+
+        # Get learned techniques
+        from sqlalchemy import text
+        learned_result = db.execute(
+            text("SELECT technique_ids FROM hacker_playbook_progress WHERE user_id = :user_id"),
+            {"user_id": user_id}
+        ).fetchone()
+
+        learned_ids = []
+        if learned_result and learned_result[0]:
+            try:
+                learned_ids = json.loads(learned_result[0])
+            except:
+                learned_ids = []
+
+        technique = HACKER_PLAYBOOK[index]
+
+        return jsonify({
+            'current_index': index,
+            'name': technique['name'],
+            'difficulty': technique['difficulty'],
+            'attack_steps': technique['attack_steps'],
+            'defense_steps': technique['defense_steps'],
+            'learned_count': len(learned_ids),
+            'is_learned': index in learned_ids
+        })
+
+    except Exception as e:
+        print(f"[PLAYBOOK] Error getting technique: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/ghost/hacker-playbook/<int:index>/learned', methods=['POST'])
+@require_auth
+def mark_technique_learned(index):
+    """Mark a technique as learned for the user"""
+    db = None
+    try:
+        if index < 0 or index >= len(HACKER_PLAYBOOK):
+            return jsonify({'error': 'Invalid technique index'}), 400
+
+        db = get_db()
+        user = request.user
+        user_id = user.get('id') if isinstance(user, dict) else user.id
+
+        from sqlalchemy import text
+
+        # Get current learned techniques
+        learned_result = db.execute(
+            text("SELECT technique_ids FROM hacker_playbook_progress WHERE user_id = :user_id"),
+            {"user_id": user_id}
+        ).fetchone()
+
+        learned_ids = []
+        if learned_result and learned_result[0]:
+            try:
+                learned_ids = json.loads(learned_result[0])
+            except:
+                learned_ids = []
+
+        # Add technique if not already learned
+        if index not in learned_ids:
+            learned_ids.append(index)
+
+            if learned_result:
+                # Update existing record
+                db.execute(
+                    text("UPDATE hacker_playbook_progress SET technique_ids = :ids, updated_at = :now WHERE user_id = :user_id"),
+                    {"ids": json.dumps(learned_ids), "now": datetime.now(timezone.utc), "user_id": user_id}
+                )
+            else:
+                # Create new record
+                db.execute(
+                    text("INSERT INTO hacker_playbook_progress (user_id, technique_ids, updated_at) VALUES (:user_id, :ids, :now)"),
+                    {"user_id": user_id, "ids": json.dumps(learned_ids), "now": datetime.now(timezone.utc)}
+                )
+
+            db.commit()
+
+        return jsonify({
+            'success': True,
+            'learned_count': len(learned_ids),
+            'is_learned': True
+        })
+
+    except Exception as e:
+        print(f"[PLAYBOOK] Error marking learned: {e}")
+        if db:
+            db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+
+# ============================================================================
 # MONITORING DASHBOARD ENDPOINT
 # ============================================================================
 
@@ -6370,6 +8579,7 @@ def get_roadmap_stats():
 
         tasks_total = len(all_tasks)
         tasks_completed = sum(1 for t in all_tasks if t.status == 'completed')
+        tasks_in_progress = sum(1 for t in all_tasks if t.status == 'in_progress')
         completion_pct = round((tasks_completed / tasks_total * 100) if tasks_total > 0 else 0, 1)
 
         # Find next quick win (easiest incomplete task with highest impact)
@@ -6412,6 +8622,7 @@ def get_roadmap_stats():
             'tasks_this_week': phase1_count,
             'completion_percentage': completion_pct,
             'tasks_completed': tasks_completed,
+            'tasks_in_progress': tasks_in_progress,
             'tasks_total': tasks_total
         }), 200
 

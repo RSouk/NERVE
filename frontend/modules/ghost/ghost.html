@@ -639,6 +639,43 @@
             color: var(--text-muted);
         }
 
+        /* Roadmap Locked Message */
+        .feature-locked-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .feature-locked-message .lock-icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+
+        .feature-locked-message p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .feature-locked-message .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            color: var(--gold-primary);
+            padding: 8px 16px;
+            font-size: 12px;
+            text-decoration: none;
+            border-radius: 6px;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .feature-locked-message .btn-outline:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--gold-primary);
+        }
+
         .quick-win-card {
             background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), transparent);
             border: 1px solid rgba(212, 175, 55, 0.2);
@@ -1014,9 +1051,796 @@
             }
         }
 
-        /* Chart styles */
-        #security-score-chart {
-            max-height: 200px;
+        /* Daily Quiz Card Styles */
+        .quiz-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at center, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .quiz-header-left h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quiz-header-left h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border-radius: 2px;
+            margin-right: 4px;
+        }
+
+        .quiz-subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            margin-left: 20px;
+        }
+
+        .quiz-streak {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 30px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+
+        .streak-fire {
+            font-size: 1.1rem;
+            animation: flame 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes flame {
+            from { transform: scale(1) rotate(-3deg); }
+            to { transform: scale(1.1) rotate(3deg); }
+        }
+
+        .quiz-question-container {
+            background: var(--bg-elevated);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-category {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .quiz-question-text {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-option {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            background: rgba(212, 175, 55, 0.03);
+            border: 2px solid rgba(212, 175, 55, 0.15);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            text-align: left;
+            font-family: inherit;
+            overflow: hidden;
+        }
+
+        .quiz-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.1), transparent);
+            transition: width 0.4s ease;
+        }
+
+        .quiz-option:hover:not(:disabled)::before {
+            width: 100%;
+        }
+
+        .quiz-option:hover:not(:disabled) {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateX(6px);
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.1);
+        }
+
+        .quiz-option:disabled {
+            cursor: default;
+        }
+
+        .option-letter {
+            position: relative;
+            z-index: 1;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--gold-primary);
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover:not(:disabled) .option-letter {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.35), rgba(212, 175, 55, 0.2));
+            transform: scale(1.05);
+        }
+
+        .option-text {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .quiz-option.correct {
+            background: rgba(0, 230, 118, 0.1);
+            border-color: rgba(0, 230, 118, 0.5);
+        }
+
+        .quiz-option.correct .option-letter {
+            background: linear-gradient(135deg, rgba(0, 230, 118, 0.3), rgba(0, 230, 118, 0.15));
+            border-color: rgba(0, 230, 118, 0.5);
+            color: var(--green);
+        }
+
+        .quiz-option.incorrect {
+            background: rgba(255, 82, 82, 0.1);
+            border-color: rgba(255, 82, 82, 0.5);
+        }
+
+        .quiz-option.incorrect .option-letter {
+            background: linear-gradient(135deg, rgba(255, 82, 82, 0.3), rgba(255, 82, 82, 0.15));
+            border-color: rgba(255, 82, 82, 0.5);
+            color: var(--red);
+        }
+
+        .quiz-result {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--gold-primary);
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .result-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .result-icon.correct-icon {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--green);
+        }
+
+        .result-icon.incorrect-icon {
+            background: rgba(255, 82, 82, 0.2);
+            color: var(--red);
+        }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .result-title.correct-title {
+            color: var(--green);
+        }
+
+        .result-title.incorrect-title {
+            color: var(--red);
+        }
+
+        .result-explanation {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .result-explanation strong {
+            color: var(--gold-primary);
+        }
+
+        .quiz-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .quiz-score-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+        }
+
+        .score-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-next-quiz {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 10px;
+            color: var(--gold-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-next-quiz:hover {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.15));
+            border-color: rgba(212, 175, 55, 0.6);
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.15);
+        }
+
+        .btn-next-quiz .arrow {
+            transition: transform 0.3s;
+        }
+
+        .btn-next-quiz:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        .quiz-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .quiz-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(212, 175, 55, 0.1);
+            border-top-color: var(--gold-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .quiz-completed {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .quiz-completed-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .quiz-completed h3 {
+            color: var(--gold-primary);
+            margin-bottom: 8px;
+        }
+
+        .quiz-completed p {
+            color: var(--text-secondary);
+        }
+
+        /* ==========================================
+           HACKER PLAYBOOK CARD
+           ========================================== */
+        .playbook-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .playbook-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(239, 68, 68, 0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .playbook-card::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .playbook-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .playbook-header-left h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .playbook-header-left h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border-radius: 2px;
+            margin-right: 4px;
+        }
+
+        .playbook-subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            margin-left: 20px;
+        }
+
+        .playbook-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 30px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+
+        .playbook-progress-icon {
+            font-size: 1rem;
+        }
+
+        .technique-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            border-radius: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .technique-name h4 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .technique-name h4::before {
+            content: '⚔️';
+            font-size: 1.1rem;
+        }
+
+        .difficulty-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .difficulty-easy {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.08));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .difficulty-medium {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.08));
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .difficulty-hard {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.08));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .difficulty-expert {
+            background: linear-gradient(135deg, rgba(187, 134, 252, 0.2), rgba(187, 134, 252, 0.08));
+            border: 1px solid rgba(187, 134, 252, 0.3);
+            color: #BB86FC;
+        }
+
+        .playbook-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .attack-column,
+        .defense-column {
+            background: var(--bg-elevated);
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .attack-column {
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-left: 4px solid #ef4444;
+        }
+
+        .attack-column:hover {
+            border-color: rgba(239, 68, 68, 0.35);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.08);
+        }
+
+        .defense-column {
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-left: 4px solid #10b981;
+        }
+
+        .defense-column:hover {
+            border-color: rgba(16, 185, 129, 0.35);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.08);
+        }
+
+        .column-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .column-icon {
+            font-size: 1.25rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+
+        .attack-column .column-icon {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
+        }
+
+        .defense-column .column-icon {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+        }
+
+        .column-header h5 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .attack-column .column-header h5 {
+            color: #ef4444;
+        }
+
+        .defense-column .column-header h5 {
+            color: #10b981;
+        }
+
+        .technique-steps,
+        .defense-list {
+            padding-left: 0;
+            margin: 0;
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .technique-steps li {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 36px;
+            margin-bottom: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.9rem;
+        }
+
+        .technique-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(239, 68, 68, 0.1));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .defense-list li {
+            position: relative;
+            padding-left: 32px;
+            margin-bottom: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.9rem;
+        }
+
+        .defense-list li::before {
+            content: '🛡️';
+            position: absolute;
+            left: 0;
+            top: 2px;
+            font-size: 0.9rem;
+        }
+
+        .playbook-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-subtle);
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-playbook {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-playbook:hover:not(:disabled) {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: rgba(212, 175, 55, 0.4);
+            color: var(--gold-primary);
+            transform: translateX(4px);
+        }
+
+        .btn-playbook:first-child:hover:not(:disabled) {
+            transform: translateX(-4px);
+        }
+
+        .btn-playbook:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .btn-playbook .arrow {
+            transition: transform 0.3s;
+        }
+
+        .btn-playbook:hover:not(:disabled) .arrow-right {
+            transform: translateX(3px);
+        }
+
+        .btn-playbook:hover:not(:disabled) .arrow-left {
+            transform: translateX(-3px);
+        }
+
+        .btn-mark-learned {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.08));
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #10b981;
+            padding: 12px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            flex: 1;
+            max-width: 220px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-mark-learned:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.15));
+            border-color: rgba(16, 185, 129, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-mark-learned:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-mark-learned.learned {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(16, 185, 129, 0.2));
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        .playbook-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .playbook-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(212, 175, 55, 0.1);
+            border-top-color: var(--gold-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        /* Responsive adjustments for playbook */
+        @media (max-width: 900px) {
+            .playbook-content {
+                grid-template-columns: 1fr;
+            }
+
+            .playbook-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn-mark-learned {
+                max-width: 100%;
+                order: -1;
+            }
+
+            .playbook-header {
+                flex-direction: column;
+                gap: 16px;
+            }
         }
     </style>
 </head>
@@ -1075,43 +1899,73 @@
 
             <!-- Content -->
             <div class="content">
-                <!-- Security Score -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="section-title">Security Score Over Time</h2>
-                        <div class="section-actions">
-                            <button class="btn btn-secondary" onclick="exportSecurityReport()">Export Report</button>
-                            <button class="btn btn-primary" onclick="scheduleNextScan()">Schedule Scan</button>
+                <!-- Daily Security Quiz -->
+                <div class="section-card quiz-card">
+                    <div class="quiz-header">
+                        <div class="quiz-header-left">
+                            <h2>Daily Security Challenge</h2>
+                            <p class="quiz-subtitle">Test your cybersecurity knowledge</p>
+                        </div>
+                        <div class="quiz-streak">
+                            <span class="streak-fire">🔥</span>
+                            <span id="quizStreak">0</span> day streak
                         </div>
                     </div>
-                    <canvas id="security-score-chart" height="80"></canvas>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value gold" id="current-score">--</div>
-                            <div class="stat-label">Current Score</div>
+
+                    <div id="quizContent">
+                        <div class="quiz-loading">
+                            <div class="quiz-loading-spinner"></div>
+                            <span>Loading today's challenge...</span>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value green" id="score-change">--</div>
-                            <div class="stat-label">30 Day Change</div>
+                    </div>
+
+                    <div class="quiz-footer">
+                        <div class="quiz-score-display">
+                            <div class="score-item">
+                                <span class="score-value" id="quizCorrect">0</span>
+                                <span class="score-label">Correct</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-value" id="quizTotal">0</span>
+                                <span class="score-label">Attempted</span>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value red" id="critical-count">--</div>
-                            <div class="stat-label">Critical Issues</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value blue" id="total-findings">--</div>
-                            <div class="stat-label">Total Findings</div>
-                        </div>
+                        <button id="nextQuizBtn" class="btn-next-quiz" style="display: none;" onclick="loadNextQuestion()">
+                            Next Question <span class="arrow">→</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Scan History -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="section-title">Scan History</h2>
+                <!-- Hacker Playbook -->
+                <div class="section-card playbook-card">
+                    <div class="playbook-header">
+                        <div class="playbook-header-left">
+                            <h2>Hacker Playbook</h2>
+                            <p class="playbook-subtitle">Learn attack techniques & defenses</p>
+                        </div>
+                        <div class="playbook-progress">
+                            <span class="playbook-progress-icon">📚</span>
+                            <span id="techniquesLearned">0</span>/100 techniques
+                        </div>
                     </div>
-                    <div id="scan-history-container" class="scan-history-list">
-                        <p class="loading-text">Loading scan history...</p>
+
+                    <div id="playbookContent">
+                        <div class="playbook-loading">
+                            <div class="playbook-loading-spinner"></div>
+                            <span>Loading technique...</span>
+                        </div>
+                    </div>
+
+                    <div class="playbook-footer" id="playbookFooter" style="display: none;">
+                        <button id="prevTechniqueBtn" class="btn-playbook" disabled>
+                            <span class="arrow arrow-left">←</span> Previous
+                        </button>
+                        <button id="markLearnedBtn" class="btn-mark-learned">
+                            Mark as Learned
+                        </button>
+                        <button id="nextTechniqueBtn" class="btn-playbook">
+                            Next <span class="arrow arrow-right">→</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1239,18 +2093,26 @@
 
     <script>
         const API_URL = 'http://localhost:5000';
-        let securityChart = null;
+
+        // Quiz state
+        let currentQuizData = null;
+        let quizAnswered = false;
+
+        // Playbook state
+        let currentTechniqueIndex = 0;
+        let totalTechniques = 100;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            loadSecurityScoreHistory();
-            loadScanHistory();
+            loadDailyQuiz();
+            loadHackerPlaybook();
             calculateNextScanDate();
             loadCuratedNews();
             loadMaintenanceState();
             loadRoadmapWidget();
             checkWeeklyReset();
             checkAdminAccess();
+            initPlaybookListeners();
         });
 
         // Check if user has admin access
@@ -1287,129 +2149,425 @@
 
         // Refresh Dashboard
         function refreshDashboard() {
-            loadSecurityScoreHistory();
-            loadScanHistory();
+            loadDailyQuiz();
+            loadHackerPlaybook();
             loadCuratedNews();
             loadRoadmapWidget();
         }
 
-        // Security Score Chart
-        async function loadSecurityScoreHistory() {
-            try {
-                const response = await fetch(`${API_URL}/api/xasm/security-score-history`);
-                const data = await response.json();
+        // ==========================================
+        // DAILY SECURITY QUIZ
+        // ==========================================
 
-                if (data.history && data.history.length > 0) {
-                    const labels = data.history.map(h => {
-                        const date = new Date(h.date);
-                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                    });
-                    const scores = data.history.map(h => h.security_score);
-
-                    renderSecurityChart(labels, scores, data);
-                    updateScoreStats(data);
-                }
-            } catch (error) {
-                console.log('[GHOST] Security score history not available');
-            }
-        }
-
-        function renderSecurityChart(labels, scores, data) {
-            const ctx = document.getElementById('security-score-chart').getContext('2d');
-
-            if (securityChart) securityChart.destroy();
-
-            const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-            gradient.addColorStop(0, 'rgba(212, 175, 55, 0.3)');
-            gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
-
-            securityChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Security Score',
-                        data: scores,
-                        borderColor: '#D4AF37',
-                        backgroundColor: gradient,
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointBackgroundColor: '#D4AF37',
-                        pointBorderColor: '#030305',
-                        pointBorderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { color: '#5A5D66', font: { family: 'JetBrains Mono' } },
-                            grid: { color: 'rgba(255,255,255,0.03)' }
-                        },
-                        x: {
-                            ticks: { color: '#5A5D66', font: { family: 'JetBrains Mono' } },
-                            grid: { color: 'rgba(255,255,255,0.03)' }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateScoreStats(data) {
-            document.getElementById('current-score').textContent = data.current_score || '--';
-            document.getElementById('score-change').textContent = (data.score_change >= 0 ? '+' : '') + (data.score_change || 0);
-            document.getElementById('critical-count').textContent = data.critical_count || 0;
-            document.getElementById('total-findings').textContent = data.total_findings || 0;
-        }
-
-        // Scan History
-        async function loadScanHistory() {
-            const container = document.getElementById('scan-history-container');
+        async function loadDailyQuiz() {
             const token = localStorage.getItem('session_token');
-            try {
-                const response = await fetch(`${API_URL}/api/ghost/scan-history`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                const data = await response.json();
+            const contentDiv = document.getElementById('quizContent');
 
-                // Handle array response (scan history returns array directly)
-                const scans = Array.isArray(data) ? data : (data.scans || []);
-                if (scans.length > 0) {
-                    container.innerHTML = scans.slice(0, 5).map(scan => `
-                        <div class="scan-item">
-                            <div class="scan-domain">${scan.domain}</div>
-                            <div class="scan-date">${new Date(scan.scan_date).toLocaleDateString()}</div>
-                            <div class="scan-findings">${scan.total_findings || 0} findings</div>
-                            <button class="scan-action" onclick="viewScanDetails(${scan.scan_id})">View</button>
-                        </div>
-                    `).join('');
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/daily-quiz`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load quiz');
+
+                const data = await response.json();
+                currentQuizData = data;
+                quizAnswered = data.already_answered || false;
+
+                // Update streak and stats
+                document.getElementById('quizStreak').textContent = data.streak || 0;
+                document.getElementById('quizCorrect').textContent = data.correct_count || 0;
+                document.getElementById('quizTotal').textContent = data.total_attempted || 0;
+
+                if (data.completed_today) {
+                    renderQuizCompleted(data);
                 } else {
-                    container.innerHTML = '<p class="loading-text">No scans yet. Run your first XASM scan!</p>';
+                    renderQuizQuestion(data);
                 }
+
             } catch (error) {
-                container.innerHTML = '<p class="loading-text">Unable to load scan history</p>';
+                console.error('[QUIZ] Error loading quiz:', error);
+                contentDiv.innerHTML = `
+                    <div class="quiz-question-container">
+                        <div class="quiz-category">Security Basics</div>
+                        <p class="quiz-question-text">Unable to load today's challenge. Please try again later.</p>
+                    </div>
+                `;
             }
         }
 
-        function viewScanDetails(scanId) {
-            window.location.href = `ghost-asm.html?scan=${scanId}`;
+        function renderQuizQuestion(data) {
+            const contentDiv = document.getElementById('quizContent');
+            const letters = ['A', 'B', 'C', 'D'];
+
+            let optionsHtml = data.options.map((option, index) => `
+                <button class="quiz-option" onclick="submitQuizAnswer(${index})" ${quizAnswered ? 'disabled' : ''}>
+                    <span class="option-letter">${letters[index]}</span>
+                    <span class="option-text">${option}</span>
+                </button>
+            `).join('');
+
+            contentDiv.innerHTML = `
+                <div class="quiz-question-container">
+                    <div class="quiz-category">${data.category || 'Security Fundamentals'}</div>
+                    <p class="quiz-question-text">${data.question}</p>
+                </div>
+                <div class="quiz-options" id="quizOptions">
+                    ${optionsHtml}
+                </div>
+                <div id="quizResult" style="display: none;"></div>
+            `;
+
+            // If already answered, show result
+            if (quizAnswered && data.user_answer !== undefined) {
+                showQuizResult(data.user_answer, data.correct_answer, data.explanation);
+            }
+        }
+
+        function renderQuizCompleted(data) {
+            const contentDiv = document.getElementById('quizContent');
+            contentDiv.innerHTML = `
+                <div class="quiz-completed">
+                    <div class="quiz-completed-icon">🏆</div>
+                    <h3>Today's Challenge Complete!</h3>
+                    <p>Come back tomorrow for a new security question.</p>
+                    <p style="margin-top: 12px; color: var(--gold-primary);">
+                        Your accuracy: ${data.correct_count || 0}/${data.total_attempted || 0} correct
+                    </p>
+                </div>
+            `;
+            document.getElementById('nextQuizBtn').style.display = 'none';
+        }
+
+        async function submitQuizAnswer(selectedIndex) {
+            if (quizAnswered) return;
+
+            const token = localStorage.getItem('session_token');
+            const options = document.querySelectorAll('.quiz-option');
+            const correctIndex = currentQuizData.correct_answer;
+
+            // Disable all options
+            options.forEach(opt => opt.disabled = true);
+            quizAnswered = true;
+
+            // Mark correct and incorrect
+            options[correctIndex].classList.add('correct');
+            if (selectedIndex !== correctIndex) {
+                options[selectedIndex].classList.add('incorrect');
+            }
+
+            // Save answer to backend
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/daily-quiz/answer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        question_id: currentQuizData.question_id,
+                        selected_answer: selectedIndex,
+                        correct: selectedIndex === correctIndex
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    // Update stats
+                    document.getElementById('quizStreak').textContent = result.streak || 0;
+                    document.getElementById('quizCorrect').textContent = result.correct_count || 0;
+                    document.getElementById('quizTotal').textContent = result.total_attempted || 0;
+                }
+            } catch (error) {
+                console.error('[QUIZ] Error saving answer:', error);
+            }
+
+            // Show explanation
+            showQuizResult(selectedIndex, correctIndex, currentQuizData.explanation);
+        }
+
+        function showQuizResult(selectedIndex, correctIndex, explanation) {
+            const resultDiv = document.getElementById('quizResult');
+            const isCorrect = selectedIndex === correctIndex;
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="result-header">
+                    <div class="result-icon ${isCorrect ? 'correct-icon' : 'incorrect-icon'}">
+                        ${isCorrect ? '✓' : '✗'}
+                    </div>
+                    <span class="result-title ${isCorrect ? 'correct-title' : 'incorrect-title'}">
+                        ${isCorrect ? 'Correct!' : 'Incorrect'}
+                    </span>
+                </div>
+                <p class="result-explanation">${explanation || 'Great effort! Keep learning about cybersecurity.'}</p>
+            `;
+
+            // Show next button if there are more questions
+            if (currentQuizData.has_more) {
+                document.getElementById('nextQuizBtn').style.display = 'flex';
+            }
+        }
+
+        async function loadNextQuestion() {
+            quizAnswered = false;
+            document.getElementById('nextQuizBtn').style.display = 'none';
+
+            const contentDiv = document.getElementById('quizContent');
+            contentDiv.innerHTML = `
+                <div class="quiz-loading">
+                    <div class="quiz-loading-spinner"></div>
+                    <span>Loading next question...</span>
+                </div>
+            `;
+
+            const token = localStorage.getItem('session_token');
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/daily-quiz/next`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('No more questions');
+
+                const data = await response.json();
+                currentQuizData = data;
+                renderQuizQuestion(data);
+
+            } catch (error) {
+                console.error('[QUIZ] Error loading next question:', error);
+                renderQuizCompleted(currentQuizData);
+            }
+        }
+
+        // ==========================================
+        // HACKER PLAYBOOK
+        // ==========================================
+
+        function initPlaybookListeners() {
+            document.getElementById('prevTechniqueBtn').addEventListener('click', () => navigateTechnique(-1));
+            document.getElementById('nextTechniqueBtn').addEventListener('click', () => navigateTechnique(1));
+            document.getElementById('markLearnedBtn').addEventListener('click', markTechniqueAsLearned);
+        }
+
+        async function loadHackerPlaybook() {
+            const token = localStorage.getItem('session_token');
+            const contentDiv = document.getElementById('playbookContent');
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/hacker-playbook`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load playbook');
+
+                const data = await response.json();
+                currentTechniqueIndex = data.current_index || 0;
+
+                // Update progress display
+                document.getElementById('techniquesLearned').textContent = data.learned_count || 0;
+
+                // Render technique content
+                renderTechniqueContent(data);
+
+                // Show footer
+                document.getElementById('playbookFooter').style.display = 'flex';
+
+                // Update button states
+                updatePlaybookButtons(data);
+
+            } catch (error) {
+                console.error('[PLAYBOOK] Error loading:', error);
+                contentDiv.innerHTML = `
+                    <div class="technique-header">
+                        <div class="technique-name">
+                            <h4>Unable to load technique</h4>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-muted); text-align: center; padding: 20px;">
+                        Please try refreshing the page or check your connection.
+                    </p>
+                `;
+            }
+        }
+
+        function renderTechniqueContent(data) {
+            const contentDiv = document.getElementById('playbookContent');
+
+            // Build attack steps HTML
+            const attackStepsHtml = data.attack_steps.map(step => `<li>${escapeHtml(step)}</li>`).join('');
+
+            // Build defense steps HTML
+            const defenseStepsHtml = data.defense_steps.map(step => `<li>${escapeHtml(step)}</li>`).join('');
+
+            contentDiv.innerHTML = `
+                <div class="technique-header">
+                    <div class="technique-name">
+                        <h4 id="techniqueName">${escapeHtml(data.name)}</h4>
+                    </div>
+                    <span class="difficulty-badge difficulty-${data.difficulty.toLowerCase()}" id="difficultyBadge">
+                        ${data.difficulty}
+                    </span>
+                </div>
+
+                <div class="playbook-content">
+                    <div class="attack-column">
+                        <div class="column-header">
+                            <span class="column-icon">💀</span>
+                            <h5>What Hackers Do</h5>
+                        </div>
+                        <ol id="attackSteps" class="technique-steps">
+                            ${attackStepsHtml}
+                        </ol>
+                    </div>
+
+                    <div class="defense-column">
+                        <div class="column-header">
+                            <span class="column-icon">🛡️</span>
+                            <h5>How to Defend</h5>
+                        </div>
+                        <ul id="defenseSteps" class="defense-list">
+                            ${defenseStepsHtml}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updatePlaybookButtons(data) {
+            const prevBtn = document.getElementById('prevTechniqueBtn');
+            const nextBtn = document.getElementById('nextTechniqueBtn');
+            const markBtn = document.getElementById('markLearnedBtn');
+
+            // Disable prev if at start
+            prevBtn.disabled = currentTechniqueIndex === 0;
+
+            // Disable next if at end
+            nextBtn.disabled = currentTechniqueIndex >= totalTechniques - 1;
+
+            // Update mark button if already learned
+            if (data.is_learned) {
+                markBtn.textContent = '✓ Learned';
+                markBtn.disabled = true;
+                markBtn.classList.add('learned');
+            } else {
+                markBtn.textContent = 'Mark as Learned';
+                markBtn.disabled = false;
+                markBtn.classList.remove('learned');
+            }
+        }
+
+        async function navigateTechnique(direction) {
+            const newIndex = currentTechniqueIndex + direction;
+
+            // Bounds check
+            if (newIndex < 0 || newIndex >= totalTechniques) return;
+
+            currentTechniqueIndex = newIndex;
+
+            const contentDiv = document.getElementById('playbookContent');
+            contentDiv.innerHTML = `
+                <div class="playbook-loading">
+                    <div class="playbook-loading-spinner"></div>
+                    <span>Loading technique...</span>
+                </div>
+            `;
+
+            const token = localStorage.getItem('session_token');
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/hacker-playbook/${currentTechniqueIndex}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load technique');
+
+                const data = await response.json();
+
+                // Render new technique
+                renderTechniqueContent(data);
+                updatePlaybookButtons(data);
+
+            } catch (error) {
+                console.error('[PLAYBOOK] Error navigating:', error);
+                contentDiv.innerHTML = `
+                    <div class="technique-header">
+                        <div class="technique-name">
+                            <h4>Error loading technique</h4>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function markTechniqueAsLearned() {
+            const token = localStorage.getItem('session_token');
+            const markBtn = document.getElementById('markLearnedBtn');
+
+            // Immediate visual feedback
+            markBtn.textContent = 'Saving...';
+            markBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/hacker-playbook/${currentTechniqueIndex}/learned`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Update button
+                    markBtn.textContent = '✓ Learned';
+                    markBtn.classList.add('learned');
+
+                    // Update progress counter
+                    document.getElementById('techniquesLearned').textContent = data.learned_count || 0;
+                } else {
+                    throw new Error('Failed to mark as learned');
+                }
+
+            } catch (error) {
+                console.error('[PLAYBOOK] Error marking learned:', error);
+                markBtn.textContent = 'Mark as Learned';
+                markBtn.disabled = false;
+            }
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Roadmap Widget
         async function loadRoadmapWidget() {
+            const token = localStorage.getItem('session_token');
+
             try {
-                const response = await fetch(`${API_URL}/api/roadmap/stats`);
+                // Get user info first to check role
+                const userResponse = await fetch(`${API_URL}/api/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!userResponse.ok) {
+                    console.log('[GHOST] Not logged in, skipping roadmap');
+                    return;
+                }
+
+                const userData = await userResponse.json();
+
+                // Check if user has access to roadmap (company_user role)
+                if (userData.role && userData.role.toLowerCase() !== 'company_user') {
+                    showRoadmapLocked();
+                    return;
+                }
+
+                // Fetch roadmap stats with auth
+                const response = await fetch(`${API_URL}/api/roadmap/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const stats = await response.json();
 
                 const score = stats.security_score || 0;
@@ -1448,7 +2606,21 @@
                     document.getElementById('roadmap-quick-win-points').textContent = `+${stats.next_quick_win.score_impact || 5}`;
                 }
             } catch (error) {
-                console.log('[GHOST] Roadmap data not available');
+                console.log('[GHOST] Roadmap data not available:', error);
+            }
+        }
+
+        // Show locked message for non-company users
+        function showRoadmapLocked() {
+            const widget = document.querySelector('.roadmap-widget');
+            if (widget) {
+                widget.innerHTML = `
+                    <div class="feature-locked-message">
+                        <span class="lock-icon">&#128274;</span>
+                        <p>Security Roadmap available for Company accounts</p>
+                        <a href="ghost-roadmap.html" class="btn btn-outline" style="margin-top: 12px;">Learn More</a>
+                    </div>
+                `;
             }
         }
 

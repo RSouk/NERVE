@@ -2095,7 +2095,7 @@
                 const data = await response.json();
 
                 if (!data.profile) {
-                    showProfileModal();
+                    showProfileModal(data.locked_company_info);
                 } else {
                     currentProfile = data.profile;
                     await loadDashboard();
@@ -2106,7 +2106,7 @@
             }
         }
 
-        function showProfileModal() {
+        function showProfileModal(lockedCompanyInfo = null) {
             document.getElementById('profileModal').classList.add('active');
             document.getElementById('mainContent').innerHTML = `
                 <div class="empty-state">
@@ -2115,6 +2115,28 @@
                     <p>Set up your profile to get started with a personalized security improvement plan</p>
                 </div>
             `;
+
+            // Pre-fill and lock company fields for COMPANY_USER
+            if (lockedCompanyInfo) {
+                const nameInput = document.getElementById('companyName');
+                const domainInput = document.getElementById('companyDomain');
+
+                if (nameInput) {
+                    nameInput.value = lockedCompanyInfo.company_name || '';
+                    nameInput.readOnly = true;
+                    nameInput.style.opacity = '0.7';
+                    nameInput.style.cursor = 'not-allowed';
+                    nameInput.title = 'Company name is set by your administrator';
+                }
+
+                if (domainInput) {
+                    domainInput.value = lockedCompanyInfo.company_domain || '';
+                    domainInput.readOnly = true;
+                    domainInput.style.opacity = '0.7';
+                    domainInput.style.cursor = 'not-allowed';
+                    domainInput.title = 'Domain is set by your administrator';
+                }
+            }
         }
 
         function toggleCheckbox(element) {

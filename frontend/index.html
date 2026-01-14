@@ -308,12 +308,6 @@
             text-overflow: ellipsis;
         }
 
-        .user-role {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: capitalize;
-        }
-
         .profile-arrow {
             color: var(--text-muted);
             font-size: 0.9rem;
@@ -1233,7 +1227,6 @@
                     <div class="user-avatar-small" id="sidebarAvatar">--</div>
                     <div class="user-info">
                         <div class="user-name" id="sidebarUserName">Loading...</div>
-                        <div class="user-role" id="sidebarUserRole">User</div>
                     </div>
                     <span class="profile-arrow">&#8594;</span>
                 </a>
@@ -1504,14 +1497,45 @@
             }
         }
 
-        // RSS Feed Management
-        let userFeeds = JSON.parse(localStorage.getItem('nerve_rss_feeds') || '[]');
+        // RSS Feed Management - User-specific feeds stored in database
+        let userFeeds = [];  // Array of {id, name, url} objects from backend
         let allArticles = [];
         let displayedCount = 0;
         const INITIAL_ARTICLES = 9;
         const LOAD_MORE_COUNT = 6;
 
-        function addFeed() {
+        // Load user's RSS sources from backend
+        async function loadUserFeeds() {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                console.log('[RSS] No session token, skipping feed load');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/news-sources', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    userFeeds = await response.json();
+                    displayConfiguredFeeds();
+                    loadFeedArticles();
+                } else if (response.status === 401) {
+                    console.log('[RSS] Unauthorized, user not logged in');
+                }
+            } catch (error) {
+                console.error('[RSS] Error loading user feeds:', error);
+            }
+        }
+
+        async function addFeed() {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                showNotification('Please log in to add feeds', 'warning');
+                return;
+            }
+
             const feedUrl = document.getElementById('feed-url-input').value.trim();
 
             if (!feedUrl) {
@@ -1524,24 +1548,66 @@
                 return;
             }
 
-            if (userFeeds.includes(feedUrl)) {
+            // Check if already exists
+            if (userFeeds.some(f => f.url === feedUrl)) {
                 showNotification('This feed is already added', 'warning');
                 return;
             }
 
-            userFeeds.push(feedUrl);
-            localStorage.setItem('nerve_rss_feeds', JSON.stringify(userFeeds));
-            document.getElementById('feed-url-input').value = '';
-            displayConfiguredFeeds();
-            loadFeedArticles();
-            showNotification('Feed added successfully', 'success');
+            try {
+                const response = await fetch('http://localhost:5000/api/news-sources', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ url: feedUrl })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    userFeeds.push(result.source);
+                    document.getElementById('feed-url-input').value = '';
+                    displayConfiguredFeeds();
+                    loadFeedArticles();
+                    showNotification('Feed added successfully', 'success');
+                } else {
+                    showNotification(result.error || 'Error adding feed', 'error');
+                }
+            } catch (error) {
+                console.error('[RSS] Error adding feed:', error);
+                showNotification('Error adding feed. Please try again.', 'error');
+            }
         }
 
-        function removeFeed(feedUrl) {
-            userFeeds = userFeeds.filter(f => f !== feedUrl);
-            localStorage.setItem('nerve_rss_feeds', JSON.stringify(userFeeds));
-            displayConfiguredFeeds();
-            loadFeedArticles();
+        async function removeFeed(feedId) {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                showNotification('Please log in to remove feeds', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5000/api/news-sources/${feedId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    userFeeds = userFeeds.filter(f => f.id !== feedId);
+                    displayConfiguredFeeds();
+                    loadFeedArticles();
+                    showNotification('Feed removed', 'success');
+                } else {
+                    showNotification(result.error || 'Error removing feed', 'error');
+                }
+            } catch (error) {
+                console.error('[RSS] Error removing feed:', error);
+                showNotification('Error removing feed. Please try again.', 'error');
+            }
         }
 
         function displayConfiguredFeeds() {
@@ -1556,15 +1622,26 @@
                 <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.85rem;">Active Feeds (${userFeeds.length}/10)</p>
                 ${userFeeds.map(feed => `
                     <div class="feed-item">
-                        <span class="feed-item-url">${feed}</span>
-                        <button class="feed-remove-btn" onclick="removeFeed('${feed.replace(/'/g, "\\'")}')">Remove</button>
+                        <span class="feed-item-url">${feed.name || feed.url}</span>
+                        <button class="feed-remove-btn" onclick="removeFeed(${feed.id})">Remove</button>
                     </div>
                 `).join('')}
             `;
         }
 
         async function loadFeedArticles() {
+            const token = localStorage.getItem('session_token');
             const articlesContainer = document.getElementById('feed-articles');
+
+            if (!token) {
+                articlesContainer.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">&#128274;</div>
+                        <p>Log in to manage your RSS feeds</p>
+                    </div>
+                `;
+                return;
+            }
 
             if (userFeeds.length === 0) {
                 articlesContainer.innerHTML = `
@@ -1579,10 +1656,8 @@
             articlesContainer.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">&#8987;</div><p>Loading articles...</p></div>';
 
             try {
-                const response = await fetch('http://localhost:5000/api/rss/fetch', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({feeds: userFeeds})
+                const response = await fetch('http://localhost:5000/api/rss-feed', {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 const data = await response.json();
@@ -1595,7 +1670,7 @@
                     articlesContainer.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>No articles found</p></div>';
                 }
             } catch (error) {
-                console.error('Error loading feeds:', error);
+                console.error('[RSS] Error loading feeds:', error);
                 articlesContainer.innerHTML = '<div class="empty-state" style="grid-column: 1/-1; color: var(--red);"><p>Error loading feeds. Please try again.</p></div>';
             }
         }
@@ -1732,12 +1807,6 @@
                         userName.textContent = user.full_name || user.email.split('@')[0];
                     }
 
-                    // Update role
-                    const userRole = document.getElementById('sidebarUserRole');
-                    if (userRole) {
-                        userRole.textContent = user.role || 'User';
-                    }
-
                     // Show admin link for admin/owner roles
                     const adminLink = document.getElementById('adminNavLink');
                     if (adminLink && ['admin', 'owner', 'super_admin'].includes(user.role)) {
@@ -1766,8 +1835,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            displayConfiguredFeeds();
-            loadFeedArticles();
+            loadUserFeeds();  // Load user's RSS feeds from backend
             loadPlatformStats();
             loadSidebarProfile();
         });

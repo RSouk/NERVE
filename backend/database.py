@@ -37,7 +37,7 @@ TODO (Phase 7 - PostgreSQL Migration):
     - Add GIN indexes for JSONB columns
 """
 
-from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Text, DateTime, Float, ForeignKey, JSON, Boolean, Enum, text, inspect
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Text, DateTime, Date, Float, ForeignKey, JSON, Boolean, Enum, text, inspect, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError
@@ -453,11 +453,15 @@ class ErrorLog(Base):
 # ============================================================================
 
 class NewsSource(Base):
-    """RSS news sources for the Ghost Dashboard news feed"""
+    """RSS news sources for the Ghost Dashboard news feed - user-specific"""
     __tablename__ = 'news_sources'
+    __table_args__ = (
+        UniqueConstraint('user_id', 'url', name='uq_news_sources_user_url'),
+    )
 
     id = Column(Integer, primary_key=True)
-    url = Column(String(500), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)  # Each user has their own feeds
+    url = Column(String(500), nullable=False)
     name = Column(String(200))  # Optional friendly name
     active = Column(Boolean, default=True, nullable=False)
     last_fetched = Column(DateTime)
@@ -467,7 +471,7 @@ class NewsSource(Base):
     # Audit
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    created_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'))
+    created_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'))  # For audit - who originally created it
 
     def __repr__(self):
         return f'<NewsSource {self.url}>'
@@ -1609,6 +1613,66 @@ class ScanResultsLightbox(Base):
     is_active = Column(Boolean, nullable=False, default=True)
 
 
+class UserSearchQuota(Base):
+    """
+    Track daily search usage per user for quota enforcement.
+
+    V1: Hardcoded limit of 10 searches/day for non-exempt users.
+    V2: Admin-configurable limits via platform_settings.
+
+    Exempt roles (unlimited searches):
+    - ADMIN, ANALYST, SUPER_ADMIN
+
+    Limited roles:
+    - USER, COMPANY_USER, DEMO: 10 searches/day
+    """
+    __tablename__ = 'user_search_quota'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
+    searches_used = Column(Integer, default=0, nullable=False)
+    search_limit = Column(Integer, default=10, nullable=False)  # V1: Hardcoded to 10
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'date', name='uq_user_search_quota_user_date'),
+    )
+
+    def __repr__(self):
+        return f'<UserSearchQuota user_id={self.user_id} date={self.date} used={self.searches_used}/{self.search_limit}>'
+
+
+class MaintenanceChecklist(Base):
+    """
+    User-specific weekly maintenance checklist for Ghost Dashboard.
+
+    Each user has their own checklist progress that resets weekly (Monday).
+    Tasks are pre-defined but tracked per-user to show individual completion.
+    """
+    __tablename__ = 'maintenance_checklist'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    task_key = Column(String(50), nullable=False)  # e.g., 'rescan', 'breach-check'
+    task_name = Column(String(200), nullable=False)
+    task_description = Column(String(500))
+    completed = Column(Boolean, default=False)
+    week_start = Column(Date, nullable=False, index=True)  # Monday of the week
+    completed_at = Column(DateTime)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Unique constraint: one task per user per week
+    __table_args__ = (
+        UniqueConstraint('user_id', 'task_key', 'week_start', name='uq_maintenance_user_task_week'),
+    )
+
+    def __repr__(self):
+        return f'<MaintenanceChecklist user={self.user_id} task={self.task_key} completed={self.completed}>'
+
+
 def init_db() -> None:
     """
     Initialize the database and create all tables.
@@ -2018,19 +2082,23 @@ def save_lightbox_for_ai(company: str, results: dict) -> bool:
         session.close()
 
 
-def load_xasm_for_ai(company: str) -> dict:
-    """Load XASM results for AI report from CachedASMScan"""
+def load_xasm_for_ai(company: str, user_id: int = None) -> dict:
+    """Load XASM results for AI report from CachedASMScan - FILTERED BY USER"""
     session = SessionLocal()
 
     try:
-        # Query CachedASMScan by domain (company parameter is actually domain)
-        scan = session.query(CachedASMScan).filter_by(domain=company).first()
+        # CRITICAL: Filter by user_id to ensure data isolation
+        query = session.query(CachedASMScan).filter_by(domain=company)
+        if user_id:
+            query = query.filter_by(user_id=user_id)
+
+        scan = query.order_by(CachedASMScan.scanned_at.desc()).first()
 
         if not scan:
-            print(f"[DB] No XASM scan found for {company}")
+            print(f"[DB] No XASM scan found for {company} (user_id: {user_id})")
             return None
 
-        print(f"[DB] Loaded XASM scan for {company}")
+        print(f"[DB] Loaded XASM scan for {company} (user_id: {user_id})")
         # scan_results is already a dict (JSON column)
         return scan.scan_results if scan.scan_results else None
 
@@ -2043,19 +2111,23 @@ def load_xasm_for_ai(company: str) -> dict:
         session.close()
 
 
-def load_lightbox_for_ai(company: str) -> dict:
-    """Load Lightbox results for AI report from LightboxScan"""
+def load_lightbox_for_ai(company: str, user_id: int = None) -> dict:
+    """Load Lightbox results for AI report from LightboxScan - FILTERED BY USER"""
     session = SessionLocal()
 
     try:
-        # Query LightboxScan by domain (company parameter is actually domain)
-        scan = session.query(LightboxScan).filter_by(domain=company).first()
+        # CRITICAL: Filter by user_id to ensure data isolation
+        query = session.query(LightboxScan).filter_by(domain=company)
+        if user_id:
+            query = query.filter_by(user_id=user_id)
+
+        scan = query.order_by(LightboxScan.scanned_at.desc()).first()
 
         if not scan:
-            print(f"[DB] No Lightbox scan found for {company}")
+            print(f"[DB] No Lightbox scan found for {company} (user_id: {user_id})")
             return None
 
-        print(f"[DB] Loaded Lightbox scan for {company}")
+        print(f"[DB] Loaded Lightbox scan for {company} (user_id: {user_id})")
         # Return the scan as a dict using the to_dict method
         return scan.to_dict()
 
@@ -2068,16 +2140,21 @@ def load_lightbox_for_ai(company: str) -> dict:
         session.close()
 
 
-def get_companies_with_scans() -> list:
-    """Get list of domains with available scans for AI reports"""
+def get_companies_with_scans(user_id: int = None) -> list:
+    """Get list of domains with available scans for AI reports - FILTERED BY USER"""
     session = SessionLocal()
 
     try:
-        # Get all available XASM scans
-        xasm_records = session.query(CachedASMScan).all()
+        # CRITICAL: Filter by user_id to ensure data isolation
+        xasm_query = session.query(CachedASMScan)
+        lightbox_query = session.query(LightboxScan)
 
-        # Get all available Lightbox scans
-        lightbox_records = session.query(LightboxScan).all()
+        if user_id:
+            xasm_query = xasm_query.filter_by(user_id=user_id)
+            lightbox_query = lightbox_query.filter_by(user_id=user_id)
+
+        xasm_records = xasm_query.all()
+        lightbox_records = lightbox_query.all()
 
         # Build domain map
         domain_map = {}

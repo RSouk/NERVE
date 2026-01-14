@@ -372,6 +372,114 @@
             color: var(--gold-primary);
         }
 
+        /* ===== SEARCH QUOTA BAR ===== */
+        .quota-bar-container {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            margin-top: 20px;
+        }
+
+        .quota-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .quota-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quota-text {
+            color: var(--gold-primary);
+            font-weight: 600;
+            font-size: 14px;
+            font-family: var(--font-mono);
+        }
+
+        .quota-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .quota-progress-fill {
+            height: 100%;
+            background: var(--green-primary);
+            transition: width 0.3s ease, background 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .quota-progress-fill.warning {
+            background: var(--orange-primary);
+        }
+
+        .quota-progress-fill.critical {
+            background: var(--red-primary);
+        }
+
+        .quota-reset {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .quota-reset-time {
+            color: var(--cyan-primary);
+            font-family: var(--font-mono);
+        }
+
+        .quota-exceeded {
+            text-align: center;
+            padding: 60px 40px;
+            background: rgba(255, 82, 82, 0.08);
+            border: 1px solid rgba(255, 82, 82, 0.25);
+            border-radius: var(--radius-lg);
+            margin: 40px auto;
+            max-width: 600px;
+        }
+
+        .quota-exceeded-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .quota-exceeded h3 {
+            color: var(--red-primary);
+            margin-bottom: 16px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .quota-exceeded p {
+            margin: 12px 0;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .quota-exceeded .reset-highlight {
+            color: var(--cyan-primary);
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .upgrade-hint {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 82, 82, 0.15);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
         /* ===== SEARCH EXAMPLES ===== */
         .search-examples {
             display: flex;
@@ -1688,6 +1796,77 @@
             opacity: 0.5;
         }
 
+        /* ===== EMAIL MONITORING LOCKED STATE ===== */
+        .feature-locked {
+            text-align: center;
+            padding: 60px 40px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            max-width: 600px;
+            margin: 40px auto;
+        }
+
+        .feature-locked .lock-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .feature-locked h3 {
+            color: #D4AF37;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+
+        .feature-locked p {
+            color: rgba(255,255,255,0.8);
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+
+        .feature-benefits {
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 3px solid #D4AF37;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+
+        .feature-benefits strong {
+            color: #D4AF37;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .feature-benefits ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .feature-benefits li {
+            padding: 6px 0;
+            position: relative;
+            padding-left: 24px;
+        }
+
+        .feature-benefits li:before {
+            content: "\2713";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .upgrade-text {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+
         /* ===== MONITORING RESULTS SECTION ===== */
         .monitoring-results-section {
             background: var(--bg-card);
@@ -2627,6 +2806,20 @@
                 <span class="example-chip" onclick="exampleSearch('192.168.1.1')">192.168.1.1</span>
                 <span class="example-chip" onclick="exampleSearch('Password123!')">Password123!</span>
             </div>
+
+            <!-- Search Quota Bar (hidden for admins/analysts) -->
+            <div id="searchQuotaBar" class="quota-bar-container" style="display: none;">
+                <div class="quota-info">
+                    <span class="quota-label">Daily Search Limit</span>
+                    <span id="quotaText" class="quota-text"></span>
+                </div>
+                <div class="quota-progress-bar">
+                    <div id="quotaProgress" class="quota-progress-fill"></div>
+                </div>
+                <div class="quota-reset">
+                    Resets in: <span id="quotaResetTime" class="quota-reset-time"></span>
+                </div>
+            </div>
         </div>
 
         <!-- Content Grid (Filters & Results) -->
@@ -2823,6 +3016,57 @@ email3@example.com"></textarea>
         let uploadedFileId = null;
         let currentSearchMode = 'global';
 
+        // ============================================================================
+        // USER ISOLATION: All localStorage keys must be scoped by user_id
+        // ============================================================================
+        let currentUserId = null;
+
+        // Get user-scoped localStorage key
+        function getUserKey(baseKey) {
+            return currentUserId ? `${baseKey}_user_${currentUserId}` : baseKey;
+        }
+
+        // Initialize user info from profile API
+        async function initializeUserInfo() {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                console.warn('[SEARCH] No session token, using default storage');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const userData = await response.json();
+                    currentUserId = userData.id;
+                    console.log('[SEARCH] User initialized:', currentUserId);
+                    // Reload user-scoped data after getting user_id
+                    loadUserScopedData();
+                }
+            } catch (error) {
+                console.error('[SEARCH] Error fetching user info:', error);
+            }
+        }
+
+        // Load data with user-scoped keys
+        function loadUserScopedData() {
+            queryHistory = JSON.parse(localStorage.getItem(getUserKey('ghost_query_history')) || '[]');
+            monitoredEmails = JSON.parse(localStorage.getItem(getUserKey('ghost_monitored_emails')) || '[]');
+            checkFrequency = localStorage.getItem(getUserKey('ghost_check_frequency')) || 'weekly';
+            checkHistory = JSON.parse(localStorage.getItem(getUserKey('ghost_check_history')) || '[]');
+        }
+
+        // Initialize on page load
+        initializeUserInfo();
+
+        // Load search quota (after a short delay to ensure user is loaded)
+        setTimeout(() => {
+            loadSearchQuota();
+        }, 500);
+        // ============================================================================
+
         // Store full results globally for pagination
         let allStealerLogs = [];
         let allCredentials = [];
@@ -2835,8 +3079,8 @@ email3@example.com"></textarea>
             credentials: []
         };
 
-        // Query history
-        let queryHistory = JSON.parse(localStorage.getItem('ghost_query_history') || '[]');
+        // Query history (will be reloaded with user scope)
+        let queryHistory = [];
 
         // Pagination state
         const RESULTS_PER_PAGE = 12;
@@ -3015,6 +3259,133 @@ email3@example.com"></textarea>
             }
         }
 
+        // ============================================================================
+        // SEARCH QUOTA MANAGEMENT
+        // ============================================================================
+
+        async function loadSearchQuota() {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                console.log('[QUOTA] No session token, skipping quota load');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/search/quota`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    console.error('[QUOTA] Failed to load quota:', response.status);
+                    return;
+                }
+
+                const quota = await response.json();
+                console.log('[QUOTA] Loaded quota:', quota);
+                updateQuotaDisplay(quota);
+
+            } catch (error) {
+                console.error('[QUOTA] Error loading quota:', error);
+            }
+        }
+
+        function updateQuotaDisplay(quota) {
+            const quotaBar = document.getElementById('searchQuotaBar');
+            const quotaText = document.getElementById('quotaText');
+            const quotaProgress = document.getElementById('quotaProgress');
+            const quotaResetTime = document.getElementById('quotaResetTime');
+
+            if (!quotaBar) return;
+
+            // Hide quota bar for exempt users (admins/analysts)
+            if (quota.exempt) {
+                quotaBar.style.display = 'none';
+                enableSearch();
+                return;
+            }
+
+            // Show quota bar for regular users
+            quotaBar.style.display = 'block';
+
+            // Update text
+            if (quotaText) {
+                quotaText.textContent = `${quota.remaining} / ${quota.search_limit} remaining`;
+            }
+
+            // Update progress bar
+            if (quotaProgress) {
+                const percentUsed = (quota.searches_used / quota.search_limit) * 100;
+                quotaProgress.style.width = `${percentUsed}%`;
+
+                // Color based on usage
+                quotaProgress.classList.remove('warning', 'critical');
+                if (percentUsed >= 90) {
+                    quotaProgress.classList.add('critical');
+                } else if (percentUsed >= 70) {
+                    quotaProgress.classList.add('warning');
+                }
+            }
+
+            // Update reset time
+            if (quotaResetTime && quota.reset_time) {
+                quotaResetTime.textContent = quota.reset_time;
+            }
+
+            // Disable search if limit reached
+            if (!quota.allowed) {
+                disableSearch(quota);
+            } else {
+                enableSearch();
+            }
+        }
+
+        function disableSearch(quota) {
+            const searchBtn = document.querySelector('.search-btn');
+            const searchInput = document.getElementById('search-input');
+
+            if (searchBtn) {
+                searchBtn.disabled = true;
+                searchBtn.style.opacity = '0.5';
+                searchBtn.style.cursor = 'not-allowed';
+            }
+
+            if (searchInput) {
+                searchInput.disabled = true;
+                searchInput.placeholder = `Daily limit reached - resets in ${quota.reset_time}`;
+            }
+        }
+
+        function enableSearch() {
+            const searchBtn = document.querySelector('.search-btn');
+            const searchInput = document.getElementById('search-input');
+
+            if (searchBtn) {
+                searchBtn.disabled = false;
+                searchBtn.style.opacity = '1';
+                searchBtn.style.cursor = 'pointer';
+            }
+
+            if (searchInput) {
+                searchInput.disabled = false;
+                searchInput.placeholder = 'Search email, domain, password, username, IP, or keyword...';
+            }
+        }
+
+        function showQuotaExceededMessage(quota) {
+            const resultsDiv = document.getElementById('results');
+            if (!resultsDiv) return;
+
+            resultsDiv.innerHTML = `
+                <div class="quota-exceeded">
+                    <div class="quota-exceeded-icon">&#128683;</div>
+                    <h3>Daily Search Limit Reached</h3>
+                    <p>You've used all <strong>${quota.search_limit}</strong> of your daily searches.</p>
+                    <p>Your limit will reset in: <span class="reset-highlight">${quota.reset_time}</span></p>
+                    <p class="upgrade-hint">Need more searches? Contact your administrator about upgrading your account.</p>
+                </div>
+            `;
+        }
+
         async function performSearch() {
             // Reset pagination when new search starts
             resetPagination();
@@ -3041,16 +3412,31 @@ email3@example.com"></textarea>
             }
 
             try {
+                const token = localStorage.getItem('session_token');
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 const response = await fetch('http://localhost:5000/api/search/unified', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         query: query,
                         search_type: 'auto'
                     })
                 });
+
+                // Handle quota exceeded (429)
+                if (response.status === 429) {
+                    const errorData = await response.json();
+                    console.warn('[SEARCH] Quota exceeded:', errorData);
+                    showQuotaExceededMessage(errorData.quota);
+                    updateQuotaDisplay(errorData.quota);
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -3061,6 +3447,11 @@ email3@example.com"></textarea>
 
                 saveQueryToHistory(query, data);
                 displayResults(data);
+
+                // Update quota display after successful search
+                if (data.quota) {
+                    updateQuotaDisplay(data.quota);
+                }
 
             } catch (error) {
                 console.error('[SEARCH] Error:', error);
@@ -3706,12 +4097,14 @@ email3@example.com"></textarea>
             queryHistory.unshift(entry);
             queryHistory = queryHistory.slice(0, 50);
 
-            localStorage.setItem('ghost_query_history', JSON.stringify(queryHistory));
+            // USER ISOLATION: Use user-scoped localStorage key
+            localStorage.setItem(getUserKey('ghost_query_history'), JSON.stringify(queryHistory));
         }
 
         function clearQueryHistory() {
             queryHistory = [];
-            localStorage.removeItem('ghost_query_history');
+            // USER ISOLATION: Use user-scoped localStorage key
+            localStorage.removeItem(getUserKey('ghost_query_history'));
             loadQueryHistory();
         }
 
@@ -3754,10 +4147,10 @@ email3@example.com"></textarea>
             doc.save(`ghost-report-${new Date().toISOString().slice(0, 10)}.pdf`);
         }
 
-        // Email Monitoring
-        let monitoredEmails = JSON.parse(localStorage.getItem('ghost_monitored_emails') || '[]');
-        let checkFrequency = localStorage.getItem('ghost_check_frequency') || 'weekly';
-        let checkHistory = JSON.parse(localStorage.getItem('ghost_check_history') || '[]');
+        // Email Monitoring (will be reloaded with user scope via loadUserScopedData)
+        let monitoredEmails = [];
+        let checkFrequency = 'weekly';
+        let checkHistory = [];
 
         function addMonitoredEmail() {
             const input = document.getElementById('emailToMonitor');
@@ -3775,7 +4168,8 @@ email3@example.com"></textarea>
 
             if (!monitoredEmails.find(e => e.email === email)) {
                 monitoredEmails.push({ email: email, status: 'pending', lastChecked: null });
-                localStorage.setItem('ghost_monitored_emails', JSON.stringify(monitoredEmails));
+                // USER ISOLATION: Use user-scoped localStorage key
+                localStorage.setItem(getUserKey('ghost_monitored_emails'), JSON.stringify(monitoredEmails));
                 renderMonitoredEmails();
             }
 
@@ -3784,7 +4178,8 @@ email3@example.com"></textarea>
 
         function removeMonitoredEmail(email) {
             monitoredEmails = monitoredEmails.filter(e => e.email !== email);
-            localStorage.setItem('ghost_monitored_emails', JSON.stringify(monitoredEmails));
+            // USER ISOLATION: Use user-scoped localStorage key
+            localStorage.setItem(getUserKey('ghost_monitored_emails'), JSON.stringify(monitoredEmails));
             renderMonitoredEmails();
         }
 
@@ -3840,7 +4235,8 @@ email3@example.com"></textarea>
                 }
             });
 
-            localStorage.setItem('ghost_monitored_emails', JSON.stringify(monitoredEmails));
+            // USER ISOLATION: Use user-scoped localStorage key
+            localStorage.setItem(getUserKey('ghost_monitored_emails'), JSON.stringify(monitoredEmails));
             renderMonitoredEmails();
             closeBulkEmailModal();
 
@@ -3851,14 +4247,16 @@ email3@example.com"></textarea>
 
         function updateCheckFrequency() {
             checkFrequency = document.getElementById('checkFrequency').value;
-            localStorage.setItem('ghost_check_frequency', checkFrequency);
+            // USER ISOLATION: Use user-scoped localStorage key
+            localStorage.setItem(getUserKey('ghost_check_frequency'), checkFrequency);
             document.getElementById('currentFrequency').textContent = checkFrequency.charAt(0).toUpperCase() + checkFrequency.slice(1);
             updateNextCheckTime();
         }
 
         function updateNextCheckTime() {
             const nextCheckEl = document.getElementById('nextCheckTime');
-            const lastCheck = localStorage.getItem('ghost_last_check');
+            // USER ISOLATION: Use user-scoped localStorage key
+            const lastCheck = localStorage.getItem(getUserKey('ghost_last_check'));
 
             if (!lastCheck) {
                 nextCheckEl.textContent = 'Run first check';
@@ -3924,7 +4322,104 @@ email3@example.com"></textarea>
             URL.revokeObjectURL(url);
         }
 
-        function initializeMonitoring() {
+        // ============================================================================
+        // EMAIL MONITORING ROLE-BASED ACCESS CONTROL
+        // ============================================================================
+
+        async function checkEmailMonitoringAccess() {
+            const token = localStorage.getItem('session_token');
+
+            if (!token) {
+                console.warn('[EMAIL MONITORING] No session token, defaulting to locked');
+                lockEmailMonitoring();
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    console.error('[EMAIL MONITORING] Failed to fetch profile');
+                    lockEmailMonitoring();
+                    return false;
+                }
+
+                const userData = await response.json();
+
+                // Check if user has access to email monitoring
+                // Only COMPANY_USER and above have access
+                const allowedRoles = ['company_user', 'admin', 'analyst', 'super_admin', 'owner'];
+                const userRole = (userData.role || '').toLowerCase();
+
+                console.log('[EMAIL MONITORING] User role:', userRole);
+
+                if (!allowedRoles.includes(userRole)) {
+                    console.log('[EMAIL MONITORING] Access denied for role:', userRole);
+                    lockEmailMonitoring();
+                    return false;
+                }
+
+                console.log('[EMAIL MONITORING] Access granted for role:', userRole);
+                enableEmailMonitoring();
+                return true;
+
+            } catch (error) {
+                console.error('[EMAIL MONITORING] Error checking permissions:', error);
+                lockEmailMonitoring();
+                return false;
+            }
+        }
+
+        function lockEmailMonitoring() {
+            // Hide email monitoring section content and show locked message
+            const monitoringSection = document.querySelector('.email-monitoring-section');
+            if (monitoringSection) {
+                monitoringSection.innerHTML = `
+                    <div class="feature-locked">
+                        <div class="lock-icon">&#128274;</div>
+                        <h3>Email Monitoring - Company Feature</h3>
+                        <p>Email monitoring is available for Company accounts and higher tiers.</p>
+                        <div class="feature-benefits">
+                            <p><strong>This feature includes:</strong></p>
+                            <ul>
+                                <li>Continuous monitoring of company email addresses</li>
+                                <li>Real-time breach notifications</li>
+                                <li>Historical exposure timeline</li>
+                                <li>Automated alerts for new exposures</li>
+                            </ul>
+                        </div>
+                        <p class="upgrade-text">Contact your administrator to upgrade your account.</p>
+                    </div>
+                `;
+            }
+
+            // Hide monitoring results section
+            const resultsSection = document.getElementById('monitoringResults');
+            if (resultsSection) {
+                resultsSection.style.display = 'none';
+            }
+        }
+
+        function enableEmailMonitoring() {
+            // Show monitoring results section
+            const resultsSection = document.getElementById('monitoringResults');
+            if (resultsSection) {
+                resultsSection.style.display = 'block';
+            }
+        }
+
+        async function initializeMonitoring() {
+            // First check if user has access
+            const hasAccess = await checkEmailMonitoringAccess();
+
+            if (!hasAccess) {
+                console.log('[EMAIL MONITORING] User does not have access, skipping initialization');
+                return;
+            }
+
+            // Continue with normal initialization for authorized users
             renderMonitoredEmails();
             renderCheckTimeline();
 
@@ -3934,8 +4429,8 @@ email3@example.com"></textarea>
 
             document.getElementById('currentFrequency').textContent = checkFrequency.charAt(0).toUpperCase() + checkFrequency.slice(1);
 
-            // Set last check time
-            const lastCheck = localStorage.getItem('ghost_last_check');
+            // Set last check time - USER ISOLATION: Use user-scoped localStorage key
+            const lastCheck = localStorage.getItem(getUserKey('ghost_last_check'));
             if (lastCheck) {
                 document.getElementById('lastCheckTime').textContent = formatTimeAgo(lastCheck);
             }

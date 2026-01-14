@@ -18,7 +18,11 @@ from database import (
     SecurityEvent, PlatformSettings, ErrorLog,
     run_health_check, create_backup, optimize_database, AuditLog, DB_PATH,
     # Content Management
-    NewsSource, EducationResource, BackupRecord
+    NewsSource, EducationResource, BackupRecord,
+    # Search Quota
+    UserSearchQuota,
+    # Maintenance Checklist
+    MaintenanceChecklist
 )
 import feedparser
 from modules.ghost.osint import scan_profile_breaches
@@ -261,6 +265,201 @@ def get_current_user_id():
     return getattr(request, 'user_id', None)
 
 
+def require_email_monitoring_access(f):
+    """
+    Decorator to restrict email monitoring to COMPANY_USER and above.
+    USER and DEMO roles cannot access email monitoring features.
+    Must be used after @require_auth.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({
+                'error': 'Authentication required',
+                'code': 'AUTH_REQUIRED'
+            }), 401
+
+        # Check if user has access - COMPANY_USER and above
+        allowed_roles = ['company_user', 'admin', 'analyst', 'super_admin', 'owner']
+        user_role = (user.get('role') or '').lower()
+
+        if user_role not in allowed_roles:
+            return jsonify({
+                'error': 'Access denied',
+                'message': 'Email monitoring is only available for Company accounts and above',
+                'code': 'EMAIL_MONITORING_ACCESS_DENIED'
+            }), 403
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# =============================================================================
+# SEARCH QUOTA MANAGEMENT
+# =============================================================================
+
+# V1: Hardcoded search limit (V2 will read from platform_settings)
+DEFAULT_SEARCH_LIMIT = 10
+
+def is_exempt_from_quota(user_role):
+    """
+    Check if user role is exempt from search limits.
+
+    Exempt roles: admin, analyst, super_admin
+    Limited roles: user, company_user, demo
+
+    Args:
+        user_role: String or UserRole enum value
+
+    Returns:
+        bool: True if user is exempt from quota limits
+    """
+    # Handle both string and enum values
+    role_str = user_role.value if hasattr(user_role, 'value') else str(user_role)
+    exempt_roles = ['admin', 'analyst', 'super_admin']
+    return role_str.lower() in exempt_roles
+
+
+def get_next_reset_time():
+    """
+    Get time until midnight UTC (daily reset).
+
+    Returns:
+        str: Formatted string like "5h 23m"
+    """
+    now = datetime.now(timezone.utc)
+    tomorrow = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    seconds_until_reset = int((tomorrow - now).total_seconds())
+    hours = seconds_until_reset // 3600
+    minutes = (seconds_until_reset % 3600) // 60
+    return f"{hours}h {minutes}m"
+
+
+def check_search_quota(user_id, user_role):
+    """
+    Check if user has remaining searches for today.
+
+    Args:
+        user_id: User's database ID
+        user_role: User's role (string or UserRole enum)
+
+    Returns:
+        dict: Quota status including:
+            - allowed: bool - whether user can perform a search
+            - exempt: bool - whether user is exempt from limits
+            - searches_used: int - number of searches used today
+            - search_limit: int or 'unlimited' - max allowed searches
+            - remaining: int or 'unlimited' - searches left today
+            - reset_time: str - time until quota resets (if not exempt)
+    """
+    # Admins and Analysts are exempt
+    if is_exempt_from_quota(user_role):
+        return {
+            'allowed': True,
+            'exempt': True,
+            'searches_used': 0,
+            'search_limit': 'unlimited',
+            'remaining': 'unlimited'
+        }
+
+    session = SessionLocal()
+
+    try:
+        today = datetime.now(timezone.utc).date()
+
+        # Get or create today's quota record
+        quota = session.query(UserSearchQuota).filter_by(
+            user_id=user_id,
+            date=today
+        ).first()
+
+        if not quota:
+            # Create new quota record for today
+            quota = UserSearchQuota(
+                user_id=user_id,
+                date=today,
+                searches_used=0,
+                search_limit=DEFAULT_SEARCH_LIMIT  # V1: Hardcoded limit
+            )
+            session.add(quota)
+            session.commit()
+
+        # Check if limit exceeded
+        if quota.searches_used >= quota.search_limit:
+            return {
+                'allowed': False,
+                'exempt': False,
+                'searches_used': quota.searches_used,
+                'search_limit': quota.search_limit,
+                'remaining': 0,
+                'reset_time': get_next_reset_time()
+            }
+
+        return {
+            'allowed': True,
+            'exempt': False,
+            'searches_used': quota.searches_used,
+            'search_limit': quota.search_limit,
+            'remaining': quota.search_limit - quota.searches_used,
+            'reset_time': get_next_reset_time()
+        }
+
+    finally:
+        session.close()
+
+
+def increment_search_usage(user_id, user_role):
+    """
+    Increment search count for user (skip if exempt).
+
+    Args:
+        user_id: User's database ID
+        user_role: User's role (string or UserRole enum)
+
+    Returns:
+        bool: True if increment was successful, False otherwise
+    """
+    # Don't increment for exempt roles
+    if is_exempt_from_quota(user_role):
+        return True
+
+    session = SessionLocal()
+
+    try:
+        today = datetime.now(timezone.utc).date()
+
+        quota = session.query(UserSearchQuota).filter_by(
+            user_id=user_id,
+            date=today
+        ).first()
+
+        if quota:
+            quota.searches_used += 1
+            quota.updated_at = datetime.now(timezone.utc)
+            session.commit()
+            return True
+        else:
+            # Create quota record if it doesn't exist (shouldn't happen normally)
+            quota = UserSearchQuota(
+                user_id=user_id,
+                date=today,
+                searches_used=1,
+                search_limit=DEFAULT_SEARCH_LIMIT
+            )
+            session.add(quota)
+            session.commit()
+            return True
+
+    except Exception as e:
+        print(f"[QUOTA] Error incrementing search usage: {e}")
+        session.rollback()
+        return False
+
+    finally:
+        session.close()
+
+
 @app.route('/')
 def index():
     return jsonify({
@@ -437,10 +636,22 @@ def scan_breaches(target_id):
 
 
 @app.route('/api/search/unified', methods=['POST'])
-@optional_auth
+@require_auth
 def unified_search_endpoint():
-    """Unified search across all data sources"""
-    user_id = request.user_id  # May be None for anonymous
+    """Unified search across all data sources with quota enforcement"""
+    user_id = request.user_id
+    user_role = request.user.get('role', 'user') if request.user else 'user'
+
+    # Check user's search quota (admins/analysts exempt)
+    quota_status = check_search_quota(user_id, user_role)
+
+    if not quota_status['allowed']:
+        return jsonify({
+            'error': 'Search limit reached',
+            'message': f'You have used all {quota_status["search_limit"]} daily searches. Resets in {quota_status["reset_time"]}.',
+            'quota': quota_status
+        }), 429
+
     data = request.json
     query = data.get('query', '').strip()
 
@@ -450,7 +661,37 @@ def unified_search_endpoint():
     searcher = UnifiedSearch()
     result = searcher.search(query)
 
+    # Increment usage AFTER successful search
+    increment_search_usage(user_id, user_role)
+
+    # Include updated quota in response
+    updated_quota = check_search_quota(user_id, user_role)
+    result['quota'] = updated_quota
+
     return jsonify(result)
+
+
+@app.route('/api/search/quota', methods=['GET'])
+@require_auth
+def get_search_quota():
+    """
+    Get current user's search quota status.
+
+    Returns:
+        JSON with quota information:
+        - allowed: bool - whether user can perform a search
+        - exempt: bool - whether user is exempt from limits (admin/analyst)
+        - searches_used: int - number of searches used today
+        - search_limit: int or 'unlimited' - max allowed searches
+        - remaining: int or 'unlimited' - searches left today
+        - reset_time: str - time until quota resets (e.g., "5h 23m")
+    """
+    user_id = request.user_id
+    user_role = request.user.get('role', 'user') if request.user else 'user'
+
+    quota_status = check_search_quota(user_id, user_role)
+    return jsonify(quota_status)
+
 
 # Initialize adversary matcher
 adversary_matcher = AdversaryMatcher()
@@ -1208,6 +1449,241 @@ def get_dashboard_feed():
         }), 500
 
 # ============================================================================
+# MAINTENANCE CHECKLIST ENDPOINTS (User-Specific)
+# ============================================================================
+
+# Default maintenance tasks for the weekly checklist
+DEFAULT_MAINTENANCE_TASKS = [
+    {
+        'key': 'rescan',
+        'name': 'Re-scan your domain',
+        'description': 'Recommended weekly to track changes'
+    },
+    {
+        'key': 'breach-check',
+        'name': 'Check for new breaches',
+        'description': 'Run Global Search for your domain'
+    },
+    {
+        'key': 'adversary-review',
+        'name': 'Review threat landscape',
+        'description': 'Check Adversary Matcher for new threats'
+    },
+    {
+        'key': 'lightbox-test',
+        'name': 'Test one fix with Lightbox',
+        'description': 'Verify remediation worked'
+    }
+]
+
+
+def get_week_start(date_obj=None):
+    """Get the Monday of the current week (or specified date's week)"""
+    from datetime import date
+    if date_obj is None:
+        date_obj = date.today()
+    # Monday is weekday 0
+    days_since_monday = date_obj.weekday()
+    return date_obj - timedelta(days=days_since_monday)
+
+
+@app.route('/api/ghost/maintenance/checklist', methods=['GET'])
+@require_auth
+def get_maintenance_checklist():
+    """
+    Get weekly maintenance checklist for current user.
+    Creates default tasks for this week if none exist.
+    """
+    db = None
+    try:
+        db = SessionLocal()
+        user_id = request.user_id
+        week_start = get_week_start()
+
+        # Get user's tasks for this week
+        tasks = db.query(MaintenanceChecklist).filter_by(
+            user_id=user_id,
+            week_start=week_start
+        ).order_by(MaintenanceChecklist.id).all()
+
+        # If no tasks for this week, create default tasks
+        if not tasks:
+            for task_def in DEFAULT_MAINTENANCE_TASKS:
+                task = MaintenanceChecklist(
+                    user_id=user_id,
+                    task_key=task_def['key'],
+                    task_name=task_def['name'],
+                    task_description=task_def['description'],
+                    week_start=week_start,
+                    completed=False
+                )
+                db.add(task)
+            db.commit()
+
+            # Reload tasks
+            tasks = db.query(MaintenanceChecklist).filter_by(
+                user_id=user_id,
+                week_start=week_start
+            ).order_by(MaintenanceChecklist.id).all()
+
+        results = []
+        for task in tasks:
+            results.append({
+                'id': task.id,
+                'task_key': task.task_key,
+                'task_name': task.task_name,
+                'task_description': task.task_description,
+                'completed': task.completed,
+                'completed_at': task.completed_at.isoformat() if task.completed_at else None,
+                'week_start': task.week_start.isoformat() if task.week_start else None
+            })
+
+        return jsonify({
+            'success': True,
+            'tasks': results,
+            'week_start': week_start.isoformat()
+        }), 200
+
+    except Exception as e:
+        print(f"[MAINTENANCE] Error getting checklist: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/ghost/maintenance/checklist/<int:task_id>/toggle', methods=['POST'])
+@require_auth
+def toggle_maintenance_task(task_id):
+    """
+    Toggle a maintenance task completion status.
+    Users can only toggle their own tasks.
+    """
+    db = None
+    try:
+        db = SessionLocal()
+        user_id = request.user_id
+
+        # Find task and verify ownership
+        task = db.query(MaintenanceChecklist).filter_by(
+            id=task_id,
+            user_id=user_id
+        ).first()
+
+        if not task:
+            return jsonify({
+                'success': False,
+                'error': 'Task not found or unauthorized'
+            }), 404
+
+        # Toggle completion status
+        task.completed = not task.completed
+        task.completed_at = datetime.now(timezone.utc) if task.completed else None
+        task.updated_at = datetime.now(timezone.utc)
+
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'task': {
+                'id': task.id,
+                'task_key': task.task_key,
+                'completed': task.completed,
+                'completed_at': task.completed_at.isoformat() if task.completed_at else None
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"[MAINTENANCE] Error toggling task: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if db:
+            db.close()
+
+
+@app.route('/api/ghost/maintenance/checklist/<task_key>/toggle-by-key', methods=['POST'])
+@require_auth
+def toggle_maintenance_task_by_key(task_key):
+    """
+    Toggle a maintenance task by its key (for backward compatibility with frontend).
+    Creates the task for current week if it doesn't exist.
+    """
+    db = None
+    try:
+        db = SessionLocal()
+        user_id = request.user_id
+        week_start = get_week_start()
+
+        # Find task by key for this user and week
+        task = db.query(MaintenanceChecklist).filter_by(
+            user_id=user_id,
+            task_key=task_key,
+            week_start=week_start
+        ).first()
+
+        # If task doesn't exist, create it
+        if not task:
+            # Find task definition
+            task_def = next((t for t in DEFAULT_MAINTENANCE_TASKS if t['key'] == task_key), None)
+            if not task_def:
+                return jsonify({
+                    'success': False,
+                    'error': f'Unknown task key: {task_key}'
+                }), 400
+
+            task = MaintenanceChecklist(
+                user_id=user_id,
+                task_key=task_key,
+                task_name=task_def['name'],
+                task_description=task_def['description'],
+                week_start=week_start,
+                completed=False
+            )
+            db.add(task)
+            db.commit()
+            db.refresh(task)
+
+        # Toggle completion status
+        task.completed = not task.completed
+        task.completed_at = datetime.now(timezone.utc) if task.completed else None
+        task.updated_at = datetime.now(timezone.utc)
+
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'task': {
+                'id': task.id,
+                'task_key': task.task_key,
+                'completed': task.completed,
+                'completed_at': task.completed_at.isoformat() if task.completed_at else None
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"[MAINTENANCE] Error toggling task by key: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if db:
+            db.close()
+
+
+# ============================================================================
 # MONITORING DASHBOARD ENDPOINT
 # ============================================================================
 
@@ -1354,6 +1830,10 @@ def asm_scan():
     Performs subdomain discovery, Shodan search, and DNS enumeration
 
     Returns cached results if scan < 24 hours old, unless force_rescan=true
+
+    Domain Restrictions:
+    - COMPANY_USER: Can only scan their company's primary domain
+    - USER, ADMIN, ANALYST, SUPER_ADMIN: Unrestricted access
     """
     user_id = request.user_id
     session = SessionLocal()
@@ -1371,6 +1851,46 @@ def asm_scan():
         import re
         if not re.match(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', domain):
             return jsonify({'success': False, 'error': 'Invalid domain format'}), 400
+
+        # ═══════════════════════════════════════════════════════════════
+        # DOMAIN RESTRICTION FOR COMPANY_USER ROLE
+        # Company users can only scan their company's domain
+        # ═══════════════════════════════════════════════════════════════
+        user = session.query(User).filter_by(id=user_id).first()
+        if user and user.role and user.role.value == 'company_user':
+            if not user.company_id:
+                return jsonify({
+                    'success': False,
+                    'error': 'No company assigned to your account'
+                }), 403
+
+            company = session.query(Company).filter_by(id=user.company_id).first()
+            if not company or not company.primary_domain:
+                return jsonify({
+                    'success': False,
+                    'error': 'Company domain not configured. Contact your administrator.'
+                }), 403
+
+            # Normalize domains for comparison (remove protocol, www, trailing slashes)
+            def normalize_domain(d):
+                d = d.lower().strip()
+                d = d.replace('https://', '').replace('http://', '')
+                d = d.replace('www.', '')
+                d = d.split('/')[0]  # Remove paths
+                return d
+
+            target_normalized = normalize_domain(domain)
+            company_normalized = normalize_domain(company.primary_domain)
+
+            if target_normalized != company_normalized:
+                logger.warning(f"[ASM] COMPANY_USER {user_id} attempted to scan unauthorized domain: {domain}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Access denied',
+                    'message': f'Company users can only scan their own domain: {company.primary_domain}'
+                }), 403
+
+            logger.info(f"[ASM] COMPANY_USER {user_id} scanning authorized domain: {domain}")
 
         logger.info(f"[ASM API] Scan request for {domain} (force={force_rescan})")
 
@@ -1614,12 +2134,16 @@ def asm_scan_progress():
 # ============================================================================
 
 @app.route('/api/ghost/scan-history', methods=['GET'])
+@require_auth
 def get_scan_history():
-    """Get all XASM scan history for current user (for now, return all scans)"""
+    """Get XASM scan history for current user only"""
     try:
-        # TODO: Filter by user_id when authentication is implemented
+        # CRITICAL: Filter by authenticated user's ID
+        user_id = request.user_id
         session = SessionLocal()
-        scans = session.query(CachedASMScan).order_by(CachedASMScan.scan_date.desc()).all()
+        scans = session.query(CachedASMScan).filter_by(
+            user_id=user_id
+        ).order_by(CachedASMScan.scanned_at.desc()).all()
 
         history = []
         for scan in scans:
@@ -1635,7 +2159,7 @@ def get_scan_history():
             history.append({
                 'scan_id': scan.id,
                 'domain': scan.domain,
-                'scan_date': scan.scan_date.isoformat() if scan.scan_date else None,
+                'scan_date': scan.scanned_at.isoformat() if scan.scanned_at else None,
                 'risk_score': scan.risk_score,
                 'critical_count': critical_count,
                 'total_findings': total_findings
@@ -1661,6 +2185,10 @@ def lightbox_scan():
     Supports two modes:
     1. full_surface: Test all assets from XASM scan (requires domain + scan_id)
     2. specific_targets: Test only user-specified targets (requires targets list)
+
+    Domain Restrictions:
+    - COMPANY_USER: Can only scan their company's primary domain
+    - USER, ADMIN, ANALYST, SUPER_ADMIN: Unrestricted access
     """
     session = SessionLocal()
     try:
@@ -1670,6 +2198,95 @@ def lightbox_scan():
 
         # Import Lightbox scanner
         from modules.ghost.lightbox_scanner import run_lightbox_scan
+
+        # ═══════════════════════════════════════════════════════════════
+        # DOMAIN RESTRICTION FOR COMPANY_USER ROLE
+        # Company users can only scan their company's domain
+        # IP addresses blocked for company users
+        # ═══════════════════════════════════════════════════════════════
+        def is_target_allowed_for_company_user(target, company_domain):
+            """
+            Check if target is allowed for company user to scan.
+            Returns: (allowed: bool, error_message: str or None)
+            """
+            import re
+            from urllib.parse import urlparse
+
+            if not company_domain:
+                return False, "Company domain not configured"
+
+            # Parse target URL to extract hostname
+            try:
+                parsed = urlparse(target if '://' in target else f'http://{target}')
+                hostname = parsed.hostname or parsed.path.split('/')[0]
+                if not hostname:
+                    hostname = target.split('/')[0].split(':')[0]
+            except:
+                return False, "Invalid target format"
+
+            # Check if target is an IP address (block for company users)
+            ip_pattern = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
+            if re.match(ip_pattern, hostname):
+                return False, "Company users cannot test IP addresses. Contact your administrator to add approved IPs."
+
+            # Normalize domains for comparison
+            company_normalized = company_domain.lower().replace('https://', '').replace('http://', '').replace('www.', '').split('/')[0]
+            target_normalized = hostname.lower().replace('www.', '')
+
+            # Check exact match
+            if target_normalized == company_normalized:
+                return True, None
+
+            # Check subdomain match (e.g., api.westsidestores.ca matches westsidestores.ca)
+            if target_normalized.endswith(f'.{company_normalized}'):
+                return True, None
+
+            return False, f"Company users can only test their own domain: {company_domain}"
+
+        user = session.query(User).filter_by(id=user_id).first()
+        if user and user.role and user.role.value == 'company_user':
+            if not user.company_id:
+                return jsonify({
+                    'success': False,
+                    'error': 'No company assigned to your account'
+                }), 403
+
+            company = session.query(Company).filter_by(id=user.company_id).first()
+            if not company or not company.primary_domain:
+                return jsonify({
+                    'success': False,
+                    'error': 'Company domain not configured. Contact your administrator.'
+                }), 403
+
+            company_domain = company.primary_domain
+
+            # Collect all targets to validate
+            targets_to_validate = []
+
+            # Get domain from full_surface mode
+            if data.get('domain'):
+                targets_to_validate.append(data.get('domain'))
+
+            # Get all targets from specific_targets mode
+            if mode == 'specific_targets':
+                targets = data.get('targets', [])
+                for target in targets:
+                    if isinstance(target, str) and target.strip():
+                        targets_to_validate.append(target.strip())
+
+            # Validate ALL targets
+            for target in targets_to_validate:
+                allowed, error_msg = is_target_allowed_for_company_user(target, company_domain)
+                if not allowed:
+                    logger.warning(f"[LIGHTBOX] COMPANY_USER {user_id} attempted to scan unauthorized target: {target}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Access denied',
+                        'message': error_msg
+                    }), 403
+
+            if targets_to_validate:
+                logger.info(f"[LIGHTBOX] COMPANY_USER {user_id} scanning {len(targets_to_validate)} authorized target(s)")
 
         if mode == 'specific_targets':
             # ═══════════════════════════════════════════════════════════════
@@ -1805,20 +2422,22 @@ def lightbox_scan():
                     except Exception as e:
                         logger.warning(f"[LIGHTBOX BG] Failed to save for AI: {e}")
 
-                    # Set completion status
+                    # Set completion status with explicit scan_complete flag
                     with scan_progress_lock:
                         scan_progress[scan_key] = {
                             'status': 'complete',
                             'progress': 100,
                             'current_step': 'Scan complete',
                             'total_steps': 100,
-                            'scan_id': lightbox_record.id
+                            'scan_id': lightbox_record.id,
+                            'scan_complete': True,
+                            'findings_count': total_findings
                         }
                     logger.info(f"[LIGHTBOX BG] Set completion status for {scan_key}")
 
-                    # Wait for frontend to read status, then cleanup
+                    # Wait for frontend to read status, then cleanup (30 seconds to ensure frontend polls)
                     import time as time_mod
-                    time_mod.sleep(5)
+                    time_mod.sleep(30)
                     with scan_progress_lock:
                         if scan_key in scan_progress:
                             del scan_progress[scan_key]
@@ -2024,20 +2643,22 @@ def lightbox_scan():
                     except Exception as e:
                         logger.warning(f"[LIGHTBOX BG] Failed to save for AI report: {e}")
 
-                    # Set completion status
+                    # Set completion status with explicit scan_complete flag
                     with scan_progress_lock:
                         scan_progress[scan_key] = {
                             'status': 'complete',
                             'progress': 100,
                             'current_step': 'Scan complete',
                             'total_steps': 100,
-                            'scan_id': lightbox_record.id
+                            'scan_id': lightbox_record.id,
+                            'scan_complete': True,
+                            'findings_count': total_findings
                         }
                     logger.info(f"[LIGHTBOX BG] Set completion status for {scan_key}")
 
-                    # Wait for frontend to read status, then cleanup
+                    # Wait for frontend to read status, then cleanup (30 seconds to ensure frontend polls)
                     import time as time_mod
-                    time_mod.sleep(5)
+                    time_mod.sleep(30)
                     with scan_progress_lock:
                         if scan_key in scan_progress:
                             del scan_progress[scan_key]
@@ -2126,6 +2747,12 @@ def get_lightbox_progress():
                 'total_steps': 100
             })
 
+        # Ensure scan_complete flag is set based on status for reliable detection
+        if progress.get('status') == 'complete':
+            progress['scan_complete'] = True
+        else:
+            progress['scan_complete'] = progress.get('scan_complete', False)
+
         return jsonify(progress), 200
 
     except Exception as e:
@@ -2135,26 +2762,31 @@ def get_lightbox_progress():
 @app.route('/api/ghost/lightbox/history/<domain>', methods=['GET'])
 @require_auth
 def get_lightbox_history(domain):
-    """Get Lightbox scan history and cleanup old scans (30+ days)"""
+    """Get Lightbox scan history for current user only and cleanup old scans (30+ days)"""
     session = SessionLocal()
+    user_id = request.user_id  # CRITICAL: Get authenticated user's ID
     try:
         from datetime import timedelta
 
-        # Auto-cleanup: Delete scans older than 30 days
+        # Auto-cleanup: Delete scans older than 30 days (only for current user)
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
 
         old_scans = session.query(LightboxScan).filter(
-            LightboxScan.scanned_at < cutoff_date
+            LightboxScan.scanned_at < cutoff_date,
+            LightboxScan.user_id == user_id
         ).all()
 
         if old_scans:
-            logger.info(f"[LIGHTBOX CLEANUP] Deleting {len(old_scans)} scans older than 30 days")
+            logger.info(f"[LIGHTBOX CLEANUP] Deleting {len(old_scans)} scans older than 30 days for user {user_id}")
             for scan in old_scans:
                 session.delete(scan)
             session.commit()
 
-        # Get recent scans (last 30 days)
-        scans = session.query(LightboxScan).filter_by(domain=domain).filter(
+        # CRITICAL: Get recent scans (last 30 days) FILTERED BY USER
+        scans = session.query(LightboxScan).filter_by(
+            domain=domain,
+            user_id=user_id
+        ).filter(
             LightboxScan.scanned_at >= cutoff_date
         ).order_by(LightboxScan.scanned_at.desc()).all()
 
@@ -2173,13 +2805,17 @@ def get_lightbox_history(domain):
 @app.route('/api/ghost/lightbox/scan/<int:scan_id>', methods=['GET'])
 @require_auth
 def get_lightbox_scan(scan_id):
-    """Get specific Lightbox scan by ID"""
+    """Get specific Lightbox scan by ID - only if owned by current user"""
     session = SessionLocal()
     try:
         scan = session.query(LightboxScan).get(scan_id)
 
         if not scan:
             return jsonify({'error': 'Scan not found'}), 404
+
+        # CRITICAL: Verify scan belongs to current user
+        if scan.user_id and scan.user_id != request.user_id:
+            return jsonify({'error': 'Access denied'}), 403
 
         return jsonify(scan.to_dict()), 200
 
@@ -2192,7 +2828,7 @@ def get_lightbox_scan(scan_id):
 @app.route('/api/ghost/lightbox/scan/<int:scan_id>', methods=['DELETE'])
 @require_auth
 def delete_lightbox_scan(scan_id):
-    """Manually delete a specific Lightbox scan"""
+    """Manually delete a specific Lightbox scan - only if owned by current user"""
     session = SessionLocal()
     try:
         scan = session.query(LightboxScan).get(scan_id)
@@ -2200,11 +2836,15 @@ def delete_lightbox_scan(scan_id):
         if not scan:
             return jsonify({'error': 'Scan not found'}), 404
 
+        # CRITICAL: Verify scan belongs to current user before deleting
+        if scan.user_id and scan.user_id != request.user_id:
+            return jsonify({'error': 'Access denied'}), 403
+
         domain = scan.domain
         session.delete(scan)
         session.commit()
 
-        logger.info(f"[LIGHTBOX] Manually deleted scan {scan_id} for {domain}")
+        logger.info(f"[LIGHTBOX] Manually deleted scan {scan_id} for {domain} by user {request.user_id}")
 
         return jsonify({
             'success': True,
@@ -2223,23 +2863,38 @@ def delete_lightbox_scan(scan_id):
 # ============================================================================
 
 @app.route('/api/xasm/history', methods=['GET'])
+@require_auth
 def get_xasm_history():
-    """Get XASM scan history"""
+    """Get XASM scan history for current user only"""
     from database import get_xasm_scan_history
 
     try:
-        history = get_xasm_scan_history()
+        # CRITICAL: Filter by authenticated user's ID from token
+        user_id = request.user_id
+        history = get_xasm_scan_history(user_id=user_id)
         return jsonify({'success': True, 'history': history})
     except Exception as e:
         logger.error(f"[XASM HISTORY] Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/xasm/history/<scan_id>', methods=['GET'])
+@require_auth
 def get_xasm_scan_details(scan_id):
-    """Get full XASM scan results by ID"""
-    from database import get_xasm_scan_by_id
+    """Get full XASM scan results by ID - only if owned by current user"""
+    from database import get_xasm_scan_by_id, XASMScanHistory, SessionLocal
 
     try:
+        # CRITICAL: Verify scan belongs to current user
+        session = SessionLocal()
+        try:
+            scan = session.query(XASMScanHistory).filter_by(scan_id=scan_id).first()
+            if not scan:
+                return jsonify({'error': 'Scan not found'}), 404
+            if scan.user_id and scan.user_id != request.user_id:
+                return jsonify({'error': 'Access denied'}), 403
+        finally:
+            session.close()
+
         results = get_xasm_scan_by_id(scan_id)
         if results:
             return jsonify({'success': True, 'results': results})
@@ -2250,11 +2905,23 @@ def get_xasm_scan_details(scan_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/xasm/history/<scan_id>', methods=['DELETE'])
+@require_auth
 def delete_xasm_scan_endpoint(scan_id):
-    """Delete XASM scan from history"""
-    from database import delete_xasm_scan
+    """Delete XASM scan from history - only if owned by current user"""
+    from database import delete_xasm_scan, XASMScanHistory, SessionLocal
 
     try:
+        # CRITICAL: Verify scan belongs to current user before deleting
+        session = SessionLocal()
+        try:
+            scan = session.query(XASMScanHistory).filter_by(scan_id=scan_id).first()
+            if not scan:
+                return jsonify({'error': 'Scan not found'}), 404
+            if scan.user_id and scan.user_id != request.user_id:
+                return jsonify({'error': 'Access denied'}), 403
+        finally:
+            session.close()
+
         success = delete_xasm_scan(scan_id)
         if success:
             return jsonify({'success': True})
@@ -2266,24 +2933,27 @@ def delete_xasm_scan_endpoint(scan_id):
 
 
 @app.route('/api/xasm/cached-domains', methods=['GET'])
+@require_auth
 def get_xasm_cached_domains():
-    """Get list of unique domains that have been scanned via XASM and/or Lightbox"""
+    """Get list of unique domains that have been scanned via XASM and/or Lightbox for current user"""
     from database import get_db, XASMScan, LightboxScanHistory
     from sqlalchemy import func
 
     db = None
+    user_id = request.user_id  # CRITICAL: Filter by authenticated user
     try:
         db = get_db()
 
         # Dictionary to collect domain data
         domain_data = {}
 
-        # Get XASM domains with last scan date
+        # Get XASM domains with last scan date - FILTERED BY USER
         xasm_stats = db.query(
             XASMScan.domain,
             func.max(XASMScan.scan_date).label('last_scan')
         ).filter(
-            XASMScan.deleted_at == None
+            XASMScan.deleted_at == None,
+            XASMScan.user_id == user_id
         ).group_by(
             XASMScan.domain
         ).all()
@@ -2301,12 +2971,13 @@ def get_xasm_cached_domains():
             domain_data[domain]['last_xasm_scan'] = stat.last_scan.isoformat() if stat.last_scan else None
             domain_data[domain]['has_xasm'] = True
 
-        # Get Lightbox domains with last scan date
+        # Get Lightbox domains with last scan date - FILTERED BY USER
         lightbox_stats = db.query(
             LightboxScanHistory.target,
             func.max(LightboxScanHistory.timestamp).label('last_scan')
         ).filter(
-            LightboxScanHistory.deleted_at == None
+            LightboxScanHistory.deleted_at == None,
+            LightboxScanHistory.user_id == user_id
         ).group_by(
             LightboxScanHistory.target
         ).all()
@@ -2352,13 +3023,13 @@ def get_xasm_cached_domains():
 @app.route('/api/lightbox/history', methods=['GET'])
 @require_auth
 def get_lightbox_history_endpoint():
-    """Get Lightbox scan history"""
+    """Get Lightbox scan history for current user only"""
     from database import get_lightbox_scan_history
     user_id = request.user_id
 
     try:
-        # TODO: Filter history by user_id when database supports it
-        history = get_lightbox_scan_history()
+        # CRITICAL: Filter history by authenticated user's ID
+        history = get_lightbox_scan_history(user_id=user_id)
         return jsonify({'success': True, 'history': history})
     except Exception as e:
         logger.error(f"[LIGHTBOX HISTORY] Error: {str(e)}")
@@ -2367,11 +3038,21 @@ def get_lightbox_history_endpoint():
 @app.route('/api/lightbox/history/<scan_id>', methods=['GET'])
 @require_auth
 def get_lightbox_scan_details(scan_id):
-    """Get full Lightbox scan results by ID"""
-    from database import get_lightbox_scan_by_id
-    # TODO: Add user ownership check when database supports it
+    """Get full Lightbox scan results by ID - only if owned by current user"""
+    from database import get_lightbox_scan_by_id, LightboxScanHistory, SessionLocal
 
     try:
+        # CRITICAL: Verify scan belongs to current user
+        session = SessionLocal()
+        try:
+            scan = session.query(LightboxScanHistory).filter_by(scan_id=scan_id).first()
+            if not scan:
+                return jsonify({'error': 'Scan not found'}), 404
+            if scan.user_id and scan.user_id != request.user_id:
+                return jsonify({'error': 'Access denied'}), 403
+        finally:
+            session.close()
+
         results = get_lightbox_scan_by_id(scan_id)
         if results:
             return jsonify({'success': True, 'results': results})
@@ -2384,11 +3065,21 @@ def get_lightbox_scan_details(scan_id):
 @app.route('/api/lightbox/history/<scan_id>', methods=['DELETE'])
 @require_auth
 def delete_lightbox_scan_history_endpoint(scan_id):
-    """Delete Lightbox scan from history"""
-    from database import delete_lightbox_scan_history
-    # TODO: Add user ownership check when database supports it
+    """Delete Lightbox scan from history - only if owned by current user"""
+    from database import delete_lightbox_scan_history, LightboxScanHistory, SessionLocal
 
     try:
+        # CRITICAL: Verify scan belongs to current user before deleting
+        session = SessionLocal()
+        try:
+            scan = session.query(LightboxScanHistory).filter_by(scan_id=scan_id).first()
+            if not scan:
+                return jsonify({'error': 'Scan not found'}), 404
+            if scan.user_id and scan.user_id != request.user_id:
+                return jsonify({'error': 'Access denied'}), 403
+        finally:
+            session.close()
+
         success = delete_lightbox_scan_history(scan_id)
         if success:
             return jsonify({'success': True})
@@ -2403,10 +3094,13 @@ def delete_lightbox_scan_history_endpoint(scan_id):
 # ============================================================================
 
 @app.route('/api/ai/companies', methods=['GET'])
+@require_auth
 def get_companies_for_ai():
-    """Get list of companies with available scans for AI reports"""
+    """Get list of companies with available scans for AI reports - FILTERED BY USER"""
     try:
-        companies = get_companies_with_scans()
+        # CRITICAL: Filter by authenticated user's ID
+        user_id = request.user_id
+        companies = get_companies_with_scans(user_id=user_id)
 
         return jsonify({
             'success': True,
@@ -2420,23 +3114,25 @@ def get_companies_for_ai():
 
 
 @app.route('/api/ai/generate-report', methods=['POST'])
+@require_auth
 def generate_ai_report():
-    """Generate AI vulnerability assessment report"""
+    """Generate AI vulnerability assessment report - FILTERED BY USER"""
     from database import load_xasm_for_ai, load_lightbox_for_ai
     from modules.ghost.ai_vuln_report import generate_vulnerability_report
 
     try:
         data = request.get_json()
         company = data.get('company')
+        user_id = request.user_id  # CRITICAL: Filter by authenticated user
 
         if not company:
             return jsonify({'error': 'Company required'}), 400
 
-        print(f"[AI API] Generating report for {company}")
+        print(f"[AI API] Generating report for {company} (user_id: {user_id})")
 
-        # Load scan results
-        xasm_data = load_xasm_for_ai(company)
-        lightbox_data = load_lightbox_for_ai(company)
+        # Load scan results - filtered by user_id
+        xasm_data = load_xasm_for_ai(company, user_id=user_id)
+        lightbox_data = load_lightbox_for_ai(company, user_id=user_id)
 
         if not xasm_data:
             return jsonify({'error': 'XASM scan results not found or expired'}), 404
@@ -2746,8 +3442,10 @@ def search_uploaded_file():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/ghost/monitoring/timeline', methods=['POST'])
+@require_auth
+@require_email_monitoring_access
 def get_monitoring_timeline():
-    """Get breach timeline for monitored emails"""
+    """Get breach timeline for monitored emails - requires COMPANY_USER role or above"""
     try:
         data = request.json
         emails = data.get('emails', [])
@@ -3239,6 +3937,210 @@ def fetch_rss_feeds():
     except Exception as e:
         print(f"[RSS] ❌ Error: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# USER-SPECIFIC RSS FEED MANAGEMENT
+# ============================================================================
+
+@app.route('/api/news-sources', methods=['GET'])
+@require_auth
+def get_user_news_sources():
+    """Get RSS sources for current user."""
+    db = SessionLocal()
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        sources = db.query(NewsSource).filter_by(
+            user_id=user.get('id'),
+            active=True
+        ).order_by(NewsSource.created_at.desc()).all()
+
+        results = []
+        for source in sources:
+            results.append({
+                'id': source.id,
+                'name': source.name,
+                'url': source.url,
+                'active': source.active,
+                'last_fetched': source.last_fetched.isoformat() if source.last_fetched else None
+            })
+
+        return jsonify(results)
+
+    except Exception as e:
+        print(f"[RSS] Get user news sources error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/news-sources', methods=['POST'])
+@require_auth
+def add_user_news_source():
+    """Add RSS source for current user."""
+    db = SessionLocal()
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        data = request.get_json() or {}
+        url = data.get('url', '').strip()
+        name = data.get('name', '').strip()
+
+        if not url:
+            return jsonify({'error': 'URL is required'}), 400
+
+        # Check user's feed count (limit to 10)
+        feed_count = db.query(NewsSource).filter_by(user_id=user.get('id'), active=True).count()
+        if feed_count >= 10:
+            return jsonify({'error': 'Maximum 10 feeds allowed'}), 400
+
+        # Check for duplicate URL for this user
+        existing = db.query(NewsSource).filter_by(user_id=user.get('id'), url=url).first()
+        if existing:
+            return jsonify({'error': 'This feed is already added'}), 400
+
+        source = NewsSource(
+            user_id=user.get('id'),
+            url=url,
+            name=name or None,
+            active=True,
+            created_by=user.get('id')
+        )
+        db.add(source)
+        db.commit()
+
+        print(f"[RSS] User {user.get('id')} added feed: {url}")
+
+        return jsonify({
+            'success': True,
+            'source': {
+                'id': source.id,
+                'name': source.name,
+                'url': source.url,
+                'active': source.active
+            }
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"[RSS] Add user news source error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/news-sources/<int:source_id>', methods=['DELETE'])
+@require_auth
+def delete_user_news_source(source_id):
+    """Delete RSS source (only if owned by current user)."""
+    db = SessionLocal()
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        # Find source and verify ownership
+        source = db.query(NewsSource).filter_by(
+            id=source_id,
+            user_id=user.get('id')
+        ).first()
+
+        if not source:
+            return jsonify({'error': 'Source not found or unauthorized'}), 404
+
+        url = source.url
+        db.delete(source)
+        db.commit()
+
+        print(f"[RSS] User {user.get('id')} deleted feed: {url}")
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.rollback()
+        print(f"[RSS] Delete user news source error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/rss-feed', methods=['GET'])
+@require_auth
+def get_user_rss_feed():
+    """Get aggregated RSS feed from user's sources."""
+    db = SessionLocal()
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        # Get user's active RSS sources
+        sources = db.query(NewsSource).filter_by(
+            user_id=user.get('id'),
+            active=True
+        ).all()
+
+        if not sources:
+            # Return empty feed if no sources configured
+            return jsonify({
+                'articles': [],
+                'sources_count': 0,
+                'message': 'No RSS sources configured'
+            })
+
+        # Fetch and aggregate articles from all user's sources
+        all_articles = []
+
+        for source in sources:
+            try:
+                print(f"[RSS] Fetching for user {user.get('id')}: {source.url}")
+                feed = feedparser.parse(source.url)
+
+                for entry in feed.entries[:5]:  # Top 5 per source
+                    # Parse publication date
+                    pub_date = None
+                    if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                        pub_date = datetime(*entry.published_parsed[:6])
+                    elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
+                        pub_date = datetime(*entry.updated_parsed[:6])
+
+                    all_articles.append({
+                        'title': entry.get('title', 'No title'),
+                        'link': entry.get('link', ''),
+                        'description': (entry.get('summary', '') or '')[:200] + '...',
+                        'source': source.name or feed.feed.get('title', source.url),
+                        'published': pub_date.isoformat() if pub_date else datetime.now(timezone.utc).isoformat()
+                    })
+
+                # Update last_fetched timestamp
+                source.last_fetched = datetime.now(timezone.utc)
+                source.fetch_error = None
+
+            except Exception as e:
+                print(f"[RSS] Error fetching {source.url}: {e}")
+                source.fetch_error = str(e)
+                continue
+
+        db.commit()
+
+        # Sort by date (most recent first)
+        all_articles.sort(key=lambda x: x.get('published', ''), reverse=True)
+
+        return jsonify({
+            'articles': all_articles[:20],  # Return top 20 articles
+            'sources_count': len(sources)
+        })
+
+    except Exception as e:
+        print(f"[RSS] Get user feed error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
 
 
 # ============================================================================
@@ -4480,12 +5382,28 @@ def get_roadmap_profile():
             RoadmapProfile.is_active == True
         ).order_by(RoadmapProfile.created_at.desc()).first()
 
+        # Get user for role check
+        user = db.query(User).filter_by(id=user_id).first()
+
+        # Pre-fill company info for COMPANY_USER
+        locked_company_info = None
+        if user and user.role == UserRole.COMPANY_USER and user.company_id:
+            company = db.query(Company).filter_by(id=user.company_id).first()
+            if company:
+                locked_company_info = {
+                    'company_name': company.name,
+                    'company_domain': company.primary_domain
+                }
+
         if not profile:
-            return jsonify({
+            result = {
                 'success': True,
                 'profile': None,
                 'message': 'No profile found - setup required'
-            }), 200
+            }
+            if locked_company_info:
+                result['locked_company_info'] = locked_company_info
+            return jsonify(result), 200
 
         # Parse JSON fields
         current_measures = []
@@ -4501,11 +5419,12 @@ def get_roadmap_profile():
         except:
             pass
 
-        return jsonify({
+        result = {
             'success': True,
             'profile': {
                 'id': profile.id,
                 'company_name': profile.company_name,
+                'company_domain': profile.company_domain,
                 'company_size': profile.company_size,
                 'industry': profile.industry,
                 'employee_count': profile.employee_count,
@@ -4521,7 +5440,10 @@ def get_roadmap_profile():
                 'created_at': profile.created_at.isoformat() if profile.created_at else None,
                 'last_recalculated': profile.last_recalculated.isoformat() if profile.last_recalculated else None
             }
-        }), 200
+        }
+        if locked_company_info:
+            result['locked_company_info'] = locked_company_info
+        return jsonify(result), 200
 
     except Exception as e:
         print(f"[ROADMAP] Error getting profile: {e}")
@@ -4545,6 +5467,18 @@ def create_roadmap_profile():
         data = request.get_json()
         db = get_db()
 
+        # Get company name/domain from request
+        company_name = data.get('company_name', 'My Company').strip() if data.get('company_name') else 'My Company'
+        company_domain = data.get('company_domain', '').strip() if data.get('company_domain') else None
+
+        # COMPANY_USER: override with actual company info (enforced)
+        user = db.query(User).filter_by(id=user_id).first()
+        if user and user.role == UserRole.COMPANY_USER and user.company_id:
+            company = db.query(Company).filter_by(id=user.company_id).first()
+            if company:
+                company_name = company.name
+                company_domain = company.primary_domain
+
         # Check for existing profile for this user
         existing = db.query(RoadmapProfile).filter(
             RoadmapProfile.user_id == user_id,
@@ -4554,8 +5488,8 @@ def create_roadmap_profile():
 
         if existing:
             # Update existing profile
-            existing.company_name = data.get('company_name', existing.company_name)
-            existing.company_domain = data.get('company_domain', existing.company_domain)
+            existing.company_name = company_name
+            existing.company_domain = company_domain
             existing.company_size = data.get('company_size', existing.company_size)
             existing.industry = data.get('industry', existing.industry)
             existing.employee_count = data.get('employee_count', existing.employee_count)
@@ -4585,8 +5519,8 @@ def create_roadmap_profile():
             # Create new profile for this user
             profile = RoadmapProfile(
                 user_id=user_id,
-                company_name=data.get('company_name', 'My Company'),
-                company_domain=data.get('company_domain'),
+                company_name=company_name,
+                company_domain=company_domain,
                 company_size=data.get('company_size', 'small'),
                 industry=data.get('industry', 'technology'),
                 employee_count=data.get('employee_count'),
@@ -5977,15 +6911,19 @@ def get_user_profile():
         if not user:
             return jsonify({'error': 'User not found'}), 404
 
-        # Get company name if user belongs to a company
-        company_name = None
+        # Get company info if user belongs to a company
+        company_info = None
         if user.company_id:
             company = db.query(Company).filter(
                 Company.id == user.company_id,
                 Company.deleted_at.is_(None)
             ).first()
             if company:
-                company_name = company.name
+                company_info = {
+                    'id': company.id,
+                    'name': company.name,
+                    'domain': company.primary_domain  # Include domain for frontend restrictions
+                }
 
         return jsonify({
             'id': user.id,
@@ -5993,7 +6931,8 @@ def get_user_profile():
             'full_name': user.full_name,
             'role': user.role.value if user.role else 'user',
             'company_id': user.company_id,
-            'company_name': company_name,
+            'company_name': company_info['name'] if company_info else None,
+            'company': company_info,  # Full company object with domain
             'created_at': user.created_at.isoformat() if user.created_at else None,
             'last_login': user.last_login_at.isoformat() if user.last_login_at else None,
             'email_verified': user.email_verified,

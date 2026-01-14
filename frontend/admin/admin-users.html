@@ -471,6 +471,12 @@
             display: inline-block;
         }
 
+        .role-badge.super_admin {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
         .role-badge.owner {
             background: rgba(187, 134, 252, 0.15);
             color: var(--role-owner);
@@ -478,15 +484,33 @@
         }
 
         .role-badge.admin {
-            background: rgba(66, 165, 245, 0.15);
-            color: var(--role-admin);
-            border: 1px solid rgba(66, 165, 245, 0.3);
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
 
-        .role-badge.user, .role-badge.analyst {
-            background: rgba(0, 230, 118, 0.15);
-            color: var(--role-user);
-            border: 1px solid rgba(0, 230, 118, 0.3);
+        .role-badge.analyst {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .role-badge.company_user {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .role-badge.user {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+            border: 1px solid rgba(107, 114, 128, 0.3);
+        }
+
+        .role-badge.demo {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
         }
 
         .role-badge.viewer {
@@ -896,6 +920,87 @@
         }
 
         .animate-in { animation: fadeIn 0.5s ease-out forwards; }
+
+        /* Password Options */
+        .password-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .radio-option:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .radio-option input[type="radio"] {
+            cursor: pointer;
+            accent-color: var(--gold-primary);
+        }
+
+        .radio-option span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .password-display-box {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .password-display-box code {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--gold-primary);
+            user-select: all;
+        }
+
+        .btn-copy {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        .form-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .form-note.warning {
+            color: #f59e0b;
+        }
     </style>
 </head>
 <body>
@@ -1051,18 +1156,42 @@
                         </div>
                     </div>
                     <div class="form-group" id="passwordOptionsGroup">
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="autoPassword" checked>
-                            <span class="checkbox-box">&#10003;</span>
-                            <span class="checkbox-label">Auto-generate temporary password</span>
-                        </label>
+                        <label class="form-label">Password Setup</label>
+                        <div class="password-options">
+                            <label class="radio-option">
+                                <input type="radio" name="passwordMode" value="auto" checked onchange="togglePasswordMode()">
+                                <span>Auto-generate temporary password</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="passwordMode" value="manual" onchange="togglePasswordMode()">
+                                <span>Set password manually</span>
+                            </label>
+                        </div>
+
+                        <!-- Manual password input (hidden by default) -->
+                        <div id="manualPasswordSection" style="display: none;">
+                            <input type="password" class="form-input" id="manualPassword" placeholder="Enter password (min 8 characters)">
+                            <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm password" style="margin-top: 8px;">
+                            <p class="form-note">Password will be shown to you after user creation</p>
+                        </div>
+
+                        <!-- Auto-generated password display area (shown after creation) -->
+                        <div id="generatedPasswordDisplay" style="display: none; margin-top: 12px;">
+                            <div class="password-display-box">
+                                <strong style="color: var(--text-secondary);">Generated Password:</strong>
+                                <code id="displayedPassword"></code>
+                                <button type="button" onclick="copyPassword()" class="btn-copy">Copy</button>
+                            </div>
+                            <p class="form-note warning">Save this password now - it won't be shown again!</p>
+                        </div>
                     </div>
                     <div class="form-group" id="sendEmailGroup">
                         <label class="checkbox-item">
-                            <input type="checkbox" id="sendWelcomeEmail" checked>
+                            <input type="checkbox" id="sendWelcomeEmail">
                             <span class="checkbox-box">&#10003;</span>
-                            <span class="checkbox-label">Send welcome email with credentials</span>
+                            <span class="checkbox-label">Send welcome email (optional)</span>
                         </label>
+                        <p class="form-note">Email system may not be configured. Manually share credentials with user.</p>
                     </div>
                 </form>
             </div>
@@ -1253,11 +1382,17 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    usersData = data.users || data;
+                    console.log('[USERS] API response:', data);
+
+                    // API returns {users: [...], total: N, page: N, total_pages: N}
+                    usersData = data.users || [];
                     totalPages = data.total_pages || 1;
+
+                    console.log('[USERS] Loaded', usersData.length, 'users');
                     renderUsers();
                     renderPagination();
                 } else {
+                    console.error('[USERS] API error:', response.status);
                     loadMockUsers();
                 }
             } catch (error) {
@@ -1311,7 +1446,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td><span class="role-badge ${user.role}">${user.role}</span></td>
+                        <td>${getRoleBadge(user.role)}</td>
                         <td>${user.company_name || '<span style="color: var(--text-muted)">--</span>'}</td>
                         <td class="status-cell"><span class="status-dot ${user.status}" title="${user.status.charAt(0).toUpperCase() + user.status.slice(1)}"></span></td>
                         <td>${user.last_login_at ? formatRelativeTime(user.last_login_at) : '<span style="color: var(--text-muted)">Never</span>'}</td>
@@ -1397,7 +1532,45 @@
             document.getElementById('userId').value = '';
             document.getElementById('passwordOptionsGroup').style.display = 'block';
             document.getElementById('sendEmailGroup').style.display = 'block';
+
+            // Reset password mode to auto
+            document.querySelector('input[name="passwordMode"][value="auto"]').checked = true;
+            document.getElementById('manualPasswordSection').style.display = 'none';
+            document.getElementById('generatedPasswordDisplay').style.display = 'none';
+            document.getElementById('manualPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+
             openModal('userModal');
+        }
+
+        function togglePasswordMode() {
+            const mode = document.querySelector('input[name="passwordMode"]:checked').value;
+            const manualSection = document.getElementById('manualPasswordSection');
+            const generatedDisplay = document.getElementById('generatedPasswordDisplay');
+
+            if (mode === 'manual') {
+                manualSection.style.display = 'block';
+                generatedDisplay.style.display = 'none';
+            } else {
+                manualSection.style.display = 'none';
+                // Keep generated display if it was shown (after successful creation)
+            }
+        }
+
+        function copyPassword() {
+            const password = document.getElementById('displayedPassword').textContent;
+            navigator.clipboard.writeText(password).then(() => {
+                showToast('Password copied to clipboard', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = password;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Password copied to clipboard', 'success');
+            });
         }
 
         function editUser(userId) {
@@ -1418,20 +1591,47 @@
 
         async function saveUser() {
             const userId = document.getElementById('userId').value;
+            const isEditing = !!userId;
+
+            // Get password mode (only for new users)
+            const passwordMode = document.querySelector('input[name="passwordMode"]:checked')?.value || 'auto';
+            let password = null;
+            let autoPassword = true;
+
+            // For new users, validate password if manual mode
+            if (!isEditing && passwordMode === 'manual') {
+                const manualPassword = document.getElementById('manualPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (!manualPassword || manualPassword.length < 8) {
+                    showToast('Password must be at least 8 characters', 'error');
+                    return;
+                }
+
+                if (manualPassword !== confirmPassword) {
+                    showToast('Passwords do not match', 'error');
+                    return;
+                }
+
+                password = manualPassword;
+                autoPassword = false;
+            }
+
             const userData = {
                 full_name: document.getElementById('userFullName').value,
                 email: document.getElementById('userEmail').value,
                 role: document.getElementById('userRole').value,
                 company_id: document.getElementById('userCompany').value || null,
-                auto_password: document.getElementById('autoPassword').checked,
+                auto_password: autoPassword,
+                password: password,
                 send_email: document.getElementById('sendWelcomeEmail').checked
             };
 
             try {
-                const url = userId
+                const url = isEditing
                     ? `${API_URL}/api/admin/users/${userId}`
                     : `${API_URL}/api/admin/users`;
-                const method = userId ? 'PUT' : 'POST';
+                const method = isEditing ? 'PUT' : 'POST';
 
                 const response = await fetch(url, {
                     method,
@@ -1442,15 +1642,44 @@
                     body: JSON.stringify(userData)
                 });
 
+                const result = await response.json();
+
                 if (response.ok) {
-                    showToast(userId ? 'User updated successfully' : 'User created successfully', 'success');
-                    closeModal('userModal');
-                    loadUsers();
+                    if (isEditing) {
+                        showToast('User updated successfully', 'success');
+                        closeModal('userModal');
+                        loadUsers();
+                    } else {
+                        // New user created
+                        if (autoPassword && result.temporary_password) {
+                            // Show the auto-generated password
+                            document.getElementById('displayedPassword').textContent = result.temporary_password;
+                            document.getElementById('generatedPasswordDisplay').style.display = 'block';
+                            document.getElementById('saveUserBtn').textContent = 'Done';
+                            document.getElementById('saveUserBtn').onclick = () => {
+                                closeModal('userModal');
+                                loadUsers();
+                                // Reset button
+                                document.getElementById('saveUserBtn').textContent = 'Create User';
+                                document.getElementById('saveUserBtn').onclick = saveUser;
+                            };
+                            showToast('User created! Save the password below.', 'success');
+                        } else if (!autoPassword) {
+                            // Manual password was set
+                            showToast('User created with your specified password', 'success');
+                            closeModal('userModal');
+                            loadUsers();
+                        } else {
+                            showToast('User created successfully', 'success');
+                            closeModal('userModal');
+                            loadUsers();
+                        }
+                    }
                 } else {
-                    const error = await response.json();
-                    showToast(error.error || 'Failed to save user', 'error');
+                    showToast(result.error || 'Failed to save user', 'error');
                 }
             } catch (error) {
+                console.error('Save user error:', error);
                 showToast('Connection error. Please try again.', 'error');
             }
         }
@@ -1656,6 +1885,26 @@
             const parts = name.split(/[@\s]+/).filter(Boolean);
             if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
             return name.substring(0, 2).toUpperCase();
+        }
+
+        function getRoleBadge(role) {
+            // Normalize role to lowercase for consistent mapping
+            const normalizedRole = (role || 'user').toLowerCase().trim();
+
+            const roleMap = {
+                'super_admin': { label: 'SUPER_ADMIN', color: '#ef4444' },
+                'admin': { label: 'ADMIN', color: '#f59e0b' },
+                'analyst': { label: 'ANALYST', color: '#3b82f6' },
+                'company_user': { label: 'COMPANY_USER', color: '#10b981' },
+                'user': { label: 'USER', color: '#6b7280' },
+                'demo': { label: 'DEMO', color: '#8b5cf6' },
+                'owner': { label: 'OWNER', color: '#bb86fc' },
+                'viewer': { label: 'VIEWER', color: '#6b7280' }
+            };
+
+            const roleInfo = roleMap[normalizedRole] || roleMap['user'];
+
+            return `<span class="role-badge" style="background: ${roleInfo.color}20; color: ${roleInfo.color}; border: 1px solid ${roleInfo.color}40; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">${roleInfo.label}</span>`;
         }
 
         function formatRelativeTime(dateString) {

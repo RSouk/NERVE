@@ -1181,34 +1181,7 @@
                         <h2 class="section-title">Weekly Maintenance</h2>
                     </div>
                     <div class="checklist" id="maintenance-checklist">
-                        <div class="checklist-item" onclick="toggleChecklist(this, 'rescan')">
-                            <div class="checklist-checkbox">&#10003;</div>
-                            <div class="checklist-content">
-                                <div class="checklist-title">Re-scan your domain</div>
-                                <div class="checklist-desc">Recommended weekly to track changes</div>
-                            </div>
-                        </div>
-                        <div class="checklist-item" onclick="toggleChecklist(this, 'breach-check')">
-                            <div class="checklist-checkbox">&#10003;</div>
-                            <div class="checklist-content">
-                                <div class="checklist-title">Check for new breaches</div>
-                                <div class="checklist-desc">Run Global Search for your domain</div>
-                            </div>
-                        </div>
-                        <div class="checklist-item" onclick="toggleChecklist(this, 'adversary-review')">
-                            <div class="checklist-checkbox">&#10003;</div>
-                            <div class="checklist-content">
-                                <div class="checklist-title">Review threat landscape</div>
-                                <div class="checklist-desc">Check Adversary Matcher for new threats</div>
-                            </div>
-                        </div>
-                        <div class="checklist-item" onclick="toggleChecklist(this, 'lightbox-test')">
-                            <div class="checklist-checkbox">&#10003;</div>
-                            <div class="checklist-content">
-                                <div class="checklist-title">Test one fix with Lightbox</div>
-                                <div class="checklist-desc">Verify remediation worked</div>
-                            </div>
-                        </div>
+                        <p class="loading-text">Loading checklist...</p>
                     </div>
                     <div class="next-scan-banner">
                         <div class="next-scan-label">Next Recommended Scan</div>
@@ -1401,17 +1374,24 @@
         // Scan History
         async function loadScanHistory() {
             const container = document.getElementById('scan-history-container');
+            const token = localStorage.getItem('session_token');
             try {
-                const response = await fetch(`${API_URL}/api/xasm/scan-history?limit=5`);
+                const response = await fetch(`${API_URL}/api/ghost/scan-history`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 const data = await response.json();
 
-                if (data.scans && data.scans.length > 0) {
-                    container.innerHTML = data.scans.map(scan => `
+                // Handle array response (scan history returns array directly)
+                const scans = Array.isArray(data) ? data : (data.scans || []);
+                if (scans.length > 0) {
+                    container.innerHTML = scans.slice(0, 5).map(scan => `
                         <div class="scan-item">
                             <div class="scan-domain">${scan.domain}</div>
                             <div class="scan-date">${new Date(scan.scan_date).toLocaleDateString()}</div>
-                            <div class="scan-findings">${scan.findings_count || 0} findings</div>
-                            <button class="scan-action" onclick="viewScanDetails(${scan.id})">View</button>
+                            <div class="scan-findings">${scan.total_findings || 0} findings</div>
+                            <button class="scan-action" onclick="viewScanDetails(${scan.scan_id})">View</button>
                         </div>
                     `).join('');
                 } else {
@@ -1491,13 +1471,128 @@
             });
         }
 
-        // Maintenance Checklist
-        function toggleChecklist(item, id) {
-            item.classList.toggle('checked');
-            saveMaintenanceState();
+        // Maintenance Checklist (User-Specific via API)
+        let maintenanceTasks = [];
+
+        async function loadMaintenanceChecklist() {
+            const container = document.getElementById('maintenance-checklist');
+            const token = localStorage.getItem('session_token');
+
+            if (!token) {
+                // Not logged in - show default tasks without persistence
+                renderDefaultChecklist(container);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/maintenance/checklist`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    console.error('[MAINTENANCE] Failed to load checklist:', response.status);
+                    renderDefaultChecklist(container);
+                    return;
+                }
+
+                const data = await response.json();
+                maintenanceTasks = data.tasks || [];
+                renderMaintenanceChecklist(container, maintenanceTasks);
+
+            } catch (error) {
+                console.error('[MAINTENANCE] Error loading checklist:', error);
+                renderDefaultChecklist(container);
+            }
         }
 
-        function saveMaintenanceState() {
+        function renderMaintenanceChecklist(container, tasks) {
+            if (!tasks || tasks.length === 0) {
+                renderDefaultChecklist(container);
+                return;
+            }
+
+            container.innerHTML = tasks.map(task => `
+                <div class="checklist-item ${task.completed ? 'checked' : ''}"
+                     data-task-key="${task.task_key}"
+                     data-task-id="${task.id}"
+                     onclick="toggleMaintenanceTask('${task.task_key}')">
+                    <div class="checklist-checkbox">&#10003;</div>
+                    <div class="checklist-content">
+                        <div class="checklist-title">${task.task_name}</div>
+                        <div class="checklist-desc">${task.task_description || ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderDefaultChecklist(container) {
+            // Fallback for unauthenticated users - uses localStorage
+            const defaultTasks = [
+                { key: 'rescan', name: 'Re-scan your domain', desc: 'Recommended weekly to track changes' },
+                { key: 'breach-check', name: 'Check for new breaches', desc: 'Run Global Search for your domain' },
+                { key: 'adversary-review', name: 'Review threat landscape', desc: 'Check Adversary Matcher for new threats' },
+                { key: 'lightbox-test', name: 'Test one fix with Lightbox', desc: 'Verify remediation worked' }
+            ];
+
+            const state = JSON.parse(localStorage.getItem('ghost_maintenance_state') || '{}');
+
+            container.innerHTML = defaultTasks.map((task, i) => `
+                <div class="checklist-item ${state[`item_${i}`] ? 'checked' : ''}"
+                     data-task-key="${task.key}"
+                     onclick="toggleLocalChecklist(this, ${i})">
+                    <div class="checklist-checkbox">&#10003;</div>
+                    <div class="checklist-content">
+                        <div class="checklist-title">${task.name}</div>
+                        <div class="checklist-desc">${task.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function toggleMaintenanceTask(taskKey) {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                // Fallback to local storage for unauthenticated users
+                const item = document.querySelector(`[data-task-key="${taskKey}"]`);
+                if (item) {
+                    item.classList.toggle('checked');
+                    saveLocalMaintenanceState();
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/ghost/maintenance/checklist/${taskKey}/toggle-by-key`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update UI immediately
+                    const item = document.querySelector(`[data-task-key="${taskKey}"]`);
+                    if (item) {
+                        if (data.task.completed) {
+                            item.classList.add('checked');
+                        } else {
+                            item.classList.remove('checked');
+                        }
+                    }
+                } else {
+                    console.error('[MAINTENANCE] Failed to toggle task');
+                }
+            } catch (error) {
+                console.error('[MAINTENANCE] Error toggling task:', error);
+            }
+        }
+
+        // Fallback functions for unauthenticated users (localStorage)
+        function toggleLocalChecklist(item, index) {
+            item.classList.toggle('checked');
+            saveLocalMaintenanceState();
+        }
+
+        function saveLocalMaintenanceState() {
             const items = document.querySelectorAll('.checklist-item');
             const state = {};
             items.forEach((item, i) => {
@@ -1506,17 +1601,17 @@
             localStorage.setItem('ghost_maintenance_state', JSON.stringify(state));
         }
 
+        // Alias for backward compatibility (called in DOMContentLoaded)
         function loadMaintenanceState() {
-            const state = JSON.parse(localStorage.getItem('ghost_maintenance_state') || '{}');
-            const items = document.querySelectorAll('.checklist-item');
-            items.forEach((item, i) => {
-                if (state[`item_${i}`]) {
-                    item.classList.add('checked');
-                }
-            });
+            loadMaintenanceChecklist();
         }
 
+        // Weekly reset is now handled server-side for authenticated users
         function checkWeeklyReset() {
+            // Only apply for unauthenticated users using localStorage
+            const token = localStorage.getItem('session_token');
+            if (token) return; // Server handles reset for authenticated users
+
             const lastReset = localStorage.getItem('maintenance_last_reset');
             const today = new Date();
             const dayOfWeek = today.getDay();

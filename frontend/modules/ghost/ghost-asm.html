@@ -6620,6 +6620,93 @@
         console.log('Button exists:', document.getElementById('run-lightbox-scan'));
 
         const API_URL = 'http://localhost:5000';
+
+        // ============================================================================
+        // USER ISOLATION: All localStorage keys must be scoped by user_id
+        // ============================================================================
+        let currentUserId = null;
+
+        // Get user-scoped localStorage key
+        function getUserKey(baseKey) {
+            return currentUserId ? `${baseKey}_user_${currentUserId}` : baseKey;
+        }
+
+        // Initialize user info from profile API
+        // Store user info globally for domain restriction checks
+        let currentUserRole = null;
+        let currentUserCompany = null;
+
+        async function initializeUserInfo() {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                console.warn('[XASM] No session token, using default storage');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const userData = await response.json();
+                    currentUserId = userData.id;
+                    currentUserRole = userData.role;
+                    currentUserCompany = userData.company;
+                    console.log('[XASM] User initialized:', currentUserId, 'role:', currentUserRole);
+
+                    // ═══════════════════════════════════════════════════════════════
+                    // DOMAIN RESTRICTION FOR COMPANY_USER ROLE
+                    // Pre-fill and lock domain input for company users
+                    // ═══════════════════════════════════════════════════════════════
+                    if (currentUserRole && currentUserRole.toLowerCase() === 'company_user' && currentUserCompany) {
+                        const companyDomain = currentUserCompany.domain;
+                        if (companyDomain) {
+                            console.log('[XASM] COMPANY_USER detected, locking domain to:', companyDomain);
+
+                            // Pre-fill XASM domain input
+                            const domainInput = document.getElementById('domainInput');
+                            if (domainInput) {
+                                domainInput.value = companyDomain;
+                                domainInput.readOnly = true;
+                                domainInput.style.opacity = '0.8';
+                                domainInput.style.cursor = 'not-allowed';
+                                domainInput.title = `Company users can only scan: ${companyDomain}`;
+
+                                // Add helper text
+                                const existingHelper = document.getElementById('companyDomainHelper');
+                                if (!existingHelper) {
+                                    const helperText = document.createElement('div');
+                                    helperText.id = 'companyDomainHelper';
+                                    helperText.innerHTML = `🔒 Company users can only scan: <strong>${companyDomain}</strong>`;
+                                    helperText.style.cssText = 'color: #D4AF37; font-size: 12px; margin-top: 8px; padding: 8px 12px; background: rgba(212, 175, 55, 0.1); border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.2);';
+                                    domainInput.parentElement.appendChild(helperText);
+                                }
+                            }
+
+                            // Pre-fill Lightbox full surface domain input
+                            const fullSurfaceDomain = document.getElementById('fullSurfaceDomain');
+                            if (fullSurfaceDomain) {
+                                fullSurfaceDomain.value = companyDomain;
+                                fullSurfaceDomain.readOnly = true;
+                                fullSurfaceDomain.style.opacity = '0.8';
+                                fullSurfaceDomain.style.cursor = 'not-allowed';
+                            }
+
+                            // Set global domain
+                            window.currentDomain = companyDomain;
+                            currentScanDomain = companyDomain;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('[XASM] Error fetching user info:', error);
+            }
+        }
+
+        // Initialize on page load (async, will complete before DOMContentLoaded fires)
+        initializeUserInfo();
+        // ============================================================================
+
         let currentResults = null;
         let progressPollInterval = null;
         let currentProgressInterval = null; // Lightbox progress interval
@@ -6711,10 +6798,11 @@
                             }
                         }
 
-                        // Check if complete
-                        if (data.progress >= 100 || data.status === 'complete') {
-                            console.log('[LIGHTBOX PROGRESS] Scan complete! Status:', data.status);
+                        // Check if complete - use multiple detection methods for reliability
+                        if (data.scan_complete || data.progress >= 100 || data.status === 'complete') {
+                            console.log('[LIGHTBOX PROGRESS] Scan complete! Status:', data.status, 'scan_complete:', data.scan_complete);
                             console.log('[LIGHTBOX PROGRESS] Scan ID from progress:', data.scan_id);
+                            console.log('[LIGHTBOX PROGRESS] Findings count:', data.findings_count);
                             stopLightboxProgressPolling();
 
                             // FIX: Store scan_id from progress data for reliable result loading
@@ -6723,9 +6811,24 @@
                                 console.log('[LIGHTBOX PROGRESS] Stored scan_id:', currentLightboxScanId);
                             }
 
-                            // Load and display results
-                            console.log('[LIGHTBOX PROGRESS] Loading results...');
-                            await loadLightboxResultsFromHistory();
+                            // Hide progress bar
+                            hideLightboxProgressBar();
+
+                            // Load and display results after a brief delay to ensure DB commit
+                            console.log('[LIGHTBOX PROGRESS] Loading results after 1s delay...');
+                            setTimeout(async () => {
+                                await loadLightboxResultsFromHistory();
+                            }, 1000);
+                            return; // Exit polling
+                        }
+
+                        // Check for error
+                        if (data.status === 'error') {
+                            console.error('[LIGHTBOX PROGRESS] Scan error:', data.current_step);
+                            stopLightboxProgressPolling();
+                            hideLightboxProgressBar();
+                            showLightboxError(data.current_step || 'Scan failed');
+                            return;
                         }
                     }
                 } catch (error) {
@@ -6740,6 +6843,28 @@
                 lightboxProgressInterval = null;
                 console.log('[LIGHTBOX PROGRESS] Polling stopped');
             }
+        }
+
+        function hideLightboxProgressBar() {
+            const progressContainer = document.getElementById('lightbox-progress-container');
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+                console.log('[LIGHTBOX] Progress bar hidden');
+            }
+        }
+
+        function showLightboxError(message) {
+            const activityFeed = document.getElementById('activity-feed');
+            if (activityFeed) {
+                const item = document.createElement('div');
+                item.className = 'lightbox-activity-item error';
+                item.innerHTML = `
+                    <div class="lightbox-activity-icon error" style="color: #ff4444;">&#10060;</div>
+                    <span style="color: #ff4444;">${message}</span>
+                `;
+                activityFeed.insertBefore(item, activityFeed.firstChild);
+            }
+            console.error('[LIGHTBOX] Error:', message);
         }
 
         // Load results from history and update UI after scan completes via polling
@@ -7030,6 +7155,33 @@
                 return;
             }
 
+            // ═══════════════════════════════════════════════════════════════
+            // COMPANY_USER DOMAIN RESTRICTION CHECK (Frontend validation)
+            // Backend also enforces this, but frontend provides better UX
+            // IP addresses blocked for company users
+            // ═══════════════════════════════════════════════════════════════
+            if (currentUserRole && currentUserRole.toLowerCase() === 'company_user' && currentUserCompany) {
+                const companyDomain = currentUserCompany.domain;
+                if (companyDomain) {
+                    const normalizedTarget = domain.toLowerCase().replace(/^www\./, '');
+                    const normalizedCompany = companyDomain.toLowerCase().replace(/^www\./, '');
+
+                    // Check if it's an IP address
+                    const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+                    if (ipPattern.test(normalizedTarget)) {
+                        alert('Access denied. Company users cannot scan IP addresses.\n\nContact your administrator to add approved IPs.');
+                        document.getElementById('domainInput').value = companyDomain;
+                        return;
+                    }
+
+                    if (normalizedTarget !== normalizedCompany) {
+                        alert(`Access denied. Company users can only scan: ${companyDomain}`);
+                        document.getElementById('domainInput').value = companyDomain;
+                        return;
+                    }
+                }
+            }
+
             // Check for authentication
             const token = localStorage.getItem('session_token')?.trim();
             console.log('[ASM DEBUG] Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'NULL/UNDEFINED');
@@ -7119,12 +7271,13 @@
                 window.currentASMScanId = currentASMScanId;
 
                 // SAVE TO LOCALSTORAGE for persistence across page refresh
-                localStorage.setItem('nerve_current_domain', currentScanDomain);
-                localStorage.setItem('nerve_current_scan_id', currentASMScanId);
-                localStorage.setItem('nerve_last_tab', 'asm');
+                // USER ISOLATION: Use user-scoped localStorage keys
+                localStorage.setItem(getUserKey('nerve_current_domain'), currentScanDomain);
+                localStorage.setItem(getUserKey('nerve_current_scan_id'), currentASMScanId);
+                localStorage.setItem(getUserKey('nerve_last_tab'), 'asm');
 
                 console.log('[ASM] Stored - Domain:', currentScanDomain, 'Scan ID:', currentASMScanId);
-                console.log('[ASM] Saved to localStorage for persistence');
+                console.log('[ASM] Saved to localStorage for persistence (user-scoped)');
 
                 if (!currentASMScanId) {
                     console.error('[ASM] WARNING: Scan ID is null! Backend did not return scan ID.');
@@ -8659,9 +8812,9 @@
 
         // Tab switching
         function switchTab(tabName, evt) {
-            // Save current tab to localStorage
-            localStorage.setItem('nerve_last_tab', tabName);
-            console.log(`[TAB] Switched to ${tabName}, saved to localStorage`);
+            // Save current tab to localStorage - USER ISOLATION: Use user-scoped key
+            localStorage.setItem(getUserKey('nerve_last_tab'), tabName);
+            console.log(`[TAB] Switched to ${tabName}, saved to localStorage (user-scoped)`);
 
             // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -8778,7 +8931,8 @@
                 }
 
                 // Use currentScanDomain or fallback to saved domain
-                const domain = currentScanDomain || localStorage.getItem('nerve_current_domain');
+                // USER ISOLATION: Use user-scoped localStorage key
+                const domain = currentScanDomain || localStorage.getItem(getUserKey('nerve_current_domain'));
                 if (!domain) {
                     console.log('[Lightbox] No domain available for history');
                     return;
@@ -10190,9 +10344,14 @@
 
         async function loadXASMHistory() {
             const container = document.getElementById('xasm-history-list');
+            const token = localStorage.getItem('session_token');
 
             try {
-                const response = await fetch('http://localhost:5000/api/xasm/history');
+                const response = await fetch('http://localhost:5000/api/xasm/history', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 const data = await response.json();
 
                 if (!data.success || !data.history || data.history.length === 0) {
@@ -10272,9 +10431,14 @@
 
         async function viewXASMScanFromHistory(scanId) {
             toggleXASMHistory(); // Close dropdown
+            const token = localStorage.getItem('session_token');
 
             try {
-                const response = await fetch(`http://localhost:5000/api/xasm/history/${scanId}`);
+                const response = await fetch(`http://localhost:5000/api/xasm/history/${scanId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 const data = await response.json();
 
                 if (data.success && data.results) {
@@ -10312,10 +10476,14 @@
 
         async function deleteXASMScan(scanId) {
             if (!confirm('Delete this scan from history?')) return;
+            const token = localStorage.getItem('session_token');
 
             try {
                 const response = await fetch(`http://localhost:5000/api/xasm/history/${scanId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
                 const data = await response.json();
@@ -10336,13 +10504,17 @@
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('[INIT] Page loaded, checking for saved state...');
 
+            // Wait for user info to be initialized (needed for user-scoped localStorage)
+            await initializeUserInfo();
+
             // Restore saved state from localStorage
-            const savedDomain = localStorage.getItem('nerve_current_domain');
-            const savedScanId = localStorage.getItem('nerve_current_scan_id');
-            const savedTab = localStorage.getItem('nerve_last_tab');
+            // USER ISOLATION: Use user-scoped localStorage keys
+            const savedDomain = localStorage.getItem(getUserKey('nerve_current_domain'));
+            const savedScanId = localStorage.getItem(getUserKey('nerve_current_scan_id'));
+            const savedTab = localStorage.getItem(getUserKey('nerve_last_tab'));
 
             if (savedDomain && savedScanId) {
-                console.log(`[INIT] Restoring state: ${savedDomain}, scan ${savedScanId}`);
+                console.log(`[INIT] Restoring state: ${savedDomain}, scan ${savedScanId} (user: ${currentUserId})`);
 
                 window.currentDomain = savedDomain;
                 window.currentASMScanId = parseInt(savedScanId);
@@ -10366,7 +10538,7 @@
                     }
                 }
             } else {
-                console.log('[INIT] No saved state found');
+                console.log('[INIT] No saved state found for current user');
             }
 
             // Initialize test cards on page load (UI only, no API calls)
@@ -10380,9 +10552,10 @@
             if (backButton) {
                 backButton.addEventListener('click', () => {
                     console.log('[INIT] Clearing saved state on back to dashboard');
-                    localStorage.removeItem('nerve_current_domain');
-                    localStorage.removeItem('nerve_current_scan_id');
-                    localStorage.removeItem('nerve_last_tab');
+                    // USER ISOLATION: Use user-scoped localStorage keys
+                    localStorage.removeItem(getUserKey('nerve_current_domain'));
+                    localStorage.removeItem(getUserKey('nerve_current_scan_id'));
+                    localStorage.removeItem(getUserKey('nerve_last_tab'));
                 });
             }
 
@@ -11806,8 +11979,13 @@
                 this.scanAnalysisData = null;
 
                 // Load available domains from XASM and Lightbox scans
+                const token = localStorage.getItem('session_token');
                 try {
-                    const response = await fetch('http://localhost:5000/api/xasm/cached-domains');
+                    const response = await fetch('http://localhost:5000/api/xasm/cached-domains', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     const data = await response.json();
 
                     if (data.success && data.domains && data.domains.length > 0) {
@@ -12191,6 +12369,32 @@
                 return;
             }
 
+            // ═══════════════════════════════════════════════════════════════
+            // COMPANY_USER DOMAIN RESTRICTION CHECK (Frontend validation)
+            // IP addresses blocked for company users
+            // ═══════════════════════════════════════════════════════════════
+            if (currentUserRole && currentUserRole.toLowerCase() === 'company_user' && currentUserCompany) {
+                const companyDomain = currentUserCompany.domain;
+                if (companyDomain) {
+                    const normalizedTarget = domain.toLowerCase().replace(/^www\./, '');
+                    const normalizedCompany = companyDomain.toLowerCase().replace(/^www\./, '');
+
+                    // Check if it's an IP address
+                    const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+                    if (ipPattern.test(normalizedTarget)) {
+                        alert('Access denied. Company users cannot test IP addresses.\n\nContact your administrator to add approved IPs.');
+                        document.getElementById('fullSurfaceDomain').value = companyDomain;
+                        return;
+                    }
+
+                    if (normalizedTarget !== normalizedCompany && !normalizedTarget.endsWith('.' + normalizedCompany)) {
+                        alert(`Access denied. Company users can only scan: ${companyDomain}`);
+                        document.getElementById('fullSurfaceDomain').value = companyDomain;
+                        return;
+                    }
+                }
+            }
+
             // Check authorization
             const authCheckbox = document.getElementById('lightbox-auth-checkbox');
             if (!authCheckbox || !authCheckbox.checked) {
@@ -12320,6 +12524,43 @@
             if (targets.length === 0) {
                 alert('Please enter at least one target');
                 return;
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // COMPANY_USER DOMAIN RESTRICTION CHECK (Frontend validation)
+            // Validate all targets belong to company domain
+            // IP addresses blocked for company users
+            // ═══════════════════════════════════════════════════════════════
+            if (currentUserRole && currentUserRole.toLowerCase() === 'company_user' && currentUserCompany) {
+                const companyDomain = currentUserCompany.domain;
+                if (companyDomain) {
+                    const normalizedCompany = companyDomain.toLowerCase().replace(/^www\./, '');
+                    const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+                    const ipTargets = [];
+                    const invalidDomainTargets = [];
+
+                    targets.forEach(target => {
+                        // Extract hostname from URL
+                        let hostname = target.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0].split(':')[0];
+
+                        // Check if it's an IP address
+                        if (ipPattern.test(hostname)) {
+                            ipTargets.push(target);
+                        } else if (hostname !== normalizedCompany && !hostname.endsWith('.' + normalizedCompany)) {
+                            invalidDomainTargets.push(target);
+                        }
+                    });
+
+                    if (ipTargets.length > 0) {
+                        alert(`Access denied. Company users cannot test IP addresses.\n\nContact your administrator to add approved IPs.\n\nIP targets:\n${ipTargets.join('\n')}`);
+                        return;
+                    }
+
+                    if (invalidDomainTargets.length > 0) {
+                        alert(`Access denied. Company users can only test targets under: ${companyDomain}\n\nInvalid targets:\n${invalidDomainTargets.join('\n')}`);
+                        return;
+                    }
+                }
             }
 
             // Check authorization

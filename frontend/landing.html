@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NERVE - Security Intelligence Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050505;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #0f0f0f;
+            --gold-primary: #D4AF37;
+            --gold-light: #F4D03F;
+            --gold-dark: #B8860B;
+            --gold-glow: rgba(212, 175, 55, 0.4);
+            --terminal-green: #00ff88;
+            --terminal-green-dim: rgba(0, 255, 136, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-gold: rgba(212, 175, 55, 0.2);
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Geist', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* Custom Cursor */
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: var(--gold-primary);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10001;
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 20px var(--gold-glow), 0 0 40px var(--gold-glow);
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--gold-primary);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transition: all 0.15s ease-out;
+            opacity: 0.5;
+        }
+
+        .cursor-ring.hover {
+            transform: scale(1.5);
+            border-color: var(--terminal-green);
+            opacity: 0.8;
+        }
+
+        /* Cursor Trail Particles */
+        .cursor-particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--gold-primary);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+        }
+
+        /* Noise Texture Overlay */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 70%, transparent 100%);
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 40px;
+            background: linear-gradient(180deg, rgba(5, 5, 5, 0.95) 0%, rgba(5, 5, 5, 0) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--bg-primary);
+            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 20px;
+            letter-spacing: 0.15em;
+            color: var(--text-primary);
+        }
+
+        .btn-login {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            text-decoration: none;
+            padding: 12px 28px;
+            border: 1px solid var(--border-gold);
+            border-radius: 6px;
+            background: transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
+        }
+
+        .btn-login:hover {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 20px var(--gold-glow), inset 0 0 20px rgba(212, 175, 55, 0.05);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #neural-network {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Radial Gradient Overlay */
+        .hero-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            background:
+                radial-gradient(ellipse 60% 50% at 50% 50%, transparent 0%, var(--bg-primary) 70%),
+                radial-gradient(circle at 30% 70%, rgba(212, 175, 55, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 70% 30%, rgba(0, 255, 136, 0.02) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 0 20px;
+            max-width: 900px;
+        }
+
+        .hero-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--terminal-green);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.2s;
+        }
+
+        .eyebrow-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--terminal-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .hero-title {
+            font-family: 'Instrument Serif', Georgia, serif;
+            font-size: clamp(48px, 8vw, 88px);
+            font-weight: 400;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            margin-bottom: 28px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.4s;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-family: 'Geist', sans-serif;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin: 0 auto 48px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.6s;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.8s;
+        }
+
+        .btn-primary {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--bg-primary);
+            text-decoration: none;
+            padding: 16px 36px;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 100%);
+            border: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px var(--gold-glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .btn-primary:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--gold-glow);
+        }
+
+        .btn-secondary {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 16px 36px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards, float 3s ease-in-out infinite;
+            animation-delay: 1.5s, 2.5s;
+        }
+
+        .scroll-indicator svg {
+            width: 24px;
+            height: 40px;
+            stroke: var(--text-muted);
+        }
+
+        /* Features Section */
+        .features-section {
+            position: relative;
+            padding: 120px 40px;
+            background: var(--bg-secondary);
+        }
+
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'Instrument Serif', Georgia, serif;
+            font-size: clamp(36px, 5vw, 52px);
+            font-weight: 400;
+            letter-spacing: -0.01em;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 40px 32px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-gold);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 10px;
+            border: 1px solid var(--border-gold);
+        }
+
+        .feature-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--gold-primary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .feature-title {
+            font-family: 'Geist', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        /* Waitlist Section */
+        .waitlist-section {
+            position: relative;
+            padding: 140px 40px;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .waitlist-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .waitlist-content {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .waitlist-title {
+            font-family: 'Instrument Serif', Georgia, serif;
+            font-size: clamp(32px, 4vw, 44px);
+            font-weight: 400;
+            margin-bottom: 16px;
+        }
+
+        .waitlist-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+        }
+
+        .waitlist-form {
+            display: flex;
+            gap: 12px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .waitlist-input {
+            flex: 1;
+            padding: 16px 20px;
+            font-family: 'Geist', sans-serif;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .waitlist-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .waitlist-input:focus {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .waitlist-submit {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--bg-primary);
+            padding: 16px 28px;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 100%);
+            border: none;
+            border-radius: 6px;
+            cursor: none;
+            transition: all 0.3s ease;
+        }
+
+        .waitlist-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--gold-glow);
+        }
+
+        /* About Section */
+        .about-section {
+            position: relative;
+            padding: 140px 40px;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .about-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .about-text {
+            max-width: 540px;
+        }
+
+        .about-title {
+            font-family: 'Instrument Serif', Georgia, serif;
+            font-size: clamp(32px, 4vw, 48px);
+            font-weight: 400;
+            line-height: 1.15;
+            margin-bottom: 24px;
+        }
+
+        .about-lead {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+        }
+
+        .about-features {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .about-feature {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .about-feature-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid var(--border-gold);
+            border-radius: 10px;
+            color: var(--gold-primary);
+        }
+
+        .about-feature-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .about-feature-content h4 {
+            font-family: 'Geist', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .about-feature-content p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* Code Window */
+        .about-visual {
+            position: relative;
+        }
+
+        .code-window {
+            background: #0c0c0c;
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow:
+                0 4px 6px rgba(0, 0, 0, 0.3),
+                0 20px 50px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            transform: perspective(1000px) rotateY(-2deg) rotateX(1deg);
+            transition: transform 0.4s ease;
+        }
+
+        .code-window:hover {
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        .code-dot.red { background: #ff5f57; }
+        .code-dot.yellow { background: #febc2e; }
+        .code-dot.green { background: #28c840; }
+
+        .code-title {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .code-content {
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.9;
+        }
+
+        .code-line {
+            white-space: nowrap;
+            opacity: 0;
+            animation: typeIn 0.3s ease forwards;
+        }
+
+        .code-line:nth-child(1) { animation-delay: 0.2s; }
+        .code-line:nth-child(2) { animation-delay: 0.3s; }
+        .code-line:nth-child(3) { animation-delay: 0.6s; }
+        .code-line:nth-child(4) { animation-delay: 1.0s; }
+        .code-line:nth-child(5) { animation-delay: 1.3s; }
+        .code-line:nth-child(6) { animation-delay: 1.6s; }
+        .code-line:nth-child(7) { animation-delay: 1.8s; }
+        .code-line:nth-child(8) { animation-delay: 2.2s; }
+        .code-line:nth-child(9) { animation-delay: 2.5s; }
+        .code-line:nth-child(10) { animation-delay: 2.7s; }
+        .code-line:nth-child(11) { animation-delay: 3.0s; }
+        .code-line:nth-child(12) { animation-delay: 3.3s; }
+
+        .code-empty {
+            height: 1.9em;
+        }
+
+        .code-prompt {
+            color: var(--terminal-green);
+            margin-right: 8px;
+        }
+
+        .code-icon {
+            margin-right: 6px;
+        }
+
+        .code-dim {
+            color: var(--text-muted);
+        }
+
+        .code-success {
+            color: var(--terminal-green);
+        }
+
+        .code-check {
+            color: var(--terminal-green);
+            margin-right: 6px;
+        }
+
+        .code-warning {
+            color: var(--gold-light);
+        }
+
+        .code-warn {
+            margin-right: 6px;
+        }
+
+        .code-critical {
+            color: #ff6b6b;
+            font-weight: 500;
+        }
+
+        .code-url {
+            color: var(--text-muted);
+            padding-left: 1.5em;
+        }
+
+        .code-highlight {
+            color: var(--gold-primary);
+            font-weight: 500;
+        }
+
+        .code-cursor {
+            color: var(--gold-primary);
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes typeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Updated Waitlist Form */
+        .waitlist-form-full {
+            max-width: 520px;
+            margin: 0 auto 40px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-group .required {
+            color: var(--gold-primary);
+        }
+
+        .form-group .optional {
+            color: var(--text-muted);
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            font-family: 'Geist', sans-serif;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-group input:focus {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .waitlist-submit-full {
+            width: 100%;
+            margin-top: 24px;
+            padding: 18px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .waitlist-submit-full:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .form-message {
+            margin-top: 20px;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            display: none;
+        }
+
+        .form-message.success {
+            display: block;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: var(--terminal-green);
+        }
+
+        .form-message.error {
+            display: block;
+            background: rgba(255, 107, 107, 0.08);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .waitlist-count {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .count-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 48px;
+            height: 32px;
+            padding: 0 12px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-gold);
+            border-radius: 16px;
+        }
+
+        .count-badge span {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gold-primary);
+        }
+
+        .count-text {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 40px;
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-primary);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-logo .logo-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+        }
+
+        .footer-logo .logo-text {
+            font-size: 14px;
+        }
+
+        .footer-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+
+            .about-text {
+                max-width: 100%;
+            }
+
+            .code-window {
+                transform: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                cursor: auto;
+            }
+
+            .cursor-dot, .cursor-ring, .cursor-particle {
+                display: none !important;
+            }
+
+            .top-nav {
+                padding: 16px 20px;
+            }
+
+            .logo-text {
+                display: none;
+            }
+
+            .hero-subtitle br {
+                display: none;
+            }
+
+            .features-section {
+                padding: 80px 20px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .about-section {
+                padding: 80px 20px;
+            }
+
+            .about-title br {
+                display: none;
+            }
+
+            .code-content {
+                font-size: 11px;
+                padding: 16px;
+            }
+
+            .waitlist-section {
+                padding: 100px 20px;
+            }
+
+            .waitlist-form {
+                flex-direction: column;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            padding: 120px 40px;
+            background: linear-gradient(180deg, transparent 0%, rgba(212, 175, 55, 0.02) 100%);
+            position: relative;
+        }
+
+        .pricing-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-top: 60px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-card {
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            border-radius: 16px;
+            padding: 40px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card.featured {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.1);
+        }
+
+        .pricing-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-8px);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-8px);
+        }
+
+        .pricing-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #D4AF37;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 24px;
+        }
+
+        .pricing-badge.featured-badge {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .pricing-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .pricing-price {
+            margin-bottom: 16px;
+        }
+
+        .price-amount {
+            font-size: 56px;
+            font-weight: 700;
+            color: #D4AF37;
+        }
+
+        .price-period {
+            font-size: 18px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .pricing-description {
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 32px 0;
+        }
+
+        .pricing-features li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .pricing-features li:before {
+            content: "✓";
+            color: #D4AF37;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+
+        .btn-pricing {
+            width: 100%;
+            padding: 16px;
+            background: transparent;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            color: #D4AF37;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-pricing:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .btn-pricing.primary {
+            background: #D4AF37;
+            color: #0a0a0a;
+            border-color: #D4AF37;
+        }
+
+        .btn-pricing.primary:hover {
+            background: var(--gold-light);
+            box-shadow: 0 8px 20px var(--gold-glow);
+        }
+
+        .pricing-note {
+            text-align: center;
+            margin-top: 40px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        @media (max-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                max-width: 400px;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .pricing-card.featured:hover {
+                transform: translateY(-8px);
+            }
+
+            .pricing-section {
+                padding: 80px 20px;
+            }
+        }
+
+        /* Roadmap Section */
+        .roadmap-section {
+            padding: 120px 40px;
+            position: relative;
+        }
+
+        .roadmap-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
+        }
+
+        .timeline {
+            max-width: 900px;
+            margin: 80px auto 0;
+            position: relative;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 80px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .timeline-item.animate {
+            animation: timelineFadeInUp 0.6s ease forwards;
+        }
+
+        .timeline-item:nth-child(1).animate { animation-delay: 0.1s; }
+        .timeline-item:nth-child(2).animate { animation-delay: 0.2s; }
+        .timeline-item:nth-child(3).animate { animation-delay: 0.3s; }
+        .timeline-item:nth-child(4).animate { animation-delay: 0.4s; }
+
+        @keyframes timelineFadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .timeline-marker {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #D4AF37;
+            border: 4px solid rgba(212, 175, 55, 0.2);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 0 20px var(--gold-glow);
+        }
+
+        .timeline-line {
+            width: 2px;
+            height: calc(100% + 60px);
+            background: linear-gradient(180deg, #D4AF37 0%, rgba(212, 175, 55, 0.2) 100%);
+            position: absolute;
+            top: 20px;
+            left: 9px;
+        }
+
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+
+        .timeline-content {
+            flex: 1;
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-content:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateX(8px);
+        }
+
+        .timeline-date {
+            color: #D4AF37;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .timeline-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .timeline-description {
+            color: rgba(255,255,255,0.7);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .timeline-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+
+        .timeline-features li {
+            padding: 8px 0;
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+        }
+
+        .timeline-features li:before {
+            content: "→";
+            color: #D4AF37;
+            margin-right: 8px;
+        }
+
+        .timeline-status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-status.launching {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .timeline-status.development {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+        }
+
+        .timeline-status.planned {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .timeline-status.future {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .roadmap-section {
+                padding: 80px 20px;
+            }
+
+            .timeline {
+                margin-top: 40px;
+            }
+
+            .timeline-item {
+                gap: 20px;
+                margin-bottom: 40px;
+            }
+
+            .timeline-content {
+                padding: 24px;
+            }
+
+            .timeline-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-ring"></div>
+
+    <!-- Background Effects -->
+    <div class="noise-overlay"></div>
+    <div class="grid-bg"></div>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">N</span>
+                <span class="logo-text">NERVE</span>
+            </a>
+            <a href="file:///C:/Projects/NERVE/frontend/auth/login.html" class="btn-login">Login</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <canvas id="neural-network"></canvas>
+        <div class="hero-gradient"></div>
+
+        <div class="hero-content">
+            <div class="hero-eyebrow">
+                <span class="eyebrow-dot"></span>
+                <span>Security Intelligence Platform</span>
+                <span class="eyebrow-dot"></span>
+            </div>
+            <h1 class="hero-title">
+                Security Intelligence<br/>
+                <span class="gradient-text">Without The Noise</span>
+            </h1>
+            <p class="hero-subtitle">
+                Real-time threat intelligence, attack surface monitoring,
+                and breach detection unified in a single command center.
+            </p>
+            <div class="hero-cta">
+                <a href="#waitlist" class="btn-primary">Join the Waitlist</a>
+                <a href="#features" class="btn-secondary">Explore Features</a>
+            </div>
+        </div>
+
+        <div class="scroll-indicator">
+            <svg viewBox="0 0 24 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="22" height="38" rx="11" stroke="currentColor" stroke-width="1"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor">
+                    <animate attributeName="cy" values="12;20;12" dur="2s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+                </circle>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-eyebrow">Capabilities</div>
+                <h2 class="section-title">Your Security Command Center</h2>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <h3 class="feature-title">Threat Intelligence</h3>
+                    <p class="feature-description">Real-time threat feeds aggregated from global sources, filtered for relevance to your attack surface.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    </div>
+                    <h3 class="feature-title">Attack Surface Mapping</h3>
+                    <p class="feature-description">Continuous discovery and monitoring of your external assets, subdomains, and exposed services.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+                    </div>
+                    <h3 class="feature-title">Breach Detection</h3>
+                    <p class="feature-description">Instant alerts when your credentials or sensitive data appear in breaches, paste sites, or dark web markets.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    </div>
+                    <h3 class="feature-title">Vulnerability Scanning</h3>
+                    <p class="feature-description">Automated security testing with Lightbox engine for comprehensive vulnerability assessment.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                    </div>
+                    <h3 class="feature-title">Compliance Tracking</h3>
+                    <p class="feature-description">Map vulnerabilities to SOC 2, ISO 27001, and NIST controls with evidence-based reporting.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                    </div>
+                    <h3 class="feature-title">Security Roadmap</h3>
+                    <p class="feature-description">Personalized remediation plans with priority scoring to systematically improve your security posture.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section">
+        <div class="section-container">
+            <div class="about-content">
+                <div class="about-text">
+                    <div class="section-eyebrow">Why NERVE</div>
+                    <h2 class="about-title">Built For Security Teams<br/><span class="gradient-text">Who Actually Do The Work</span></h2>
+                    <p class="about-lead">
+                        NERVE isn't another "enterprise security platform" with 47 dashboards
+                        you'll never use. It's a focused toolkit built by security professionals
+                        who got tired of duct-taping five different tools together.
+                    </p>
+
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <div class="about-feature-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </div>
+                            <div class="about-feature-content">
+                                <h4>No Fluff</h4>
+                                <p>Every feature solves a real problem. No enterprise bloat.</p>
+                            </div>
+                        </div>
+
+                        <div class="about-feature">
+                            <div class="about-feature-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                            </div>
+                            <div class="about-feature-content">
+                                <h4>Actually Fast</h4>
+                                <p>Scans complete in seconds, not hours. Real-time monitoring.</p>
+                            </div>
+                        </div>
+
+                        <div class="about-feature">
+                            <div class="about-feature-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </div>
+                            <div class="about-feature-content">
+                                <h4>Transparent</h4>
+                                <p>See exactly what we check, how we check it, and why it matters.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="about-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot red"></span>
+                            <span class="code-dot yellow"></span>
+                            <span class="code-dot green"></span>
+                            <span class="code-title">nerve-cli</span>
+                        </div>
+                        <div class="code-content">
+                            <div class="code-line"><span class="code-prompt">$</span> nerve scan westsidestores.ca</div>
+                            <div class="code-line code-empty"></div>
+                            <div class="code-line"><span class="code-icon">🔍</span> <span class="code-dim">Scanning attack surface...</span></div>
+                            <div class="code-line code-success"><span class="code-check">✓</span> Found 47 subdomains</div>
+                            <div class="code-line code-success"><span class="code-check">✓</span> Identified 12 open ports</div>
+                            <div class="code-line code-success"><span class="code-check">✓</span> Detected 3 vulnerabilities</div>
+                            <div class="code-line code-empty"></div>
+                            <div class="code-line code-warning"><span class="code-warn">⚠️</span> <span class="code-critical">Critical:</span> Exposed admin panel</div>
+                            <div class="code-line code-url">   → https://admin.westsidestores.ca</div>
+                            <div class="code-line code-empty"></div>
+                            <div class="code-line code-success"><span class="code-check">✓</span> Scan complete in <span class="code-highlight">3.2s</span></div>
+                            <div class="code-line"><span class="code-cursor">▋</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing-section" id="pricing">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-eyebrow">Pricing</div>
+                <h2 class="section-title">Pricing That Makes Sense</h2>
+                <p class="pricing-subtitle" style="color: rgba(255,255,255,0.6); margin-top: 16px; font-size: 16px;">No surprise fees. No hidden costs. Pay for what you use.</p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Starter Tier -->
+                <div class="pricing-card">
+                    <div class="pricing-badge">Individual</div>
+                    <h3 class="pricing-title">Starter</h3>
+                    <div class="pricing-price">
+                        <span class="price-amount">$49</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <p class="pricing-description">
+                        For security professionals and solo practitioners
+                    </p>
+                    <ul class="pricing-features">
+                        <li>10 searches/day</li>
+                        <li>Basic threat intelligence</li>
+                        <li>Email breach monitoring (5 addresses)</li>
+                        <li>Attack surface scanning</li>
+                        <li>Security roadmap</li>
+                    </ul>
+                    <button class="btn-pricing" onclick="document.getElementById('waitlist').scrollIntoView({behavior: 'smooth'})">Join Waitlist</button>
+                </div>
+
+                <!-- Team Tier (Featured) -->
+                <div class="pricing-card featured">
+                    <div class="pricing-badge featured-badge">Most Popular</div>
+                    <h3 class="pricing-title">Team</h3>
+                    <div class="pricing-price">
+                        <span class="price-amount">$199</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <p class="pricing-description">
+                        For security teams and growing companies
+                    </p>
+                    <ul class="pricing-features">
+                        <li>Unlimited searches</li>
+                        <li>Advanced threat intelligence</li>
+                        <li>Email monitoring (unlimited)</li>
+                        <li>Continuous attack surface monitoring</li>
+                        <li>Security roadmap + progress tracking</li>
+                        <li>Multi-user access (up to 5)</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <button class="btn-pricing primary" onclick="document.getElementById('waitlist').scrollIntoView({behavior: 'smooth'})">Join Waitlist</button>
+                </div>
+
+                <!-- Enterprise Tier -->
+                <div class="pricing-card">
+                    <div class="pricing-badge">Custom</div>
+                    <h3 class="pricing-title">Enterprise</h3>
+                    <div class="pricing-price">
+                        <span class="price-amount">Custom</span>
+                    </div>
+                    <p class="pricing-description">
+                        For organizations with complex security needs
+                    </p>
+                    <ul class="pricing-features">
+                        <li>Everything in Team, plus:</li>
+                        <li>Unlimited team members</li>
+                        <li>Custom integrations</li>
+                        <li>API access</li>
+                        <li>Dedicated support</li>
+                        <li>SLA guarantee</li>
+                        <li>On-premise deployment option</li>
+                    </ul>
+                    <button class="btn-pricing" onclick="window.location.href='mailto:sales@nerve.security'">Contact Sales</button>
+                </div>
+            </div>
+
+            <div class="pricing-note">
+                All plans include 14-day free trial. No credit card required.
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap Section -->
+    <section class="roadmap-section" id="roadmap">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-eyebrow">What's Coming</div>
+                <h2 class="section-title">2026 Roadmap</h2>
+                <p class="roadmap-subtitle" style="color: rgba(255,255,255,0.6); margin-top: 16px; font-size: 16px;">What we're building and when you can expect it</p>
+            </div>
+
+            <div class="timeline">
+                <!-- Q1 2026 - Launch -->
+                <div class="timeline-item" data-quarter="Q1">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">Q1 2026</div>
+                        <h3 class="timeline-title">NERVE Launch</h3>
+                        <p class="timeline-description">
+                            Core platform goes live with essential security monitoring capabilities.
+                        </p>
+                        <ul class="timeline-features">
+                            <li>Platform infrastructure</li>
+                            <li>User authentication & roles</li>
+                            <li>Basic threat intelligence</li>
+                        </ul>
+                        <div class="timeline-status launching">Launching Now</div>
+                    </div>
+                </div>
+
+                <!-- Q2 2026 - Ghost -->
+                <div class="timeline-item" data-quarter="Q2">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">Q2 2026</div>
+                        <h3 class="timeline-title">GHOST - Intelligence Suite</h3>
+                        <p class="timeline-description">
+                            Comprehensive cyber threat intelligence and attack surface management.
+                        </p>
+                        <ul class="timeline-features">
+                            <li>Global breach search</li>
+                            <li>Attack surface monitoring (XASM)</li>
+                            <li>Vulnerability scanning (Lightbox)</li>
+                            <li>Threat actor profiling</li>
+                            <li>Security roadmap generator</li>
+                        </ul>
+                        <div class="timeline-status development">In Development</div>
+                    </div>
+                </div>
+
+                <!-- Q3 2026 - Ghost Enhancements -->
+                <div class="timeline-item" data-quarter="Q3">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">Q3 2026</div>
+                        <h3 class="timeline-title">GHOST Enhancements</h3>
+                        <p class="timeline-description">
+                            Advanced features and integrations for power users.
+                        </p>
+                        <ul class="timeline-features">
+                            <li>API access for custom integrations</li>
+                            <li>Automated alerting system</li>
+                            <li>Advanced reporting & analytics</li>
+                            <li>Slack/Teams integrations</li>
+                            <li>Custom threat feeds</li>
+                        </ul>
+                        <div class="timeline-status planned">Planned</div>
+                    </div>
+                </div>
+
+                <!-- Q4 2026 - OPSYCH -->
+                <div class="timeline-item" data-quarter="Q4">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">Q4 2026</div>
+                        <h3 class="timeline-title">OPSYCH - OSINT Platform</h3>
+                        <p class="timeline-description">
+                            Open-source intelligence gathering and social media monitoring.
+                        </p>
+                        <ul class="timeline-features">
+                            <li>Multi-platform OSINT searches</li>
+                            <li>Social media monitoring</li>
+                            <li>Digital footprint analysis</li>
+                            <li>Dark web monitoring</li>
+                            <li>Entity relationship mapping</li>
+                        </ul>
+                        <div class="timeline-status future">Future Release</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Waitlist Section -->
+    <section class="waitlist-section" id="waitlist">
+        <div class="waitlist-glow"></div>
+        <div class="waitlist-content">
+            <div class="section-eyebrow">Early Access</div>
+            <h2 class="waitlist-title">Join the Waitlist</h2>
+            <p class="waitlist-subtitle">Be among the first to access NERVE when we launch.</p>
+
+            <form id="waitlistForm" class="waitlist-form-full">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="waitlistName">Name <span class="required">*</span></label>
+                        <input type="text" id="waitlistName" name="name" required placeholder="John Doe">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="waitlistEmail">Email <span class="required">*</span></label>
+                        <input type="email" id="waitlistEmail" name="email" required placeholder="john@company.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="waitlistCompany">Company <span class="optional">(Optional)</span></label>
+                    <input type="text" id="waitlistCompany" name="company" placeholder="Acme Corp">
+                </div>
+
+                <button type="submit" class="btn-primary waitlist-submit-full">
+                    <span class="btn-text">Join Waitlist</span>
+                    <span class="btn-loading" style="display: none;">
+                        <svg class="spinner" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="30 60"/>
+                        </svg>
+                        Submitting...
+                    </span>
+                </button>
+
+                <div class="form-message" id="formMessage"></div>
+            </form>
+
+            <div class="waitlist-count">
+                <div class="count-badge">
+                    <span id="waitlistCount">0</span>
+                </div>
+                <span class="count-text">security-conscious teams already waiting</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <span class="logo-icon">N</span>
+                <span class="logo-text">NERVE</span>
+            </div>
+            <div class="footer-text">&copy; 2025 NERVE Security. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+        // Neural Network Animation
+        const canvas = document.getElementById('neural-network');
+        const ctx = canvas.getContext('2d');
+        let nodes = [];
+        let connections = [];
+        let pulses = [];
+        let mouseX = 0;
+        let mouseY = 0;
+        let animationFrame;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initNodes();
+        }
+
+        function initNodes() {
+            nodes = [];
+            connections = [];
+            const nodeCount = Math.min(50, Math.floor((canvas.width * canvas.height) / 25000));
+
+            for (let i = 0; i < nodeCount; i++) {
+                nodes.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    radius: Math.random() * 2 + 1,
+                    baseRadius: Math.random() * 2 + 1,
+                    pulsePhase: Math.random() * Math.PI * 2
+                });
+            }
+
+            // Create connections
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const dx = nodes[i].x - nodes[j].x;
+                    const dy = nodes[i].y - nodes[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 200) {
+                        connections.push({ from: i, to: j });
+                    }
+                }
+            }
+        }
+
+        function createPulse() {
+            if (connections.length === 0) return;
+            const conn = connections[Math.floor(Math.random() * connections.length)];
+            pulses.push({
+                from: conn.from,
+                to: conn.to,
+                progress: 0,
+                speed: 0.01 + Math.random() * 0.02
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update nodes
+            const time = Date.now() * 0.001;
+            nodes.forEach((node, i) => {
+                // Mouse influence
+                const dx = mouseX - node.x;
+                const dy = mouseY - node.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 200) {
+                    node.vx += dx * 0.00005;
+                    node.vy += dy * 0.00005;
+                }
+
+                // Move
+                node.x += node.vx;
+                node.y += node.vy;
+
+                // Bounce
+                if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+                if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+
+                // Damping
+                node.vx *= 0.99;
+                node.vy *= 0.99;
+
+                // Pulse animation
+                node.radius = node.baseRadius + Math.sin(time * 2 + node.pulsePhase) * 0.5;
+            });
+
+            // Draw connections
+            connections.forEach(conn => {
+                const from = nodes[conn.from];
+                const to = nodes[conn.to];
+                const dx = from.x - to.x;
+                const dy = from.y - to.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 200) {
+                    const alpha = (1 - distance / 200) * 0.15;
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.strokeStyle = `rgba(212, 175, 55, ${alpha})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            });
+
+            // Draw and update pulses
+            pulses = pulses.filter(pulse => {
+                pulse.progress += pulse.speed;
+                if (pulse.progress >= 1) return false;
+
+                const from = nodes[pulse.from];
+                const to = nodes[pulse.to];
+                const x = from.x + (to.x - from.x) * pulse.progress;
+                const y = from.y + (to.y - from.y) * pulse.progress;
+
+                // Draw pulse glow
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 8);
+                gradient.addColorStop(0, 'rgba(212, 175, 55, 0.8)');
+                gradient.addColorStop(0.5, 'rgba(212, 175, 55, 0.3)');
+                gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
+
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                return true;
+            });
+
+            // Draw nodes
+            nodes.forEach(node => {
+                // Glow
+                const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.radius * 4);
+                gradient.addColorStop(0, 'rgba(212, 175, 55, 0.4)');
+                gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius * 4, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Core
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(212, 175, 55, 0.8)';
+                ctx.fill();
+            });
+
+            // Create new pulses randomly
+            if (Math.random() < 0.03) createPulse();
+
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        // Custom Cursor
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorRing = document.querySelector('.cursor-ring');
+        let cursorX = 0, cursorY = 0;
+        let ringX = 0, ringY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursorX = e.clientX;
+            cursorY = e.clientY;
+            cursorDot.style.left = cursorX + 'px';
+            cursorDot.style.top = cursorY + 'px';
+        });
+
+        function animateCursor() {
+            ringX += (cursorX - ringX) * 0.15;
+            ringY += (cursorY - ringY) * 0.15;
+            cursorRing.style.left = ringX - 20 + 'px';
+            cursorRing.style.top = ringY - 20 + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+
+        // Hover effects
+        const hoverElements = document.querySelectorAll('a, button, input');
+        hoverElements.forEach(el => {
+            el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursorRing.classList.remove('hover'));
+        });
+
+        // Waitlist Form Handler
+        document.getElementById('waitlistForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoading = submitBtn.querySelector('.btn-loading');
+            const formMessage = document.getElementById('formMessage');
+
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-flex';
+            formMessage.style.display = 'none';
+            formMessage.className = 'form-message';
+
+            const formData = {
+                name: document.getElementById('waitlistName').value.trim(),
+                email: document.getElementById('waitlistEmail').value.trim(),
+                company: document.getElementById('waitlistCompany').value.trim() || null
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/waitlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    formMessage.textContent = 'Successfully joined the waitlist!';
+                    formMessage.className = 'form-message success';
+                    formMessage.style.display = 'block';
+                    e.target.reset();
+
+                    // Update counter with animation
+                    loadWaitlistCount();
+                } else {
+                    formMessage.textContent = result.error || 'Something went wrong. Please try again.';
+                    formMessage.className = 'form-message error';
+                    formMessage.style.display = 'block';
+                }
+            } catch (error) {
+                formMessage.textContent = 'Network error. Please check your connection and try again.';
+                formMessage.className = 'form-message error';
+                formMessage.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+            }
+        });
+
+        // Load waitlist count
+        async function loadWaitlistCount() {
+            try {
+                const response = await fetch('http://localhost:5000/api/waitlist/count');
+                const data = await response.json();
+                const countEl = document.getElementById('waitlistCount');
+                const newCount = data.count || 0;
+
+                // Animate count update
+                const currentCount = parseInt(countEl.textContent) || 0;
+                if (newCount !== currentCount) {
+                    animateCount(countEl, currentCount, newCount);
+                }
+            } catch (error) {
+                console.error('Error loading waitlist count:', error);
+            }
+        }
+
+        // Animate count number
+        function animateCount(element, from, to) {
+            const duration = 800;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Easing function
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(from + (to - from) * eased);
+
+                element.textContent = current;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // Load count on page load
+        loadWaitlistCount();
+
+        // Initialize
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+        animateCursor();
+
+        // Intersection Observer for scroll animations
+        const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card').forEach((card, i) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = `all 0.6s ease ${i * 0.1}s`;
+            observer.observe(card);
+        });
+
+        // Timeline animation observer
+        const timelineObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate');
+                }
+            });
+        }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            timelineObserver.observe(item);
+        });
+
+        // Pricing cards animation
+        document.querySelectorAll('.pricing-card').forEach((card, i) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = `all 0.6s ease ${i * 0.1}s`;
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, g, Response
+from flask import Flask, render_template, request, jsonify, g, Response, send_from_directory
 from flask_cors import CORS
 from functools import wraps
 from database import (
@@ -22,7 +22,9 @@ from database import (
     # Search Quota
     UserSearchQuota,
     # Maintenance Checklist
-    MaintenanceChecklist
+    MaintenanceChecklist,
+    # Waitlist
+    WaitlistSignup
 )
 import feedparser
 from modules.ghost.osint import scan_profile_breaches
@@ -50,6 +52,8 @@ import http.client
 import urllib.parse
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Load environment variables
 load_dotenv()
@@ -67,6 +71,23 @@ CORS(app, resources={
         "supports_credentials": True
     }
 })
+
+# Initialize rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
+# Rate limit error handler
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({
+        'error': 'Rate limit exceeded',
+        'message': 'Too many requests. Please try again later.',
+        'retry_after': str(e.description)
+    }), 429
 
 # Global progress tracking dictionary
 # Format: {domain: {status: str, current_step: str, progress: int, total: int, message: str}}
@@ -461,9 +482,24 @@ def increment_search_usage(user_id, user_role):
 
 
 @app.route('/')
-def index():
+def landing_page():
+    """Serve the landing page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
+    return send_from_directory(frontend_path, 'landing.html')
+
+
+@app.route('/login')
+def login_page():
+    """Serve login page"""
+    return send_from_directory('frontend/auth', 'login.html')
+
+
+@app.route('/api')
+def api_index():
+    """API documentation endpoint"""
     return jsonify({
-        "message": "Ghost API is running",
+        "message": "NERVE API is running",
         "version": "0.3.0",
         "endpoints": {
             "search": "/api/search",
@@ -636,6 +672,7 @@ def scan_breaches(target_id):
 
 
 @app.route('/api/search/unified', methods=['POST'])
+@limiter.limit("30 per minute")  # Prevent API abuse
 @require_auth
 def unified_search_endpoint():
     """Unified search across all data sources with quota enforcement"""
@@ -4032,6 +4069,7 @@ def get_monitor_stats():
 # ============================================================================
 
 @app.route('/api/ghost/asm/scan', methods=['POST'])
+@limiter.limit("10 per hour")  # Prevent scan spam and resource exhaustion
 @require_auth
 def asm_scan():
     """
@@ -4386,6 +4424,7 @@ def get_scan_history():
 # ============================================================================
 
 @app.route('/api/ghost/lightbox/scan', methods=['POST'])
+@limiter.limit("10 per hour")  # Prevent scan spam and resource exhaustion
 @require_auth
 def lightbox_scan():
     """
@@ -8638,6 +8677,7 @@ def get_roadmap_stats():
 # =============================================================================
 
 @app.route('/api/auth/signup', methods=['POST'])
+@limiter.limit("3 per hour")  # Prevent spam account creation
 def auth_signup():
     """Register a new user account."""
     db = None
@@ -8729,6 +8769,7 @@ def auth_signup():
 
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")  # Prevent brute force attacks
 def auth_login():
     """Authenticate user and create session."""
     db = None
@@ -13296,6 +13337,186 @@ def delete_backup(filename):
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
+
+
+# ============================================================================
+# WAITLIST ENDPOINTS
+# ============================================================================
+
+@app.route('/api/waitlist', methods=['POST', 'OPTIONS'])
+@limiter.limit("3 per hour")
+def waitlist_signup():
+    """
+    Add a user to the waitlist for early access.
+
+    Rate limited to 3 signups per hour per IP to prevent spam.
+    """
+    if request.method == 'OPTIONS':
+        return '', 200
+
+    session = None
+    try:
+        data = request.json or {}
+
+        # Validate required fields
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip().lower()
+        company = data.get('company', '').strip() or None
+
+        if not name:
+            return jsonify({'error': 'Name is required'}), 400
+
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        # Basic email validation
+        if '@' not in email or '.' not in email.split('@')[-1]:
+            return jsonify({'error': 'Please enter a valid email address'}), 400
+
+        session = SessionLocal()
+
+        # Check if already signed up
+        existing = session.query(WaitlistSignup).filter_by(email=email).first()
+        if existing:
+            return jsonify({'error': 'This email is already on the waitlist'}), 400
+
+        # Create signup
+        signup = WaitlistSignup(
+            name=name,
+            email=email,
+            company=company,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', '')[:500]  # Limit length
+        )
+
+        session.add(signup)
+        session.commit()
+
+        print(f"[WAITLIST] New signup: {email} ({name})")
+
+        return jsonify({
+            'success': True,
+            'message': 'Successfully joined the waitlist'
+        })
+
+    except Exception as e:
+        print(f"[WAITLIST] Signup error: {e}")
+        if session:
+            session.rollback()
+        return jsonify({'error': 'An error occurred. Please try again.'}), 500
+    finally:
+        if session:
+            session.close()
+
+
+@app.route('/api/waitlist/count', methods=['GET'])
+def waitlist_count():
+    """
+    Get the total number of waitlist signups.
+
+    Public endpoint - no auth required.
+    """
+    session = None
+    try:
+        session = SessionLocal()
+        count = session.query(WaitlistSignup).count()
+        return jsonify({'count': count})
+    except Exception as e:
+        print(f"[WAITLIST] Count error: {e}")
+        return jsonify({'count': 0})
+    finally:
+        if session:
+            session.close()
+
+
+@app.route('/api/admin/waitlist', methods=['GET'])
+@require_auth
+@require_admin
+def get_waitlist():
+    """
+    Get all waitlist signups (admin only).
+
+    Returns a paginated list of signups with optional status filtering.
+    """
+    session = None
+    try:
+        session = SessionLocal()
+
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        status_filter = request.args.get('status')
+
+        query = session.query(WaitlistSignup)
+
+        if status_filter:
+            query = query.filter(WaitlistSignup.status == status_filter)
+
+        query = query.order_by(WaitlistSignup.signup_date.desc())
+
+        total = query.count()
+        signups = query.offset((page - 1) * per_page).limit(per_page).all()
+
+        return jsonify({
+            'signups': [s.to_dict() for s in signups],
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'pages': (total + per_page - 1) // per_page
+        })
+
+    except Exception as e:
+        print(f"[ADMIN] Waitlist fetch error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if session:
+            session.close()
+
+
+@app.route('/api/admin/waitlist/<int:signup_id>/status', methods=['PATCH'])
+@require_auth
+@require_admin
+def update_waitlist_status(signup_id):
+    """
+    Update the status of a waitlist signup (admin only).
+
+    Allows admins to mark signups as contacted, converted, etc.
+    """
+    session = None
+    try:
+        data = request.json or {}
+        new_status = data.get('status')
+
+        if new_status not in ['pending', 'contacted', 'converted', 'declined']:
+            return jsonify({'error': 'Invalid status'}), 400
+
+        session = SessionLocal()
+        signup = session.query(WaitlistSignup).filter_by(id=signup_id).first()
+
+        if not signup:
+            return jsonify({'error': 'Signup not found'}), 404
+
+        signup.status = new_status
+
+        # Optionally update notes
+        if 'notes' in data:
+            signup.notes = data.get('notes')
+
+        session.commit()
+
+        return jsonify({
+            'success': True,
+            'signup': signup.to_dict()
+        })
+
+    except Exception as e:
+        print(f"[ADMIN] Waitlist status update error: {e}")
+        if session:
+            session.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if session:
+            session.close()
 
 
 if __name__ == '__main__':

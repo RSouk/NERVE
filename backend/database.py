@@ -1673,6 +1673,39 @@ class MaintenanceChecklist(Base):
         return f'<MaintenanceChecklist user={self.user_id} task={self.task_key} completed={self.completed}>'
 
 
+class WaitlistSignup(Base):
+    """
+    Waitlist signups for early access to NERVE platform.
+
+    Tracks users who sign up for early access via the landing page,
+    including their contact info and signup metadata.
+    """
+    __tablename__ = 'waitlist'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    company = Column(String(255))
+    signup_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    ip_address = Column(String(50))
+    user_agent = Column(Text)
+    status = Column(String(50), default='pending')  # pending, contacted, converted
+    notes = Column(Text)  # Admin notes for follow-up
+
+    def __repr__(self):
+        return f'<WaitlistSignup {self.email}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'company': self.company,
+            'signup_date': self.signup_date.isoformat() if self.signup_date else None,
+            'status': self.status
+        }
+
+
 def init_db() -> None:
     """
     Initialize the database and create all tables.

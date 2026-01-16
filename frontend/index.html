@@ -121,15 +121,15 @@
         }
 
         .logo-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
-            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        .logo-icon img {
+            height: 100px;
+            width: auto;
+            object-fit: contain;
         }
 
         .logo-text {
@@ -251,6 +251,12 @@
         .nav-badge.soon {
             background: rgba(255, 255, 255, 0.05);
             color: var(--text-muted);
+        }
+
+        .nav-badge.coming-soon {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.4);
         }
 
         .sidebar-footer {
@@ -526,6 +532,27 @@
             color: var(--gold-primary);
         }
 
+        .module-list {
+            list-style: none;
+            padding: 0 28px !important;
+            margin: 20px 0;
+        }
+
+        .module-list li {
+            padding: 12px 0;
+            padding-left: 24px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .module-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--gold-primary);
+            font-size: 20px;
+        }
+
         .hero-stats {
             display: flex;
             gap: 48px;
@@ -694,6 +721,12 @@
         .module-badge.soon {
             background: rgba(255, 255, 255, 0.05);
             color: var(--text-muted);
+        }
+
+        .module-badge.phase-2 {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.4);
         }
 
         .module-title {
@@ -1169,10 +1202,9 @@
         <aside class="sidebar">
             <div class="logo-section">
                 <div class="logo-mark">
-                    <div class="logo-icon">N</div>
                     <span class="logo-text">NERVE</span>
                 </div>
-                <p class="logo-tagline">Intelligence Platform</p>
+                <p class="logo-tagline">Unified Intelligence Platform</p>
             </div>
 
             <nav class="nav-section">
@@ -1191,20 +1223,20 @@
                         <span>GHOST</span>
                         <span class="nav-badge active">Active</span>
                     </a>
-                    <a href="modules/opsych/opsych.html" class="nav-item">
+                    <div class="nav-item disabled" title="Coming in NERVE 2.0">
                         <span class="nav-icon">&#129504;</span>
                         <span>OPSYCH</span>
-                        <span class="nav-badge beta">Beta</span>
-                    </a>
+                        <span class="nav-badge coming-soon">2.0</span>
+                    </div>
                     <div class="nav-item disabled">
                         <span class="nav-icon">&#128065;</span>
                         <span>WATCHTOWER</span>
-                        <span class="nav-badge soon">Phase 3</span>
+                        <span class="nav-badge soon">3.0</span>
                     </div>
                     <div class="nav-item disabled">
                         <span class="nav-icon">&#128302;</span>
                         <span>ORACLE</span>
-                        <span class="nav-badge soon">Phase 4</span>
+                        <span class="nav-badge soon">4.0</span>
                     </div>
                 </div>
 
@@ -1246,30 +1278,11 @@
                         <span class="status-dot"></span>
                         Platform Active
                     </div>
-                    <h1 class="hero-title">NERVE Security Intelligence Platform</h1>
+                    <h1 class="hero-title">NERVE Unified Intelligence Platform</h1>
                     <p class="hero-subtitle">Comprehensive threat intelligence and security management</p>
                     <button class="info-btn" onclick="showPlatformInfo()">
-                        ℹ️ What is NERVE?
+                        What is NERVE?
                     </button>
-
-                    <div class="hero-stats">
-                        <div class="hero-stat">
-                            <div class="hero-stat-value" id="stat-modules">2</div>
-                            <div class="hero-stat-label">Active Modules</div>
-                        </div>
-                        <div class="hero-stat">
-                            <div class="hero-stat-value" id="stat-scans">--</div>
-                            <div class="hero-stat-label">Scans Run</div>
-                        </div>
-                        <div class="hero-stat">
-                            <div class="hero-stat-value" id="stat-threats">--</div>
-                            <div class="hero-stat-label">Threats Detected</div>
-                        </div>
-                        <div class="hero-stat">
-                            <div class="hero-stat-value" id="stat-uptime">99.9%</div>
-                            <div class="hero-stat-label">System Uptime</div>
-                        </div>
-                    </div>
                 </div>
             </section>
 
@@ -1323,10 +1336,10 @@
                         </div>
                     </a>
 
-                    <a href="modules/opsych/opsych.html" class="module-card">
+                    <div class="module-card disabled">
                         <div class="module-header">
                             <div class="module-icon">&#129504;</div>
-                            <span class="module-badge beta">Beta</span>
+                            <span class="module-badge phase-2">Phase 2</span>
                         </div>
                         <h3 class="module-title">OPSYCH</h3>
                         <p class="module-desc">Social engineering simulation and awareness training. Build employee resilience against phishing attacks.</p>
@@ -1335,7 +1348,7 @@
                             <span class="module-feature">Training</span>
                             <span class="module-feature">Analytics</span>
                         </div>
-                    </a>
+                    </div>
 
                     <div class="module-card disabled">
                         <div class="module-header">
@@ -1452,15 +1465,26 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="close" onclick="closePlatformInfo()">&times;</span>
             <h2>About NERVE Platform</h2>
-            <p>NERVE is a comprehensive security intelligence platform designed to provide organizations with:</p>
-            <ul>
-                <li><strong>Threat Intelligence:</strong> Real-time monitoring of threat actors and attack patterns</li>
-                <li><strong>Attack Surface Management:</strong> Continuous scanning and vulnerability assessment</li>
-                <li><strong>Compliance Management:</strong> Framework-based security posture tracking</li>
-                <li><strong>Security Roadmap:</strong> Prioritized, actionable security improvements</li>
-                <li><strong>Intelligence Search:</strong> Deep search across threat databases and breach data</li>
+            <p>
+                NERVE is a unified security operations platform that consolidates cyber threat intelligence,
+                attack surface management, penetration testing, social engineering protection, and compliance
+                tracking into a single integrated solution.
+            </p>
+
+            <p>
+                NERVE is built on a modular architecture where each major version introduces a new security domain:
+            </p>
+
+            <ul class="module-list">
+                <li><strong>NERVE 1.0 (Ghost):</strong> Cyber Threat Intelligence & Attack Surface Management</li>
+                <li><strong>NERVE 2.0 (OPSYCH):</strong> Social Engineering Protection & Human Intelligence</li>
+                <li><strong>NERVE 3.0 (WATCHTOWER):</strong> [Future Module]</li>
+                <li><strong>NERVE 4.0 (ORACLE):</strong> [Future Module]</li>
             </ul>
-            <p>NERVE helps security teams understand their risks, prioritize actions, and improve their security posture systematically.</p>
+
+            <p>
+                Each module integrates seamlessly with previous modules, creating a comprehensive security ecosystem.
+            </p>
         </div>
     </div>
 

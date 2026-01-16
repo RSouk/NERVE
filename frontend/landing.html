@@ -167,6 +167,25 @@
             color: var(--text-primary);
         }
 
+        .logo-image {
+            height: 100px;
+            width: auto;
+            object-fit: contain;
+            transition: opacity 0.3s ease;
+        }
+
+        .logo-image:hover {
+            opacity: 0.8;
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: #D4AF37;
+            letter-spacing: 2px;
+        }
+
         .btn-login {
             font-family: 'JetBrains Mono', monospace;
             font-size: 13px;
@@ -288,6 +307,36 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        .hero-tagline {
+            font-size: 24px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            margin: 20px 0;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.5s;
+        }
+
+        .tagline-highlight {
+            color: #D4AF37;
+            position: relative;
+            padding: 0 8px;
+        }
+
+        .tagline-highlight::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #D4AF37, transparent);
         }
 
         .hero-subtitle {
@@ -500,6 +549,26 @@
             color: var(--text-secondary);
         }
 
+        .capability-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .capability-version {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         /* Waitlist Section */
         .waitlist-section {
             position: relative;
@@ -675,6 +744,100 @@
             font-size: 14px;
             line-height: 1.6;
             color: var(--text-secondary);
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .lead {
+            font-size: 18px;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        .problem-list {
+            list-style: none;
+            padding: 20px 24px;
+            margin: 24px 0;
+            background: rgba(239, 68, 68, 0.05);
+            border-left: 3px solid rgba(239, 68, 68, 0.4);
+            border-radius: 8px;
+        }
+
+        .problem-list li {
+            padding: 8px 0;
+            color: rgba(255,255,255,0.85);
+            position: relative;
+            padding-left: 24px;
+        }
+
+        .problem-list li:before {
+            content: "×";
+            position: absolute;
+            left: 0;
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .solution-text {
+            font-size: 16px;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.85);
+            margin: 24px 0;
+            padding: 24px;
+            background: rgba(16, 185, 129, 0.05);
+            border-left: 3px solid rgba(16, 185, 129, 0.4);
+            border-radius: 8px;
+        }
+
+        .value-props {
+            margin-top: 32px;
+        }
+
+        .value-prop {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .value-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .value-prop h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #D4AF37;
+            margin-bottom: 8px;
+        }
+
+        .value-prop p {
+            color: rgba(255,255,255,0.8);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .code-content pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.9;
+        }
+
+        .code-content code {
+            color: var(--text-secondary);
+            white-space: pre;
         }
 
         /* Code Window */
@@ -976,8 +1139,9 @@
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
+            gap: 16px;
         }
 
         .footer-logo {
@@ -996,11 +1160,45 @@
             font-size: 14px;
         }
 
+        .footer-logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-logo-img {
+            height: 100px;
+            width: auto;
+            object-fit: contain;
+            opacity: 0.9;
+        }
+
+        .footer-logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #D4AF37;
+            letter-spacing: 2px;
+        }
+
         .footer-text {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--text-muted);
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
             letter-spacing: 0.05em;
+        }
+
+        .footer-link {
+            color: #D4AF37;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-weight: 600;
+        }
+
+        .footer-link:hover {
+            color: #f59e0b;
+            text-decoration: underline;
         }
 
         /* Animations */
@@ -1283,6 +1481,187 @@
             }
         }
 
+        .pricing-billing {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 16px;
+            font-style: italic;
+        }
+
+        .price-prefix {
+            font-size: 32px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+            margin-right: 4px;
+        }
+
+        .pricing-comparison {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .comparison-item {
+            padding: 12px 0;
+        }
+
+        .comparison-item.highlight {
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 3px solid #D4AF37;
+            padding: 12px 16px;
+            margin-top: 8px;
+            border-radius: 4px;
+        }
+
+        .comparison-label {
+            display: block;
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 4px;
+        }
+
+        .comparison-value {
+            display: block;
+            font-size: 18px;
+            font-weight: 700;
+            color: #D4AF37;
+        }
+
+        .comparison-location {
+            display: block;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 2px;
+        }
+
+        /* Founding Member Section */
+        .founding-member-section {
+            margin-top: 60px;
+        }
+
+        .founding-member-card {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            border-radius: 16px;
+            padding: 48px;
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .founding-member-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+        }
+
+        .founding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .founding-header h3 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #D4AF37;
+            margin: 0;
+        }
+
+        .founding-badge {
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #D4AF37;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .founding-price {
+            margin-bottom: 32px;
+        }
+
+        .founding-price .price-amount {
+            font-size: 48px;
+        }
+
+        .founding-benefits h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 16px;
+        }
+
+        .founding-benefits ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 32px 0;
+        }
+
+        .founding-benefits li {
+            padding: 12px 0;
+            padding-left: 32px;
+            position: relative;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.6;
+        }
+
+        .founding-benefits li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #D4AF37;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .founding-benefits strong {
+            color: #D4AF37;
+            font-weight: 700;
+        }
+
+        .btn-founding {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #D4AF37 0%, #f59e0b 100%);
+            border: none;
+            color: #0a0a0a;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-founding:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .founding-member-card {
+                padding: 32px 24px;
+            }
+
+            .founding-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
         /* Roadmap Section */
         .roadmap-section {
             padding: 120px 40px;
@@ -1483,10 +1862,10 @@
     <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="nav-container">
-            <a href="/" class="logo">
-                <span class="logo-icon">N</span>
+            <div class="logo">
+                <img src="NerveLogo1.png" alt="NERVE" class="logo-image">
                 <span class="logo-text">NERVE</span>
-            </a>
+            </div>
             <a href="file:///C:/Projects/NERVE/frontend/auth/login.html" class="btn-login">Login</a>
         </div>
     </nav>
@@ -1499,16 +1878,21 @@
         <div class="hero-content">
             <div class="hero-eyebrow">
                 <span class="eyebrow-dot"></span>
-                <span>Security Intelligence Platform</span>
+                <span>Built By NOF Consulting</span>
                 <span class="eyebrow-dot"></span>
             </div>
             <h1 class="hero-title">
-                Security Intelligence<br/>
-                <span class="gradient-text">Without The Noise</span>
+                Unified Intelligence Platform
             </h1>
+            <p class="hero-tagline">
+                <span class="tagline-highlight">One Platform.</span>
+                <span class="tagline-highlight">Multiple Modules.</span>
+                <span class="tagline-highlight">Accessible Pricing.</span>
+            </p>
             <p class="hero-subtitle">
-                Real-time threat intelligence, attack surface monitoring,
-                and breach detection unified in a single command center.
+                Integrated cyber intelligence, social engineering protection,<br/>
+                active monitoring, and predictive analytics.<br/>
+                Built for teams that need everything to work, every day.
             </p>
             <div class="hero-cta">
                 <a href="#waitlist" class="btn-primary">Join the Waitlist</a>
@@ -1532,56 +1916,74 @@
         <div class="section-container">
             <div class="section-header">
                 <div class="section-eyebrow">Capabilities</div>
-                <h2 class="section-title">Your Security Command Center</h2>
+                <h2 class="section-title">Modular Intelligence</h2>
             </div>
 
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <div class="capability-header">
+                        <div class="feature-icon">
+                            <span style="font-size: 24px;">👻</span>
+                        </div>
+                        <span class="capability-version">Ghost v1.0</span>
                     </div>
                     <h3 class="feature-title">Threat Intelligence</h3>
-                    <p class="feature-description">Real-time threat feeds aggregated from global sources, filtered for relevance to your attack surface.</p>
+                    <p class="feature-description">Customizable newsfeeds, daily education, breach discovery/passive monitoring, and unique adversary mapping for over 850 APT groups.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    <div class="capability-header">
+                        <div class="feature-icon">
+                            <span style="font-size: 24px;">🗺️</span>
+                        </div>
+                        <span class="capability-version">Ghost v1.0</span>
                     </div>
-                    <h3 class="feature-title">Attack Surface Mapping</h3>
-                    <p class="feature-description">Continuous discovery and monitoring of your external assets, subdomains, and exposed services.</p>
+                    <h3 class="feature-title">Attack Surface Management</h3>
+                    <p class="feature-description">Continuous discovery and monitoring of digital assets with active light penetration testing on full scope or specific infrastructure.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-                    </div>
-                    <h3 class="feature-title">Breach Detection</h3>
-                    <p class="feature-description">Instant alerts when your credentials or sensitive data appear in breaches, paste sites, or dark web markets.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    </div>
-                    <h3 class="feature-title">Vulnerability Scanning</h3>
-                    <p class="feature-description">Automated security testing with Lightbox engine for comprehensive vulnerability assessment.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
-                    </div>
-                    <h3 class="feature-title">Compliance Tracking</h3>
-                    <p class="feature-description">Map vulnerabilities to SOC 2, ISO 27001, and NIST controls with evidence-based reporting.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                    <div class="capability-header">
+                        <div class="feature-icon">
+                            <span style="font-size: 24px;">📋</span>
+                        </div>
+                        <span class="capability-version">Ghost v1.0</span>
                     </div>
                     <h3 class="feature-title">Security Roadmap</h3>
-                    <p class="feature-description">Personalized remediation plans with priority scoring to systematically improve your security posture.</p>
+                    <p class="feature-description">Personalized remediation plans with priority scoring and phased execution to systematically improve your security posture.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="capability-header">
+                        <div class="feature-icon">
+                            <span style="font-size: 24px;">🧠</span>
+                        </div>
+                        <span class="capability-version">OPSYCH v2.0</span>
+                    </div>
+                    <h3 class="feature-title">Social Engineering Protection</h3>
+                    <p class="feature-description">Discover psychological bias, conduct social investigations, and gain insight into the most vulnerable aspect of any system: humans.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="capability-header">
+                        <div class="feature-icon">
+                            <span style="font-size: 24px;">🔭</span>
+                        </div>
+                        <span class="capability-version">WATCHTOWER v3.0</span>
+                    </div>
+                    <h3 class="feature-title">Continuous Monitoring</h3>
+                    <p class="feature-description">Real-time alerting across digital, physical, and social systems. The first complete birds-eye view of organizational protection.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="capability-header">
+                        <div class="feature-icon">
+                            <span style="font-size: 24px;">🔮</span>
+                        </div>
+                        <span class="capability-version">ORACLE v4.0</span>
+                    </div>
+                    <h3 class="feature-title">Predictive Intelligence</h3>
+                    <p class="feature-description">Forecast and track emerging threats before they materialize. Your organization's personal crystal ball for strategic security planning.</p>
                 </div>
             </div>
         </div>
@@ -1590,52 +1992,46 @@
     <!-- About Section -->
     <section class="about-section">
         <div class="section-container">
+            <div class="section-header">
+                <span class="section-label">Why NERVE</span>
+                <h2 class="section-title">Intelligence Without The Vendor Stack</h2>
+            </div>
+
             <div class="about-content">
                 <div class="about-text">
-                    <div class="section-eyebrow">Why NERVE</div>
-                    <h2 class="about-title">Built For Security Teams<br/><span class="gradient-text">Who Actually Do The Work</span></h2>
-                    <p class="about-lead">
-                        NERVE isn't another "enterprise security platform" with 47 dashboards
-                        you'll never use. It's a focused toolkit built by security professionals
-                        who got tired of duct-taping five different tools together.
+                    <p class="lead">
+                        All mid-market organizations need security intelligence, attack surface management,
+                        vulnerability testing, and social engineering protection. But buying these separately means:
                     </p>
 
-                    <div class="about-features">
-                        <div class="about-feature">
-                            <div class="about-feature-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </div>
-                            <div class="about-feature-content">
-                                <h4>No Fluff</h4>
-                                <p>Every feature solves a real problem. No enterprise bloat.</p>
+                    <ul class="problem-list">
+                        <li>$100K-$150K/year across multiple vendors</li>
+                        <li>Minimal integration between tools</li>
+                        <li>Manual correlation of findings</li>
+                        <li>Steep learning curves for each platform and never full usage</li>
+                    </ul>
+
+                    <p class="solution-text">
+                        NERVE isn't another "enterprise security platform" with 47 dashboards you'll never use.
+                        It's a focused toolkit built by security professionals who got tired of duct-taping
+                        different tools together. Integrated Intelligence Modules share data. Findings connect
+                        automatically. Get one unified view of your security posture.
+                    </p>
+
+                    <div class="value-props">
+                        <div class="value-prop">
+                            <div class="value-icon">🧩</div>
+                            <div>
+                                <h4>Modular Setup</h4>
+                                <p>Use what you need. Add capabilities as you grow. Get the maximum out of what you buy.</p>
                             </div>
                         </div>
 
-                        <div class="about-feature">
-                            <div class="about-feature-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                                </svg>
-                            </div>
-                            <div class="about-feature-content">
-                                <h4>Actually Fast</h4>
-                                <p>Scans complete in seconds, not hours. Real-time monitoring.</p>
-                            </div>
-                        </div>
-
-                        <div class="about-feature">
-                            <div class="about-feature-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </div>
-                            <div class="about-feature-content">
-                                <h4>Transparent</h4>
-                                <p>See exactly what we check, how we check it, and why it matters.</p>
+                        <div class="value-prop">
+                            <div class="value-icon">🎯</div>
+                            <div>
+                                <h4>Built Specifically For Mid-Market</h4>
+                                <p>Designed for organizations with 10-500 employees who need real protection without Fortune 500 complexity and cost.</p>
                             </div>
                         </div>
                     </div>
@@ -1650,18 +2046,17 @@
                             <span class="code-title">nerve-cli</span>
                         </div>
                         <div class="code-content">
-                            <div class="code-line"><span class="code-prompt">$</span> nerve scan westsidestores.ca</div>
-                            <div class="code-line code-empty"></div>
-                            <div class="code-line"><span class="code-icon">🔍</span> <span class="code-dim">Scanning attack surface...</span></div>
-                            <div class="code-line code-success"><span class="code-check">✓</span> Found 47 subdomains</div>
-                            <div class="code-line code-success"><span class="code-check">✓</span> Identified 12 open ports</div>
-                            <div class="code-line code-success"><span class="code-check">✓</span> Detected 3 vulnerabilities</div>
-                            <div class="code-line code-empty"></div>
-                            <div class="code-line code-warning"><span class="code-warn">⚠️</span> <span class="code-critical">Critical:</span> Exposed admin panel</div>
-                            <div class="code-line code-url">   → https://admin.westsidestores.ca</div>
-                            <div class="code-line code-empty"></div>
-                            <div class="code-line code-success"><span class="code-check">✓</span> Scan complete in <span class="code-highlight">3.2s</span></div>
-                            <div class="code-line"><span class="code-cursor">▋</span></div>
+                            <pre><code>$ nerve scan example.com
+
+🔍 Scanning attack surface...
+✓ Found 47 subdomains
+✓ Identified 12 open ports
+✓ Detected 3 vulnerabilities
+
+⚠️  Critical: Exposed admin panel
+   → https://admin.example.com
+
+✓ Scan complete</code></pre>
                         </div>
                     </div>
                 </div>
@@ -1675,184 +2070,230 @@
             <div class="section-header">
                 <div class="section-eyebrow">Pricing</div>
                 <h2 class="section-title">Pricing That Makes Sense</h2>
-                <p class="pricing-subtitle" style="color: rgba(255,255,255,0.6); margin-top: 16px; font-size: 16px;">No surprise fees. No hidden costs. Pay for what you use.</p>
+                <p class="pricing-subtitle" style="color: rgba(255,255,255,0.6); margin-top: 16px; font-size: 16px;">No surprise fees. No vendor fragmentation.</p>
             </div>
 
             <div class="pricing-grid">
-                <!-- Starter Tier -->
+                <!-- Solo Practitioner -->
                 <div class="pricing-card">
-                    <div class="pricing-badge">Individual</div>
-                    <h3 class="pricing-title">Starter</h3>
+                    <div class="pricing-badge">Solo Practitioner</div>
                     <div class="pricing-price">
-                        <span class="price-amount">$49</span>
-                        <span class="price-period">/month</span>
+                        <span class="price-amount">$2,099</span>
+                        <span class="price-period">/year</span>
                     </div>
+                    <p class="pricing-billing">Billed annually</p>
                     <p class="pricing-description">
-                        For security professionals and solo practitioners
+                        For freelance consultants and independent security professionals
                     </p>
                     <ul class="pricing-features">
-                        <li>10 searches/day</li>
-                        <li>Basic threat intelligence</li>
-                        <li>Email breach monitoring (5 addresses)</li>
-                        <li>Attack surface scanning</li>
-                        <li>Security roadmap</li>
+                        <li>Full Ghost platform access (Search, Adversary Mapping, XASM, Lightbox)</li>
+                        <li>Limited searches and Unlimited scans</li>
+                        <li>Attack surface monitoring</li>
+                        <li>Email support</li>
+                        <li>Priority feature implementation</li>
                     </ul>
                     <button class="btn-pricing" onclick="document.getElementById('waitlist').scrollIntoView({behavior: 'smooth'})">Join Waitlist</button>
                 </div>
 
-                <!-- Team Tier (Featured) -->
+                <!-- Company License (Featured) -->
                 <div class="pricing-card featured">
                     <div class="pricing-badge featured-badge">Most Popular</div>
-                    <h3 class="pricing-title">Team</h3>
                     <div class="pricing-price">
-                        <span class="price-amount">$199</span>
-                        <span class="price-period">/month</span>
+                        <span class="price-amount">$5,499</span>
+                        <span class="price-period">/year</span>
                     </div>
+                    <p class="pricing-billing">Billed annually</p>
                     <p class="pricing-description">
-                        For security teams and growing companies
+                        For organizations of 10-100 employees
                     </p>
                     <ul class="pricing-features">
-                        <li>Unlimited searches</li>
-                        <li>Advanced threat intelligence</li>
-                        <li>Email monitoring (unlimited)</li>
-                        <li>Continuous attack surface monitoring</li>
-                        <li>Security roadmap + progress tracking</li>
-                        <li>Multi-user access (up to 5)</li>
-                        <li>Priority support</li>
+                        <li>3 Seats</li>
+                        <li>Full Ghost platform access</li>
+                        <li>Email monitoring for up to 15 people</li>
+                        <li>Monitor your organization</li>
+                        <li>Quarterly strategic review calls</li>
+                        <li>Email + chat support</li>
+                        <li>Training included</li>
                     </ul>
                     <button class="btn-pricing primary" onclick="document.getElementById('waitlist').scrollIntoView({behavior: 'smooth'})">Join Waitlist</button>
                 </div>
 
-                <!-- Enterprise Tier -->
+                <!-- Managed Service -->
                 <div class="pricing-card">
-                    <div class="pricing-badge">Custom</div>
-                    <h3 class="pricing-title">Enterprise</h3>
+                    <div class="pricing-badge">Managed Service</div>
                     <div class="pricing-price">
-                        <span class="price-amount">Custom</span>
+                        <span class="price-prefix">+</span>
+                        <span class="price-amount">$1,000</span>
+                        <span class="price-period">/month</span>
                     </div>
+                    <p class="pricing-billing">Added to Company License</p>
                     <p class="pricing-description">
-                        For organizations with complex security needs
+                        For teams that need expert guidance
                     </p>
                     <ul class="pricing-features">
-                        <li>Everything in Team, plus:</li>
-                        <li>Unlimited team members</li>
-                        <li>Custom integrations</li>
-                        <li>API access</li>
-                        <li>Dedicated support</li>
-                        <li>SLA guarantee</li>
-                        <li>On-premise deployment option</li>
+                        <li>Dedicated & vetted NOF security analyst</li>
+                        <li>Bi-weekly or Monthly security reports</li>
+                        <li>Monthly strategic review calls</li>
+                        <li>Active monitoring and alert triage</li>
+                        <li>Remediation guidance</li>
+                        <li>Direct analyst access</li>
                     </ul>
-                    <button class="btn-pricing" onclick="window.location.href='mailto:sales@nerve.security'">Contact Sales</button>
+                    <div class="pricing-comparison">
+                        <div class="comparison-item">
+                            <span class="comparison-label">Average security analyst salary:</span>
+                            <span class="comparison-value">$75K-$95K/year</span>
+                            <span class="comparison-location">(North America)</span>
+                        </div>
+                        <div class="comparison-item highlight">
+                            <span class="comparison-label">NERVE Managed Analyst Service:</span>
+                            <span class="comparison-value">$12K/year</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Founding Member Program -->
+            <div class="founding-member-section">
+                <div class="founding-member-card">
+                    <div class="founding-header">
+                        <h3>Founding Member Program</h3>
+                        <span class="founding-badge">Limited to first 10 companies</span>
+                    </div>
+
+                    <div class="founding-price">
+                        <span class="price-amount">$4,499</span>
+                        <span class="price-period">/year for Year 1</span>
+                    </div>
+
+                    <div class="founding-benefits">
+                        <h4>Founding Member Benefits:</h4>
+                        <ul>
+                            <li>Early access to OPSYCH beta (Q4 2025)</li>
+                            <li>Quarterly roadmap input sessions</li>
+                            <li>Priority feature requests and support</li>
+                            <li>Case study collaboration</li>
+                            <li>Direct access to partner network for added services</li>
+                            <li>At Year 2 renewal: <strong>15% lifetime discount</strong> on all modules</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn-founding" onclick="document.getElementById('waitlist').scrollIntoView({behavior: 'smooth'})">
+                        Apply for Founding Member Status
+                    </button>
                 </div>
             </div>
 
             <div class="pricing-note">
-                All plans include 14-day free trial. No credit card required.
+                All plans billed annually. Ghost v1.0 launches Q1 2025.
             </div>
         </div>
     </section>
 
     <!-- Roadmap Section -->
-    <section class="roadmap-section" id="roadmap">
-        <div class="section-container">
-            <div class="section-header">
-                <div class="section-eyebrow">What's Coming</div>
-                <h2 class="section-title">2026 Roadmap</h2>
-                <p class="roadmap-subtitle" style="color: rgba(255,255,255,0.6); margin-top: 16px; font-size: 16px;">What we're building and when you can expect it</p>
+<section class="roadmap-section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Product Roadmap</h2>
+        </div>
+
+        <div class="timeline">
+            <!-- Q1 2026 - NERVE Launch -->
+            <div class="timeline-item" data-quarter="Q1">
+                <div class="timeline-marker">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-line"></div>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-date">Q1 2026</div>
+                    <h3 class="timeline-title">NERVE Launch - Ghost v1.0</h3>
+                    <p class="timeline-description">
+                        Core platform goes live with complete threat intelligence suite
+                    </p>
+                    <ul class="timeline-features">
+                        <li>Credential search and breach monitoring</li>
+                        <li>Adversary mapping for 850+ APT groups</li>
+                        <li>Attack surface management</li>
+                        <li>Automated vulnerability testing (Lightbox)</li>
+                        <li>Security roadmap generator</li>
+                        <li>Daily Education & Customized News Feeds</li>
+                    </ul>
+                    <div class="timeline-status launching">Launching Soon</div>
+                </div>
             </div>
 
-            <div class="timeline">
-                <!-- Q1 2026 - Launch -->
-                <div class="timeline-item" data-quarter="Q1">
-                    <div class="timeline-marker">
-                        <div class="timeline-dot"></div>
-                        <div class="timeline-line"></div>
-                    </div>
-                    <div class="timeline-content">
-                        <div class="timeline-date">Q1 2026</div>
-                        <h3 class="timeline-title">NERVE Launch</h3>
-                        <p class="timeline-description">
-                            Core platform goes live with essential security monitoring capabilities.
-                        </p>
-                        <ul class="timeline-features">
-                            <li>Platform infrastructure</li>
-                            <li>User authentication & roles</li>
-                            <li>Basic threat intelligence</li>
-                        </ul>
-                        <div class="timeline-status launching">Launching Now</div>
-                    </div>
+            <!-- Q2 2025 - Ghost 1.1-1.3 -->
+            <div class="timeline-item" data-quarter="Q2">
+                <div class="timeline-marker">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-line"></div>
                 </div>
-
-                <!-- Q2 2026 - Ghost -->
-                <div class="timeline-item" data-quarter="Q2">
-                    <div class="timeline-marker">
-                        <div class="timeline-dot"></div>
-                        <div class="timeline-line"></div>
-                    </div>
-                    <div class="timeline-content">
-                        <div class="timeline-date">Q2 2026</div>
-                        <h3 class="timeline-title">GHOST - Intelligence Suite</h3>
-                        <p class="timeline-description">
-                            Comprehensive cyber threat intelligence and attack surface management.
-                        </p>
-                        <ul class="timeline-features">
-                            <li>Global breach search</li>
-                            <li>Attack surface monitoring (XASM)</li>
-                            <li>Vulnerability scanning (Lightbox)</li>
-                            <li>Threat actor profiling</li>
-                            <li>Security roadmap generator</li>
-                        </ul>
-                        <div class="timeline-status development">In Development</div>
-                    </div>
+                <div class="timeline-content">
+                    <div class="timeline-date">Q2 2025</div>
+                    <h3 class="timeline-title">Ghost v1.1-1.3 - Refinement</h3>
+                    <p class="timeline-description">
+                        Platform enhancements based on customer feedback
+                    </p>
+                    <ul class="timeline-features">
+                        <li>Enhanced breach data sources</li>
+                        <li>New intelligence components</li>
+                        <li>Analyst tooling and workflows</li>
+                        <li>Quality of life improvements</li>
+                        <li>User-requested features</li>
+                        <li>Performance optimization</li>
+                    </ul>
+                    <div class="timeline-status planned">Planned</div>
                 </div>
+            </div>
 
-                <!-- Q3 2026 - Ghost Enhancements -->
-                <div class="timeline-item" data-quarter="Q3">
-                    <div class="timeline-marker">
-                        <div class="timeline-dot"></div>
-                        <div class="timeline-line"></div>
-                    </div>
-                    <div class="timeline-content">
-                        <div class="timeline-date">Q3 2026</div>
-                        <h3 class="timeline-title">GHOST Enhancements</h3>
-                        <p class="timeline-description">
-                            Advanced features and integrations for power users.
-                        </p>
-                        <ul class="timeline-features">
-                            <li>API access for custom integrations</li>
-                            <li>Automated alerting system</li>
-                            <li>Advanced reporting & analytics</li>
-                            <li>Slack/Teams integrations</li>
-                            <li>Custom threat feeds</li>
-                        </ul>
-                        <div class="timeline-status planned">Planned</div>
-                    </div>
+            <!-- Q3 2025 - Ghost 1.4-1.9 -->
+            <div class="timeline-item" data-quarter="Q3">
+                <div class="timeline-marker">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-line"></div>
                 </div>
+                <div class="timeline-content">
+                    <div class="timeline-date">Q3 2025</div>
+                    <h3 class="timeline-title">Ghost v1.4-1.9 - Advanced Features</h3>
+                    <p class="timeline-description">
+                        Power user capabilities and enterprise integrations
+                    </p>
+                    <ul class="timeline-features">
+                        <li>Automated alerting system</li>
+                        <li>Advanced reporting and analytics</li>
+                        <li>Internal AI model integration</li>
+                        <li>3rd party business app integrations (Slack, Teams)</li>
+                        <li>Custom threat feed ingestion</li>
+                        <li>Compliance gap assessments (SOC 2, ISO 27001, NIST)</li>
+                    </ul>
+                    <div class="timeline-status planned">Planned</div>
+                </div>
+            </div>
 
-                <!-- Q4 2026 - OPSYCH -->
-                <div class="timeline-item" data-quarter="Q4">
-                    <div class="timeline-marker">
-                        <div class="timeline-dot"></div>
-                    </div>
-                    <div class="timeline-content">
-                        <div class="timeline-date">Q4 2026</div>
-                        <h3 class="timeline-title">OPSYCH - OSINT Platform</h3>
-                        <p class="timeline-description">
-                            Open-source intelligence gathering and social media monitoring.
-                        </p>
-                        <ul class="timeline-features">
-                            <li>Multi-platform OSINT searches</li>
-                            <li>Social media monitoring</li>
-                            <li>Digital footprint analysis</li>
-                            <li>Dark web monitoring</li>
-                            <li>Entity relationship mapping</li>
-                        </ul>
-                        <div class="timeline-status future">Future Release</div>
-                    </div>
+            <!-- Q4 2025 - OPSYCH -->
+            <div class="timeline-item" data-quarter="Q4">
+                <div class="timeline-marker">
+                    <div class="timeline-dot"></div>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-date">Q4 2025</div>
+                    <h3 class="timeline-title">OPSYCH v2.0 - Beta Launch</h3>
+                    <p class="timeline-description">
+                        OSINT platform and social engineering intelligence
+                    </p>
+                    <ul class="timeline-features">
+                        <li>Multi-platform OSINT searches</li>
+                        <li>Social media monitoring and sentiment analysis</li>
+                        <li>Digital footprint analysis</li>
+                        <li>Dark web monitoring</li>
+                        <li>Entity relationship mapping</li>
+                        <li>Psychological profiling and bias detection</li>
+                    </ul>
+                    <div class="timeline-status future">Future Release</div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- Waitlist Section -->
     <section class="waitlist-section" id="waitlist">
@@ -1905,11 +2346,11 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-logo">
-                <span class="logo-icon">N</span>
-                <span class="logo-text">NERVE</span>
+            <div class="footer-logo-container">
+                <img src="NerveLogo1.png" alt="NERVE" class="footer-logo-img">
+                <span class="footer-logo-text">NERVE</span>
             </div>
-            <div class="footer-text">&copy; 2025 NERVE Security. All rights reserved.</div>
+            <div class="footer-text">&copy; 2026 <a href="https://www.nofconsulting.com" target="_blank" rel="noopener noreferrer" class="footer-link">NOF Consulting</a>. All rights reserved.</div>
         </div>
     </footer>
 
@@ -1923,6 +2364,45 @@
         let mouseX = 0;
         let mouseY = 0;
         let animationFrame;
+
+        // Cursor Particle Trail System
+        const cursorParticles = [];
+        const maxParticles = 20;
+
+        class CursorParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 2;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = (Math.random() - 0.5) * 2;
+                this.life = 1.0;
+                this.decay = 0.02;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life -= this.decay;
+                this.size *= 0.95;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = '#D4AF37';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#D4AF37';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            isDead() {
+                return this.life <= 0;
+            }
+        }
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -1941,8 +2421,8 @@
                     y: Math.random() * canvas.height,
                     vx: (Math.random() - 0.5) * 0.3,
                     vy: (Math.random() - 0.5) * 0.3,
-                    radius: Math.random() * 2 + 1,
-                    baseRadius: Math.random() * 2 + 1,
+                    radius: Math.random() * 2 + 3,
+                    baseRadius: Math.random() * 2 + 3,
                     pulsePhase: Math.random() * Math.PI * 2
                 });
             }
@@ -1974,16 +2454,18 @@
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Update nodes
+            // Update nodes with enhanced parallax
             const time = Date.now() * 0.001;
+            const parallaxStrength = 0.03;
             nodes.forEach((node, i) => {
-                // Mouse influence
+                // Mouse influence - enhanced parallax
                 const dx = mouseX - node.x;
                 const dy = mouseY - node.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 200) {
-                    node.vx += dx * 0.00005;
-                    node.vy += dy * 0.00005;
+                if (dist < 250) {
+                    const force = (250 - dist) / 250;
+                    node.vx += dx * parallaxStrength * force * 0.01;
+                    node.vy += dy * parallaxStrength * force * 0.01;
                 }
 
                 // Move
@@ -2011,12 +2493,12 @@
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < 200) {
-                    const alpha = (1 - distance / 200) * 0.15;
+                    const alpha = (1 - distance / 200) * 0.3;
                     ctx.beginPath();
                     ctx.moveTo(from.x, from.y);
                     ctx.lineTo(to.x, to.y);
                     ctx.strokeStyle = `rgba(212, 175, 55, ${alpha})`;
-                    ctx.lineWidth = 0.5;
+                    ctx.lineWidth = 1.5;
                     ctx.stroke();
                 }
             });
@@ -2032,13 +2514,13 @@
                 const y = from.y + (to.y - from.y) * pulse.progress;
 
                 // Draw pulse glow
-                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 8);
-                gradient.addColorStop(0, 'rgba(212, 175, 55, 0.8)');
-                gradient.addColorStop(0.5, 'rgba(212, 175, 55, 0.3)');
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
+                gradient.addColorStop(0, 'rgba(212, 175, 55, 0.9)');
+                gradient.addColorStop(0.5, 'rgba(212, 175, 55, 0.4)');
                 gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
 
                 ctx.beginPath();
-                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.arc(x, y, 12, 0, Math.PI * 2);
                 ctx.fillStyle = gradient;
                 ctx.fill();
 
@@ -2048,23 +2530,36 @@
             // Draw nodes
             nodes.forEach(node => {
                 // Glow
-                const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.radius * 4);
-                gradient.addColorStop(0, 'rgba(212, 175, 55, 0.4)');
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(212, 175, 55, 0.6)';
+                const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.radius * 5);
+                gradient.addColorStop(0, 'rgba(212, 175, 55, 0.6)');
                 gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, node.radius * 4, 0, Math.PI * 2);
+                ctx.arc(node.x, node.y, node.radius * 5, 0, Math.PI * 2);
                 ctx.fillStyle = gradient;
                 ctx.fill();
 
                 // Core
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(212, 175, 55, 0.8)';
+                ctx.fillStyle = '#D4AF37';
                 ctx.fill();
+                ctx.restore();
             });
 
             // Create new pulses randomly
             if (Math.random() < 0.03) createPulse();
+
+            // Draw and update cursor particles
+            for (let i = cursorParticles.length - 1; i >= 0; i--) {
+                cursorParticles[i].update();
+                cursorParticles[i].draw(ctx);
+                if (cursorParticles[i].isDead()) {
+                    cursorParticles.splice(i, 1);
+                }
+            }
 
             animationFrame = requestAnimationFrame(animate);
         }
@@ -2082,6 +2577,19 @@
             cursorY = e.clientY;
             cursorDot.style.left = cursorX + 'px';
             cursorDot.style.top = cursorY + 'px';
+
+            // Add cursor particles on canvas
+            const rect = canvas.getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                for (let i = 0; i < 2; i++) {
+                    cursorParticles.push(new CursorParticle(e.clientX, e.clientY));
+                }
+                // Limit particle count
+                while (cursorParticles.length > maxParticles) {
+                    cursorParticles.shift();
+                }
+            }
         });
 
         function animateCursor() {
@@ -2160,7 +2668,8 @@
                 const response = await fetch('http://localhost:5000/api/waitlist/count');
                 const data = await response.json();
                 const countEl = document.getElementById('waitlistCount');
-                const newCount = data.count || 0;
+                // Add 8 to the actual count for social proof
+                const newCount = (data.count || 0) + 8;
 
                 // Animate count update
                 const currentCount = parseInt(countEl.textContent) || 0;
@@ -2169,6 +2678,8 @@
                 }
             } catch (error) {
                 console.error('Error loading waitlist count:', error);
+                // If API fails, show 8 as default
+                document.getElementById('waitlistCount').textContent = 8;
             }
         }
 

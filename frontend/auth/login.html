@@ -596,7 +596,7 @@
             <!-- Branding -->
             <div class="brand">
                 <div class="brand-logo">
-                    <img src="../NerveLogo1.png" alt="NERVE" class="login-logo">
+                    <img src="/NerveLogo1.png" alt="NERVE" class="login-logo">
                 </div>
                 <h1 class="brand-title">NERVE</h1>
                 <p class="brand-subtitle">Unified Intelligence Platform</p>
@@ -670,7 +670,7 @@
                         </span>
                         <span class="checkbox-label">Remember me</span>
                     </label>
-                    <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+                    <a href="/forgot-password" class="forgot-link">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="submit-btn" id="submitBtn">
@@ -742,12 +742,17 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Store token
+                    // Store token in localStorage
                     localStorage.setItem('session_token', data.token);
                     localStorage.setItem('nerve_user', JSON.stringify(data.user));
 
-                    // Redirect to dashboard
-                    window.location.href = '../index.html';
+                    // Set session cookie for server-side auth checks
+                    const remember = document.getElementById('remember').checked;
+                    const maxAge = remember ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days or 1 day
+                    document.cookie = `nerve_session=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
+                    // Redirect to dashboard (use response redirect or default)
+                    window.location.href = data.redirect || '/dashboard';
                 } else {
                     // Show error
                     errorText.textContent = data.message || 'Invalid email or password';

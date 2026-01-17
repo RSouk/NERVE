@@ -5088,6 +5088,36 @@
             .ai-export-buttons { width: 100%; justify-content: center; }
         }
 
+        /* Back to Dashboard Button */
+        .btn-back-dashboard {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            color: #D4AF37;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back-dashboard:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.5);
+            transform: translateX(-2px);
+        }
+
+        .back-icon {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-back-dashboard:hover .back-icon {
+            transform: translateX(-3px);
+        }
 
     </style>
 </head>
@@ -5095,23 +5125,26 @@
     <div class="container">
         <div class="header">
             <div class="header-left">
-                <img src="ghost-logo.png" alt="GHOST">
+                <img src="/ghost-logo.png" alt="Ghost" style="height: 40px; width: auto;">
                 <div class="header-title">
                     <h1>GHOST</h1>
                     <p>Attack Surface Management</p>
                 </div>
             </div>
             <div style="display: flex; gap: 10px;">
-                <a href="../../profile.html" class="back-button" title="Profile"><span style="color: #D4AF37; font-size: 20px;">⚙️</span> Settings</a>
-                <a href="ghost.html" class="back-button">← Back to Dashboard</a>
+                <a href="/profile" class="back-button" title="Profile"><span style="color: #D4AF37; font-size: 20px;">⚙️</span> Settings</a>
+                <a href="/ghost" class="btn-back-dashboard">
+                    <span class="back-icon">←</span>
+                    Back to Dashboard
+                </a>
             </div>
         </div>
 
         <!-- Quick Navigation -->
         <div style="display: flex; gap: 12px; justify-content: center; padding: 16px 30px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(212,175,55,0.15); margin-bottom: 20px;">
-            <a href="ghost-search.html" style="padding: 8px 16px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; color: #D4AF37; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.2)'" onmouseout="this.style.background='rgba(212,175,55,0.1)'">Global Search</a>
-            <a href="ghost-adversary.html" style="padding: 8px 16px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; color: #D4AF37; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.2)'" onmouseout="this.style.background='rgba(212,175,55,0.1)'">Adversary Matching</a>
-            <a href="ghost-roadmap.html" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px; color: #ffd700; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.25)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))'">Security Roadmap</a>
+            <a href="/ghost/search" style="padding: 8px 16px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; color: #D4AF37; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.2)'" onmouseout="this.style.background='rgba(212,175,55,0.1)'">Global Search</a>
+            <a href="/ghost/adversary" style="padding: 8px 16px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; color: #D4AF37; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.2)'" onmouseout="this.style.background='rgba(212,175,55,0.1)'">Adversary Matching</a>
+            <a href="/ghost/roadmap" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px; color: #ffd700; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.25)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))'">Security Roadmap</a>
         </div>
 
         <!-- Search Section with History Icon -->
@@ -7188,7 +7221,7 @@
 
             if (!token) {
                 alert('Please log in to run scans');
-                window.location.href = '../../auth/login.html';
+                window.location.href = '/login';
                 return;
             }
 
@@ -7245,8 +7278,10 @@
                 if (response.status === 401) {
                     console.error('[ASM DEBUG] 401 Unauthorized - token invalid or expired');
                     localStorage.removeItem('session_token');
+                    localStorage.removeItem('nerve_user');
+                    document.cookie = 'nerve_session=; path=/; max-age=0; SameSite=Lax';
                     alert('Session expired. Please log in again.');
-                    window.location.href = '../../auth/login.html';
+                    window.location.href = '/login';
                     return;
                 }
 

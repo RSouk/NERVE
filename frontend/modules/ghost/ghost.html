@@ -1576,6 +1576,70 @@
             color: #BB86FC;
         }
 
+        /* Technique Description Toggle */
+        .technique-description {
+            margin: 0 0 20px 0;
+            padding: 0 0 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .description-toggle {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: #D4AF37;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-family: 'Outfit', -apple-system, sans-serif;
+        }
+
+        .description-toggle:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.5);
+        }
+
+        .description-toggle .toggle-icon {
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .plain-english {
+            margin-top: 12px;
+            padding: 16px;
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 3px solid #D4AF37;
+            border-radius: 4px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .plain-english strong {
+            color: #D4AF37;
+        }
+
+        .plain-english p {
+            margin: 0;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.95rem;
+        }
+
         .playbook-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1852,7 +1916,7 @@
         <!-- Header -->
         <header class="header">
             <div class="header-left">
-                <img src="ghost-logo.png" alt="GHOST">
+                <img src="/ghost-logo.png" alt="Ghost" style="height: 40px; width: auto;">
                 <div class="header-title">
                     <h1>GHOST</h1>
                     <p>CTI Intelligence Dashboard</p>
@@ -1860,10 +1924,10 @@
             </div>
             <div class="header-right">
                 <button class="header-btn" onclick="refreshDashboard()">Refresh</button>
-                <a href="../../profile.html" class="header-btn profile-btn" id="profileBtn" title="Profile">
+                <a href="/profile" class="header-btn profile-btn" id="profileBtn" title="Profile">
                     <span class="settings-icon">⚙️</span>
                 </a>
-                <a href="../../index.html" class="header-btn">Back to NERVE</a>
+                <a href="/dashboard" class="header-btn">Back to NERVE</a>
             </div>
         </header>
 
@@ -1872,23 +1936,23 @@
             <!-- Sidebar -->
             <aside class="sidebar">
                 <div class="sidebar-title">Module Features</div>
-                <a href="ghost-search.html" class="nav-item">
+                <a href="/ghost/search" class="nav-item">
                     <span class="nav-icon">&#128269;</span>
                     <span>Global Search</span>
                 </a>
-                <a href="ghost-adversary.html" class="nav-item">
+                <a href="/ghost/adversary" class="nav-item">
                     <span class="nav-icon">&#127919;</span>
                     <span>Adversary Matching</span>
                 </a>
-                <a href="ghost-asm.html" class="nav-item">
+                <a href="/ghost/xasm" class="nav-item">
                     <span class="nav-icon">&#127760;</span>
                     <span>Attack Surface</span>
                 </a>
-                <a href="ghost-roadmap.html" class="nav-item featured">
+                <a href="/ghost/roadmap" class="nav-item featured">
                     <span class="nav-icon">&#128739;</span>
                     <span>Security Roadmap <span class="beta-badge">BETA</span></span>
                 </a>
-                <a href="../../admin/admin-dashboard.html" class="nav-item" id="adminNavLink" style="display: none;">
+                <a href="/admin/dashboard" class="nav-item" id="adminNavLink" style="display: none;">
                     <span class="nav-icon">&#128736;</span>
                     <span>Admin Panel</span>
                 </a>
@@ -1973,7 +2037,7 @@
                 <div class="section-card">
                     <div class="section-header">
                         <h2 class="section-title">Security Roadmap</h2>
-                        <a href="ghost-roadmap.html" class="btn btn-primary">View Full Roadmap</a>
+                        <a href="/ghost/roadmap" class="btn btn-primary">View Full Roadmap</a>
                     </div>
                     <div class="roadmap-widget">
                         <div class="score-ring-container">
@@ -2400,6 +2464,19 @@
             // Build defense steps HTML
             const defenseStepsHtml = data.defense_steps.map(step => `<li>${escapeHtml(step)}</li>`).join('');
 
+            // Build description toggle HTML if description exists
+            const descriptionHtml = data.description ? `
+                <div class="technique-description">
+                    <button class="description-toggle" onclick="toggleDescription(this)">
+                        <span class="toggle-icon">💡</span>
+                        <span class="toggle-text">What does this mean?</span>
+                    </button>
+                    <div class="plain-english" style="display: none;">
+                        <p><strong>In Plain English:</strong> ${escapeHtml(data.description)}</p>
+                    </div>
+                </div>
+            ` : '';
+
             contentDiv.innerHTML = `
                 <div class="technique-header">
                     <div class="technique-name">
@@ -2409,6 +2486,8 @@
                         ${data.difficulty}
                     </span>
                 </div>
+
+                ${descriptionHtml}
 
                 <div class="playbook-content">
                     <div class="attack-column">
@@ -2432,6 +2511,22 @@
                     </div>
                 </div>
             `;
+        }
+
+        function toggleDescription(button) {
+            const description = button.nextElementSibling;
+            const icon = button.querySelector('.toggle-icon');
+            const text = button.querySelector('.toggle-text');
+
+            if (description.style.display === 'none') {
+                description.style.display = 'block';
+                icon.textContent = '✓';
+                text.textContent = 'Got it!';
+            } else {
+                description.style.display = 'none';
+                icon.textContent = '💡';
+                text.textContent = 'What does this mean?';
+            }
         }
 
         function updatePlaybookButtons(data) {
@@ -2618,7 +2713,7 @@
                     <div class="feature-locked-message">
                         <span class="lock-icon">&#128274;</span>
                         <p>Security Roadmap available for Company accounts</p>
-                        <a href="ghost-roadmap.html" class="btn btn-outline" style="margin-top: 12px;">Learn More</a>
+                        <a href="/ghost/roadmap" class="btn btn-outline" style="margin-top: 12px;">Learn More</a>
                     </div>
                 `;
             }

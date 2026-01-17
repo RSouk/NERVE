@@ -948,7 +948,7 @@
     <header class="admin-header">
         <div class="header-main">
             <div class="header-left">
-                <a href="admin-dashboard.html" class="admin-brand">
+                <a href="/admin/dashboard" class="admin-brand">
                     <div class="brand-icon">N</div>
                     <div class="brand-text">
                         <span class="brand-name">NERVE</span>
@@ -956,20 +956,20 @@
                     </div>
                 </a>
                 <nav class="header-nav">
-                    <a href="admin-dashboard.html" class="nav-link active">Dashboard</a>
-                    <a href="admin-users.html" class="nav-link">Users</a>
-                    <a href="admin-companies.html" class="nav-link">Companies</a>
-                    <a href="admin-system.html" class="nav-link">System</a>
-                    <a href="admin-logs.html" class="nav-link">Logs</a>
-                    <a href="admin-settings.html" class="nav-link">Settings</a>
+                    <a href="/admin/dashboard" class="nav-link active">Dashboard</a>
+                    <a href="/admin/users" class="nav-link">Users</a>
+                    <a href="/admin/companies" class="nav-link">Companies</a>
+                    <a href="/admin/system" class="nav-link">System</a>
+                    <a href="/admin/logs" class="nav-link">Logs</a>
+                    <a href="/admin/settings" class="nav-link">Settings</a>
                 </nav>
             </div>
             <div class="header-right">
-                <a href="../index.html" class="header-btn">
+                <a href="/dashboard" class="header-btn">
                     <span>&#8592;</span>
                     <span>View Site</span>
                 </a>
-                <a href="../profile.html" class="header-btn">
+                <a href="/profile" class="header-btn">
                     <span>&#128100;</span>
                     <span>Profile</span>
                 </a>
@@ -987,9 +987,9 @@
             </div>
         </div>
         <div class="breadcrumbs">
-            <a href="../index.html" class="breadcrumb-item">NERVE</a>
+            <a href="/dashboard" class="breadcrumb-item">NERVE</a>
             <span class="breadcrumb-sep">&#8250;</span>
-            <a href="admin-dashboard.html" class="breadcrumb-item">Admin</a>
+            <a href="/admin/dashboard" class="breadcrumb-item">Admin</a>
             <span class="breadcrumb-sep">&#8250;</span>
             <span class="breadcrumb-item current">Dashboard</span>
         </div>
@@ -1111,12 +1111,12 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions animate-in delay-3">
-            <a href="admin-users.html?action=create" class="action-btn">
+            <a href="/admin/users?action=create" class="action-btn">
                 <div class="action-icon">&#128100;</div>
                 <span class="action-label">+ Create User</span>
                 <span class="action-desc">Add new platform user</span>
             </a>
-            <a href="admin-companies.html?action=create" class="action-btn">
+            <a href="/admin/companies?action=create" class="action-btn">
                 <div class="action-icon">&#127970;</div>
                 <span class="action-label">+ Create Company</span>
                 <span class="action-desc">Register new organization</span>
@@ -1155,7 +1155,7 @@
             const token = localStorage.getItem('session_token');
 
             if (!token) {
-                window.location.href = '../auth/login.html';
+                window.location.href = '/login';
                 return;
             }
 
@@ -1166,7 +1166,7 @@
 
                 if (!response.ok) {
                     localStorage.removeItem('session_token');
-                    window.location.href = '../auth/login.html';
+                    window.location.href = '/login';
                     return;
                 }
 
@@ -1176,7 +1176,7 @@
                 if (!['admin', 'owner', 'super_admin'].includes(currentUser.role)) {
                     showToast('Access denied. Admin privileges required.', 'error');
                     setTimeout(() => {
-                        window.location.href = '../index.html';
+                        window.location.href = '/dashboard';
                     }, 2000);
                     return;
                 }
@@ -1186,7 +1186,7 @@
 
             } catch (error) {
                 console.error('Auth check failed:', error);
-                window.location.href = '../auth/login.html';
+                window.location.href = '/login';
             }
         }
 
@@ -1424,7 +1424,9 @@
 
         function logout() {
             localStorage.removeItem('session_token');
-            window.location.href = '../auth/login.html';
+            localStorage.removeItem('nerve_user');
+            document.cookie = 'nerve_session=; path=/; max-age=0; SameSite=Lax';
+            window.location.href = '/home';
         }
 
         function showToast(message, type = 'info') {

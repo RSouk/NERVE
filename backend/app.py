@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, g, Response, send_from_directory
+from flask import Flask, render_template, request, jsonify, g, Response, send_from_directory, redirect
 from flask_cors import CORS
 from functools import wraps
 from database import (
@@ -61,7 +61,10 @@ load_dotenv()
 # Setup logging
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+# Get the absolute path to the frontend directory for static file serving
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
+
+app = Flask(__name__, static_folder=frontend_path, static_url_path='')
 CORS(app, resources={
     r"/api/*": {
         "origins": "*",
@@ -286,6 +289,123 @@ def get_current_user_id():
     return getattr(request, 'user_id', None)
 
 
+def require_page_auth(f):
+    """
+    Decorator for protected page routes that require authentication.
+    Checks for session token in cookies and redirects to login if not authenticated.
+
+    Usage:
+        @app.route('/dashboard')
+        @require_page_auth
+        def dashboard():
+            return send_from_directory(...)
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check for session token in cookie
+        token = request.cookies.get('nerve_session')
+
+        if not token:
+            return redirect('/login')
+
+        # Validate the session
+        session_info = validate_session(token)
+
+        if not session_info:
+            return redirect('/login')
+
+        # Verify user exists and is active
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(
+                User.id == session_info['user_id'],
+                User.deleted_at.is_(None),
+                User.status == UserStatus.ACTIVE
+            ).first()
+
+            if not user:
+                return redirect('/login')
+
+            # Attach user info to request context
+            request.user_id = user.id
+            request.user = {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role.value if user.role else 'analyst',
+                'company_id': user.company_id
+            }
+            g.user_id = user.id
+            g.user = request.user
+
+        finally:
+            db.close()
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def require_admin_page(f):
+    """
+    Decorator for admin page routes that require admin authentication.
+    Checks for session token in cookies and verifies admin role.
+    Redirects to login if not authenticated, or to dashboard if not admin.
+
+    Usage:
+        @app.route('/admin/dashboard')
+        @require_admin_page
+        def admin_dashboard():
+            return send_from_directory(...)
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check for session token in cookie
+        token = request.cookies.get('nerve_session')
+
+        if not token:
+            return redirect('/login')
+
+        # Validate the session
+        session_info = validate_session(token)
+
+        if not session_info:
+            return redirect('/login')
+
+        # Verify user exists, is active, and is admin
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(
+                User.id == session_info['user_id'],
+                User.deleted_at.is_(None),
+                User.status == UserStatus.ACTIVE
+            ).first()
+
+            if not user:
+                return redirect('/login')
+
+            # Check for admin role (ADMIN or SUPER_ADMIN)
+            if user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+                return redirect('/dashboard')
+
+            # Attach user info to request context
+            request.user_id = user.id
+            request.user = {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role.value if user.role else 'analyst',
+                'company_id': user.company_id
+            }
+            g.user_id = user.id
+            g.user = request.user
+
+        finally:
+            db.close()
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def require_email_monitoring_access(f):
     """
     Decorator to restrict email monitoring to COMPANY_USER and above.
@@ -481,9 +601,12 @@ def increment_search_usage(user_id, user_role):
         session.close()
 
 
+# ==================== PUBLIC ROUTES ====================
+
 @app.route('/')
+@app.route('/home')
 def landing_page():
-    """Serve the landing page"""
+    """Landing page"""
     import os
     frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
     return send_from_directory(frontend_path, 'landing.html')
@@ -491,9 +614,146 @@ def landing_page():
 
 @app.route('/login')
 def login_page():
-    """Serve login page"""
-    return send_from_directory('frontend/auth', 'login.html')
+    """Login page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'auth')
+    return send_from_directory(frontend_path, 'login.html')
 
+
+@app.route('/forgot-password')
+def forgot_password_page():
+    """Forgot password page"""
+    auth_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'auth')
+    return send_from_directory(auth_path, 'forgot-password.html')
+
+
+@app.route('/waitlist')
+def waitlist_redirect():
+    """Redirect to landing page waitlist section"""
+    return redirect('/#waitlist')
+
+
+# ==================== PROTECTED ROUTES ====================
+
+@app.route('/dashboard')
+@require_page_auth
+def nerve_dashboard():
+    """NERVE main dashboard (requires auth)"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
+    return send_from_directory(frontend_path, 'index.html')
+
+
+@app.route('/ghost')
+@require_page_auth
+def ghost_dashboard():
+    """Ghost module dashboard"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'modules', 'ghost')
+    return send_from_directory(frontend_path, 'ghost.html')
+
+
+@app.route('/ghost/search')
+@require_page_auth
+def ghost_search():
+    """Ghost search page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'modules', 'ghost')
+    return send_from_directory(frontend_path, 'ghost-search.html')
+
+
+@app.route('/ghost/adversary')
+@require_page_auth
+def ghost_adversary():
+    """Ghost adversary page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'modules', 'ghost')
+    return send_from_directory(frontend_path, 'ghost-adversary.html')
+
+
+@app.route('/ghost/xasm')
+@require_page_auth
+def ghost_xasm():
+    """Ghost XASM (Attack Surface) page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'modules', 'ghost')
+    return send_from_directory(frontend_path, 'ghost-asm.html')
+
+
+@app.route('/ghost/roadmap')
+@require_page_auth
+def ghost_roadmap():
+    """Ghost security roadmap page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'modules', 'ghost')
+    return send_from_directory(frontend_path, 'ghost-roadmap.html')
+
+
+@app.route('/profile')
+@require_page_auth
+def profile_page():
+    """User profile page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
+    return send_from_directory(frontend_path, 'profile.html')
+
+
+# Admin routes (require admin role)
+@app.route('/admin/dashboard')
+@require_admin_page
+def admin_dashboard_page():
+    """Admin dashboard page"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'admin')
+    return send_from_directory(frontend_path, 'admin-dashboard.html')
+
+
+@app.route('/admin/users')
+@require_admin_page
+def admin_users():
+    """Admin user management"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'admin')
+    return send_from_directory(frontend_path, 'admin-users.html')
+
+
+@app.route('/admin/companies')
+@require_admin_page
+def admin_companies():
+    """Admin company management"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'admin')
+    return send_from_directory(frontend_path, 'admin-companies.html')
+
+
+@app.route('/admin/system')
+@require_admin_page
+def admin_system():
+    """Admin system management"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'admin')
+    return send_from_directory(frontend_path, 'admin-system.html')
+
+
+@app.route('/admin/logs')
+@require_admin_page
+def admin_logs():
+    """Admin logs"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'admin')
+    return send_from_directory(frontend_path, 'admin-logs.html')
+
+
+@app.route('/admin/settings')
+@require_admin_page
+def admin_settings():
+    """Admin settings"""
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'admin')
+    return send_from_directory(frontend_path, 'admin-settings.html')
+
+
+# ==================== API ROUTES ====================
 
 @app.route('/api')
 def api_index():
@@ -2060,6 +2320,7 @@ HACKER_PLAYBOOK = [
         "id": 0,
         "name": "SQL Injection",
         "difficulty": "MEDIUM",
+        "description": "Attackers inject malicious code into website forms to steal database contents like passwords, credit cards, and customer data.",
         "attack_steps": [
             "Identify input fields that interact with databases",
             "Test with basic payloads like ' OR '1'='1",
@@ -2077,6 +2338,7 @@ HACKER_PLAYBOOK = [
         "id": 1,
         "name": "Cross-Site Scripting (XSS)",
         "difficulty": "MEDIUM",
+        "description": "Hackers inject malicious scripts into websites that run in your browser, stealing your login sessions, redirecting you to fake sites, or capturing everything you type.",
         "attack_steps": [
             "Find user input reflected in page output",
             "Test with simple payloads like <script>alert(1)</script>",
@@ -2094,6 +2356,7 @@ HACKER_PLAYBOOK = [
         "id": 2,
         "name": "Password Spraying",
         "difficulty": "EASY",
+        "description": "Attackers try common passwords like 'Summer2024!' across thousands of accounts simultaneously, hoping someone used an easy-to-guess password.",
         "attack_steps": [
             "Gather list of valid usernames through OSINT or enumeration",
             "Choose common passwords (Season+Year, Company123, etc.)",
@@ -2111,6 +2374,7 @@ HACKER_PLAYBOOK = [
         "id": 3,
         "name": "Phishing with Credential Harvesting",
         "difficulty": "EASY",
+        "description": "Criminals create fake login pages that look identical to real ones, trick you into entering your password, then capture your credentials to access your accounts.",
         "attack_steps": [
             "Clone target company's login page with tools like Gophish",
             "Register look-alike domain (typosquatting)",
@@ -2128,6 +2392,7 @@ HACKER_PLAYBOOK = [
         "id": 4,
         "name": "LLMNR/NBT-NS Poisoning",
         "difficulty": "MEDIUM",
+        "description": "When computers on your network ask 'where is the file server?', attackers answer 'right here!' and capture passwords when your computer tries to connect to them.",
         "attack_steps": [
             "Position on same network segment as targets",
             "Run Responder to answer broadcast name queries",
@@ -2145,6 +2410,7 @@ HACKER_PLAYBOOK = [
         "id": 5,
         "name": "Kerberoasting",
         "difficulty": "MEDIUM",
+        "description": "Attackers request service account passwords from your network and crack them offline to gain access to critical systems like databases and file servers.",
         "attack_steps": [
             "Enumerate SPNs with tools like GetUserSPNs.py",
             "Request TGS tickets for service accounts",
@@ -2162,6 +2428,7 @@ HACKER_PLAYBOOK = [
         "id": 6,
         "name": "Pass-the-Hash",
         "difficulty": "HARD",
+        "description": "Hackers steal password hashes and reuse them to log in as other users without ever cracking the actual password - like using a master key mold.",
         "attack_steps": [
             "Obtain NTLM hash through credential dumping",
             "Use hash directly for authentication without cracking",
@@ -2179,6 +2446,7 @@ HACKER_PLAYBOOK = [
         "id": 7,
         "name": "Golden Ticket Attack",
         "difficulty": "EXPERT",
+        "description": "After stealing the master encryption key from your domain controller, attackers forge unlimited access passes to impersonate any user forever - the ultimate skeleton key.",
         "attack_steps": [
             "Compromise domain controller to get KRBTGT hash",
             "Forge TGT with any user/group membership",
@@ -2196,6 +2464,7 @@ HACKER_PLAYBOOK = [
         "id": 8,
         "name": "DNS Tunneling",
         "difficulty": "HARD",
+        "description": "Attackers hide stolen data inside normal-looking website address lookups, sneaking information out of your network through a channel most firewalls ignore.",
         "attack_steps": [
             "Set up authoritative DNS server for controlled domain",
             "Encode data in DNS queries (subdomains) and responses",
@@ -2213,6 +2482,7 @@ HACKER_PLAYBOOK = [
         "id": 9,
         "name": "Living off the Land (LOLBins)",
         "difficulty": "MEDIUM",
+        "description": "Instead of bringing their own malware, hackers abuse legitimate Windows tools already on your computer to download and run malicious code, making detection much harder.",
         "attack_steps": [
             "Use built-in tools like PowerShell, certutil, mshta",
             "Download payloads with certutil or bitsadmin",
@@ -2230,6 +2500,7 @@ HACKER_PLAYBOOK = [
         "id": 10,
         "name": "Server-Side Request Forgery (SSRF)",
         "difficulty": "MEDIUM",
+        "description": "Tricking your server into accessing internal systems that should be off-limits, exposing sensitive data, admin panels, or cloud credentials to attackers.",
         "attack_steps": [
             "Find functionality that fetches URLs (webhooks, imports)",
             "Test access to internal resources (169.254.169.254)",
@@ -2247,6 +2518,7 @@ HACKER_PLAYBOOK = [
         "id": 11,
         "name": "Command Injection",
         "difficulty": "HARD",
+        "description": "Attackers insert operating system commands into form fields or URLs, making your server execute whatever they want - like remotely typing commands on your computer.",
         "attack_steps": [
             "Identify inputs passed to system commands",
             "Test with command separators (; | & ` $())",
@@ -2264,6 +2536,7 @@ HACKER_PLAYBOOK = [
         "id": 12,
         "name": "Insecure Deserialization",
         "difficulty": "HARD",
+        "description": "Applications trust data they previously saved, so attackers craft malicious 'saved data' that executes code when the application reads it back.",
         "attack_steps": [
             "Identify serialized data in requests or cookies",
             "Analyze application for gadget chains",
@@ -2281,6 +2554,7 @@ HACKER_PLAYBOOK = [
         "id": 13,
         "name": "Subdomain Takeover",
         "difficulty": "EASY",
+        "description": "When companies forget to remove old DNS records pointing to decommissioned cloud services, attackers claim those services and host malicious content on your trusted domain.",
         "attack_steps": [
             "Enumerate subdomains using tools like subfinder",
             "Check for dangling DNS records (CNAME to unclaimed service)",
@@ -2298,6 +2572,7 @@ HACKER_PLAYBOOK = [
         "id": 14,
         "name": "JWT Token Attacks",
         "difficulty": "MEDIUM",
+        "description": "Attackers exploit weak or misconfigured authentication tokens to forge their own access passes, impersonating other users or gaining admin privileges.",
         "attack_steps": [
             "Intercept JWT token from authentication flow",
             "Try algorithm confusion (alg:none or RS256->HS256)",
@@ -2315,6 +2590,7 @@ HACKER_PLAYBOOK = [
         "id": 15,
         "name": "Directory Traversal",
         "difficulty": "EASY",
+        "description": "By adding '../' to file paths, attackers escape intended directories and read sensitive files like passwords, configuration files, or source code from your server.",
         "attack_steps": [
             "Identify file path parameters in requests",
             "Test with ../ sequences to escape directory",
@@ -2332,6 +2608,7 @@ HACKER_PLAYBOOK = [
         "id": 16,
         "name": "Privilege Escalation via SUID",
         "difficulty": "MEDIUM",
+        "description": "Attackers find programs with special 'run as admin' permissions and abuse them to gain full control of your Linux system - turning limited access into root power.",
         "attack_steps": [
             "Find SUID binaries with: find / -perm -4000",
             "Check GTFOBins for exploitable binaries",
@@ -2349,6 +2626,7 @@ HACKER_PLAYBOOK = [
         "id": 17,
         "name": "Cloud Storage Misconfiguration",
         "difficulty": "EASY",
+        "description": "Amazon S3 buckets or Azure blobs accidentally left open to the public, exposing company files, customer data, and backups to anyone on the internet.",
         "attack_steps": [
             "Enumerate S3 buckets using keyword-based naming",
             "Check for public read/write permissions",
@@ -2366,6 +2644,7 @@ HACKER_PLAYBOOK = [
         "id": 18,
         "name": "Container Escape",
         "difficulty": "EXPERT",
+        "description": "Attackers break out of Docker containers that were supposed to isolate them, gaining access to the host system and potentially all other containers running on it.",
         "attack_steps": [
             "Check for privileged container or dangerous mounts",
             "Exploit kernel vulnerabilities (Dirty Pipe, etc.)",
@@ -2383,6 +2662,7 @@ HACKER_PLAYBOOK = [
         "id": 19,
         "name": "OAuth Token Theft",
         "difficulty": "MEDIUM",
+        "description": "Attackers hijack the 'Login with Google/Microsoft' flow to steal access tokens, letting them impersonate you on connected apps without knowing your password.",
         "attack_steps": [
             "Exploit open redirectors in OAuth flow",
             "Use redirect_uri manipulation to steal codes",
@@ -2400,6 +2680,7 @@ HACKER_PLAYBOOK = [
         "id": 20,
         "name": "Man-in-the-Middle (MITM)",
         "difficulty": "MEDIUM",
+        "description": "Attackers secretly position themselves between you and the website you're visiting, reading and modifying everything you send - like someone opening your mail before delivery.",
         "attack_steps": [
             "Position between victim and target using ARP spoofing",
             "Intercept and modify traffic in real-time",
@@ -2417,6 +2698,7 @@ HACKER_PLAYBOOK = [
         "id": 21,
         "name": "Business Email Compromise (BEC)",
         "difficulty": "EASY",
+        "description": "Criminals impersonate your CEO or CFO via email, tricking employees into wiring money or sharing sensitive data by exploiting trust and urgency.",
         "attack_steps": [
             "Compromise executive email or spoof their address",
             "Study communication patterns and relationships",
@@ -2434,6 +2716,7 @@ HACKER_PLAYBOOK = [
         "id": 22,
         "name": "API Key Exposure",
         "difficulty": "EASY",
+        "description": "Developers accidentally publish secret passwords and API keys to GitHub, letting anyone who finds them access your cloud services, databases, or paid APIs.",
         "attack_steps": [
             "Search GitHub, GitLab for exposed credentials",
             "Use tools like truffleHog or gitleaks",
@@ -2451,6 +2734,7 @@ HACKER_PLAYBOOK = [
         "id": 23,
         "name": "Wireless Evil Twin",
         "difficulty": "MEDIUM",
+        "description": "Attackers set up a fake WiFi network with the same name as a legitimate one, tricking your device into connecting so they can spy on all your internet traffic.",
         "attack_steps": [
             "Create fake access point with same SSID as target",
             "Use stronger signal to attract victim connections",
@@ -2468,6 +2752,7 @@ HACKER_PLAYBOOK = [
         "id": 24,
         "name": "Domain Fronting",
         "difficulty": "HARD",
+        "description": "Malware hides its communications by routing through trusted services like Google or Amazon, making malicious traffic look like normal website visits.",
         "attack_steps": [
             "Use CDN that allows routing based on Host header",
             "Send traffic appearing to go to legitimate domain",
@@ -2485,6 +2770,7 @@ HACKER_PLAYBOOK = [
         "id": 25,
         "name": "DLL Hijacking",
         "difficulty": "MEDIUM",
+        "description": "Attackers place malicious code libraries where legitimate programs will accidentally load them, hijacking trusted applications to run their malware.",
         "attack_steps": [
             "Find applications with insecure DLL search order",
             "Place malicious DLL in application or PATH directory",
@@ -2502,6 +2788,7 @@ HACKER_PLAYBOOK = [
         "id": 26,
         "name": "Watering Hole Attack",
         "difficulty": "HARD",
+        "description": "Instead of attacking you directly, hackers compromise websites you frequently visit, infecting your computer when you browse sites you trust.",
         "attack_steps": [
             "Identify websites frequently visited by target group",
             "Compromise the trusted website",
@@ -2519,6 +2806,7 @@ HACKER_PLAYBOOK = [
         "id": 27,
         "name": "Macro Malware in Documents",
         "difficulty": "EASY",
+        "description": "Malicious Word or Excel documents contain hidden scripts that run when you click 'Enable Content', downloading malware onto your computer.",
         "attack_steps": [
             "Create document with malicious VBA macro",
             "Social engineer user to enable macros",
@@ -2536,6 +2824,7 @@ HACKER_PLAYBOOK = [
         "id": 28,
         "name": "Registry Persistence",
         "difficulty": "MEDIUM",
+        "description": "Malware adds itself to Windows startup locations in the registry, ensuring it runs every time you restart your computer - surviving reboots and updates.",
         "attack_steps": [
             "Add entries to Run/RunOnce keys for user persistence",
             "Use HKLM keys for system-wide persistence",
@@ -2553,6 +2842,7 @@ HACKER_PLAYBOOK = [
         "id": 29,
         "name": "BloodHound AD Mapping",
         "difficulty": "MEDIUM",
+        "description": "Attackers use specialized tools to map out your entire corporate network, finding the quickest path from a regular user account to domain administrator.",
         "attack_steps": [
             "Run SharpHound to collect AD relationships",
             "Import data into BloodHound for analysis",
@@ -2570,6 +2860,7 @@ HACKER_PLAYBOOK = [
         "id": 30,
         "name": "CSRF (Cross-Site Request Forgery)",
         "difficulty": "MEDIUM",
+        "description": "A malicious website tricks your browser into performing actions on other sites where you're logged in - like transferring money while you're still signed into your bank.",
         "attack_steps": [
             "Identify state-changing actions without CSRF protection",
             "Craft malicious page with auto-submitting form",
@@ -2587,6 +2878,7 @@ HACKER_PLAYBOOK = [
         "id": 31,
         "name": "WMI Persistence",
         "difficulty": "HARD",
+        "description": "Malware hides in Windows Management system to automatically restart itself based on triggers like system boot or specific times - nearly invisible to antivirus.",
         "attack_steps": [
             "Create WMI event subscription for persistence",
             "Use EventConsumer to execute payload on trigger",
@@ -2604,6 +2896,7 @@ HACKER_PLAYBOOK = [
         "id": 32,
         "name": "Browser Extension Hijacking",
         "difficulty": "MEDIUM",
+        "description": "Malicious browser extensions spy on everything you do online - reading your passwords, banking info, and private messages from every website you visit.",
         "attack_steps": [
             "Create or compromise browser extension",
             "Request broad permissions (all URLs, cookies)",
@@ -2621,6 +2914,7 @@ HACKER_PLAYBOOK = [
         "id": 33,
         "name": "Scheduled Task Persistence",
         "difficulty": "EASY",
+        "description": "Attackers create Windows scheduled tasks to run their malware automatically at startup, login, or specific times - like a recurring calendar event for malware.",
         "attack_steps": [
             "Create scheduled task running malicious payload",
             "Set trigger for boot, logon, or time-based",
@@ -2638,6 +2932,7 @@ HACKER_PLAYBOOK = [
         "id": 34,
         "name": "Silver Ticket Attack",
         "difficulty": "HARD",
+        "description": "After stealing a service account's password hash, attackers forge access tickets to that specific service without ever contacting the domain controller.",
         "attack_steps": [
             "Obtain service account password hash",
             "Forge TGS for specific service without DC contact",
@@ -2655,6 +2950,7 @@ HACKER_PLAYBOOK = [
         "id": 35,
         "name": "PowerShell Constrained Language Bypass",
         "difficulty": "HARD",
+        "description": "When security tools restrict PowerShell commands, attackers find creative workarounds to still run malicious scripts - defeating your protective measures.",
         "attack_steps": [
             "Identify constrained language mode restrictions",
             "Use Add-Type to compile inline C# code",
@@ -2672,6 +2968,7 @@ HACKER_PLAYBOOK = [
         "id": 36,
         "name": "Email Header Injection",
         "difficulty": "MEDIUM",
+        "description": "Attackers abuse your website's contact form to send spam or phishing emails that appear to come from your company's legitimate email servers.",
         "attack_steps": [
             "Find contact forms that send emails",
             "Inject newlines and additional headers",
@@ -2689,6 +2986,7 @@ HACKER_PLAYBOOK = [
         "id": 37,
         "name": "XML External Entity (XXE)",
         "difficulty": "MEDIUM",
+        "description": "When applications process XML files, attackers inject special references that trick the server into revealing sensitive files or connecting to internal systems.",
         "attack_steps": [
             "Identify XML parsing endpoints",
             "Inject external entity referencing local files",
@@ -2706,6 +3004,7 @@ HACKER_PLAYBOOK = [
         "id": 38,
         "name": "Active Directory Certificate Services Abuse",
         "difficulty": "EXPERT",
+        "description": "Misconfigured certificate templates let attackers request certificates that impersonate any user, including domain admins - a backdoor that survives password changes.",
         "attack_steps": [
             "Find misconfigured certificate templates",
             "Request certificate for privileged user (ESC1)",
@@ -2723,6 +3022,7 @@ HACKER_PLAYBOOK = [
         "id": 39,
         "name": "Cobalt Strike Beacon Detection",
         "difficulty": "HARD",
+        "description": "Professional hackers use Cobalt Strike, a powerful commercial tool, to remotely control compromised systems, evade detection, and move through networks.",
         "attack_steps": [
             "Deploy beacon through phishing or exploit",
             "Use Malleable C2 profiles for evasion",
@@ -2740,6 +3040,7 @@ HACKER_PLAYBOOK = [
         "id": 40,
         "name": "SSH Key Theft",
         "difficulty": "MEDIUM",
+        "description": "Attackers steal SSH private key files from compromised machines, then use those keys to access other servers without needing passwords.",
         "attack_steps": [
             "Locate SSH private keys in .ssh directories",
             "Check for keys without passphrases",
@@ -2757,6 +3058,7 @@ HACKER_PLAYBOOK = [
         "id": 41,
         "name": "HTTP Request Smuggling",
         "difficulty": "EXPERT",
+        "description": "Attackers exploit differences in how front-end and back-end servers interpret HTTP requests, sneaking malicious requests past security controls.",
         "attack_steps": [
             "Identify discrepancies between frontend and backend",
             "Craft ambiguous Content-Length and Transfer-Encoding",
@@ -2774,6 +3076,7 @@ HACKER_PLAYBOOK = [
         "id": 42,
         "name": "Process Injection",
         "difficulty": "HARD",
+        "description": "Malware injects its code into legitimate running programs like Chrome or Word, hiding inside trusted processes to avoid detection.",
         "attack_steps": [
             "Choose target process for injection",
             "Use techniques like CreateRemoteThread or APC injection",
@@ -2791,6 +3094,7 @@ HACKER_PLAYBOOK = [
         "id": 43,
         "name": "Supply Chain Attack",
         "difficulty": "EXPERT",
+        "description": "Rather than attacking you directly, hackers compromise the software vendors you trust, inserting malware into legitimate updates - like poisoning the water supply.",
         "attack_steps": [
             "Compromise developer environment or build system",
             "Inject malicious code into legitimate software",
@@ -2808,6 +3112,7 @@ HACKER_PLAYBOOK = [
         "id": 44,
         "name": "Keylogger Deployment",
         "difficulty": "MEDIUM",
+        "description": "Malware secretly records every keystroke you make, capturing passwords, credit card numbers, and private messages as you type them.",
         "attack_steps": [
             "Deploy software keylogger through malware",
             "Hook keyboard APIs to capture keystrokes",
@@ -2825,6 +3130,7 @@ HACKER_PLAYBOOK = [
         "id": 45,
         "name": "NTDS.dit Extraction",
         "difficulty": "HARD",
+        "description": "Attackers steal the Active Directory database file containing every user's password hash in your organization - the ultimate credential heist.",
         "attack_steps": [
             "Gain Domain Admin or backup operator access",
             "Use Volume Shadow Copy to access locked file",
@@ -2842,6 +3148,7 @@ HACKER_PLAYBOOK = [
         "id": 46,
         "name": "Mimikatz Credential Dumping",
         "difficulty": "HARD",
+        "description": "The infamous Mimikatz tool extracts passwords directly from Windows memory, revealing plaintext credentials of anyone who logged into the computer.",
         "attack_steps": [
             "Execute Mimikatz with administrative privileges",
             "Dump credentials from LSASS memory",
@@ -2859,6 +3166,7 @@ HACKER_PLAYBOOK = [
         "id": 47,
         "name": "SMB Relay Attack",
         "difficulty": "MEDIUM",
+        "description": "When your computer tries to authenticate to a file server, attackers intercept and forward those credentials to another server, gaining your access level.",
         "attack_steps": [
             "Position to intercept SMB authentication",
             "Use tools like ntlmrelayx to relay credentials",
@@ -2876,6 +3184,7 @@ HACKER_PLAYBOOK = [
         "id": 48,
         "name": "Log4Shell (Log4j RCE)",
         "difficulty": "HARD",
+        "description": "One of the worst vulnerabilities ever - attackers send a special string that makes Java applications automatically download and run malware.",
         "attack_steps": [
             "Identify applications using vulnerable Log4j",
             "Inject JNDI lookup string in logged input",
@@ -2893,6 +3202,7 @@ HACKER_PLAYBOOK = [
         "id": 49,
         "name": "Cloud Privilege Escalation",
         "difficulty": "HARD",
+        "description": "Attackers with limited cloud access find misconfigurations that let them grant themselves admin permissions, taking over your entire AWS/Azure/GCP account.",
         "attack_steps": [
             "Enumerate IAM permissions of compromised identity",
             "Find path to escalate privileges (PassRole, etc.)",
@@ -2910,6 +3220,7 @@ HACKER_PLAYBOOK = [
         "id": 50,
         "name": "Ransomware Deployment",
         "difficulty": "HARD",
+        "description": "Criminals encrypt all your files and demand payment for the decryption key, often threatening to leak stolen data publicly if you don't pay.",
         "attack_steps": [
             "Gain initial access through phishing or RDP",
             "Establish persistence and map network",
@@ -2927,6 +3238,7 @@ HACKER_PLAYBOOK = [
         "id": 51,
         "name": "Local File Inclusion (LFI)",
         "difficulty": "MEDIUM",
+        "description": "Web applications that load files based on user input can be tricked into reading sensitive system files or even executing attacker-controlled code.",
         "attack_steps": [
             "Identify parameters loading local files",
             "Use path traversal to include sensitive files",
@@ -2944,6 +3256,7 @@ HACKER_PLAYBOOK = [
         "id": 52,
         "name": "GraphQL Introspection Abuse",
         "difficulty": "EASY",
+        "description": "GraphQL APIs often expose their entire schema, letting attackers discover hidden endpoints, sensitive data fields, and potential vulnerabilities.",
         "attack_steps": [
             "Query __schema to dump entire API structure",
             "Discover hidden queries, mutations, and types",
@@ -2961,6 +3274,7 @@ HACKER_PLAYBOOK = [
         "id": 53,
         "name": "Android APK Analysis",
         "difficulty": "MEDIUM",
+        "description": "Attackers reverse-engineer mobile apps to extract hardcoded secrets, API keys, and discover vulnerabilities in client-side security checks.",
         "attack_steps": [
             "Decompile APK with tools like jadx or apktool",
             "Extract hardcoded credentials and API keys",
@@ -2978,6 +3292,7 @@ HACKER_PLAYBOOK = [
         "id": 54,
         "name": "Formjacking",
         "difficulty": "MEDIUM",
+        "description": "Hidden malicious code on shopping websites secretly copies your credit card details as you type them, sending them to criminals.",
         "attack_steps": [
             "Compromise website or third-party script",
             "Inject JavaScript to capture form data",
@@ -2995,6 +3310,7 @@ HACKER_PLAYBOOK = [
         "id": 55,
         "name": "Responder Credential Capture",
         "difficulty": "MEDIUM",
+        "description": "A popular hacking tool that listens on your network for computers looking for resources, then tricks them into handing over password hashes.",
         "attack_steps": [
             "Deploy Responder on internal network",
             "Answer LLMNR, NBT-NS, and mDNS queries",
@@ -3012,6 +3328,7 @@ HACKER_PLAYBOOK = [
         "id": 56,
         "name": "PrintNightmare Exploitation",
         "difficulty": "HARD",
+        "description": "A critical Windows vulnerability in the print spooler service that lets attackers instantly gain SYSTEM-level access to any unpatched computer.",
         "attack_steps": [
             "Identify vulnerable Windows print spooler service",
             "Use CVE-2021-34527 to load malicious DLL",
@@ -3029,6 +3346,7 @@ HACKER_PLAYBOOK = [
         "id": 57,
         "name": "Time-Based Blind SQL Injection",
         "difficulty": "HARD",
+        "description": "When applications don't show database errors, attackers use time delays to extract data one character at a time - slow but effective.",
         "attack_steps": [
             "Inject time delay payloads (SLEEP, WAITFOR)",
             "Infer database responses from response timing",
@@ -3046,6 +3364,7 @@ HACKER_PLAYBOOK = [
         "id": 58,
         "name": "Dependency Confusion",
         "difficulty": "MEDIUM",
+        "description": "Attackers publish malicious packages with the same names as your private internal libraries, tricking your build system into downloading malware.",
         "attack_steps": [
             "Identify internal package names from repositories",
             "Create public package with same name",
@@ -3063,6 +3382,7 @@ HACKER_PLAYBOOK = [
         "id": 59,
         "name": "Bluetooth Exploitation",
         "difficulty": "MEDIUM",
+        "description": "Attackers exploit vulnerabilities in Bluetooth connections to take over phones, laptops, and IoT devices without any user interaction.",
         "attack_steps": [
             "Scan for discoverable Bluetooth devices",
             "Exploit vulnerabilities like BlueBorne",
@@ -3080,6 +3400,7 @@ HACKER_PLAYBOOK = [
         "id": 60,
         "name": "Host Header Injection",
         "difficulty": "MEDIUM",
+        "description": "Attackers manipulate the Host header in HTTP requests to hijack password reset links, poison web caches, or bypass security controls.",
         "attack_steps": [
             "Modify Host header in HTTP requests",
             "Exploit password reset link generation",
@@ -3097,6 +3418,7 @@ HACKER_PLAYBOOK = [
         "id": 61,
         "name": "Memory Scraping",
         "difficulty": "HARD",
+        "description": "Malware on payment terminals reads credit card numbers directly from computer memory before they get encrypted, stealing thousands of cards at once.",
         "attack_steps": [
             "Compromise point-of-sale or payment system",
             "Scan process memory for card data patterns",
@@ -3114,6 +3436,7 @@ HACKER_PLAYBOOK = [
         "id": 62,
         "name": "IDOR (Insecure Direct Object Reference)",
         "difficulty": "EASY",
+        "description": "Simply changing a number in the URL (like changing order/1234 to order/1235) lets attackers view or modify other users' private data.",
         "attack_steps": [
             "Identify sequential or predictable object IDs",
             "Modify ID parameters to access other users' data",
@@ -3131,6 +3454,7 @@ HACKER_PLAYBOOK = [
         "id": 63,
         "name": "Type Juggling Attacks",
         "difficulty": "MEDIUM",
+        "description": "PHP and JavaScript's loose type comparisons let attackers bypass authentication by exploiting how these languages compare different data types.",
         "attack_steps": [
             "Identify loose type comparisons in PHP/JavaScript",
             "Craft payloads exploiting type coercion",
@@ -3148,6 +3472,7 @@ HACKER_PLAYBOOK = [
         "id": 64,
         "name": "SSTI (Server-Side Template Injection)",
         "difficulty": "HARD",
+        "description": "When websites use templates to generate pages, attackers inject template code that gets executed on the server, often leading to full system takeover.",
         "attack_steps": [
             "Identify user input in template rendering",
             "Test with template syntax like {{7*7}}",
@@ -3165,6 +3490,7 @@ HACKER_PLAYBOOK = [
         "id": 65,
         "name": "Firmware Analysis",
         "difficulty": "HARD",
+        "description": "Hackers extract and reverse-engineer router and IoT device firmware to find hardcoded passwords, backdoors, and vulnerabilities.",
         "attack_steps": [
             "Extract firmware from device or download",
             "Use binwalk to identify and extract filesystem",
@@ -3182,6 +3508,7 @@ HACKER_PLAYBOOK = [
         "id": 66,
         "name": "Service Principal Abuse (Azure)",
         "difficulty": "HARD",
+        "description": "Azure service accounts often have excessive permissions - attackers who steal their credentials can access cloud resources across your entire tenant.",
         "attack_steps": [
             "Enumerate Service Principals with excessive permissions",
             "Obtain SP credentials from config or metadata",
@@ -3199,6 +3526,7 @@ HACKER_PLAYBOOK = [
         "id": 67,
         "name": "GPO Abuse",
         "difficulty": "HARD",
+        "description": "Attackers who gain access to modify Group Policy can push malicious settings or scripts to every computer in your domain automatically.",
         "attack_steps": [
             "Gain write access to Group Policy Objects",
             "Modify GPO to deploy malicious scripts or settings",
@@ -3216,6 +3544,7 @@ HACKER_PLAYBOOK = [
         "id": 68,
         "name": "Account Enumeration",
         "difficulty": "EASY",
+        "description": "Login pages that say 'user not found' vs 'wrong password' let attackers build a list of valid usernames for targeted password attacks.",
         "attack_steps": [
             "Test login and registration endpoints",
             "Observe different responses for valid vs invalid users",
@@ -3233,6 +3562,7 @@ HACKER_PLAYBOOK = [
         "id": 69,
         "name": "WebSocket Security Issues",
         "difficulty": "MEDIUM",
+        "description": "Real-time WebSocket connections often skip the same security checks as regular HTTP requests, creating hidden vulnerabilities in chat and notification features.",
         "attack_steps": [
             "Intercept WebSocket traffic with Burp or similar",
             "Identify missing authentication on WS endpoints",
@@ -3250,6 +3580,7 @@ HACKER_PLAYBOOK = [
         "id": 70,
         "name": "Clickjacking",
         "difficulty": "EASY",
+        "description": "Invisible overlays on web pages trick you into clicking hidden buttons - you think you're playing a game but you're actually transferring money.",
         "attack_steps": [
             "Create transparent iframe over legitimate site",
             "Trick user into clicking invisible button",
@@ -3267,6 +3598,7 @@ HACKER_PLAYBOOK = [
         "id": 71,
         "name": "DCSync Attack",
         "difficulty": "HARD",
+        "description": "Attackers with the right permissions can ask the domain controller to sync all password hashes to them - as if they were a legitimate backup server.",
         "attack_steps": [
             "Obtain account with replication permissions",
             "Use Mimikatz to request replication from DC",
@@ -3284,6 +3616,7 @@ HACKER_PLAYBOOK = [
         "id": 72,
         "name": "Exposed Git Repository",
         "difficulty": "EASY",
+        "description": "Accidentally exposed .git folders on websites let attackers download your entire source code history, including old passwords and secrets.",
         "attack_steps": [
             "Access /.git/ directory on web server",
             "Download and reconstruct repository",
@@ -3301,6 +3634,7 @@ HACKER_PLAYBOOK = [
         "id": 73,
         "name": "ICS/SCADA Attacks",
         "difficulty": "EXPERT",
+        "description": "Attacks on industrial control systems can shut down power grids, water treatment plants, and manufacturing facilities - causing real-world physical damage.",
         "attack_steps": [
             "Identify industrial control systems on network",
             "Exploit legacy protocols lacking authentication",
@@ -3318,6 +3652,7 @@ HACKER_PLAYBOOK = [
         "id": 74,
         "name": "Password Manager Vulnerabilities",
         "difficulty": "MEDIUM",
+        "description": "Even password managers can be attacked - through malicious websites triggering auto-fill, or malware reading passwords from memory.",
         "attack_steps": [
             "Target password manager process or memory",
             "Exploit auto-fill on malicious sites",
@@ -3335,6 +3670,7 @@ HACKER_PLAYBOOK = [
         "id": 75,
         "name": "Steganography Detection Evasion",
         "difficulty": "HARD",
+        "description": "Attackers hide malware or stolen data inside innocent-looking images, allowing malicious payloads to slip past security tools undetected.",
         "attack_steps": [
             "Hide malware or commands in image files",
             "Use tools like steghide or LSB techniques",
@@ -3352,6 +3688,7 @@ HACKER_PLAYBOOK = [
         "id": 76,
         "name": "VPN Credential Theft",
         "difficulty": "MEDIUM",
+        "description": "Stolen VPN credentials give attackers direct access to your internal network from anywhere in the world - the keys to your digital kingdom.",
         "attack_steps": [
             "Phish VPN credentials with fake login page",
             "Exploit VPN vulnerabilities (CVE-2018-13379, etc.)",
@@ -3369,6 +3706,7 @@ HACKER_PLAYBOOK = [
         "id": 77,
         "name": "Prototype Pollution",
         "difficulty": "HARD",
+        "description": "JavaScript's prototype chain can be poisoned to add malicious properties to every object in an application, leading to XSS or remote code execution.",
         "attack_steps": [
             "Identify JavaScript code modifying object prototypes",
             "Inject __proto__ or constructor.prototype properties",
@@ -3386,6 +3724,7 @@ HACKER_PLAYBOOK = [
         "id": 78,
         "name": "RDP BlueKeep Exploitation",
         "difficulty": "HARD",
+        "description": "A wormable Windows vulnerability that lets attackers take over computers through Remote Desktop without any authentication required.",
         "attack_steps": [
             "Scan for systems vulnerable to CVE-2019-0708",
             "Exploit pre-authentication RCE vulnerability",
@@ -3403,6 +3742,7 @@ HACKER_PLAYBOOK = [
         "id": 79,
         "name": "Session Fixation",
         "difficulty": "MEDIUM",
+        "description": "Attackers pre-set your session ID before you log in, then use that same ID to hijack your authenticated session after you enter your password.",
         "attack_steps": [
             "Obtain valid session ID from application",
             "Force victim to authenticate with known session ID",
@@ -3420,6 +3760,7 @@ HACKER_PLAYBOOK = [
         "id": 80,
         "name": "Office Macro Alternative (DDE)",
         "difficulty": "MEDIUM",
+        "description": "Even with macros disabled, Word and Excel documents can execute code through Dynamic Data Exchange - a lesser-known but equally dangerous feature.",
         "attack_steps": [
             "Embed DDE field in Word or Excel document",
             "Craft payload to execute on document open",
@@ -3437,6 +3778,7 @@ HACKER_PLAYBOOK = [
         "id": 81,
         "name": "Shadow Admin Accounts",
         "difficulty": "MEDIUM",
+        "description": "Hidden privileged accounts that aren't in obvious admin groups but still have powerful permissions - the backdoors that security teams often miss.",
         "attack_steps": [
             "Identify high-privilege accounts not in admin groups",
             "Look for accounts with DCSync or GPO permissions",
@@ -3454,6 +3796,7 @@ HACKER_PLAYBOOK = [
         "id": 82,
         "name": "Mass Assignment Vulnerability",
         "difficulty": "MEDIUM",
+        "description": "Web applications that blindly accept all submitted form fields can be exploited to set hidden values like 'isAdmin=true' that weren't meant to be user-editable.",
         "attack_steps": [
             "Identify API endpoints accepting object properties",
             "Add additional properties to requests (isAdmin, role)",
@@ -3471,6 +3814,7 @@ HACKER_PLAYBOOK = [
         "id": 83,
         "name": "Kubernetes API Server Exploitation",
         "difficulty": "HARD",
+        "description": "Exposed or misconfigured Kubernetes API servers let attackers deploy containers, access secrets, and potentially take over your entire cloud infrastructure.",
         "attack_steps": [
             "Find exposed Kubernetes API (port 6443/8443)",
             "Exploit misconfigured RBAC or anonymous access",
@@ -3488,6 +3832,7 @@ HACKER_PLAYBOOK = [
         "id": 84,
         "name": "S3 Bucket Access Logging Analysis",
         "difficulty": "MEDIUM",
+        "description": "S3 access logs can accidentally contain presigned URLs with embedded credentials, allowing attackers to reuse them and access private files.",
         "attack_steps": [
             "Gain access to S3 server access logs",
             "Analyze for presigned URLs with embedded credentials",
@@ -3505,6 +3850,7 @@ HACKER_PLAYBOOK = [
         "id": 85,
         "name": "Race Condition Exploitation",
         "difficulty": "HARD",
+        "description": "By sending requests at precisely the right moment, attackers exploit timing windows to do things twice - like withdrawing money before the balance check completes.",
         "attack_steps": [
             "Identify time-of-check-to-time-of-use vulnerabilities",
             "Send concurrent requests to exploit race window",
@@ -3522,6 +3868,7 @@ HACKER_PLAYBOOK = [
         "id": 86,
         "name": "Credential Stuffing",
         "difficulty": "EASY",
+        "description": "Using billions of leaked username/password combinations from data breaches, attackers automatically try them on other websites - exploiting password reuse.",
         "attack_steps": [
             "Obtain breached credential databases",
             "Automated login attempts across multiple sites",
@@ -3539,6 +3886,7 @@ HACKER_PLAYBOOK = [
         "id": 87,
         "name": "Zero-Day Exploitation",
         "difficulty": "EXPERT",
+        "description": "The most dangerous attacks use vulnerabilities that vendors don't even know exist yet - no patch available, no defense except detection and response.",
         "attack_steps": [
             "Discover unknown vulnerability through research",
             "Develop working exploit for vulnerability",
@@ -3556,6 +3904,7 @@ HACKER_PLAYBOOK = [
         "id": 88,
         "name": "BitLocker Bypass",
         "difficulty": "HARD",
+        "description": "Windows disk encryption can be bypassed through TPM sniffing, cold boot attacks, or boot process vulnerabilities, exposing supposedly protected data.",
         "attack_steps": [
             "Extract BitLocker keys from TPM using sniffing",
             "Exploit vulnerable boot process configurations",
@@ -3573,6 +3922,7 @@ HACKER_PLAYBOOK = [
         "id": 89,
         "name": "AWS Lambda Injection",
         "difficulty": "MEDIUM",
+        "description": "Serverless functions that process user input without validation can be exploited to run malicious code or steal AWS credentials from the execution environment.",
         "attack_steps": [
             "Identify Lambda functions processing user input",
             "Inject commands through event data",
@@ -3590,6 +3940,7 @@ HACKER_PLAYBOOK = [
         "id": 90,
         "name": "SAML Assertion Manipulation",
         "difficulty": "HARD",
+        "description": "Enterprise single sign-on tokens can be forged or modified to impersonate any user, bypassing authentication across all connected applications.",
         "attack_steps": [
             "Intercept SAML response in authentication flow",
             "Modify assertions (user, roles, attributes)",
@@ -3607,6 +3958,7 @@ HACKER_PLAYBOOK = [
         "id": 91,
         "name": "Exploiting Debug Endpoints",
         "difficulty": "MEDIUM",
+        "description": "Development debug interfaces accidentally left enabled in production expose sensitive data, configuration secrets, and sometimes direct code execution.",
         "attack_steps": [
             "Discover debug endpoints left in production",
             "Access /debug, /trace, /actuator endpoints",
@@ -3624,6 +3976,7 @@ HACKER_PLAYBOOK = [
         "id": 92,
         "name": "USB Rubber Ducky Attack",
         "difficulty": "EASY",
+        "description": "A USB device that looks like a flash drive but acts as a keyboard, typing malicious commands faster than humanly possible when plugged into any computer.",
         "attack_steps": [
             "Program USB device with keystroke injection payload",
             "Deploy through social engineering or physical access",
@@ -3641,6 +3994,7 @@ HACKER_PLAYBOOK = [
         "id": 93,
         "name": "Second Order SQL Injection",
         "difficulty": "HARD",
+        "description": "Malicious data stored safely in the database later becomes dangerous when a different part of the application uses it without proper sanitization.",
         "attack_steps": [
             "Store malicious payload in database safely",
             "Payload activates when data is used later",
@@ -3658,6 +4012,7 @@ HACKER_PLAYBOOK = [
         "id": 94,
         "name": "Social Engineering Pretexting",
         "difficulty": "EASY",
+        "description": "Attackers create believable scenarios - pretending to be IT support or a vendor - to manipulate employees into revealing passwords or granting access.",
         "attack_steps": [
             "Research target organization and employees",
             "Develop believable scenario (IT support, vendor)",
@@ -3675,6 +4030,7 @@ HACKER_PLAYBOOK = [
         "id": 95,
         "name": "Insecure File Upload",
         "difficulty": "MEDIUM",
+        "description": "Poorly secured file upload features let attackers upload executable scripts disguised as images, gaining remote control of your web server.",
         "attack_steps": [
             "Find file upload functionality in application",
             "Bypass extension and content-type validation",
@@ -3692,6 +4048,7 @@ HACKER_PLAYBOOK = [
         "id": 96,
         "name": "AI/ML Model Poisoning",
         "difficulty": "EXPERT",
+        "description": "Attackers corrupt machine learning training data to make AI systems behave maliciously - like teaching a spam filter to let phishing emails through.",
         "attack_steps": [
             "Identify machine learning pipeline and training data",
             "Inject malicious samples into training dataset",
@@ -3709,6 +4066,7 @@ HACKER_PLAYBOOK = [
         "id": 97,
         "name": "SIM Swapping",
         "difficulty": "MEDIUM",
+        "description": "Criminals convince your phone carrier to transfer your number to their SIM card, intercepting your text messages to bypass two-factor authentication.",
         "attack_steps": [
             "Gather personal information about target",
             "Social engineer mobile carrier support",
@@ -3726,6 +4084,7 @@ HACKER_PLAYBOOK = [
         "id": 98,
         "name": "Exploiting Misconfigured CORS",
         "difficulty": "MEDIUM",
+        "description": "Overly permissive cross-origin settings let malicious websites read your private data from other sites you're logged into - like reading your emails from a game website.",
         "attack_steps": [
             "Identify APIs with overly permissive CORS",
             "Find reflected Origin in Access-Control headers",
@@ -3743,6 +4102,7 @@ HACKER_PLAYBOOK = [
         "id": 99,
         "name": "Lateral Movement via Jump Server",
         "difficulty": "HARD",
+        "description": "Compromising the 'secure gateway' server that admins use to access internal systems gives attackers a launching pad to reach everything on your network.",
         "attack_steps": [
             "Compromise jump server or bastion host",
             "Use stored credentials or sessions on jump server",
@@ -3795,6 +4155,7 @@ def get_hacker_playbook():
             'current_index': current_index,
             'name': technique['name'],
             'difficulty': technique['difficulty'],
+            'description': technique.get('description', ''),
             'attack_steps': technique['attack_steps'],
             'defense_steps': technique['defense_steps'],
             'learned_count': len(learned_ids),
@@ -3809,6 +4170,7 @@ def get_hacker_playbook():
             'current_index': 0,
             'name': technique['name'],
             'difficulty': technique['difficulty'],
+            'description': technique.get('description', ''),
             'attack_steps': technique['attack_steps'],
             'defense_steps': technique['defense_steps'],
             'learned_count': 0,
@@ -3852,6 +4214,7 @@ def get_technique_by_index(index):
             'current_index': index,
             'name': technique['name'],
             'difficulty': technique['difficulty'],
+            'description': technique.get('description', ''),
             'attack_steps': technique['attack_steps'],
             'defense_steps': technique['defense_steps'],
             'learned_count': len(learned_ids),
@@ -8853,6 +9216,7 @@ def auth_login():
         return jsonify({
             'success': True,
             'message': 'Login successful',
+            'redirect': '/dashboard',
             'token': session_data['token'],
             'user': user_data
         }), 200
@@ -8903,7 +9267,8 @@ def auth_logout():
 
         return jsonify({
             'success': True,
-            'message': 'Logged out successfully'
+            'message': 'Logged out successfully',
+            'redirect': '/home'
         }), 200
 
     except Exception as e:
@@ -10097,7 +10462,7 @@ def require_owner(f):
 @app.route('/api/admin/dashboard', methods=['GET'])
 @require_auth
 @require_admin
-def admin_dashboard():
+def admin_dashboard_api():
     """
     Get admin dashboard data including stats, recent activity, and alerts.
     """

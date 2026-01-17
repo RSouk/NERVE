@@ -1541,13 +1541,44 @@
             width: 100%;
             margin-top: 8px;
         }
+
+        /* Back to Dashboard Button */
+        .btn-back-dashboard {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            color: #D4AF37;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back-dashboard:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.5);
+            transform: translateX(-2px);
+        }
+
+        .back-icon {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-back-dashboard:hover .back-icon {
+            transform: translateX(-3px);
+        }
     </style>
 </head>
 <body>
     <!-- Header -->
     <header class="header">
         <div class="header-left">
-            <img src="ghost-logo.png" alt="GHOST">
+            <img src="/ghost-logo.png" alt="Ghost" style="height: 40px; width: auto;">
             <div class="header-title">
                 <h1>Security Roadmap</h1>
                 <p>Your path to security excellence</p>
@@ -1560,24 +1591,22 @@
                 </svg>
                 Regenerate
             </button>
-            <a href="../../profile.html" class="btn btn-ghost" title="Profile">
+            <a href="/profile" class="btn btn-ghost" title="Profile">
                 <span style="font-size: 1.1rem;">&#128100;</span>
                 Profile
             </a>
-            <a href="ghost.html" class="btn btn-ghost">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-                Back to GHOST
+            <a href="/ghost" class="btn-back-dashboard">
+                <span class="back-icon">←</span>
+                Back to Dashboard
             </a>
         </div>
     </header>
 
     <!-- Quick Navigation -->
     <div style="display: flex; gap: 12px; justify-content: center; padding: 16px 30px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-subtle);">
-        <a href="ghost-search.html" style="padding: 8px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">Global Search</a>
-        <a href="ghost-adversary.html" style="padding: 8px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">Adversary Matching</a>
-        <a href="ghost-asm.html" style="padding: 8px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">Attack Surface</a>
+        <a href="/ghost/search" style="padding: 8px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">Global Search</a>
+        <a href="/ghost/adversary" style="padding: 8px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">Adversary Matching</a>
+        <a href="/ghost/xasm" style="padding: 8px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--gold-primary); text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">Attack Surface</a>
     </div>
 
     <div class="container">

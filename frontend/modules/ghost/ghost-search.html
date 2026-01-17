@@ -2715,6 +2715,37 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        /* Back to Dashboard Button */
+        .btn-back-dashboard {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            color: #D4AF37;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back-dashboard:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.5);
+            transform: translateX(-2px);
+        }
+
+        .back-icon {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-back-dashboard:hover .back-icon {
+            transform: translateX(-3px);
+        }
     </style>
 </head>
 <body>
@@ -2725,28 +2756,29 @@
     <!-- Header -->
     <header class="header">
         <div class="header-left">
-            <img src="ghost-logo.png" alt="GHOST" class="header-logo">
+            <img src="/ghost-logo.png" alt="Ghost" style="height: 40px; width: auto;">
             <div class="header-title">
                 <h1>GHOST</h1>
                 <p>Global Intelligence Search</p>
             </div>
         </div>
         <div class="header-actions">
-            <a href="../../profile.html" class="btn btn-ghost profile-btn" title="Profile">
+            <a href="/profile" class="btn btn-ghost profile-btn" title="Profile">
                 <span class="settings-icon">⚙️</span>
             </a>
-            <a href="ghost.html" class="btn btn-ghost">
-                <span>&#8592;</span> Dashboard
+            <a href="/ghost" class="btn-back-dashboard">
+                <span class="back-icon">←</span>
+                Back to Dashboard
             </a>
         </div>
     </header>
 
     <!-- Quick Navigation -->
     <nav class="quick-nav">
-        <a href="ghost-search.html" class="nav-link active">Global Search</a>
-        <a href="ghost-adversary.html" class="nav-link">Adversary Matching</a>
-        <a href="ghost-asm.html" class="nav-link">Attack Surface</a>
-        <a href="ghost-roadmap.html" class="nav-link">Security Roadmap</a>
+        <a href="/ghost/search" class="nav-link active">Global Search</a>
+        <a href="/ghost/adversary" class="nav-link">Adversary Matching</a>
+        <a href="/ghost/xasm" class="nav-link">Attack Surface</a>
+        <a href="/ghost/roadmap" class="nav-link">Security Roadmap</a>
     </nav>
 
     <!-- Main Content -->
@@ -3406,7 +3438,7 @@ email3@example.com"></textarea>
                     <div class="loading-state">
                         <div class="loading-spinner"></div>
                         <h3>Searching Intelligence Databases</h3>
-                        <p>Querying LeakInsight, HIBP, Hudson Rock, and more...</p>
+                        <p>Querying Sources...</p>
                     </div>
                 `;
             }

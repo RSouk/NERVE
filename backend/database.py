@@ -1464,6 +1464,11 @@ class CachedASMScan(Base):
     deleted_at = Column(DateTime, index=True)
     is_active = Column(Boolean, nullable=False, default=True)
 
+    # Auto-scan fields for company users
+    last_scanned = Column(DateTime, nullable=True)  # When last scan completed
+    next_scan_at = Column(DateTime, nullable=True)  # When next scan should run
+    auto_scan_enabled = Column(Boolean, nullable=False, default=False)  # Enable for company users only
+
 
 class LightboxScan(Base):
     """Store Lightbox scan results"""

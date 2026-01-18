@@ -614,6 +614,32 @@
             vertical-align: middle;
         }
 
+        .tab-locked {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .tab-locked:hover {
+            color: #666;
+            background: transparent;
+        }
+
+        .coming-soon-badge {
+            display: inline-block;
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            vertical-align: middle;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         /* ============================================
            COMPLIANCE TAB STYLES
            ============================================ */
@@ -3275,7 +3301,7 @@
         .xasm-export-btn.json { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #3b82f6; }
         .xasm-export-btn:hover { transform: translateY(-2px); }
 
-        .xasm-cache-banner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; margin-bottom: 24px; }
+        .xasm-cache-banner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; margin-bottom: 24px; }
 
         @media (max-width: 1200px) { .xasm-summary-content { grid-template-columns: 1fr; } .xasm-scan-steps { grid-template-columns: 1fr; } }
         @media (max-width: 768px) { .xasm-filter-bar { flex-direction: column; align-items: stretch; } .xasm-export-panel { flex-direction: column; gap: 20px; text-align: center; } .xasm-stats-grid { grid-template-columns: 1fr; } }
@@ -5249,7 +5275,7 @@
             <button class="tab active" onclick="switchTab('asm', event)">🌐 Attack Surface</button>
             <button class="tab" onclick="switchTab('lightbox', event)">🔬 Lightbox Testing</button>
             <button class="tab" onclick="switchTab('compliance', event)">📋 Compliance Readiness</button>
-            <button class="tab" id="tab-vulnerability" onclick="switchTab('vulnerability', event)">🛡️ Vulnerability Report <span class="beta-badge">BETA</span></button>
+            <button class="tab tab-locked" id="tab-vulnerability" disabled title="Feature launching soon">🛡️ Vulnerability Report <span class="coming-soon-badge">Coming Soon</span></button>
         </div>
 
         <!-- ASM Tab Content -->
@@ -5319,14 +5345,14 @@
 
         <!-- Results Container -->
         <div id="resultsContainer" class="results-container">
-            <!-- Cache Info Banner -->
+            <!-- Scan Status Banner -->
             <div id="cacheInfo" class="xasm-cache-banner" style="display: none;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 20px;">💾</span>
-                    <span id="cacheInfoText" style="font-size: 14px; color: #3b82f6;"></span>
+                    <span style="font-size: 20px; color: #10b981;">✓</span>
+                    <span id="cacheInfoText" style="font-size: 14px; color: #D4AF37; font-weight: 500;"></span>
                 </div>
-                <button id="rescanButton" style="padding: 10px 20px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; color: #3b82f6; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(59, 130, 246, 0.3)'" onmouseout="this.style.background='rgba(59, 130, 246, 0.2)'">
-                    🔄 Re-scan Now
+                <button id="rescanButton" style="padding: 10px 20px; background: rgba(212, 175, 55, 0.2); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; color: #D4AF37; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(212, 175, 55, 0.3)'" onmouseout="this.style.background='rgba(212, 175, 55, 0.2)'">
+                    🔄 Scan Now
                 </button>
             </div>
             <!-- Export Panel -->
@@ -7319,16 +7345,34 @@
                     console.error('[ASM] Response data:', data);
                 }
 
-                // Show cache info if cached
+                // Show scan status info (always show for transparency)
                 const cacheInfo = document.getElementById('cacheInfo');
                 const cacheInfoText = document.getElementById('cacheInfoText');
+
+                // Build status text
+                let statusText = '';
                 if (data.cached) {
                     const cacheAgeHours = data.cache_age_hours || 0;
-                    cacheInfoText.textContent = `Last scanned: ${formatTimeAgo(cacheAgeHours)}`;
-                    cacheInfo.style.display = 'block';
+                    statusText = `Last scanned: ${formatTimeAgo(cacheAgeHours)}`;
                 } else {
-                    cacheInfo.style.display = 'none';
+                    statusText = 'Last scanned: Just now';
                 }
+
+                // Add auto-scan info for company users
+                if (data.auto_scan_enabled && data.next_scan_at) {
+                    const nextScan = new Date(data.next_scan_at);
+                    const now = new Date();
+                    const hoursUntil = Math.floor((nextScan - now) / (1000 * 60 * 60));
+
+                    if (hoursUntil > 0) {
+                        statusText += ` • Next auto-scan: in ${hoursUntil}h`;
+                    } else {
+                        statusText += ' • Auto-scan running soon';
+                    }
+                }
+
+                cacheInfoText.textContent = statusText;
+                cacheInfo.style.display = 'block';
 
                 console.log('[ASM] Scan complete:', currentResults);
 
@@ -13373,75 +13417,510 @@
             }
 
             const data = currentResults;
-            const domain = data.domain || 'Unknown Domain';
+            const domain = data.domain || document.getElementById('domainInput')?.value?.trim() || 'Unknown Domain';
             const timestamp = new Date().toLocaleString();
+
+            // Calculate totals
+            const subdomains = data.subdomains || [];
+            const crtSubdomains = data.crt_subdomains || [];
+            const totalSubdomains = subdomains.length + crtSubdomains.length;
+            const portResults = data.shodan_results || data.port_scan_results || [];
+            const dnsRecords = data.dns_records || {};
+            const cloudAssets = data.cloud_assets || [];
+            const criticalFindings = data.critical_findings || [];
+
+            // Count DNS records
+            let dnsCount = 0;
+            for (const recordType in dnsRecords) {
+                if (Array.isArray(dnsRecords[recordType])) {
+                    dnsCount += dnsRecords[recordType].length;
+                }
+            }
+
+            // Risk level styling
+            const riskLevel = (data.risk_level || 'unknown').toLowerCase();
+            const riskScore = data.risk_score || 0;
+            let riskColor = '#22c55e';
+            if (riskLevel === 'critical') riskColor = '#dc3545';
+            else if (riskLevel === 'high') riskColor = '#f59e0b';
+            else if (riskLevel === 'medium') riskColor = '#eab308';
+
+            // Helper to escape HTML
+            const escapeHtml = (str) => {
+                if (!str) return '';
+                return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            };
 
             // Create printable content
             let content = `
+                <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>XASM Report - ${domain}</title>
+                    <title>XASM Report - ${escapeHtml(domain)}</title>
                     <style>
-                        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-                        h1 { color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
-                        h2 { color: #555; margin-top: 30px; }
-                        .header { margin-bottom: 30px; }
-                        .section { margin-bottom: 25px; padding: 15px; background: #f9f9f9; border-radius: 8px; }
-                        .stat { display: inline-block; margin-right: 30px; }
-                        .stat-value { font-size: 24px; font-weight: bold; color: #D4AF37; }
-                        .stat-label { font-size: 12px; color: #888; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-                        th { background: #f0f0f0; }
-                        .critical { color: #dc3545; }
-                        .high { color: #f59e0b; }
-                        .medium { color: #eab308; }
-                        .low { color: #22c55e; }
+                        * { box-sizing: border-box; }
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            padding: 40px;
+                            color: #333;
+                            max-width: 1000px;
+                            margin: 0 auto;
+                            line-height: 1.5;
+                        }
+                        .report-header {
+                            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                            color: white;
+                            padding: 30px;
+                            border-radius: 12px;
+                            margin-bottom: 30px;
+                        }
+                        .report-header h1 {
+                            color: #D4AF37;
+                            margin: 0 0 10px 0;
+                            font-size: 28px;
+                        }
+                        .report-header .subtitle {
+                            color: #888;
+                            font-size: 14px;
+                            margin-bottom: 20px;
+                        }
+                        .report-meta {
+                            display: flex;
+                            justify-content: space-between;
+                            flex-wrap: wrap;
+                            gap: 15px;
+                        }
+                        .report-meta-item {
+                            background: rgba(255,255,255,0.1);
+                            padding: 10px 15px;
+                            border-radius: 6px;
+                        }
+                        .report-meta-item label {
+                            display: block;
+                            font-size: 11px;
+                            color: #888;
+                            text-transform: uppercase;
+                        }
+                        .report-meta-item span {
+                            font-size: 16px;
+                            font-weight: 600;
+                        }
+                        .risk-score-box {
+                            background: ${riskColor};
+                            color: white;
+                            padding: 15px 25px;
+                            border-radius: 8px;
+                            text-align: center;
+                        }
+                        .risk-score-box .score {
+                            font-size: 32px;
+                            font-weight: bold;
+                        }
+                        .risk-score-box .level {
+                            font-size: 12px;
+                            text-transform: uppercase;
+                        }
+                        .stats-grid {
+                            display: grid;
+                            grid-template-columns: repeat(5, 1fr);
+                            gap: 15px;
+                            margin-bottom: 30px;
+                        }
+                        .stat-card {
+                            background: #f8f9fa;
+                            border: 1px solid #e9ecef;
+                            border-radius: 8px;
+                            padding: 20px;
+                            text-align: center;
+                        }
+                        .stat-card .value {
+                            font-size: 28px;
+                            font-weight: bold;
+                            color: #D4AF37;
+                        }
+                        .stat-card .label {
+                            font-size: 12px;
+                            color: #666;
+                            margin-top: 5px;
+                        }
+                        .section {
+                            margin-bottom: 30px;
+                            page-break-inside: avoid;
+                        }
+                        .section h2 {
+                            color: #1a1a2e;
+                            font-size: 18px;
+                            border-bottom: 2px solid #D4AF37;
+                            padding-bottom: 8px;
+                            margin-bottom: 15px;
+                        }
+                        .section h2 .count {
+                            background: #D4AF37;
+                            color: white;
+                            padding: 2px 8px;
+                            border-radius: 12px;
+                            font-size: 12px;
+                            margin-left: 10px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 10px;
+                            font-size: 13px;
+                        }
+                        th, td {
+                            padding: 10px 12px;
+                            text-align: left;
+                            border-bottom: 1px solid #e9ecef;
+                        }
+                        th {
+                            background: #f8f9fa;
+                            font-weight: 600;
+                            color: #555;
+                            text-transform: uppercase;
+                            font-size: 11px;
+                        }
+                        tr:hover { background: #f8f9fa; }
+                        .badge {
+                            display: inline-block;
+                            padding: 3px 8px;
+                            border-radius: 4px;
+                            font-size: 11px;
+                            font-weight: 600;
+                        }
+                        .badge-critical { background: #dc3545; color: white; }
+                        .badge-high { background: #f59e0b; color: white; }
+                        .badge-medium { background: #eab308; color: #333; }
+                        .badge-low { background: #22c55e; color: white; }
+                        .badge-info { background: #6c757d; color: white; }
+                        .cve-list {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 4px;
+                        }
+                        .cve-badge {
+                            background: #dc3545;
+                            color: white;
+                            padding: 2px 6px;
+                            border-radius: 3px;
+                            font-size: 10px;
+                        }
+                        .footer {
+                            margin-top: 40px;
+                            padding-top: 20px;
+                            border-top: 2px solid #e9ecef;
+                            text-align: center;
+                            color: #888;
+                            font-size: 12px;
+                        }
+                        .footer .brand {
+                            color: #D4AF37;
+                            font-weight: bold;
+                            font-size: 16px;
+                        }
+                        .empty-note {
+                            color: #888;
+                            font-style: italic;
+                            padding: 20px;
+                            text-align: center;
+                            background: #f8f9fa;
+                            border-radius: 6px;
+                        }
+                        @media print {
+                            body { padding: 20px; }
+                            .section { page-break-inside: avoid; }
+                            .report-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .badge, .cve-badge, .risk-score-box, .stat-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        }
                     </style>
                 </head>
                 <body>
-                    <div class="header">
+                    <div class="report-header">
                         <h1>XASM Attack Surface Report</h1>
-                        <p><strong>Domain:</strong> ${domain}</p>
-                        <p><strong>Generated:</strong> ${timestamp}</p>
-                        <p><strong>Risk Score:</strong> ${data.risk_score || 'N/A'}/100</p>
+                        <div class="subtitle">Comprehensive Security Assessment</div>
+                        <div class="report-meta">
+                            <div class="report-meta-item">
+                                <label>Target Domain</label>
+                                <span>${escapeHtml(domain)}</span>
+                            </div>
+                            <div class="report-meta-item">
+                                <label>Generated</label>
+                                <span>${timestamp}</span>
+                            </div>
+                            <div class="risk-score-box">
+                                <div class="score">${riskScore}/100</div>
+                                <div class="level">${riskLevel} risk</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="section">
-                        <h2>Summary Statistics</h2>
-                        <div class="stat"><span class="stat-value">${data.subdomains?.length || 0}</span><br><span class="stat-label">Subdomains</span></div>
-                        <div class="stat"><span class="stat-value">${data.port_scan_results?.length || 0}</span><br><span class="stat-label">Open Ports</span></div>
-                        <div class="stat"><span class="stat-value">${data.dns_records?.length || 0}</span><br><span class="stat-label">DNS Records</span></div>
-                        <div class="stat"><span class="stat-value">${data.cloud_assets?.length || 0}</span><br><span class="stat-label">Cloud Assets</span></div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="value">${criticalFindings.length}</div>
+                            <div class="label">Critical Findings</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${totalSubdomains}</div>
+                            <div class="label">Subdomains</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${portResults.length}</div>
+                            <div class="label">Open Ports</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${dnsCount}</div>
+                            <div class="label">DNS Records</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${cloudAssets.length}</div>
+                            <div class="label">Cloud Assets</div>
+                        </div>
                     </div>
             `;
 
-            // Add subdomains section
-            if (data.subdomains && data.subdomains.length > 0) {
-                content += `<div class="section"><h2>Discovered Subdomains</h2><table><tr><th>Subdomain</th></tr>`;
-                data.subdomains.slice(0, 50).forEach(sub => {
-                    content += `<tr><td>${sub}</td></tr>`;
+            // CRITICAL FINDINGS
+            if (criticalFindings.length > 0) {
+                content += `<div class="section">
+                    <h2>Critical Findings <span class="count">${criticalFindings.length}</span></h2>
+                    <table>
+                        <tr><th>Severity</th><th>Type</th><th>Description</th><th>CVEs</th></tr>`;
+                criticalFindings.forEach(finding => {
+                    const severity = (finding.severity || 'unknown').toUpperCase();
+                    const badgeClass = severity === 'CRITICAL' ? 'badge-critical' : severity === 'HIGH' ? 'badge-high' : severity === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+                    const cves = finding.cves && finding.cves.length > 0
+                        ? `<div class="cve-list">${finding.cves.map(c => `<span class="cve-badge">${escapeHtml(c)}</span>`).join('')}</div>`
+                        : '-';
+                    content += `<tr>
+                        <td><span class="badge ${badgeClass}">${severity}</span></td>
+                        <td>${escapeHtml(finding.type || 'Unknown')}</td>
+                        <td>${escapeHtml(finding.description || 'No description')}</td>
+                        <td>${cves}</td>
+                    </tr>`;
                 });
-                if (data.subdomains.length > 50) content += `<tr><td>... and ${data.subdomains.length - 50} more</td></tr>`;
                 content += `</table></div>`;
             }
 
-            // Add open ports section
-            if (data.port_scan_results && data.port_scan_results.length > 0) {
-                content += `<div class="section"><h2>Open Ports</h2><table><tr><th>Port</th><th>Service</th><th>State</th></tr>`;
-                data.port_scan_results.forEach(port => {
-                    content += `<tr><td>${port.port || port}</td><td>${port.service || 'Unknown'}</td><td>${port.state || 'Open'}</td></tr>`;
+            // SUBDOMAINS
+            if (totalSubdomains > 0) {
+                content += `<div class="section">
+                    <h2>Discovered Subdomains <span class="count">${totalSubdomains}</span></h2>
+                    <table>
+                        <tr><th>#</th><th>Subdomain</th><th>Type</th><th>IP Addresses</th><th>Source</th></tr>`;
+
+                let idx = 1;
+                subdomains.forEach(sub => {
+                    if (!sub) return;
+                    const name = sub.subdomain || sub.name || 'Unknown';
+                    const type = sub.type || 'A';
+                    const ips = sub.ips || [];
+                    const ipStr = ips.length > 0 ? ips.join(', ') : 'No IP';
+                    content += `<tr>
+                        <td>${idx++}</td>
+                        <td>${escapeHtml(name)}</td>
+                        <td>${escapeHtml(type)}</td>
+                        <td>${escapeHtml(ipStr)}</td>
+                        <td><span class="badge badge-info">DNS</span></td>
+                    </tr>`;
+                });
+
+                crtSubdomains.slice(0, 20).forEach(sub => {
+                    if (!sub) return;
+                    const name = sub.subdomain || sub.name || (typeof sub === 'string' ? sub : 'Unknown');
+                    content += `<tr>
+                        <td>${idx++}</td>
+                        <td>${escapeHtml(name)}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="badge badge-low">crt.sh</span></td>
+                    </tr>`;
+                });
+
+                if (crtSubdomains.length > 20) {
+                    content += `<tr><td colspan="5" style="text-align:center; color:#888;">... and ${crtSubdomains.length - 20} more from crt.sh</td></tr>`;
+                }
+                content += `</table></div>`;
+            }
+
+            // OPEN PORTS & SERVICES
+            if (portResults.length > 0) {
+                content += `<div class="section">
+                    <h2>Open Ports & Services <span class="count">${portResults.length}</span></h2>
+                    <table>
+                        <tr><th>IP:Port</th><th>Risk</th><th>Service</th><th>Version</th><th>Organization</th><th>CVEs</th></tr>`;
+                portResults.forEach(result => {
+                    if (!result) return;
+                    const ip = result.ip || 'Unknown';
+                    const port = result.port || '?';
+                    const service = result.service || 'Unknown';
+                    const version = result.version || '-';
+                    const risk = (result.risk || 'LOW').toUpperCase();
+                    const org = result.organization || '-';
+                    const vulnerabilities = result.vulnerabilities || [];
+                    const badgeClass = risk === 'CRITICAL' ? 'badge-critical' : risk === 'HIGH' ? 'badge-high' : risk === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+                    const cves = vulnerabilities.length > 0
+                        ? `<div class="cve-list">${vulnerabilities.slice(0, 3).map(c => `<span class="cve-badge">${escapeHtml(c)}</span>`).join('')}${vulnerabilities.length > 3 ? `<span class="badge badge-info">+${vulnerabilities.length - 3}</span>` : ''}</div>`
+                        : '-';
+
+                    content += `<tr>
+                        <td><strong>${escapeHtml(ip)}:${port}</strong></td>
+                        <td><span class="badge ${badgeClass}">${risk}</span></td>
+                        <td>${escapeHtml(service)}</td>
+                        <td>${escapeHtml(version)}</td>
+                        <td>${escapeHtml(org)}</td>
+                        <td>${cves}</td>
+                    </tr>`;
                 });
                 content += `</table></div>`;
             }
 
-            content += `</body></html>`;
+            // DNS RECORDS
+            if (dnsCount > 0) {
+                content += `<div class="section">
+                    <h2>DNS Records <span class="count">${dnsCount}</span></h2>
+                    <table>
+                        <tr><th>Type</th><th>Value</th></tr>`;
+                for (const recordType in dnsRecords) {
+                    const records = dnsRecords[recordType];
+                    if (!Array.isArray(records) || records.length === 0) continue;
+
+                    records.forEach(record => {
+                        if (!record) return;
+                        let recordValue = '';
+                        if (typeof record === 'string') {
+                            recordValue = record;
+                        } else if (recordType === 'MX') {
+                            recordValue = `Priority: ${record.priority || 'N/A'}, Server: ${record.server || 'N/A'}`;
+                        } else if (recordType === 'SOA') {
+                            recordValue = `MNAME: ${record.mname || 'N/A'}, RNAME: ${record.rname || 'N/A'}`;
+                        } else if (typeof record === 'object') {
+                            try { recordValue = JSON.stringify(record); } catch (e) { recordValue = 'Complex record'; }
+                        } else {
+                            recordValue = String(record);
+                        }
+                        content += `<tr>
+                            <td><span class="badge badge-info">${escapeHtml(recordType)}</span></td>
+                            <td>${escapeHtml(recordValue)}</td>
+                        </tr>`;
+                    });
+                }
+                content += `</table></div>`;
+            }
+
+            // CLOUD ASSETS
+            if (cloudAssets.length > 0) {
+                content += `<div class="section">
+                    <h2>Cloud Assets <span class="count">${cloudAssets.length}</span></h2>
+                    <table>
+                        <tr><th>Name</th><th>Type</th><th>Status</th><th>Risk</th><th>URL</th></tr>`;
+                cloudAssets.forEach(asset => {
+                    if (!asset) return;
+                    const name = asset.name || 'Unknown';
+                    const type = asset.type || 'Unknown';
+                    const status = asset.status || 'Unknown';
+                    const risk = (asset.risk || 'LOW').toUpperCase();
+                    const url = asset.url || '-';
+                    const badgeClass = risk === 'CRITICAL' ? 'badge-critical' : risk === 'HIGH' ? 'badge-high' : risk === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+
+                    content += `<tr>
+                        <td>${escapeHtml(name)}</td>
+                        <td>${escapeHtml(type)}</td>
+                        <td>${escapeHtml(status)}</td>
+                        <td><span class="badge ${badgeClass}">${risk}</span></td>
+                        <td style="word-break:break-all; max-width:200px;">${escapeHtml(url)}</td>
+                    </tr>`;
+                });
+                content += `</table></div>`;
+            }
+
+            // TECHNOLOGIES
+            if (data.technologies && data.technologies.length > 0) {
+                content += `<div class="section">
+                    <h2>Technologies Detected <span class="count">${data.technologies.length}</span></h2>
+                    <table>
+                        <tr><th>Technology</th><th>Version</th><th>Category</th></tr>`;
+                data.technologies.forEach(tech => {
+                    if (!tech) return;
+                    const name = typeof tech === 'string' ? tech : (tech.name || tech.technology || 'Unknown');
+                    const version = typeof tech === 'object' ? (tech.version || '-') : '-';
+                    const category = typeof tech === 'object' ? (tech.category || '-') : '-';
+                    content += `<tr>
+                        <td>${escapeHtml(name)}</td>
+                        <td>${escapeHtml(version)}</td>
+                        <td>${escapeHtml(category)}</td>
+                    </tr>`;
+                });
+                content += `</table></div>`;
+            }
+
+            // SSL/TLS ISSUES
+            if (data.ssl_issues && data.ssl_issues.length > 0) {
+                content += `<div class="section">
+                    <h2>SSL/TLS Issues <span class="count">${data.ssl_issues.length}</span></h2>
+                    <table>
+                        <tr><th>Issue</th><th>Severity</th></tr>`;
+                data.ssl_issues.forEach(issue => {
+                    if (!issue) return;
+                    const description = typeof issue === 'string' ? issue : (issue.description || issue.issue || 'Unknown issue');
+                    const severity = typeof issue === 'object' ? (issue.severity || 'INFO').toUpperCase() : 'INFO';
+                    const badgeClass = severity === 'CRITICAL' ? 'badge-critical' : severity === 'HIGH' ? 'badge-high' : severity === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+                    content += `<tr>
+                        <td>${escapeHtml(description)}</td>
+                        <td><span class="badge ${badgeClass}">${severity}</span></td>
+                    </tr>`;
+                });
+                content += `</table></div>`;
+            }
+
+            // SECURITY HEADERS
+            if (data.security_headers) {
+                const headers = data.security_headers;
+                const headerKeys = Object.keys(headers);
+                if (headerKeys.length > 0) {
+                    content += `<div class="section">
+                        <h2>Security Headers</h2>
+                        <table>
+                            <tr><th>Header</th><th>Status</th><th>Value</th></tr>`;
+                    headerKeys.forEach(header => {
+                        const value = headers[header];
+                        const status = value ? 'Present' : 'Missing';
+                        const statusClass = value ? 'badge-low' : 'badge-high';
+                        const displayValue = value && typeof value === 'string' && value.length < 80 ? value : (value ? 'Configured' : 'Not configured');
+                        content += `<tr>
+                            <td>${escapeHtml(header)}</td>
+                            <td><span class="badge ${statusClass}">${status}</span></td>
+                            <td style="word-break:break-all; max-width:300px;">${escapeHtml(displayValue)}</td>
+                        </tr>`;
+                    });
+                    content += `</table></div>`;
+                }
+            }
+
+            // Footer
+            content += `
+                    <div class="footer">
+                        <div class="brand">NERVE Security Platform</div>
+                        <p>XASM Attack Surface Management Report</p>
+                        <p>Generated on ${timestamp}</p>
+                        <p style="margin-top: 10px; font-size: 11px; color: #aaa;">
+                            This report contains confidential security assessment data. Handle according to your organization's security policies.
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `;
 
             // Open print dialog
             const printWindow = window.open('', '_blank');
-            printWindow.document.write(content);
-            printWindow.document.close();
-            printWindow.print();
+            if (printWindow) {
+                printWindow.document.write(content);
+                printWindow.document.close();
+                // Small delay to ensure styles are loaded before printing
+                setTimeout(() => {
+                    printWindow.print();
+                }, 250);
+            } else {
+                alert('Please allow popups to generate the PDF report.');
+            }
         }
 
         function exportToCSV(scanResults) {
@@ -13451,47 +13930,199 @@
             }
 
             const data = currentResults;
-            let csv = 'Category,Name,Value,Details\\n';
+            const domain = data.domain || document.getElementById('domainInput')?.value?.trim() || 'Unknown';
+            const timestamp = new Date().toISOString();
 
-            // Add domain info
-            csv += `Domain,${data.domain || ''},Risk Score,${data.risk_score || ''}\\n`;
+            // Helper to escape CSV values (handle commas, quotes, newlines)
+            const escapeCSV = (val) => {
+                if (val === null || val === undefined) return '';
+                const str = String(val);
+                if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                    return '"' + str.replace(/"/g, '""') + '"';
+                }
+                return str;
+            };
 
-            // Add subdomains
-            if (data.subdomains) {
-                data.subdomains.forEach(sub => {
-                    csv += `Subdomain,${sub},,\\n`;
+            // Gather all data
+            const subdomains = data.subdomains || [];
+            const crtSubdomains = data.crt_subdomains || [];
+            const portResults = data.shodan_results || data.port_scan_results || [];
+            const dnsRecords = data.dns_records || {};
+            const cloudAssets = data.cloud_assets || [];
+            const criticalFindings = data.critical_findings || [];
+
+            let csv = '';
+
+            // HEADER ROW - Report Info
+            csv += 'XASM Attack Surface Report\n';
+            csv += `Domain,${escapeCSV(domain)}\n`;
+            csv += `Generated,${escapeCSV(timestamp)}\n`;
+            csv += `Risk Score,${data.risk_score || 'N/A'}\n`;
+            csv += `Risk Level,${(data.risk_level || 'unknown').toUpperCase()}\n`;
+            csv += '\n';
+
+            // CRITICAL FINDINGS
+            if (criticalFindings.length > 0) {
+                csv += 'CRITICAL FINDINGS\n';
+                csv += 'Severity,Type,Description,CVEs,Recommendation\n';
+                criticalFindings.forEach(finding => {
+                    const severity = (finding.severity || 'unknown').toUpperCase();
+                    const type = finding.type || 'Unknown';
+                    const description = finding.description || '';
+                    const cves = finding.cves && finding.cves.length > 0 ? finding.cves.join('; ') : '';
+                    const recommendation = finding.recommendation || '';
+                    csv += `${escapeCSV(severity)},${escapeCSV(type)},${escapeCSV(description)},${escapeCSV(cves)},${escapeCSV(recommendation)}\n`;
                 });
+                csv += '\n';
             }
 
-            // Add ports
-            if (data.port_scan_results) {
-                data.port_scan_results.forEach(port => {
-                    const portNum = typeof port === 'object' ? port.port : port;
-                    const service = typeof port === 'object' ? port.service : 'Unknown';
-                    csv += `Open Port,${portNum},${service},\\n`;
+            // SUBDOMAINS
+            if (subdomains.length > 0 || crtSubdomains.length > 0) {
+                csv += 'SUBDOMAINS\n';
+                csv += 'Subdomain,Type,IP Addresses,Source\n';
+
+                subdomains.forEach(sub => {
+                    if (!sub) return;
+                    const name = sub.subdomain || sub.name || 'Unknown';
+                    const type = sub.type || 'A';
+                    const ips = sub.ips || [];
+                    const ipStr = ips.length > 0 ? ips.join('; ') : '';
+                    csv += `${escapeCSV(name)},${escapeCSV(type)},${escapeCSV(ipStr)},DNS\n`;
                 });
+
+                crtSubdomains.forEach(sub => {
+                    if (!sub) return;
+                    const name = sub.subdomain || sub.name || (typeof sub === 'string' ? sub : 'Unknown');
+                    csv += `${escapeCSV(name)},-,-,crt.sh\n`;
+                });
+                csv += '\n';
             }
 
-            // Add DNS records
-            if (data.dns_records) {
-                data.dns_records.forEach(record => {
-                    csv += `DNS Record,${record.type || ''},${record.value || record},"${record.name || ''}"\\n`;
+            // OPEN PORTS & SERVICES
+            if (portResults.length > 0) {
+                csv += 'OPEN PORTS & SERVICES\n';
+                csv += 'IP,Port,Risk,Service,Version,Organization,Location,CVEs,Banner\n';
+                portResults.forEach(result => {
+                    if (!result) return;
+                    const ip = result.ip || 'Unknown';
+                    const port = result.port || '';
+                    const service = result.service || 'Unknown';
+                    const version = result.version || '';
+                    const risk = (result.risk || 'LOW').toUpperCase();
+                    const org = result.organization || '';
+                    const location = result.location || {};
+                    const locStr = [location.city, location.country].filter(Boolean).join(', ');
+                    const vulnerabilities = result.vulnerabilities || [];
+                    const cves = vulnerabilities.join('; ');
+                    const banner = result.banner ? result.banner.substring(0, 100).replace(/[\n\r]/g, ' ') : '';
+
+                    csv += `${escapeCSV(ip)},${escapeCSV(port)},${escapeCSV(risk)},${escapeCSV(service)},${escapeCSV(version)},${escapeCSV(org)},${escapeCSV(locStr)},${escapeCSV(cves)},${escapeCSV(banner)}\n`;
                 });
+                csv += '\n';
             }
 
-            // Add cloud assets
-            if (data.cloud_assets) {
-                data.cloud_assets.forEach(asset => {
-                    csv += `Cloud Asset,${asset.name || asset},${asset.provider || ''},${asset.type || ''}\\n`;
+            // DNS RECORDS
+            let dnsCount = 0;
+            for (const recordType in dnsRecords) {
+                if (Array.isArray(dnsRecords[recordType])) {
+                    dnsCount += dnsRecords[recordType].length;
+                }
+            }
+
+            if (dnsCount > 0) {
+                csv += 'DNS RECORDS\n';
+                csv += 'Record Type,Value\n';
+                for (const recordType in dnsRecords) {
+                    const records = dnsRecords[recordType];
+                    if (!Array.isArray(records) || records.length === 0) continue;
+
+                    records.forEach(record => {
+                        if (!record) return;
+                        let recordValue = '';
+                        if (typeof record === 'string') {
+                            recordValue = record;
+                        } else if (recordType === 'MX') {
+                            recordValue = `Priority: ${record.priority || 'N/A'}, Server: ${record.server || 'N/A'}`;
+                        } else if (recordType === 'SOA') {
+                            recordValue = `MNAME: ${record.mname || 'N/A'}, RNAME: ${record.rname || 'N/A'}`;
+                        } else if (typeof record === 'object') {
+                            try { recordValue = JSON.stringify(record); } catch (e) { recordValue = 'Complex record'; }
+                        } else {
+                            recordValue = String(record);
+                        }
+                        csv += `${escapeCSV(recordType)},${escapeCSV(recordValue)}\n`;
+                    });
+                }
+                csv += '\n';
+            }
+
+            // CLOUD ASSETS
+            if (cloudAssets.length > 0) {
+                csv += 'CLOUD ASSETS\n';
+                csv += 'Name,Type,Provider,Status,Risk,URL\n';
+                cloudAssets.forEach(asset => {
+                    if (!asset) return;
+                    const name = asset.name || 'Unknown';
+                    const type = asset.type || 'Unknown';
+                    const provider = asset.provider || '';
+                    const status = asset.status || 'Unknown';
+                    const risk = (asset.risk || 'LOW').toUpperCase();
+                    const url = asset.url || '';
+                    csv += `${escapeCSV(name)},${escapeCSV(type)},${escapeCSV(provider)},${escapeCSV(status)},${escapeCSV(risk)},${escapeCSV(url)}\n`;
                 });
+                csv += '\n';
+            }
+
+            // TECHNOLOGIES
+            if (data.technologies && data.technologies.length > 0) {
+                csv += 'TECHNOLOGIES\n';
+                csv += 'Technology,Version,Category\n';
+                data.technologies.forEach(tech => {
+                    if (!tech) return;
+                    const name = typeof tech === 'string' ? tech : (tech.name || tech.technology || 'Unknown');
+                    const version = typeof tech === 'object' ? (tech.version || '') : '';
+                    const category = typeof tech === 'object' ? (tech.category || '') : '';
+                    csv += `${escapeCSV(name)},${escapeCSV(version)},${escapeCSV(category)}\n`;
+                });
+                csv += '\n';
+            }
+
+            // SSL/TLS ISSUES
+            if (data.ssl_issues && data.ssl_issues.length > 0) {
+                csv += 'SSL/TLS ISSUES\n';
+                csv += 'Issue,Severity\n';
+                data.ssl_issues.forEach(issue => {
+                    if (!issue) return;
+                    const description = typeof issue === 'string' ? issue : (issue.description || issue.issue || 'Unknown issue');
+                    const severity = typeof issue === 'object' ? (issue.severity || 'INFO').toUpperCase() : 'INFO';
+                    csv += `${escapeCSV(description)},${escapeCSV(severity)}\n`;
+                });
+                csv += '\n';
+            }
+
+            // SECURITY HEADERS
+            if (data.security_headers) {
+                const headers = data.security_headers;
+                const headerKeys = Object.keys(headers);
+                if (headerKeys.length > 0) {
+                    csv += 'SECURITY HEADERS\n';
+                    csv += 'Header,Status,Value\n';
+                    headerKeys.forEach(header => {
+                        const value = headers[header];
+                        const status = value ? 'Present' : 'Missing';
+                        const displayValue = value && typeof value === 'string' ? value : (value ? 'Configured' : 'Not configured');
+                        csv += `${escapeCSV(header)},${escapeCSV(status)},${escapeCSV(displayValue)}\n`;
+                    });
+                    csv += '\n';
+                }
             }
 
             // Download CSV
-            const blob = new Blob([csv], { type: 'text/csv' });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `xasm-report-${data.domain || 'scan'}-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `xasm-report-${domain}-${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
         }
@@ -13504,67 +14135,286 @@
 
             const data = currentResults;
             const timestamp = new Date().toLocaleString();
-            let txt = `XASM Attack Surface Report
-========================================
-Domain: ${data.domain || 'Unknown'}
+            const domain = data.domain || document.getElementById('domainInput')?.value?.trim() || 'Unknown';
+
+            // Helper to create section dividers
+            const divider = '='.repeat(60);
+            const subDivider = '-'.repeat(60);
+
+            // Calculate totals
+            const subdomains = data.subdomains || [];
+            const crtSubdomains = data.crt_subdomains || [];
+            const totalSubdomains = subdomains.length + crtSubdomains.length;
+            const portResults = data.shodan_results || data.port_scan_results || [];
+            const dnsRecords = data.dns_records || {};
+            const cloudAssets = data.cloud_assets || [];
+            const criticalFindings = data.critical_findings || [];
+
+            // Count DNS records
+            let dnsCount = 0;
+            for (const recordType in dnsRecords) {
+                if (Array.isArray(dnsRecords[recordType])) {
+                    dnsCount += dnsRecords[recordType].length;
+                }
+            }
+
+            let txt = `XASM ATTACK SURFACE MANAGEMENT REPORT
+${divider}
+Domain: ${domain}
 Generated: ${timestamp}
-Risk Score: ${data.risk_score || 'N/A'}/100
-========================================
+Risk Score: ${data.risk_score || 'N/A'}/100 (${(data.risk_level || 'unknown').toUpperCase()})
+${divider}
 
 SUMMARY
--------
-Subdomains Found: ${data.subdomains?.length || 0}
-Open Ports: ${data.port_scan_results?.length || 0}
-DNS Records: ${data.dns_records?.length || 0}
-Cloud Assets: ${data.cloud_assets?.length || 0}
+${subDivider}
+  Critical Findings: ${criticalFindings.length}
+  Subdomains Found:  ${totalSubdomains}
+  Open Ports:        ${portResults.length}
+  DNS Records:       ${dnsCount}
+  Cloud Assets:      ${cloudAssets.length}
 
 `;
 
-            if (data.subdomains && data.subdomains.length > 0) {
-                txt += `SUBDOMAINS
-----------
-${data.subdomains.join('\\n')}
-
+            // CRITICAL FINDINGS
+            if (criticalFindings.length > 0) {
+                txt += `CRITICAL FINDINGS (${criticalFindings.length})
+${subDivider}
 `;
-            }
-
-            if (data.port_scan_results && data.port_scan_results.length > 0) {
-                txt += `OPEN PORTS
-----------
+                criticalFindings.forEach((finding, i) => {
+                    const severity = finding.severity || 'UNKNOWN';
+                    const type = finding.type || 'Unknown';
+                    const description = finding.description || 'No description';
+                    txt += `${i + 1}. [${severity.toUpperCase()}] ${type}
+   ${description}
 `;
-                data.port_scan_results.forEach(port => {
-                    const portNum = typeof port === 'object' ? port.port : port;
-                    const service = typeof port === 'object' ? port.service : 'Unknown';
-                    txt += `Port ${portNum} - ${service}\\n`;
-                });
-                txt += `\\n`;
-            }
-
-            if (data.dns_records && data.dns_records.length > 0) {
-                txt += `DNS RECORDS
------------
+                    if (finding.cves && finding.cves.length > 0) {
+                        txt += `   CVEs: ${finding.cves.join(', ')}
 `;
-                data.dns_records.forEach(record => {
-                    txt += `${record.type || 'RECORD'}: ${record.value || record}\\n`;
-                });
-                txt += `\\n`;
-            }
-
-            if (data.cloud_assets && data.cloud_assets.length > 0) {
-                txt += `CLOUD ASSETS
-------------
+                    }
+                    if (finding.recommendation) {
+                        txt += `   Recommendation: ${finding.recommendation}
 `;
-                data.cloud_assets.forEach(asset => {
-                    txt += `${asset.provider || 'Unknown'}: ${asset.name || asset}\\n`;
+                    }
+                    txt += `
+`;
                 });
             }
+
+            // SUBDOMAINS
+            if (totalSubdomains > 0) {
+                txt += `SUBDOMAINS (${totalSubdomains})
+${subDivider}
+`;
+                // DNS-discovered subdomains
+                subdomains.forEach((sub, i) => {
+                    if (!sub) return;
+                    const name = sub.subdomain || sub.name || 'Unknown';
+                    const ips = sub.ips || [];
+                    const type = sub.type || 'A';
+                    const ipStr = ips.length > 0 ? ips.join(', ') : 'No IP';
+                    txt += `${i + 1}. ${name}
+   Type: ${type} | IPs: ${ipStr}
+`;
+                });
+
+                // crt.sh subdomains
+                if (crtSubdomains.length > 0) {
+                    txt += `
+Certificate Transparency (crt.sh) - showing first 20:
+`;
+                    crtSubdomains.slice(0, 20).forEach((sub, i) => {
+                        if (!sub) return;
+                        const name = sub.subdomain || sub.name || sub;
+                        txt += `${i + 1}. ${name}
+`;
+                    });
+                }
+                txt += `
+`;
+            }
+
+            // OPEN PORTS & SERVICES
+            if (portResults.length > 0) {
+                txt += `OPEN PORTS & SERVICES (${portResults.length})
+${subDivider}
+`;
+                portResults.forEach((result, i) => {
+                    if (!result) return;
+                    const ip = result.ip || 'Unknown';
+                    const port = result.port || '?';
+                    const service = result.service || 'Unknown';
+                    const version = result.version || '';
+                    const risk = result.risk || 'LOW';
+                    const org = result.organization || '';
+                    const location = result.location || {};
+                    const city = location.city || '';
+                    const country = location.country || '';
+                    const vulnerabilities = result.vulnerabilities || [];
+
+                    txt += `${i + 1}. ${ip}:${port} [${risk}]
+   Service: ${service}${version ? ' ' + version : ''}
+`;
+                    if (org) {
+                        txt += `   Organization: ${org}
+`;
+                    }
+                    if (city || country) {
+                        txt += `   Location: ${[city, country].filter(Boolean).join(', ')}
+`;
+                    }
+                    if (vulnerabilities.length > 0) {
+                        txt += `   CVEs: ${vulnerabilities.join(', ')}
+`;
+                    }
+                    if (result.banner) {
+                        const banner = result.banner.substring(0, 100).replace(/\n/g, ' ');
+                        txt += `   Banner: ${banner}...
+`;
+                    }
+                    txt += `
+`;
+                });
+            }
+
+            // DNS RECORDS
+            if (dnsCount > 0) {
+                txt += `DNS RECORDS (${dnsCount})
+${subDivider}
+`;
+                for (const recordType in dnsRecords) {
+                    const records = dnsRecords[recordType];
+                    if (!Array.isArray(records) || records.length === 0) continue;
+
+                    txt += `
+[${recordType}]
+`;
+                    records.forEach((record, i) => {
+                        if (!record) return;
+                        let recordValue = '';
+                        if (typeof record === 'string') {
+                            recordValue = record;
+                        } else if (recordType === 'MX') {
+                            const priority = record.priority || 'N/A';
+                            const server = record.server || 'N/A';
+                            recordValue = `Priority: ${priority}, Server: ${server}`;
+                        } else if (recordType === 'SOA') {
+                            const mname = record.mname || 'N/A';
+                            const rname = record.rname || 'N/A';
+                            recordValue = `MNAME: ${mname}, RNAME: ${rname}`;
+                        } else if (typeof record === 'object') {
+                            try {
+                                recordValue = JSON.stringify(record);
+                            } catch (e) {
+                                recordValue = 'Complex record';
+                            }
+                        } else {
+                            recordValue = String(record);
+                        }
+                        txt += `  ${i + 1}. ${recordValue}
+`;
+                    });
+                }
+                txt += `
+`;
+            }
+
+            // CLOUD ASSETS
+            if (cloudAssets.length > 0) {
+                txt += `CLOUD ASSETS (${cloudAssets.length})
+${subDivider}
+`;
+                cloudAssets.forEach((asset, i) => {
+                    if (!asset) return;
+                    const name = asset.name || 'Unknown';
+                    const type = asset.type || 'Unknown';
+                    const status = asset.status || 'Unknown';
+                    const risk = asset.risk || 'LOW';
+                    const url = asset.url || '';
+                    const provider = asset.provider || '';
+
+                    txt += `${i + 1}. ${name} [${risk}]
+   Type: ${type}${provider ? ' (' + provider + ')' : ''}
+   Status: ${status}
+`;
+                    if (url) {
+                        txt += `   URL: ${url}
+`;
+                    }
+                    txt += `
+`;
+                });
+            }
+
+            // TECHNOLOGIES (if available)
+            if (data.technologies && data.technologies.length > 0) {
+                txt += `TECHNOLOGIES DETECTED (${data.technologies.length})
+${subDivider}
+`;
+                data.technologies.forEach((tech, i) => {
+                    if (!tech) return;
+                    const name = typeof tech === 'string' ? tech : (tech.name || tech.technology || 'Unknown');
+                    const version = typeof tech === 'object' ? (tech.version || '') : '';
+                    const category = typeof tech === 'object' ? (tech.category || '') : '';
+                    txt += `${i + 1}. ${name}${version ? ' v' + version : ''}${category ? ' (' + category + ')' : ''}
+`;
+                });
+                txt += `
+`;
+            }
+
+            // SSL/TLS ISSUES (if available)
+            if (data.ssl_issues && data.ssl_issues.length > 0) {
+                txt += `SSL/TLS ISSUES (${data.ssl_issues.length})
+${subDivider}
+`;
+                data.ssl_issues.forEach((issue, i) => {
+                    if (!issue) return;
+                    const description = typeof issue === 'string' ? issue : (issue.description || issue.issue || 'Unknown issue');
+                    const severity = typeof issue === 'object' ? (issue.severity || '') : '';
+                    txt += `${i + 1}. ${description}${severity ? ' [' + severity + ']' : ''}
+`;
+                });
+                txt += `
+`;
+            }
+
+            // SECURITY HEADERS (if available)
+            if (data.security_headers) {
+                const headers = data.security_headers;
+                const headerKeys = Object.keys(headers);
+                if (headerKeys.length > 0) {
+                    txt += `SECURITY HEADERS
+${subDivider}
+`;
+                    headerKeys.forEach(header => {
+                        const value = headers[header];
+                        const status = value ? 'Present' : 'Missing';
+                        const displayValue = typeof value === 'string' ? value : (value ? 'Configured' : 'Not configured');
+                        txt += `  ${header}: ${status}
+`;
+                        if (value && typeof value === 'string' && value.length < 100) {
+                            txt += `    Value: ${value}
+`;
+                        }
+                    });
+                    txt += `
+`;
+                }
+            }
+
+            // Footer
+            txt += `${divider}
+Report generated by XASM Attack Surface Scanner
+For more details, view the full scan in the NERVE dashboard.
+${divider}
+`;
 
             // Download TXT
             const blob = new Blob([txt], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `xasm-report-${data.domain || 'scan'}-${new Date().toISOString().split('T')[0]}.txt`;
+            a.download = `xasm-report-${domain}-${new Date().toISOString().split('T')[0]}.txt`;
             a.click();
             window.URL.revokeObjectURL(url);
         }

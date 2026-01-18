@@ -105,8 +105,79 @@ scheduler.add_job(
     hours=1,
     id='cleanup_expired_scans'
 )
+
+
+def auto_scan_company_domains():
+    """
+    Auto-scan company domains every 24 hours.
+    Runs every hour to check if any scans are due.
+    Only updates existing scans - does not create new ones.
+    """
+    from modules.ghost.asm_scanner import scan_domain
+
+    session = SessionLocal()
+
+    try:
+        now = datetime.now(timezone.utc)
+
+        # Find scans that are ready for refresh (next_scan_at has passed)
+        scans_to_refresh = session.query(CachedASMScan).filter(
+            CachedASMScan.auto_scan_enabled == True,
+            CachedASMScan.next_scan_at <= now,
+            CachedASMScan.deleted_at == None
+        ).all()
+
+        if not scans_to_refresh:
+            return
+
+        print(f"[AUTO-SCAN] Found {len(scans_to_refresh)} domains ready for auto-scan")
+
+        for scan in scans_to_refresh:
+            try:
+                print(f"[AUTO-SCAN] Starting scan for {scan.domain}")
+
+                # Perform the scan
+                scan_results = scan_domain(scan.domain)
+
+                # Update the existing scan record
+                cve_stats = scan_results.get('cve_statistics', {})
+                scan.risk_score = scan_results.get('risk_score', 0)
+                scan.risk_level = scan_results.get('risk_level', 'low')
+                scan.total_cves = cve_stats.get('total_cves', 0)
+                scan.critical_cves = cve_stats.get('critical_cves', 0)
+                scan.vulnerabilities_found = scan_results.get('vulnerabilities_found', 0)
+                scan.open_ports_count = len(scan_results.get('port_scan_results', []))
+                scan.scan_results = scan_results
+                scan.scanned_at = now
+                scan.last_scanned = now
+                scan.next_scan_at = now + timedelta(hours=24)
+
+                session.commit()
+                print(f"[AUTO-SCAN] Completed scan for {scan.domain} - Risk Score: {scan.risk_score}")
+
+            except Exception as e:
+                print(f"[AUTO-SCAN] Error scanning {scan.domain}: {str(e)}")
+                # Still update next_scan_at to avoid retry loop
+                scan.next_scan_at = now + timedelta(hours=24)
+                session.commit()
+                continue
+
+    except Exception as e:
+        print(f"[AUTO-SCAN] Scheduler error: {str(e)}")
+    finally:
+        session.close()
+
+
+scheduler.add_job(
+    func=auto_scan_company_domains,
+    trigger='interval',
+    hours=1,
+    id='auto_scan_company_domains'
+)
+
 scheduler.start()
 print("[SCHEDULER] Started hourly cleanup of expired AI scan data")
+print("[SCHEDULER] Started hourly auto-scan check for company domains")
 
 # Ensure scheduler shuts down with app
 atexit.register(lambda: scheduler.shutdown())
@@ -4528,6 +4599,9 @@ def asm_scan():
                         'scanned_at': cached.scanned_at.isoformat(),
                         'cached': True,
                         'cache_age_hours': age_hours,
+                        'last_scanned': cached.last_scanned.isoformat() if cached.last_scanned else None,
+                        'next_scan_at': cached.next_scan_at.isoformat() if cached.next_scan_at else None,
+                        'auto_scan_enabled': cached.auto_scan_enabled,
                         **cached.scan_results
                     }), 200
                 else:
@@ -4578,6 +4652,7 @@ def asm_scan():
         cve_stats = scan_results.get('cve_statistics', {})
         new_scan = CachedASMScan(
             domain=domain,
+            user_id=user_id,
             risk_score=scan_results.get('risk_score', 0),
             risk_level=scan_results.get('risk_level', 'low'),
             total_cves=cve_stats.get('total_cves', 0),
@@ -4586,6 +4661,18 @@ def asm_scan():
             open_ports_count=len(scan_results.get('port_scan_results', [])),
             scan_results=scan_results
         )
+
+        # Enable auto-scanning for company users only
+        user = session.query(User).filter_by(id=user_id).first()
+        if user and user.role == UserRole.COMPANY_USER:
+            new_scan.auto_scan_enabled = True
+            new_scan.last_scanned = datetime.now(timezone.utc)
+            new_scan.next_scan_at = datetime.now(timezone.utc) + timedelta(hours=24)
+            logger.info(f"[AUTO-SCAN] Enabled for company user on domain: {domain}")
+        else:
+            new_scan.auto_scan_enabled = False
+            new_scan.last_scanned = datetime.now(timezone.utc)
+            logger.info(f"[MANUAL-SCAN] Regular user scan on domain: {domain}")
 
         session.add(new_scan)
         session.commit()
@@ -4638,6 +4725,9 @@ def asm_scan():
             'critical_cves': cve_stats.get('critical_cves', 0),
             'scanned_at': new_scan.scanned_at.isoformat(),
             'cached': False,
+            'last_scanned': new_scan.last_scanned.isoformat() if new_scan.last_scanned else None,
+            'next_scan_at': new_scan.next_scan_at.isoformat() if new_scan.next_scan_at else None,
+            'auto_scan_enabled': new_scan.auto_scan_enabled,
             **scan_results
         }), 200
 
